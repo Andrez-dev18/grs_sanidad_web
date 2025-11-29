@@ -1,6 +1,22 @@
 <!DOCTYPE html>
 <html lang="es">
 
+<!-- 
+
+TEMPLATE BASICO PARA TODO EL DASHBOARD DEL SISTEMA, 
+
+ESTOS COMPONENTES SOLO DEBEN USARSE PARA EL INDEX NADA MAS, NO SE VA COPIAR 
+NI REPLICAR EN OTRAS VENTANAS O ARHIVOS, CON QUE SEA UNO BASTA
+
+
+#################EXPLICACION###############
+
+HAY UN MONTON DE CODIGO QUE NO ES NECESARIO QUE LO MODIFIQUEN ASI COMO ESTA YA FUNCIONA
+
+SOLO SE VAN A ENCARGAR DE AGREGAR NUEVOS MENUS AL SIDEBAR 
+
+-->
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -269,10 +285,29 @@
                 <p class="text-blue-300 text-xs uppercase font-semibold mb-2 px-3">Dashboards</p>
             </div>
 
-            <!-- INFORMACIÓN DEL MERCADO -->
+            <!-- INFORMACIÓN DEL MERCADO 
+             
+            USAR LA FUNCION "activateAndLoad" para cargar ventanas en medio del dashboard
+
+            los parametros a pasarle son: nombre del archivo a mostrar, ejemplo: "ventana1.html"
+
+            tipo de ventana: en caso se quiere usar el mismo archivo para diferentes componentes
+            pero no es tan necesario, el tipo solo se pone un nombre referencial como: "tipoventana"
+
+            titulo: solo agregas el titulo que tendra la ventana, eso aparecera en la barra superior
+            del dashboard
+
+            ejemplo final: 
+
+            "onclick="activateAndLoad(this, 'dashboard-registro-muestras.php', 'muestras', 'Registro de muestras')""
+
+            eso lo colocan en cualquier boton del side bar menu para cargar alguna pagina dentro del contenor
+            principal del dashboard
+
+            -->
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'dashboard-registro-muestras.php', 'criador-emprendedor', 'Registro de muestras')">
+                    onclick="activateAndLoad(this, 'dashboard-registro-muestras.php', 'muestras', 'Registro de muestras')">
                     <span class="flex items-center gap-3">
                        <i class="fa-solid fa-car"></i>
                         <span class="font-medium">1.- Registro de muestras</span>
@@ -335,6 +370,15 @@
             </div>
 
         <!-- MANTENIMIENTOS -->
+
+        <!-- 
+        
+        en caso de los menus colabpasables solo agregar el loadDashboardAndaData
+        a las etiquetas <a> junto con la funcion selectMenuItem(this), para que tengo el efecto
+        de seleccionado y el proceso es el mismo
+        
+        -->
+
          <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                     onclick="toggleSubmenu('submenu-maestros-sistema')">
@@ -604,20 +648,7 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            // MODIFICAR DASHBOARD POR DEFECTO
-
-            // loadDashboardAndData('dashboard-comercializacion.html', 'vivo-aqp');
-            // loadDashboardAndData('dashboard-comercializacion.html', 'vivo-provincia');
-            // loadDashboardAndData('dashboard-huevo.html', 'huevo');
-
-            // Criaderos Emprendedores:
-            //loadDashboardAndData('dashboard-criadores-emprendedores.html', 'criador');
-
-            // Tamaño de Mercado:
-            // loadDashboardAndData('dashboard_tamanoMercado.html', 'tamanoMercado');
-
-            // Potencial de Venta:
-            // loadDashboardAndData('dashboard-capturas.html', 'vivo-arequipa');
+        
 
             const frame = document.getElementById('dashboardFrame');
             frame.src = 'dashboard-registro-muestras.php';
