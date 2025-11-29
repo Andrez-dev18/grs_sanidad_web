@@ -5,7 +5,8 @@ if (empty($_SESSION['active'])) {
     exit('No autorizado');
 }
 
-include_once '../conexion_grs_joya/conexion.php';
+//ruta relativa a la conexion
+include_once 'conexion_grs_joya\conexion.php';
 $conexion = conectar_sanidad();
 if (!$conexion) {
     die("Error de conexión.");
