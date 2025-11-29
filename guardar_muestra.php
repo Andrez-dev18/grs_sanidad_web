@@ -119,10 +119,7 @@ try {
         $observacionesMuestra = $_POST["observaciones_{$i}"] ?? '';       
         $numeroMuestras = $_POST["numeroMuestras_{$i}"] ?? '';
         $analisisSeleccionados = $_POST["analisis_{$i}"] ?? [];
-        //se cambio para que permita guardar en formato JSON
-       $analisisStr = !empty($analisisSeleccionados) 
-    ? json_encode($analisisSeleccionados, JSON_UNESCAPED_UNICODE) 
-    : null;
+       $analisisStr = !empty($analisisSeleccionados) ? implode(',', $analisisSeleccionados) : '';
 
 
         if ($tipoMuestra !== null) {
