@@ -294,10 +294,10 @@
 
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'dashboard-ingreso-lima.html', 'ingreso-lima', 'Gestión Ingresos Lima')">
+                    onclick="activateAndLoad(this, 'dashboard-reportes.php', 'reportes', 'Gestión de Reportes')">
                     <span class="flex items-center gap-3">
-                        <i class="fas fa-database w-5"></i>
-                        <span class="font-medium">3.- Muestra detalle</span>
+                        <i class="fa-solid fa-file"></i>
+                        <span class="font-medium">3.- Reportes</span>
                     </span>
                 </button>
             </div>
@@ -305,10 +305,10 @@
 
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'dashboard-gallina-cd.html', 'gallina-cd', 'Gestión GallinaCD')">
+                    onclick="activateAndLoad(this, 'dashboard-rpta-laboratorio.php', 'respuestalab', 'Respuesta de laboratorio')">
                     <span class="flex items-center gap-3">
-                        <i class="fas fa-database w-5"></i>
-                        <span class="font-medium">4.- Laboratorio</span>
+                        <i class="fa-solid fa-atom"></i>
+                        <span class="font-medium">4.- Respuesta Laboratorio</span>
                     </span>
                 </button>
 
@@ -346,7 +346,14 @@
                 </button>
 
                 <div id="submenu-maestros-sistema" class="submenu hidden pl-10 mt-2 space-y-2">
+                   <!-- <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empreTransporte.php','Empresas de transporte', 'Gestion de empresas de Transporte')"
+                        class="menu-link block text-gray-400 hover:text-white">Empresas de transporte</a>*/
                     <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empresa.html','empresa', 'Empresa')"
+                        class="menu-link block text-gray-400 hover:text-white">Empresa</a>-->
+
+                        <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empresas-transporte.php','Empresas de transporte', 'Gestion de empresas de Transporte')"
                         class="menu-link block text-gray-400 hover:text-white">Empresas de transporte</a>
                     <a href="#"
@@ -457,7 +464,7 @@
         // Toggle Sidebar
 
 
-        // Load Dashboard
+        // Load Dashboard por defecto
         function loadDashboard(url, element) {
             // Prevenir comportamiento por defecto del enlace
             event.preventDefault();
@@ -489,19 +496,16 @@
         }
 
         //FUNCION CLAVE PARA CARGAR LAS VENTANAS 
-        //SE LE PASA EL NOMBRE DEL ARCHIVO QUE SE DESEA CARGAR Y SI TIENE SUB TIPOS LE VAMOS EL TIPO
+        //SE LE PASA EL NOMBRE DEL ARCHIVO QUE SE DESEA CARGAR Y SI TIENE SUB TIPOS LE DAMOS EL TIPO
         //COMO POR EJEMPLO ('DASHBOARD-COMERCIO', 'TIPOCOMERCIO')
         function loadDashboardAndData(dashboardUrl, tipo, title) {
             const frame = document.getElementById('dashboardFrame');
             const titulo = document.getElementById('dashboardTitle');
-            //se adiciona el dashboard al array de titulos para cargar el titulo
+            //se adiciona el dashboard al array de titulos para cargar el titulo y la pagina a la vez
             const titles = {
-                //'dashboard-capturas.html': 'Gestion ' + title,
                 'dashboard-registro-muestras.php': title,
-                //'dashboard-vivo-arequipa.html': 'Gestion Provincia',
-                //'dashboard-vivo-provincia.html': 'Gestion Arequipa',
+                //'dashboard-empreTransporte.php': title,
 
-                'dashboard-empreTransporte.php': title,
                 'dashboard-empresas-transporte.php': title,
                 'dashboard-laboratorio.php': 'Laboratorios',
                 
@@ -510,7 +514,10 @@
                 'dashboard-analisis.php': 'Analisis',
                 'dashboard-registro-muestras-cabecera.php': 'Muestra cabecera',
                 'dashboard-detalle-muestras.php': 'Detalle',
-                 
+
+                'dashboard-rpta-laboratorio.php': title,
+                'dashboard-reportes.php': title,
+                //seguir agregando mas si hay mas ventanas
 
             };
 
