@@ -312,6 +312,7 @@ if (!$conexion) {
     <script src="funciones.js"></script>
     <script src="planificacion.js"></script>
     <script src="registro.js"></script>
+    <script src="reportes.js"></script>
     <script src="manteminiento.js"></script>
 </body>
 

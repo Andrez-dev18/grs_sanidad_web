@@ -276,7 +276,7 @@ body {
 }
 
 .submenu.open {
-    max-height: 200px; /* Ajusta según el número de ítems */
+    max-height: 300px; /* Ajusta según el número de ítems */
 }
 
 .menu-item.expanded .menu-item-arrow {

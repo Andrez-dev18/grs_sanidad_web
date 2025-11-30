@@ -294,10 +294,10 @@
 
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'dashboard-reportes.php', 'reportes', 'Gestión de Reportes')">
+                    onclick="activateAndLoad(this, 'dashboard-ingreso-lima.html', 'ingreso-lima', 'Gestión Ingresos Lima')">
                     <span class="flex items-center gap-3">
-                        <i class="fa-solid fa-file"></i>
-                        <span class="font-medium">3.- Reportes</span>
+                        <i class="fas fa-database w-5"></i>
+                        <span class="font-medium">3.- Muestra detalle</span>
                     </span>
                 </button>
             </div>
@@ -305,10 +305,10 @@
 
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'dashboard-rpta-laboratorio.php', 'respuestalab', 'Respuesta de laboratorio')">
+                    onclick="activateAndLoad(this, 'dashboard-gallina-cd.html', 'gallina-cd', 'Gestión GallinaCD')">
                     <span class="flex items-center gap-3">
-                        <i class="fa-solid fa-atom"></i>
-                        <span class="font-medium">4.- Respuesta Laboratorio</span>
+                        <i class="fas fa-database w-5"></i>
+                        <span class="font-medium">4.- Laboratorio</span>
                     </span>
                 </button>
 
@@ -350,8 +350,24 @@
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empreTransporte.php','Empresas de transporte', 'Gestion de empresas de Transporte')"
                         class="menu-link block text-gray-400 hover:text-white">Empresas de transporte</a>
                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empresa.html','empresa', 'Empresa')"
-                        class="menu-link block text-gray-400 hover:text-white">Empresa</a>
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-laboratorio.php','laboratorio', 'Laboratorio')"
+                        class="menu-link block text-gray-400 hover:text-white">Laboratorios</a>
+                        <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-tipo-muestra.php','Tipo muestra', 'tipo muestra')"
+                        class="menu-link block text-gray-400 hover:text-white">Tipos de Muestra</a>
+                        <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-paquetes-analisis.php','Paquete analisis', 'Paquete analisis')"
+                        class="menu-link block text-gray-400 hover:text-white">Paquetes de Analisis</a>
+                        <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-analisis.php','Analisis', 'Analisis')"
+                        class="menu-link block text-gray-400 hover:text-white">Analisis</a>
+                        <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empresa.','empresa', 'Empresa')"
+                        class="menu-link block text-gray-400 hover:text-white">Muestras - Cabecera</a>
+                        <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empresa.','empresa', 'Empresa')"
+                        class="menu-link block text-gray-400 hover:text-white">Muestras - Detalle</a>
+
                     
                 </div>
             </div>
@@ -441,7 +457,7 @@
         // Toggle Sidebar
 
 
-        // Load Dashboard por defecto
+        // Load Dashboard
         function loadDashboard(url, element) {
             // Prevenir comportamiento por defecto del enlace
             event.preventDefault();
@@ -473,18 +489,25 @@
         }
 
         //FUNCION CLAVE PARA CARGAR LAS VENTANAS 
-        //SE LE PASA EL NOMBRE DEL ARCHIVO QUE SE DESEA CARGAR Y SI TIENE SUB TIPOS LE DAMOS EL TIPO
+        //SE LE PASA EL NOMBRE DEL ARCHIVO QUE SE DESEA CARGAR Y SI TIENE SUB TIPOS LE VAMOS EL TIPO
         //COMO POR EJEMPLO ('DASHBOARD-COMERCIO', 'TIPOCOMERCIO')
         function loadDashboardAndData(dashboardUrl, tipo, title) {
             const frame = document.getElementById('dashboardFrame');
             const titulo = document.getElementById('dashboardTitle');
-            //se adiciona el dashboard al array de titulos para cargar el titulo y la pagina a la vez
+            //se adiciona el dashboard al array de titulos para cargar el titulo
             const titles = {
+                //'dashboard-capturas.html': 'Gestion ' + title,
                 'dashboard-registro-muestras.php': title,
+                //'dashboard-vivo-arequipa.html': 'Gestion Provincia',
+                //'dashboard-vivo-provincia.html': 'Gestion Arequipa',
+
                 'dashboard-empreTransporte.php': title,
-                'dashboard-rpta-laboratorio.php': title,
-                'dashboard-reportes.php': title,
-                //seguir agregando mas si hay mas ventanas
+                'dashboard-laboratorio.php': 'Laboratorios',
+                
+                'dashboard-tipo-muestra.php': 'Tipo muestra',
+                'dashboard-paquetes-analisis.php': 'Paquete analisis',
+                'dashboard-analisis.php': 'Analisis',
+                 
 
             };
 

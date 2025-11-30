@@ -511,6 +511,60 @@ if (!$conexion) {
                 </div>
             </div>
 
+            <!-- VISTA EMPRESAS DE TRANSPORTE -->
+            <div id="viewEmpresaTransporte" class="content-view">
+                <div class="content-header">
+                    <h1>🚚 Empresas de Transporte</h1>
+                    <p>Administre las empresas de transporte registradas en el sistema</p>
+                </div>
+
+                <div class="form-container">
+                    <!-- Botón para añadir nueva empresa -->
+                    <div style="margin-bottom: 20px; text-align: right;">
+                        <button type="button" class="btn btn-primary" onclick="openModal('create')">
+                            ➕ Nueva Empresa
+                        </button>
+                    </div>
+
+                    <!-- Tabla de empresas -->
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="empTransTableBody">
+                                <?php
+                                $query = "SELECT codigo, nombre FROM com_emp_trans ORDER BY nombre";
+                                $result = mysqli_query($conexion, $query);
+                                if ($result && mysqli_num_rows($result) > 0) {
+                                    while ($row = mysqli_fetch_assoc($result)) {
+                                        echo '<tr>';
+                                        echo '<td>' . htmlspecialchars($row['codigo']) . '</td>';
+                                        echo '<td>' . htmlspecialchars($row['nombre']) . '</td>';
+                                        echo '<td>
+                                <button class="btn-icon" title="Editar" onclick="openModal(\'edit\', ' . (int) $row['codigo'] . ', \'' . addslashes(htmlspecialchars($row['nombre'])) . '\')">
+                                    ✏️
+                                </button>
+                                <button class="btn-icon" title="Eliminar" onclick="confirmDelete(' . (int) $row['codigo'] . ')">
+                                    🗑️
+                                </button>
+                              </td>';
+                                        echo '</tr>';
+                                    }
+                                } else {
+                                    echo '<tr><td colspan="3" style="text-align: center;">No hay empresas registradas</td></tr>';
+                                }
+                                ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
         </div>
 
     </div> <!-- cierra dashboard -->
@@ -562,6 +616,8 @@ if (!$conexion) {
             </div>
         </div>
     </div>
+
+    
 
     <script>
         let paginaActual = 1;
