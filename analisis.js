@@ -188,3 +188,116 @@ function exportarAnalisis() {
     alert(`✅ Se exportaron ${count} análisis correctamente.`);
 }
 
+
+// Agregar esta función para cargar los datos con códigos
+async function cargarDatosTabla() {
+    const formData = new FormData();
+    formData.append('action', 'obtenerDatosCompletos');
+    
+    try {
+        const response = await fetch('crud_analisis.php', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            actualizarTabla(result.data);
+        }
+    } catch (error) {
+        console.error('Error al cargar datos:', error);
+    }
+}
+
+// Función para actualizar la tabla con los datos
+function actualizarTabla(datos) {
+    const tbody = document.querySelector('table tbody');
+    
+    if (!datos || datos.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-gray-500">
+                    <i class="fas fa-inbox text-4xl mb-3"></i>
+                    <p>No hay análisis registrados</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = datos.map(row => `
+        <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-4 py-3 text-sm font-medium text-gray-900">${row.codigo}</td>
+            <td class="px-4 py-3 text-sm text-gray-700">${row.nombre}</td>
+            <td class="px-4 py-3 text-sm text-gray-700">
+                <span style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; font-weight: 600; color: #4b5563; margin-right: 4px;">
+                    ${row.tipoMuestra}
+                </span>
+                ${row.tipo_muestra_nombre || 'Sin tipo'}
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-700">
+                ${row.paqueteAnalisis ? 
+                    `<span style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; font-weight: 600; color: #4b5563; margin-right: 4px;">
+                        ${row.paqueteAnalisis}
+                    </span>
+                    ${row.paquete_nombre || 'Sin paquete'}` 
+                    : '<span class="text-gray-400">Sin paquete</span>'
+                }
+            </td>
+            <td class="px-4 py-3 text-center">
+                <button onclick='editAnalisis(${JSON.stringify(row)})' 
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded mr-2">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="confirmAnalisisDelete(${row.codigo})" 
+                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Cargar datos al iniciar la página
+document.addEventListener('DOMContentLoaded', function() {
+    cargarDatosTabla();
+});
+
+// Modificar la función exportarAnalisis para incluir los códigos
+function exportarAnalisis() {
+    const tabla = document.querySelector('table');
+    const filas = tabla.querySelectorAll('tbody tr');
+    
+    let csv = '\ufeff';
+    csv += 'REPORTE DE ANÁLISIS\n';
+    csv += 'Fecha de generación:,' + new Date().toLocaleString() + '\n\n';
+    csv += 'Código,Nombre,Código Tipo Muestra,Tipo Muestra,Código Paquete,Paquete\n';
+    
+    filas.forEach(fila => {
+        const celdas = fila.querySelectorAll('td');
+        if (celdas.length > 4) {
+            const codigo = celdas[0].textContent.trim();
+            const nombre = celdas[1].textContent.trim();
+            
+            // Extraer códigos del HTML
+            const tipoMuestraSpan = celdas[2].querySelector('span');
+            const codigoTipoMuestra = tipoMuestraSpan ? tipoMuestraSpan.textContent.trim() : '';
+            const nombreTipoMuestra = celdas[2].textContent.replace(codigoTipoMuestra, '').trim();
+            
+            const paqueteSpan = celdas[3].querySelector('span');
+            const codigoPaquete = paqueteSpan ? paqueteSpan.textContent.trim() : '';
+            const nombrePaquete = celdas[3].textContent.replace(codigoPaquete, '').trim() || 'Sin paquete';
+            
+            csv += `"${codigo}","${nombre}","${codigoTipoMuestra}","${nombreTipoMuestra}","${codigoPaquete}","${nombrePaquete}"\n`;
+        }
+    });
+    
+    csv += '\n\nTotal de registros:,' + filas.length + '\n';
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'analisis_' + new Date().getTime() + '.csv';
+    link.click();
+}

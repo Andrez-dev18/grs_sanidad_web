@@ -146,5 +146,32 @@ try {
 }
 
 mysqli_close($conexion);
-?>
 
+
+if (isset($_POST['action']) && $_POST['action'] == 'obtenerDatosCompletos') {
+    $query = "SELECT 
+        a.codigo,
+        a.nombre,
+        a.tipoMuestra,
+        tm.nombre as tipo_muestra_nombre,
+        a.paqueteAnalisis,
+        pa.nombre as paquete_nombre
+    FROM com_analisis a
+    LEFT JOIN com_tipo_muestra tm ON a.tipoMuestra = tm.codigo
+    LEFT JOIN com_paquetes_analisis pa ON a.paqueteAnalisis = pa.codigo
+    ORDER BY a.codigo DESC";
+    
+    $result = $conn->query($query);
+    $data = [];
+    
+    if ($result && $result->num_rows > 0) {
+        while($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+    }
+    
+    echo json_encode(['success' => true, 'data' => $data]);
+    exit();
+}
+
+?>

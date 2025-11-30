@@ -347,7 +347,7 @@
 
                 <div id="submenu-maestros-sistema" class="submenu hidden pl-10 mt-2 space-y-2">
                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empreTransporte.php','Empresas de transporte', 'Gestion de empresas de Transporte')"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empresas-transporte.php','Empresas de transporte', 'Gestion de empresas de Transporte')"
                         class="menu-link block text-gray-400 hover:text-white">Empresas de transporte</a>
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-laboratorio.php','laboratorio', 'Laboratorio')"
@@ -362,10 +362,10 @@
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-analisis.php','Analisis', 'Analisis')"
                         class="menu-link block text-gray-400 hover:text-white">Analisis</a>
                         <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empresa.','empresa', 'Empresa')"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-muestras-cabecera.php','Muestra cabecera', 'Muestra cabecera')"
                         class="menu-link block text-gray-400 hover:text-white">Muestras - Cabecera</a>
                         <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empresa.','empresa', 'Empresa')"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-detalle-muestras.php','Detalle', 'Detalle')"
                         class="menu-link block text-gray-400 hover:text-white">Muestras - Detalle</a>
 
                     
@@ -502,11 +502,14 @@
                 //'dashboard-vivo-provincia.html': 'Gestion Arequipa',
 
                 'dashboard-empreTransporte.php': title,
+                'dashboard-empresas-transporte.php': title,
                 'dashboard-laboratorio.php': 'Laboratorios',
                 
                 'dashboard-tipo-muestra.php': 'Tipo muestra',
                 'dashboard-paquetes-analisis.php': 'Paquete analisis',
                 'dashboard-analisis.php': 'Analisis',
+                'dashboard-registro-muestras-cabecera.php': 'Muestra cabecera',
+                'dashboard-detalle-muestras.php': 'Detalle',
                  
 
             };
