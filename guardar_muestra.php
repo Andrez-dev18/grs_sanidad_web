@@ -6,7 +6,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once '../conexion_grs_joya/conexion.php';
+//ruta relativa a la conexion
+include_once 'conexion_grs_joya\conexion.php';
 $conexion = conectar_sanidad();
 if (!$conexion) {
     http_response_code(500);
@@ -119,6 +120,7 @@ try {
         $numeroMuestras = $_POST["numeroMuestras_{$i}"] ?? '';
         $analisisSeleccionados = $_POST["analisis_{$i}"] ?? [];
        $analisisStr = !empty($analisisSeleccionados) ? implode(',', $analisisSeleccionados) : '';
+
 
         if ($tipoMuestra !== null) {
             $posicionSolicitud = $i + 1;

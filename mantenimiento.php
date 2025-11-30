@@ -5,7 +5,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once '../conexion_grs_joya/conexion.php';
+//ruta relativa a la conexion
+include_once 'conexion_grs_joya\conexion.php';
 $conexion = conectar_sanidad();
 if (!$conexion) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);

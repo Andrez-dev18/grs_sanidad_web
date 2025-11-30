@@ -14,7 +14,8 @@ if (!empty($_POST)) {
     if (empty($usuario) || empty($clave)) {
         $alert = '<div class="alert alert-danger">Ingrese su usuario y contraseña</div>';
     } else {
-        include_once "./conexion_grs_joya/conexion.php"; 
+        //ruta relativa a la conexion
+        include_once 'conexion_grs_joya\conexion.php';
 
         $conexion = conectar_aqp();
         if (!$conexion) {
