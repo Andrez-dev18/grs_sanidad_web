@@ -268,7 +268,7 @@ if (!$conexion) {
                             alt="Sanidad Logo">
                     </div>
                     <div>
-                        <h2 class="text-white font-bold text-lg">SANIDA</h2>
+                        <h2 class="text-white font-bold text-lg">SANIDAD</h2>
                         <p class="text-blue-300 text-xs">Gestión </p>
                     </div>
                 </div>
@@ -395,7 +395,7 @@ if (!$conexion) {
                         <i class="fas fa-bars"></i>
                     </button>
                     <div>
-                        <h1 id="" class="text-2xl font-bold text-gray-800">Sistema de Sanida GRS</h1>
+                        <h1 id="" class="text-2xl font-bold text-gray-800">Sistema de Sanidad GRS</h1>
                         <p id="dashboardTitle" class="text-sm text-gray-500"></p>
                     </div>
 

@@ -641,7 +641,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const laboratorioCodigo = formData.get("laboratorio");
     const empresaTransporte = formData.get("empresa_transporte");
     const autorizadoPor = formData.get("autorizado_por");
-    const usuarioRegistrador = formData.get("usuario_registrador") || "user"; // Valor por defecto
+    const usuarioRegistrador = formData.get("usuario_registrador") || "user";
     const usuarioResponsable = formData.get("usuario_responsable");
 
     let laboratorioNombre = "No disponible";
@@ -655,26 +655,27 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     let summaryHTML = `
-        <h3>📋 Resumen del Envío</h3>
-        <br>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;">
-  <!-- Grupo 1 (envío) -->
-  <div style="display: flex; flex-direction: column; gap: 8px;">
-    <div><strong>Código de Envío:</strong> <span id="resumenCodigoEnvio"></span></div>
-    <div><strong>Laboratorio:</strong> ${laboratorioNombre}</div>
-    <div><strong>Fecha de Envío:</strong> ${fechaEnvio}</div>
-    <div><strong>Hora de Envío:</strong> ${horaEnvio}</div>
-  </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">📋 Resumen del Envío</h3>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+            <!-- Grupo 1 (envío) -->
+            <div class="flex flex-col gap-3">
+                <div class="text-sm"><span class="font-semibold text-gray-700">Código de Envío:</span> <span id="resumenCodigoEnvio" class="text-gray-600"></span></div>
+                <div class="text-sm"><span class="font-semibold text-gray-700">Laboratorio:</span> <span class="text-gray-600">${laboratorioNombre}</span></div>
+                <div class="text-sm"><span class="font-semibold text-gray-700">Fecha de Envío:</span> <span class="text-gray-600">${fechaEnvio}</span></div>
+                <div class="text-sm"><span class="font-semibold text-gray-700">Hora de Envío:</span> <span class="text-gray-600">${horaEnvio}</span></div>
+            </div>
 
-  <!-- Grupo 2 (responsables) -->
-  <div style="display: flex; flex-direction: column; gap: 8px;">
-    <div><strong>Autorizado por:</strong> ${autorizadoPor}</div>
-    <div><strong>Usuario Registrador:</strong> ${usuarioRegistrador}</div>
-    <div><strong>Usuario Responsable:</strong> ${usuarioResponsable}</div>
-    <div><strong>Número de Muestras:</strong> ${numeroSolicitudes}</div>
-  </div>
-</div>
-        <h3>🧪 Solicitudes</h3>
+            <!-- Grupo 2 (responsables) -->
+            <div class="flex flex-col gap-3">
+                <div class="text-sm"><span class="font-semibold text-gray-700">Autorizado por:</span> <span class="text-gray-600">${autorizadoPor}</span></div>
+                <div class="text-sm"><span class="font-semibold text-gray-700">Usuario Registrador:</span> <span class="text-gray-600">${usuarioRegistrador}</span></div>
+                <div class="text-sm"><span class="font-semibold text-gray-700">Usuario Responsable:</span> <span class="text-gray-600">${usuarioResponsable}</span></div>
+                <div class="text-sm"><span class="font-semibold text-gray-700">Número de Muestras:</span> <span class="text-gray-600">${numeroSolicitudes}</span></div>
+            </div>
+        </div>
+
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">🧪 Solicitudes</h3>
     `;
 
     for (let i = 0; i < numeroSolicitudes; i++) {
@@ -715,20 +716,20 @@ document.addEventListener("DOMContentLoaded", function () {
       });
 
       summaryHTML += `
-            <div style="border: 1px solid #e2e8f0; padding: 16px; margin: 12px 0; border-radius: 8px; background: #f8fafc;">
-                <h4 style="margin: 0 0 12px 0; color: #2d3748;">Solicitud #${
-                  i + 1
-                }</h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px;">
-                    <div><strong>Tipo de Muestra:</strong> ${tipoMuestraNombre}</div>
-                    <div><strong>Fecha de Toma:</strong> ${fechaToma}</div>
-                    <div><strong>N° de Muestras:</strong> ${numeroMuestras}</div>
-                    <div><strong>Código de Referencia:</strong> ${codigoRef}</div>
-                    <div><strong>Observaciones:</strong> ${observaciones}</div>
+            <div class="border border-gray-200 p-4 mb-4 rounded-lg bg-gray-50">
+                <h4 class="mb-3 text-gray-900 font-semibold">Solicitud #${i + 1}</h4>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4 text-sm">
+                    <div><span class="font-semibold text-gray-700">Tipo de Muestra:</span> <span class="text-gray-600">${tipoMuestraNombre}</span></div>
+                    <div><span class="font-semibold text-gray-700">Fecha de Toma:</span> <span class="text-gray-600">${fechaToma}</span></div>
+                    <div><span class="font-semibold text-gray-700">N° de Muestras:</span> <span class="text-gray-600">${numeroMuestras}</span></div>
+                    <div><span class="font-semibold text-gray-700">Código de Referencia:</span> <span class="text-gray-600">${codigoRef}</span></div>
+                    <div class="sm:col-span-2"><span class="font-semibold text-gray-700">Observaciones:</span> <span class="text-gray-600">${observaciones}</span></div>
                 </div>
-                <div style="margin-top: 12px;">
-                    <strong>Análisis Solicitados:</strong><br>
-                    <span style="display: inline-block; margin-top: 4px; padding: 6px 10px; background: #edf2f7; border-radius: 6px; font-size: 13px;">
+                
+                <div class="mt-3">
+                    <span class="font-semibold text-gray-700 text-sm">Análisis Solicitados:</span><br>
+                    <span class="inline-block mt-2 px-2.5 py-1.5 bg-gray-200 rounded text-xs text-gray-800">
                         ${
                           analisisSeleccionados.length > 0
                             ? analisisSeleccionados.join(", ")
@@ -741,10 +742,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     document.getElementById("summaryContent").innerHTML = summaryHTML;
-
     document.getElementById("resumenCodigoEnvio").textContent =
       document.getElementById("codigoEnvio").value;
-  }
+}
   window.confirmSubmit = async function () {
     const formData = new FormData(document.getElementById("sampleForm"));
     for (const [key, value] of formData.entries()) {
