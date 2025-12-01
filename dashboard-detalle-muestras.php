@@ -5,15 +5,14 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-//ruta relativa a la conexion
 include_once 'conexion_grs_joya\conexion.php';
 $conexion = conectar_sanidad();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
 
-// Obtener el código de envío si viene de otra página
-$codigoEnvioFiltro = $_GET['codigoEnvio'] ?? '';
+// Comentado: Obtener el código de envío si viene de otra página
+// $codigoEnvioFiltro = $_GET['codigoEnvio'] ?? '';
 ?>
 
 <!DOCTYPE html>
@@ -93,39 +92,7 @@ $codigoEnvioFiltro = $_GET['codigoEnvio'] ?? '';
             <div class="form-container max-w-7xl mx-auto">
                 <!-- Filtro y Botones de acción -->
                 <div class="mb-6">
-                    <!-- Filtro de código de envío -->
-                    <div class="mb-4 bg-white p-4 rounded-lg shadow-sm">
-                        <div class="flex items-center gap-4">
-                            <label class="text-sm font-medium text-gray-700">Filtrar por Código de Envío:</label>
-                            <select id="filtroCodigoEnvio" 
-                                    onchange="filtrarMuestraDetalle()" 
-                                    class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                                <option value="">Todos los envíos</option>
-                                <?php
-                                $query_filtro = "SELECT DISTINCT mc.codigoEnvio, mc.fechaEnvio 
-                                               FROM com_db_muestra_cabecera mc 
-                                               ORDER BY mc.fechaEnvio DESC, mc.codigoEnvio DESC";
-                                $result_filtro = mysqli_query($conexion, $query_filtro);
-                                if ($result_filtro) {
-                                    while ($row = mysqli_fetch_assoc($result_filtro)) {
-                                        $selected = ($row['codigoEnvio'] === $codigoEnvioFiltro) ? 'selected' : '';
-                                        echo '<option value="' . htmlspecialchars($row['codigoEnvio']) . '" ' . $selected . '>' . 
-                                             htmlspecialchars($row['codigoEnvio']) . ' (' . date('d/m/Y', strtotime($row['fechaEnvio'])) . ')' .
-                                             '</option>';
-                                    }
-                                }
-                                ?>
-                            </select>
-                            <button onclick="filtrarMuestraDetalle()" 
-                                    class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">
-                                <i class="fas fa-filter mr-2"></i>Filtrar
-                            </button>
-                            <button onclick="limpiarFiltro()" 
-                                    class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition">
-                                <i class="fas fa-times mr-2"></i>Limpiar
-                            </button>
-                        </div>
-                    </div>
+                    <!-- Filtro comentado completamente -->
 
                     <!-- Botones de acción -->
                     <div class="flex justify-between items-center flex-wrap gap-3">
@@ -173,7 +140,8 @@ $codigoEnvioFiltro = $_GET['codigoEnvio'] ?? '';
                                                            substr($row['observaciones'], 0, 50) . '...' : 
                                                            $row['observaciones'];
                                     
-                                    echo '<tr class="hover:bg-gray-50 transition" data-codigo-envio="' . htmlspecialchars($row['codigoEnvio']) . '">';
+                                    // Eliminado: data-codigo-envio del TR ya que no se necesita sin filtro
+                                    echo '<tr class="hover:bg-gray-50 transition">';
                                     echo '<td class="px-6 py-4 text-gray-700 font-medium">' . htmlspecialchars($row['codigoEnvio']) . '</td>';
                                     echo '<td class="px-6 py-4 text-center text-gray-700">' . $row['posicionSolicitud'] . '</td>';
                                     echo '<td class="px-6 py-4 text-gray-700">' . date('d/m/Y', strtotime($row['fechaToma'])) . '</td>';
@@ -193,13 +161,6 @@ $codigoEnvioFiltro = $_GET['codigoEnvio'] ?? '';
                                                     (int)$row['numeroMuestras'] . ', \'' .
                                                     addslashes(htmlspecialchars($row['observaciones'] ?? '')) . '\')">
                                                 ✏️
-                                            </button>
-                                            <button class="btn-icon p-2 text-lg hover:bg-purple-100 rounded-lg transition" 
-                                                    title="Ver Análisis" 
-                                                    onclick="viewAnalisisDetalle(\'' . 
-                                                    addslashes(htmlspecialchars($row['codigoEnvio'])) . '\', ' . 
-                                                    (int)$row['posicionSolicitud'] . ')">
-                                                🔍
                                             </button>
                                             <button class="btn-icon p-2 text-lg hover:bg-red-100 rounded-lg transition" 
                                                     title="Eliminar" 
@@ -224,8 +185,9 @@ $codigoEnvioFiltro = $_GET['codigoEnvio'] ?? '';
             </div>
         </div>
 
-        <!-- Modal para Crear/Editar Muestra Detalle -->
+        <!-- Modal para Crear/Editar Muestra Detalle (sin cambios) -->
         <div id="muestraDetalleModal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <!-- El contenido del modal permanece igual -->
             <div class="bg-white rounded-2xl shadow-lg w-full max-w-2xl">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between p-6 border-b border-gray-200">
@@ -242,6 +204,7 @@ $codigoEnvioFiltro = $_GET['codigoEnvio'] ?? '';
                         <input type="hidden" id="muestraDetalleEditCodigo" value="">
                         <input type="hidden" id="muestraDetalleEditPosicion" value="">
 
+                        <!-- El resto del formulario permanece igual -->
                         <!-- Código de Envío -->
                         <div class="form-field mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -271,94 +234,47 @@ $codigoEnvioFiltro = $_GET['codigoEnvio'] ?? '';
                             </select>
                         </div>
 
-                        <!-- Posición de Solicitud -->
+                        <!-- Resto de campos del formulario sin cambios -->
                         <div class="form-field mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Posición de Solicitud <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="number" 
-                                id="muestraDetalleModalPosicion" 
-                                name="posicionSolicitud" 
-                                min="1" 
-                                placeholder="Número de posición"
-                                required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                            >
+                            <input type="number" id="muestraDetalleModalPosicion" name="posicionSolicitud" min="1" placeholder="Número de posición" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                         </div>
 
-                        <!-- Fecha de Toma -->
                         <div class="form-field mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Fecha de Toma <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="date" 
-                                id="muestraDetalleModalFechaToma" 
-                                name="fechaToma" 
-                                required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                            >
+                            <input type="date" id="muestraDetalleModalFechaToma" name="fechaToma" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                         </div>
 
-                        <!-- Código de Referencia -->
                         <div class="form-field mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Código de Referencia <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="text" 
-                                id="muestraDetalleModalCodigoRef" 
-                                name="codigoReferencia" 
-                                maxlength="50" 
-                                placeholder="Código de referencia"
-                                required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                            >
+                            <input type="text" id="muestraDetalleModalCodigoRef" name="codigoReferencia" maxlength="50" placeholder="Código de referencia" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                         </div>
 
-                        <!-- Número de Muestras -->
                         <div class="form-field mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Número de Muestras <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="number" 
-                                id="muestraDetalleModalNumMuestras" 
-                                name="numeroMuestras" 
-                                min="1" 
-                                placeholder="Cantidad de muestras"
-                                required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                            >
+                            <input type="number" id="muestraDetalleModalNumMuestras" name="numeroMuestras" min="1" placeholder="Cantidad de muestras" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                         </div>
 
-                        <!-- Observaciones -->
                         <div class="form-field mb-6">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Observaciones <span class="text-gray-500 text-xs">(Opcional)</span>
                             </label>
-                            <textarea 
-                                id="muestraDetalleModalObservaciones" 
-                                name="observaciones" 
-                                rows="3"
-                                placeholder="Observaciones adicionales..."
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"
-                            ></textarea>
+                            <textarea id="muestraDetalleModalObservaciones" name="observaciones" rows="3" placeholder="Observaciones adicionales..." class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition resize-none"></textarea>
                         </div>
 
-                        <!-- Botones -->
                         <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
-                            <button 
-                                type="button" 
-                                onclick="closeMuestraDetalleModal()"
-                                class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200"
-                            >
+                            <button type="button" onclick="closeMuestraDetalleModal()" class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200">
                                 Cancelar
                             </button>
-                            <button 
-                                type="submit"
-                                class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2">
+                            <button type="submit" class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2">
                                 💾 Guardar
                             </button>
                         </div>
@@ -377,15 +293,16 @@ $codigoEnvioFiltro = $_GET['codigoEnvio'] ?? '';
     </div>
 
     <script src="detalle.js"></script>
+    <!-- Comentado: Script de filtro automático
     <script>
-        // Si viene con filtro, aplicarlo al cargar
-        <?php if ($codigoEnvioFiltro): ?>
-        window.addEventListener('DOMContentLoaded', function() {
-            filtrarMuestraDetalle();
-        });
-        <?php endif; ?>
+        // Comentado: Si viene con filtro, aplicarlo al cargar
+        // <?php // if ($codigoEnvioFiltro): ?>
+        // window.addEventListener('DOMContentLoaded', function() {
+        //     filtrarMuestraDetalle();
+        // });
+        // <?php // endif; ?>
     </script>
+    -->
 </body>
 
 </html>
-

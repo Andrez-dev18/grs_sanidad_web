@@ -1,4 +1,3 @@
-
 function openMuestraDetalleModal(action, codigoEnvio = null, posicion = null, fechaToma = '', codigoRef = '', numMuestras = '', observaciones = '') {
     const modal = document.getElementById('muestraDetalleModal');
     const title = document.getElementById('muestraDetalleModalTitle');
@@ -18,18 +17,18 @@ function openMuestraDetalleModal(action, codigoEnvio = null, posicion = null, fe
         document.getElementById('muestraDetalleModalNumMuestras').value = '';
         document.getElementById('muestraDetalleModalObservaciones').value = '';
         
-        // Si hay un filtro activo, preseleccionar ese código de envío
-        const filtroActivo = document.getElementById('filtroCodigoEnvio').value;
-        if (filtroActivo) {
-            document.getElementById('muestraDetalleModalCodigoEnvio').value = filtroActivo;
-        }
+        // Comentado: Si hay un filtro activo, preseleccionar ese código de envío
+        // const filtroActivo = document.getElementById('filtroCodigoEnvio').value;
+        // if (filtroActivo) {
+        //     document.getElementById('muestraDetalleModalCodigoEnvio').value = filtroActivo;
+        // }
     } else if (action === 'edit') {
         title.textContent = '✏️ Editar Detalle de Muestra';
         document.getElementById('muestraDetalleModalAction').value = 'update';
         document.getElementById('muestraDetalleEditCodigo').value = codigoEnvio;
         document.getElementById('muestraDetalleEditPosicion').value = posicion;
-        document.getElementById('muestraDetalleModalCodigoEnvio').disabled = false; // Permitir cambiar
-        document.getElementById('muestraDetalleModalPosicion').readOnly = false; // Permitir cambiar
+        document.getElementById('muestraDetalleModalCodigoEnvio').disabled = false;
+        document.getElementById('muestraDetalleModalPosicion').readOnly = false;
         document.getElementById('muestraDetalleModalCodigoEnvio').value = codigoEnvio;
         document.getElementById('muestraDetalleModalPosicion').value = posicion;
         document.getElementById('muestraDetalleModalFechaToma').value = fechaToma;
@@ -125,35 +124,35 @@ function confirmMuestraDetalleDelete(codigoEnvio, posicion) {
     }
 }
 
-function filtrarMuestraDetalle() {
-    const filtro = document.getElementById('filtroCodigoEnvio').value;
-    const filas = document.querySelectorAll('#muestraDetalleTableBody tr');
-    
-    filas.forEach(fila => {
-        const codigoEnvio = fila.getAttribute('data-codigo-envio');
-        if (!filtro || codigoEnvio === filtro) {
-            fila.style.display = '';
-        } else {
-            fila.style.display = 'none';
-        }
-    });
-}
+// Comentado: Funciones de filtrado
+// function filtrarMuestraDetalle() {
+//     const filtro = document.getElementById('filtroCodigoEnvio').value;
+//     const filas = document.querySelectorAll('#muestraDetalleTableBody tr');
+//     
+//     filas.forEach(fila => {
+//         const codigoEnvio = fila.getAttribute('data-codigo-envio');
+//         if (!filtro || codigoEnvio === filtro) {
+//             fila.style.display = '';
+//         } else {
+//             fila.style.display = 'none';
+//         }
+//     });
+// }
 
-function limpiarFiltro() {
-    document.getElementById('filtroCodigoEnvio').value = '';
-    filtrarMuestraDetalle();
-}
+// function limpiarFiltro() {
+//     document.getElementById('filtroCodigoEnvio').value = '';
+//     filtrarMuestraDetalle();
+// }
 
 function viewAnalisisDetalle(codigoEnvio, posicion) {
     // Redirigir a la vista de análisis con parámetros
     window.location.href = 'dashboard-analisis-muestra.php?codigoEnvio=' + encodeURIComponent(codigoEnvio) + '&posicion=' + posicion;
 }
 
-// Función para exportar a Excel/CSV
+// Función para exportar a Excel/CSV - Simplificada sin filtros
 function exportarDetalleMuestras() {
     console.log('Iniciando exportación de detalle de muestras...');
     
-    // Obtener los datos de la tabla
     const tbody = document.getElementById('muestraDetalleTableBody');
     
     if (!tbody) {
@@ -163,7 +162,6 @@ function exportarDetalleMuestras() {
     }
     
     const rows = tbody.querySelectorAll('tr');
-    const filtroActivo = document.getElementById('filtroCodigoEnvio').value;
     
     // Crear el contenido CSV con formato mejorado
     let csv = '\uFEFF'; // BOM para UTF-8
@@ -172,11 +170,6 @@ function exportarDetalleMuestras() {
     csv += 'SISTEMA DE SANIDAD GRS,,,,,\n';
     csv += 'DETALLE DE MUESTRAS,,,,,\n';
     csv += 'Fecha de Exportación:,' + new Date().toLocaleDateString('es-PE') + ',,,,\n';
-    
-    if (filtroActivo) {
-        csv += 'Filtrado por Código:,' + filtroActivo + ',,,,\n';
-    }
-    
     csv += ',,,,,\n';
     
     // Encabezados de columnas
@@ -184,11 +177,6 @@ function exportarDetalleMuestras() {
 
     let count = 0;
     rows.forEach(row => {
-        // Solo procesar filas visibles si hay filtro activo
-        if (filtroActivo && row.style.display === 'none') {
-            return;
-        }
-        
         const cells = row.querySelectorAll('td');
         if (cells.length >= 6) {
             const codigo = cells[0].textContent.trim();
@@ -224,9 +212,7 @@ function exportarDetalleMuestras() {
     const url = URL.createObjectURL(blob);
     
     const fecha = new Date().toISOString().split('T')[0];
-    const nombreArchivo = filtroActivo ? 
-        `Detalle_Muestras_${filtroActivo}_${fecha}.csv` : 
-        `Detalle_Muestras_${fecha}.csv`;
+    const nombreArchivo = `Detalle_Muestras_${fecha}.csv`;
     
     link.setAttribute('href', url);
     link.setAttribute('download', nombreArchivo);

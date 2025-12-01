@@ -162,11 +162,11 @@ if (!$conexion) {
                                                     addslashes(htmlspecialchars($row['autorizadoPor'])) . '\')">
                                                 ✏️
                                             </button>
-                                            <button class="btn-icon p-2 text-lg hover:bg-green-100 rounded-lg transition" 
+                                            <!--<button class="btn-icon p-2 text-lg hover:bg-green-100 rounded-lg transition" 
                                                     title="Ver Detalles" 
                                                     onclick="viewMuestraDetalle(\'' . addslashes(htmlspecialchars($row['codigoEnvio'])) . '\')">
                                                 👁️
-                                            </button>
+                                            </button>-->
                                             <button class="btn-icon p-2 text-lg hover:bg-red-100 rounded-lg transition" 
                                                     title="Eliminar" 
                                                     onclick="confirmMuestraCabeceraDelete(\'' . addslashes(htmlspecialchars($row['codigoEnvio'])) . '\')">
