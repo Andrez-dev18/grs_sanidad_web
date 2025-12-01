@@ -298,6 +298,38 @@ if (!$conexion) {
             </div>
         </div>
 
+         <!-- Modal -->
+<div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    
+    <!-- Contenedor del modal -->
+    <div class="bg-white rounded-lg shadow-lg w-[90%] max-w-3xl max-h-[600px] flex flex-col">
+        
+        <!-- Header -->
+        <div class="flex justify-between items-center px-6 py-4 border-b">
+            <h2 class="text-xl font-semibold">📋 Confirmar Envío de Muestras</h2>
+            <button class="text-gray-500 text-2xl hover:text-gray-700" onclick="closeConfirmModal()">&times;</button>
+        </div>
+
+        <!-- Body -->
+        <div class="overflow-y-auto p-6 flex-1">
+            <div id="summaryContent"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t flex justify-end gap-3 bg-white">
+            <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md" onclick="closeConfirmModal()">
+                Cancelar
+            </button>
+            <button class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md"
+                onclick="confirmSubmit()">
+                ✅ Confirmar y Guardar
+            </button>
+        </div>
+
+    </div>
+</div>
+                                   
+        
         <!-- Footer -->
         <div class="text-center mt-12">
             <p class="text-gray-500 text-sm">
