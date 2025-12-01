@@ -43,7 +43,7 @@ if (!empty($_POST)) {
             $_SESSION['usuario'] = $row['codigo'];
             $_SESSION['nombre'] = $row['nombre'];
             registrarAccionLoginLogout("LOGIN", $row['codigo'], $row['nombre'], $gps);
-            header('Location: index.php');
+            header('Location: principal.php');
             exit();
         } else {
             $alert = '<div class="alert alert-danger">Usuario o contraseña incorrecta</div>';
