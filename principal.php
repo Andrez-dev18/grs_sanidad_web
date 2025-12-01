@@ -1,3 +1,19 @@
+<?php
+
+session_start();
+if (empty($_SESSION['active'])) {
+    header('Location: login.php');
+    exit();
+}
+
+//ruta relativa a la conexion
+include_once 'conexion_grs_joya\conexion.php';
+$conexion = conectar_sanidad();
+if (!$conexion) {
+    die("Error de conexión: " . mysqli_connect_error());
+}
+?>
+
 <!DOCTYPE html>
 <html lang="es">
 
@@ -402,8 +418,8 @@
                 <details class="relative">
                     <summary class="flex items-center gap-3 cursor-pointer select-none list-none">
                         <div class="text-right">
-                            <p id="userName" class="text-sm font-semibold text-gray-700">Usuario Admin</p>
-                            <p id="rolUser" class="text-xs text-gray-500">Administrador</p>
+                            <p id="userName" class="text-sm font-semibold text-gray-700"><?php echo htmlspecialchars($_SESSION['usuario'] ?? 'usuario'); ?></p>
+                            <p id="rolUser" class="text-xs text-gray-500"><?php echo htmlspecialchars($_SESSION['nombre'] ?? 'nombre'); ?></p>
                         </div>
                         <div
                             class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
@@ -416,7 +432,7 @@
                             <i class="fas fa-user text-gray-500 mr-2"></i> Perfil
                         </a>
                         <hr class="border-gray-200 my-1" />
-                        <a href="#" onclick="cerrarSesion()"
+                        <a href="#" onclick="logout()"
                             class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
                             <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
                         </a>
@@ -637,7 +653,7 @@
         }
     </script>
 
-
+<script src="logout.js"></script>
 
 </body>
 

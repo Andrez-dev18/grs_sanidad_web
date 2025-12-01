@@ -1,15 +1,18 @@
 <?php
+include_once 'historial_acciones.php';
+
 session_start();
 $alert = '';
 
 if (!empty($_SESSION['active'])) {
-    header('Location: index.php'); 
+    header('Location: index.php');
     exit();
 }
 
 if (!empty($_POST)) {
     $usuario = trim($_POST['usuario']);
     $clave   = trim($_POST['clave']);
+    $gps = $_POST['gps'] ?? null; //ubicacion gps
 
     if (empty($usuario) || empty($clave)) {
         $alert = '<div class="alert alert-danger">Ingrese su usuario y contraseña</div>';
@@ -22,7 +25,7 @@ if (!empty($_POST)) {
             die("Error de conexión: " . mysqli_connect_error());
         }
 
-        $new_password = $clave; 
+        $new_password = $clave;
         $usuario_esc = mysqli_real_escape_string($conexion, $usuario);
         $clave_esc   = mysqli_real_escape_string($conexion, $new_password);
 
@@ -39,6 +42,7 @@ if (!empty($_POST)) {
             $_SESSION['active'] = true;
             $_SESSION['usuario'] = $row['codigo'];
             $_SESSION['nombre'] = $row['nombre'];
+            registrarAccionLoginLogout("LOGIN", $row['codigo'], $row['nombre'], $gps);
             header('Location: index.php');
             exit();
         } else {
@@ -86,6 +90,10 @@ if (!empty($_POST)) {
                     </div>
                 </div>
 
+                <!-- ubicacion input escondido -->
+                <input type="hidden" name="gps" id="gpsInput" value="">
+
+
                 <div class="form-group">
                     <label>Contraseña</label>
                     <div class="input-wrapper">
@@ -103,6 +111,66 @@ if (!empty($_POST)) {
             </form>
         </div>
     </div>
+
+    <script>
+        /**
+         * Intenta obtener la geolocalización y coloca el resultado en el input hidden con id="gpsInput"
+         * - timeout y maximumAge para responsividad
+         */
+        async function setGpsHiddenInput() {
+            const gpsInput = document.getElementById('gpsInput');
+            if (!gpsInput) return;
+
+            // Si ya tiene valor (por ejemplo, se rellenó antes), no reconsultamos.
+            if (gpsInput.value && gpsInput.value.trim() !== '') return;
+
+            if (!navigator.geolocation) {
+                gpsInput.value = 'no-disponible';
+                return;
+            }
+
+            const prom = new Promise((resolve) => {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        const lat = pos.coords.latitude;
+                        const lon = pos.coords.longitude;
+                        const acc = pos.coords.accuracy; // metros
+                        resolve(`${lat},${lon} (±${Math.round(acc)}m)`);
+                    },
+                    (err) => {
+                        // errores: PERMISSION_DENIED, POSITION_UNAVAILABLE, TIMEOUT
+                        if (err.code === err.PERMISSION_DENIED) {
+                            resolve('no-permitido');
+                        } else {
+                            resolve('no-disponible');
+                        }
+                    }, {
+                        enableHighAccuracy: false,
+                        timeout: 8000,
+                        maximumAge: 60 * 1000
+                    }
+                );
+            });
+
+            gpsInput.value = await prom;
+        }
+
+        // Ejecutar al cargar la página para rellenar el campo antes de enviar el formulario
+        document.addEventListener('DOMContentLoaded', () => {
+            setGpsHiddenInput();
+
+            // También actualizar justo antes del envío por si el usuario esperó a dar permiso
+            const loginForm = document.querySelector('form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', () => {
+                    // No esperamos el resultado (para no bloquear), pero intentamos actualizar si es posible
+                    setGpsHiddenInput();
+                });
+            }
+        });
+    </script>
+
+
 </body>
 
 </html>
