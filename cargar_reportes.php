@@ -5,17 +5,17 @@ if (empty($_SESSION['active'])) {
     exit('No autorizado');
 }
 
-//ruta relativa a la conexion
-include_once 'conexion_grs_joya\conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     echo '<div style="text-align:center; padding:20px; color:red;">Error de conexión.</div>';
     exit;
 }
 
 $registrosPorPagina = 10;
-$pagina = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($pagina < 1) $pagina = 1;
+$pagina = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+if ($pagina < 1)
+    $pagina = 1;
 $offset = ($pagina - 1) * $registrosPorPagina;
 
 $busqueda = trim($_GET['q'] ?? '');
@@ -23,15 +23,14 @@ $condicion = '';
 $params = [];
 
 if ($busqueda !== '') {
-    // Buscar solo por código de envío (coincidencia parcial)
-    $condicion = "WHERE c.codigoEnvio LIKE ?";
+    $condicion = "WHERE c.codEnvio LIKE ?";
     $params[] = "%$busqueda%";
 }
 
-// Contar total (solo si es la primera carga)
+// Contar total (solo en primera página)
 $total = false;
 if (isset($_GET['get_total'])) {
-    $sqlTotal = "SELECT COUNT(*) AS total FROM com_db_muestra_cabecera c " . $condicion;
+    $sqlTotal = "SELECT COUNT(*) AS total FROM com_db_solicitud_cab c " . $condicion;
     $stmt = mysqli_prepare($conexion, $sqlTotal);
     if (!empty($params)) {
         mysqli_stmt_bind_param($stmt, str_repeat('s', count($params)), ...$params);
@@ -42,24 +41,20 @@ if (isset($_GET['get_total'])) {
     mysqli_stmt_close($stmt);
 }
 
-// Consulta principal
+// Consulta: solo campos de la cabecera
 $sql = "
     SELECT 
-        c.codigoEnvio,
-        c.fechaEnvio,
+        c.codEnvio,
+        c.fecEnvio,
         c.horaEnvio,
-        l.nombre AS laboratorio,
-        COUNT(d.posicionSolicitud) AS total_muestras,
-        MIN(d.codigoReferencia) AS primer_codigo_ref,
-        MIN(tm.nombre) AS primer_tipo_muestra
-    FROM com_db_muestra_cabecera c
-    JOIN com_laboratorio l ON c.laboratorio = l.codigo
-    LEFT JOIN com_db_muestra_detalle d ON c.codigoEnvio = d.codigoEnvio
-    LEFT JOIN com_analisis a ON FIND_IN_SET(a.codigo, d.analisis)
-    LEFT JOIN com_tipo_muestra tm ON a.tipoMuestra = tm.codigo
+        c.nomLab,
+        c.nomEmpTrans,
+        c.usuarioRegistrador,
+        c.usuarioResponsable,
+        c.autorizadoPor
+    FROM com_db_solicitud_cab c
     $condicion
-    GROUP BY c.codigoEnvio
-    ORDER BY c.fechaRegistro DESC
+    ORDER BY c.fechaHoraRegistro DESC
     LIMIT $registrosPorPagina OFFSET $offset
 ";
 
@@ -69,53 +64,45 @@ if (!empty($params)) {
 }
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
-
 ?>
 
 <?php if (mysqli_num_rows($result) > 0): ?>
     <?php while ($row = mysqli_fetch_assoc($result)): ?>
         <?php
-        $codigoEnvio = htmlspecialchars($row['codigoEnvio']);
-        $fecha = htmlspecialchars($row['fechaEnvio']);
-        $hora = htmlspecialchars($row['horaEnvio']);
-        $laboratorio = htmlspecialchars($row['laboratorio']);
-        $codigoRef = htmlspecialchars($row['primer_codigo_ref'] ?? '–');
-        $tipoMuestra = htmlspecialchars($row['primer_tipo_muestra'] ?? '–');
-        $totalMuestras = (int)($row['total_muestras'] ?? 0);
+        $campos = [
+            'Código de Envío' => $row['codEnvio'],
+            'Fecha de Envío' => $row['fecEnvio'],
+            'Hora de Envío' => substr($row['horaEnvio'], 0, 5),
+            'Laboratorio' => $row['nomLab'],
+            'Empresa de Transporte' => $row['nomEmpTrans'] ?? '–',
+            'Usuario Registrador' => $row['usuarioRegistrador'] ?? '–',
+            'Usuario Responsable' => $row['usuarioResponsable'] ?? '–',
+            'Autorizado por' => $row['autorizadoPor'] ?? '–',
+        ];
         ?>
-        <div class="report-card" data-codigo="<?php echo $codigoEnvio; ?>">
-  <div class="report-header">
-    <div class="report-code"><?php echo $codigoEnvio; ?></div>
-  </div>
-  <div class="report-grid">
-    <div class="report-info-item">
-      <span class="report-label">Fecha y Hora</span>
-      <span class="report-value"><?php echo $fecha . ' - ' . substr($hora, 0, 5); ?></span>
-    </div>
-    <div class="report-info-item">
-      <span class="report-label">Laboratorio</span>
-      <span class="report-value"><?php echo $laboratorio; ?></span>
-    </div>
-    <div class="report-info-item">
-      <span class="report-label">Código de Referencia</span>
-      <span class="report-value"><?php echo $codigoRef; ?></span>
-    </div>
-    <div class="report-info-item">
-      <span class="report-label">N° de Muestras</span>
-      <span class="report-value"><?php echo $totalMuestras; ?> unidad(es)</span>
-    </div>
-  </div>
-  <div class="report-actions">
-    <button class="btn-download-pdf" 
-      onclick="window.open('generar_pdf.php?codigo=<?php echo urlencode($codigoEnvio); ?>', '_blank')">
-      📄 Descargar PDF Modo Tabla
-    </button>
-    <button class="btn-download-pdf"
-      onclick="window.open('generar_pdf_resumen.php?codigo=<?php echo urlencode($codigoEnvio); ?>', '_blank')">
-      📋 Descargar PDF Modo Resumen
-    </button>
-  </div>
-</div>
+        <div class="report-card" data-codigo="<?php echo htmlspecialchars($row['codEnvio']); ?>">
+            <div class="report-cabecera-resumen"
+                style="font-family: ui-monospace, monospace; font-size: 0.875rem; line-height: 1.4; margin-bottom: 12px;">
+                <?php foreach ($campos as $label => $valor): ?>
+                    <div style="display: flex; margin-bottom: 3px;">
+                        <span style="font-weight: bold; min-width: 190px;"><?php echo htmlspecialchars($label); ?>:</span>
+                        <span><?php echo htmlspecialchars($valor ?? '–'); ?></span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <div class="report-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn-download-pdf"
+                    onclick="window.open('generar_pdf.php?codigo=<?php echo urlencode($row['codEnvio']); ?>', '_blank')"
+                    style="background-color: #dc2626; color: white; font-weight: bold; padding: 0.375rem 0.5rem; border-radius: 0.375rem; border: none; cursor: pointer; font-size: 0.875rem;">
+                    📄 PDF Tabla
+                </button>
+                <button class="btn-download-pdf"
+                    onclick="window.open('generar_pdf_resumen.php?codigo=<?php echo urlencode($row['codEnvio']); ?>', '_blank')"
+                    style="background-color: #dc2626; color: white; font-weight: bold; padding: 0.375rem 0.5rem; border-radius: 0.375rem; border: none; cursor: pointer; font-size: 0.875rem;">
+                    📋 PDF Resumen
+                </button>
+            </div>
+        </div>
     <?php endwhile; ?>
 <?php else: ?>
     <div style="text-align: center; padding: 40px; color: #718096;">

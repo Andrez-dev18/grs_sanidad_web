@@ -5,8 +5,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once 'conexion_grs_joya/conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
     exit();
@@ -16,8 +16,8 @@ $action = $_POST['action'] ?? '';
 $codigoEnvio = trim($_POST['codigoEnvio'] ?? '');
 $fechaEnvio = $_POST['fechaEnvio'] ?? '';
 $horaEnvio = $_POST['horaEnvio'] ?? '';
-$laboratorio = isset($_POST['laboratorio']) ? (int)$_POST['laboratorio'] : null;
-$empTrans = isset($_POST['empTrans']) ? (int)$_POST['empTrans'] : null;
+$laboratorio = isset($_POST['laboratorio']) ? (int) $_POST['laboratorio'] : null;
+$empTrans = isset($_POST['empTrans']) ? (int) $_POST['empTrans'] : null;
 $usuarioResponsable = trim($_POST['usuarioResponsable'] ?? '');
 $autorizadoPor = trim($_POST['autorizadoPor'] ?? '');
 $codigoOriginal = trim($_POST['codigoOriginal'] ?? '');
@@ -25,8 +25,10 @@ $codigoOriginal = trim($_POST['codigoOriginal'] ?? '');
 $usuarioRegistrador = $_SESSION['nombre'] ?? 'Sistema';
 
 if ($action !== 'delete') {
-    if (empty($codigoEnvio) || empty($fechaEnvio) || empty($horaEnvio) || 
-        !$laboratorio || !$empTrans || empty($usuarioResponsable) || empty($autorizadoPor)) {
+    if (
+        empty($codigoEnvio) || empty($fechaEnvio) || empty($horaEnvio) ||
+        !$laboratorio || !$empTrans || empty($usuarioResponsable) || empty($autorizadoPor)
+    ) {
         echo json_encode(['success' => false, 'message' => 'Todos los campos son obligatorios.']);
         exit();
     }
@@ -63,15 +65,28 @@ try {
             throw new Exception('La empresa de transporte seleccionada no existe.');
         }
 
-        $stmt = mysqli_prepare($conexion, 
+        $stmt = mysqli_prepare(
+            $conexion,
             "INSERT INTO com_db_muestra_cabecera 
             (codigoEnvio, fechaEnvio, horaEnvio, laboratorio, empTrans, usuarioRegistrador, usuarioResponsable, autorizadoPor) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, "sssiisss", $codigoEnvio, $fechaEnvio, $horaEnvio, $laboratorio, $empTrans, 
-            $usuarioRegistrador, $usuarioResponsable, $autorizadoPor);
-        
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        );
+        mysqli_stmt_bind_param(
+            $stmt,
+            "sssiisss",
+            $codigoEnvio,
+            $fechaEnvio,
+            $horaEnvio,
+            $laboratorio,
+            $empTrans,
+            $usuarioRegistrador,
+            $usuarioResponsable,
+            $autorizadoPor
+        );
+
     } elseif ($action === 'update') {
-        if (empty($codigoOriginal)) throw new Exception('Código original no válido.');
+        if (empty($codigoOriginal))
+            throw new Exception('Código original no válido.');
 
         // Verificar que el laboratorio existe
         $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_laboratorio WHERE codigo = ?");
@@ -109,16 +124,29 @@ try {
             }
         }
 
-        $stmt = mysqli_prepare($conexion, 
+        $stmt = mysqli_prepare(
+            $conexion,
             "UPDATE com_db_muestra_cabecera 
             SET codigoEnvio = ?, fechaEnvio = ?, horaEnvio = ?, laboratorio = ?, empTrans = ?, 
                 usuarioResponsable = ?, autorizadoPor = ? 
-            WHERE codigoEnvio = ?");
-        mysqli_stmt_bind_param($stmt, "sssiisss", $codigoEnvio, $fechaEnvio, $horaEnvio, $laboratorio, $empTrans, 
-            $usuarioResponsable, $autorizadoPor, $codigoOriginal);
-        
+            WHERE codigoEnvio = ?"
+        );
+        mysqli_stmt_bind_param(
+            $stmt,
+            "sssiisss",
+            $codigoEnvio,
+            $fechaEnvio,
+            $horaEnvio,
+            $laboratorio,
+            $empTrans,
+            $usuarioResponsable,
+            $autorizadoPor,
+            $codigoOriginal
+        );
+
     } elseif ($action === 'delete') {
-        if (empty($codigoEnvio)) throw new Exception('Código no válido.');
+        if (empty($codigoEnvio))
+            throw new Exception('Código no válido.');
 
         // Eliminar primero los detalles asociados
         $deleteDetalle = mysqli_prepare($conexion, "DELETE FROM com_db_muestra_detalle WHERE codigoEnvio = ?");
@@ -127,7 +155,7 @@ try {
 
         $stmt = mysqli_prepare($conexion, "DELETE FROM com_db_muestra_cabecera WHERE codigoEnvio = ?");
         mysqli_stmt_bind_param($stmt, "s", $codigoEnvio);
-        
+
     } else {
         throw new Exception('Acción no válida.');
     }
@@ -137,7 +165,7 @@ try {
     }
 
     mysqli_commit($conexion);
-    
+
     $mensaje = '';
     switch ($action) {
         case 'create':
@@ -150,7 +178,7 @@ try {
             $mensaje = '✅ Registro de muestra y sus detalles eliminados correctamente.';
             break;
     }
-    
+
     echo json_encode(['success' => true, 'message' => $mensaje]);
 
 } catch (Exception $e) {

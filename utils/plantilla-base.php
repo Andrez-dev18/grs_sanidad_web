@@ -7,8 +7,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-include_once 'conexion_grs_joya\conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -80,7 +80,7 @@ if (!$conexion) {
     <div class="container mx-auto px-6 py-12">
 
 
-      
+
         <!-- AQUI EN MEDIO COLOCAR CUALQUIER COMPONENTE DE HTML Y SE VISUALIZARA DENTRO DEL DASHBOARD PRINCIPAL
          
             DESDE TABLAS, FORMULARIOS, CARD Y DEMAS 
@@ -88,7 +88,7 @@ if (!$conexion) {
             UTILIZAR ESTA PLANTILLA COMO BASE PARA CUALQUIER NUEVA VENTANA
 
         -->
-        
+
 
         <!-- Footer -->
         <div class="text-center mt-12">

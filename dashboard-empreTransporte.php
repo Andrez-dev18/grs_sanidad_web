@@ -7,8 +7,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-include_once 'conexion_grs_joya\conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -94,7 +94,9 @@ if (!$conexion) {
             <div class="form-container max-w-7xl mx-auto">
                 <!-- Botón para añadir nueva empresa -->
                 <div class="mb-6 text-right">
-                    <button type="button" class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2" onclick="openModal('create')">
+                    <button type="button"
+                        class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
+                        onclick="openModal('create')">
                         ➕ Nueva Empresa
                     </button>
                 </div>
@@ -141,57 +143,49 @@ if (!$conexion) {
             </div>
         </div>
 
-        <div id="empTransModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl shadow-lg w-full max-w-md">
-        <!-- Modal Header -->
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 id="modalTitle" class="text-xl font-bold text-gray-800">➕ Nueva Empresa</h2>
-            <button onclick="closeEmpTransModal()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition">
-                ×
-            </button>
-        </div>
-
-        <!-- Modal Body -->
-        <div class="p-6">
-            <form id="empTransForm" onsubmit="return saveEmpTrans(event)">
-                <input type="hidden" id="modalAction" value="create">
-                <input type="hidden" id="editCodigo" value="">
-
-                <!-- Campo Nombre -->
-                <div class="form-field mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Nombre de la Empresa <span class="text-red-500">*</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="modalNombre" 
-                        name="nombre" 
-                        maxlength="100" 
-                        placeholder="Ingrese el nombre de la empresa"
-                        required
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                    >
-                </div>
-
-                <!-- Botones -->
-                <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
-                    <button 
-                        type="button" 
-                        onclick="closeEmpTransModal()"
-                        class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200"
-                    >
-                        Cancelar
-                    </button>
-                    <button 
-                        type="submit"
-                        class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2">
-                        💾 Guardar
+        <div id="empTransModal"
+            class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-lg w-full max-w-md">
+                <!-- Modal Header -->
+                <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h2 id="modalTitle" class="text-xl font-bold text-gray-800">➕ Nueva Empresa</h2>
+                    <button onclick="closeEmpTransModal()"
+                        class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition">
+                        ×
                     </button>
                 </div>
-            </form>
+
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <form id="empTransForm" onsubmit="return saveEmpTrans(event)">
+                        <input type="hidden" id="modalAction" value="create">
+                        <input type="hidden" id="editCodigo" value="">
+
+                        <!-- Campo Nombre -->
+                        <div class="form-field mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Nombre de la Empresa <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" id="modalNombre" name="nombre" maxlength="100"
+                                placeholder="Ingrese el nombre de la empresa" required
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
+                            <button type="button" onclick="closeEmpTransModal()"
+                                class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200">
+                                Cancelar
+                            </button>
+                            <button type="submit"
+                                class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2">
+                                💾 Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-    </div>
-</div>
 
         <!-- Footer -->
         <div class="text-center mt-12">

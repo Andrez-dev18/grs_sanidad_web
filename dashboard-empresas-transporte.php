@@ -6,8 +6,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-include_once 'conexion_grs_joya\conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -90,17 +90,17 @@ if (!$conexion) {
             <div class="form-container max-w-7xl mx-auto">
                 <!-- Botones de acción -->
                 <div class="mb-6 flex justify-between items-center flex-wrap gap-3">
-                    <button type="button" 
-                            class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2" 
-                            onclick="exportarEmpresasTransporte()" 
-                            style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);" 
-                            onmouseover="this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'" 
-                            onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
+                    <button type="button"
+                        class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
+                        onclick="exportarEmpresasTransporte()"
+                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);"
+                        onmouseover="this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'"
+                        onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
                         📊 Exportar a Excel
                     </button>
-                    <button type="button" 
-                            class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2" 
-                            onclick="openModal('create')">
+                    <button type="button"
+                        class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
+                        onclick="openModal('create')">
                         ➕ Nueva Empresa
                     </button>
                 </div>
@@ -111,40 +111,34 @@ if (!$conexion) {
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Código</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Nombre de la Empresa</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Nombre de la Empresa
+                                </th>
                                 <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="empTransTableBody" class="divide-y divide-gray-200">
                             <?php
-                            $query = "SELECT et.codigo, et.nombre,
-                                     (SELECT COUNT(*) FROM com_db_muestra_cabecera mc WHERE mc.empTrans = et.codigo) as uso_count
-                                     FROM com_emp_trans et 
-                                     ORDER BY et.nombre";
+                            $query = "SELECT codigo, nombre FROM com_emp_trans ORDER BY codigo";
                             $result = mysqli_query($conexion, $query);
                             if ($result && mysqli_num_rows($result) > 0) {
                                 while ($row = mysqli_fetch_assoc($result)) {
                                     echo '<tr class="hover:bg-gray-50 transition">';
                                     echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['codigo']) . '</td>';
                                     echo '<td class="px-6 py-4 text-gray-700 font-medium">' . htmlspecialchars($row['nombre']);
-                                    
-                                    // Mostrar badge si está en uso
-                                    if ($row['uso_count'] > 0) {
-                                        echo ' <span class="ml-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">' . 
-                                             $row['uso_count'] . ' envío(s)</span>';
-                                    }
-                                    
+
+
+
                                     echo '</td>';
                                     echo '<td class="px-6 py-4 flex gap-2">
                                         <button class="btn-icon p-2 text-lg hover:bg-blue-100 rounded-lg transition" 
                                                 title="Editar" 
-                                                onclick="openModal(\'edit\', ' . (int)$row['codigo'] . ', \'' . 
-                                                addslashes(htmlspecialchars($row['nombre'])) . '\')">
+                                                onclick="openModal(\'edit\', ' . (int) $row['codigo'] . ', \'' .
+                                        addslashes(htmlspecialchars($row['nombre'])) . '\')">
                                             ✏️
                                         </button>
                                         <button class="btn-icon p-2 text-lg hover:bg-red-100 rounded-lg transition" 
                                                 title="Eliminar" 
-                                                onclick="confirmDelete(' . (int)$row['codigo'] . ')">
+                                                onclick="confirmDelete(' . (int) $row['codigo'] . ')">
                                             🗑️
                                         </button>
                                     </td>';
@@ -163,12 +157,14 @@ if (!$conexion) {
         </div>
 
         <!-- Modal para Crear/Editar Empresa de Transporte -->
-        <div id="empTransModal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div id="empTransModal" style="display: none;"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-2xl shadow-lg w-full max-w-md">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between p-6 border-b border-gray-200">
                     <h2 id="modalTitle" class="text-xl font-bold text-gray-800">➕ Nueva Empresa de Transporte</h2>
-                    <button onclick="closeEmpTransModal()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition">
+                    <button onclick="closeEmpTransModal()"
+                        class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition">
                         ×
                     </button>
                 </div>
@@ -184,29 +180,19 @@ if (!$conexion) {
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Nombre de la Empresa <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="text" 
-                                id="modalNombre" 
-                                name="nombre" 
-                                maxlength="255" 
-                                placeholder="Ingrese el nombre de la empresa de transporte"
-                                required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                            >
-                            <p class="text-xs text-gray-500 mt-1">Este nombre será usado en los registros de envío</p>
+                            <input type="text" id="modalNombre" name="nombre" maxlength="255"
+                                placeholder="Ingrese el nombre de la empresa de transporte" required
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+
                         </div>
 
                         <!-- Botones -->
                         <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
-                            <button 
-                                type="button" 
-                                onclick="closeEmpTransModal()"
-                                class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200"
-                            >
+                            <button type="button" onclick="closeEmpTransModal()"
+                                class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200">
                                 Cancelar
                             </button>
-                            <button 
-                                type="submit"
+                            <button type="submit"
                                 class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2">
                                 💾 Guardar
                             </button>
@@ -225,7 +211,8 @@ if (!$conexion) {
 
     </div>
 
-    <script src="mantenimiento.js"></script>
+    <script src="empresas_transporte.js"></script>
+
 </body>
 
 </html>

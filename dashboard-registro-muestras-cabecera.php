@@ -1,4 +1,3 @@
-
 <?php
 session_start();
 if (empty($_SESSION['active'])) {
@@ -6,11 +5,97 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-//ruta relativa a la conexion
-include_once 'conexion_grs_joya\conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
-    die("Error de conexión: " . mysqli_connect_error());
+    die("Error de conexión.");
+}
+
+// ===== EXPORTAR TODO (CSV COMPLETO DE CABECERAS) =====
+if (isset($_GET['export_all_cabeceras'])) {
+    $query = "
+        SELECT 
+            codEnvio, fecEnvio, horaEnvio, codLab, nomLab, 
+            codEmpTrans, nomEmpTrans, usuarioRegistrador, 
+            usuarioResponsable, autorizadoPor, fechaHoraRegistro
+        FROM com_db_solicitud_cab 
+        ORDER BY fecEnvio DESC, horaEnvio DESC
+    ";
+    $result = mysqli_query($conexion, $query);
+
+    $csv = "\uFEFF";
+    $csv .= "Código Envío,Fecha Envío,Hora Envío,Código Laboratorio,Nombre Laboratorio,Código Empresa Transporte,Nombre Empresa Transporte,Usuario Registrador,Usuario Responsable,Autorizado Por,Fecha Hora Registro\n";
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        $csv .= '"' . str_replace('"', '""', $row['codEnvio']) . '",';
+        $csv .= '"' . $row['fecEnvio'] . '",';
+        $csv .= '"' . $row['horaEnvio'] . '",';
+        $csv .= '"' . str_replace('"', '""', $row['codLab']) . '",';
+        $csv .= '"' . str_replace('"', '""', $row['nomLab']) . '",';
+        $csv .= '"' . str_replace('"', '""', $row['codEmpTrans']) . '",';
+        $csv .= '"' . str_replace('"', '""', $row['nomEmpTrans']) . '",';
+        $csv .= '"' . str_replace('"', '""', $row['usuarioRegistrador']) . '",';
+        $csv .= '"' . str_replace('"', '""', $row['usuarioResponsable']) . '",';
+        $csv .= '"' . str_replace('"', '""', $row['autorizadoPor']) . '",';
+        $csv .= '"' . $row['fechaHoraRegistro'] . '"' . "\n";
+    }
+
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="cabeceras_envios_completas.csv"');
+    echo $csv;
+    exit();
+}
+
+// ===== PAGINACIÓN PARA TABLA PRINCIPAL =====
+$registrosPorPagina = 20;
+$page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+$page = max(1, $page);
+$offset = ($page - 1) * $registrosPorPagina;
+
+$totalQuery = "SELECT COUNT(*) as total FROM com_db_solicitud_cab";
+$totalResult = mysqli_query($conexion, $totalQuery);
+$totalRegistros = mysqli_fetch_assoc($totalResult)['total'];
+$totalPaginas = ceil($totalRegistros / $registrosPorPagina);
+
+// Cabeceras paginadas
+$cabecerasQuery = "
+    SELECT 
+        codEnvio, fecEnvio, horaEnvio, codLab, nomLab, 
+        codEmpTrans, nomEmpTrans, usuarioRegistrador, 
+        usuarioResponsable, autorizadoPor, fechaHoraRegistro
+    FROM com_db_solicitud_cab 
+    ORDER BY fecEnvio DESC, horaEnvio DESC 
+    LIMIT $registrosPorPagina OFFSET $offset
+";
+$cabeceras = mysqli_query($conexion, $cabecerasQuery);
+
+// ===== CARGAR DETALLE SI HAY SELECCIÓN =====
+$codEnvioSeleccionado = $_GET['codEnvio'] ?? null;
+$detallesAgrupados = [];
+
+if ($codEnvioSeleccionado) {
+    $codEnvioEscapado = mysqli_real_escape_string($conexion, $codEnvioSeleccionado);
+    $sql = "
+        SELECT 
+            d.codEnvio, d.codRef, d.fecToma, d.numMuestras,
+            d.codMuestra, d.nomMuestra, d.codAnalisis, d.nomAnalisis,
+            d.obs, d.id, d.posSolicitud,
+            tm.nombre AS tipo_muestra_real,
+            a.nombre AS analisis_real
+        FROM com_db_solicitud_det d
+        LEFT JOIN com_tipo_muestra tm ON d.codMuestra = tm.codigo
+        LEFT JOIN com_analisis a ON d.codAnalisis = a.codigo
+        WHERE d.codEnvio = '$codEnvioEscapado'
+        ORDER BY d.posSolicitud ASC, d.codMuestra ASC, d.codAnalisis ASC
+    ";
+    $res = mysqli_query($conexion, $sql);
+    while ($row = mysqli_fetch_assoc($res)) {
+        $pos = $row['posSolicitud'];
+        if (!isset($detallesAgrupados[$pos])) {
+            $detallesAgrupados[$pos] = [];
+        }
+        $detallesAgrupados[$pos][] = $row;
+    }
 }
 ?>
 
@@ -20,346 +105,329 @@ if (!$conexion) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Registro de Muestras</title>
-
-    <!-- Tailwind CSS -->
+    <title>Muestras - Cabecera y Detalle</title>
     <link rel="stylesheet" href="css/output.css">
-
-    <!-- Font Awesome para iconos -->
-    <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
-
     <style>
         body {
-            background: #f8f9fa;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f9fafb;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            color: #1f2937;
         }
 
-        .card {
-            transition: all 0.3s ease;
+        .container {
+            max-width: 1400px;
+        }
+
+        h1,
+        h2 {
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 1rem;
+        }
+
+        /* Botón exportar */
+        .export-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.625rem 1.25rem;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .export-btn:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+        }
+
+        /* Tablas */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-top: 0.5rem;
+        }
+
+        .data-table th {
+            background-color: #f3f4f6;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.875rem;
+        }
+
+        .data-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.875rem;
+            vertical-align: top;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover {
+            background-color: #f9fafb;
+        }
+
+        /* Selector */
+        .selector-section {
+            margin: 2.5rem 0;
+            padding: 1.25rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .selector-section select {
+            padding: 0.625rem 0.875rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            min-width: 200px;
+            margin-right: 1rem;
+        }
+
+        .selector-section button {
+            padding: 0.625rem 1.25rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
             cursor: pointer;
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        .selector-section button:hover {
+            background: #2563eb;
         }
 
-        .icon-box {
-            width: 80px;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 16px;
-            margin: 0 auto 1rem;
-            font-size: 2.5rem;
+        /* Agrupación visual */
+        .pos-group-header {
+            background-color: #f0f9ff;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: #0369a1;
+            border-bottom: 2px solid #bae6fd;
+            margin-top: 1.5rem;
         }
 
-        .logo-container {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 2rem;
-            background: white;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
+        /* Responsive */
+        @media (max-width: 768px) {
+            .data-table {
+                font-size: 0.8rem;
+            }
 
-        .logo-container img {
-            width: 90%;
-            height: 90%;
-            object-fit: contain;
-        }
-
-        .dual-group-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
+            .data-table th,
+            .data-table td {
+                padding: 0.5rem;
+            }
         }
     </style>
 </head>
 
 <body class="bg-gray-50">
-    <div class="container mx-auto px-6 py-12">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-2xl">Registro Cabecera</h1>
 
-        <!-- VISTA REGISTRO DE MUESTRAS -->
-        <div id="viewRegistroMuestras" class="content-view">
-            <div class="content-header max-w-7xl mx-auto mb-8">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="text-4xl">📋</span>
-                    <h1 class="text-3xl font-bold text-gray-800">Registro de Muestras</h1>
-                </div>
-                <p class="text-gray-600 text-sm">Administre los envíos de muestras registrados en el sistema</p>
-            </div>
+        <!-- === PRIMERA SECCIÓN: TABLA COMPLETA DE CABECERAS === -->
+        <div class="mb-6">
+            <a href="?export_all_cabeceras=1" class="export-btn">📊 Exportar Todas las Cabeceras</a>
+        </div>
 
-            <div class="form-container max-w-7xl mx-auto">
-                <!-- Botones de acción -->
-                <div class="mb-6 flex justify-between items-center flex-wrap gap-3">
-                    <button type="button" 
-                            class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2" 
-                            onclick="exportarRegistroMuestras()" 
-                            style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);" 
-                            onmouseover="this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'" 
-                            onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
-                        📊 Exportar a Excel
-                    </button>
-                    <button type="button" 
-                            class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2" 
-                            onclick="openMuestraCabeceraModal('create')">
-                        ➕ Nuevo Registro
-                    </button>
-                </div>
-
-                <!-- Tabla de registros -->
-                <div class="table-container border border-gray-300 rounded-2xl bg-white overflow-x-auto">
-                    <table class="data-table w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
+        <!--h2 class="text-xl">Registros de Cabeceras (<code>com_db_solicitud_cab</code>)</h2-->
+        <div class="overflow-x-auto">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Código Envío</th>
+                        <th>Fecha Envío</th>
+                        <th>Hora Envío</th>
+                        <th>Código Laboratorio</th>
+                        <th>Nombre Laboratorio</th>
+                        <th>Código Empresa Transporte</th>
+                        <th>Nombre Empresa Transporte</th>
+                        <th>Usuario Registrador</th>
+                        <th>Usuario Responsable</th>
+                        <th>Autorizado Por</th>
+                        <th>Fecha Hora Registro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (mysqli_num_rows($cabeceras) > 0): ?>
+                        <?php while ($row = mysqli_fetch_assoc($cabeceras)): ?>
                             <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Código Envío</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Fecha</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Hora</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Laboratorio</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Transporte</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Responsable</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Autorizado Por</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Acciones</th>
+                                <td><?= htmlspecialchars($row['codEnvio']) ?></td>
+                                <td><?= $row['fecEnvio'] ?></td>
+                                <td><?= $row['horaEnvio'] ?></td>
+                                <td><?= htmlspecialchars($row['codLab']) ?></td>
+                                <td><?= htmlspecialchars($row['nomLab']) ?></td>
+                                <td><?= htmlspecialchars($row['codEmpTrans']) ?></td>
+                                <td><?= htmlspecialchars($row['nomEmpTrans']) ?></td>
+                                <td><?= htmlspecialchars($row['usuarioRegistrador']) ?></td>
+                                <td><?= htmlspecialchars($row['usuarioResponsable']) ?></td>
+                                <td><?= htmlspecialchars($row['autorizadoPor']) ?></td>
+                                <td><?= $row['fechaHoraRegistro'] ?></td>
                             </tr>
-                        </thead>
-                        <tbody id="registroMuestrasTableBody" class="divide-y divide-gray-200">
-                            <?php
-                            $query = "SELECT mc.codigoEnvio, mc.fechaEnvio, mc.horaEnvio, 
-                                     mc.laboratorio, mc.empTrans, mc.usuarioResponsable, mc.autorizadoPor,
-                                     l.nombre as laboratorio_nombre,
-                                     et.nombre as transporte_nombre
-                                     FROM com_db_muestra_cabecera mc
-                                     LEFT JOIN com_laboratorio l ON mc.laboratorio = l.codigo
-                                     LEFT JOIN com_emp_trans et ON mc.empTrans = et.codigo
-                                     ORDER BY mc.fechaEnvio DESC, mc.horaEnvio DESC";
-                            $result = mysqli_query($conexion, $query);
-                            if ($result && mysqli_num_rows($result) > 0) {
-                                while ($row = mysqli_fetch_assoc($result)) {
-                                    echo '<tr class="hover:bg-gray-50 transition">';
-                                    echo '<td class="px-6 py-4 text-gray-700 font-medium">' . htmlspecialchars($row['codigoEnvio']) . '</td>';
-                                    echo '<td class="px-6 py-4 text-gray-700">' . date('d/m/Y', strtotime($row['fechaEnvio'])) . '</td>';
-                                    echo '<td class="px-6 py-4 text-gray-700">' . date('H:i', strtotime($row['horaEnvio'])) . '</td>';
-                                    echo '<td class="px-6 py-4 text-gray-600 text-sm">' . htmlspecialchars($row['laboratorio_nombre'] ?? 'N/A') . '</td>';
-                                    echo '<td class="px-6 py-4 text-gray-600 text-sm">' . htmlspecialchars($row['transporte_nombre'] ?? 'N/A') . '</td>';
-                                    echo '<td class="px-6 py-4 text-gray-600 text-sm">' . htmlspecialchars($row['usuarioResponsable']) . '</td>';
-                                    echo '<td class="px-6 py-4 text-gray-600 text-sm">' . htmlspecialchars($row['autorizadoPor']) . '</td>';
-                                    echo '<td class="px-6 py-4">
-                                        <div class="flex gap-2">
-                                            <button class="btn-icon p-2 text-lg hover:bg-blue-100 rounded-lg transition" 
-                                                    title="Editar" 
-                                                    onclick="openMuestraCabeceraModal(\'edit\', \'' . 
-                                                    addslashes(htmlspecialchars($row['codigoEnvio'])) . '\', \'' .
-                                                    $row['fechaEnvio'] . '\', \'' . 
-                                                    $row['horaEnvio'] . '\', ' . 
-                                                    (int)$row['laboratorio'] . ', ' . 
-                                                    (int)$row['empTrans'] . ', \'' . 
-                                                    addslashes(htmlspecialchars($row['usuarioResponsable'])) . '\', \'' . 
-                                                    addslashes(htmlspecialchars($row['autorizadoPor'])) . '\')">
-                                                ✏️
-                                            </button>
-                                            <!--<button class="btn-icon p-2 text-lg hover:bg-green-100 rounded-lg transition" 
-                                                    title="Ver Detalles" 
-                                                    onclick="viewMuestraDetalle(\'' . addslashes(htmlspecialchars($row['codigoEnvio'])) . '\')">
-                                                👁️
-                                            </button>-->
-                                            <button class="btn-icon p-2 text-lg hover:bg-red-100 rounded-lg transition" 
-                                                    title="Eliminar" 
-                                                    onclick="confirmMuestraCabeceraDelete(\'' . addslashes(htmlspecialchars($row['codigoEnvio'])) . '\')">
-                                                🗑️
-                                            </button>
-                                        </div>
-                                    </td>';
-                                    echo '</tr>';
-                                }
-                            } else {
-                                echo '<tr>';
-                                echo '<td colspan="8" class="px-6 py-8 text-center text-gray-500">No hay registros de muestras</td>';
-                                echo '</tr>';
-                            }
-                            ?>
-                        </tbody>
-                    </table>
-                </div>
+                        <?php endwhile; ?>
+                    <?php else: ?>
+                        <tr>
+                            <td colspan="11" class="text-center py-4 text-gray-500">No hay registros.</td>
+                        </tr>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <?php if ($totalPaginas > 1): ?>
+            <div class="flex justify-center mt-4 gap-1">
+                <?php
+                $baseParams = $codEnvioSeleccionado ? "&codEnvio=" . urlencode($codEnvioSeleccionado) : '';
+                if ($page > 1): ?>
+                    <a href="?page=1<?= $baseParams ?>" class="px-3 py-1 border rounded">« Primera</a>
+                    <a href="?page=<?= $page - 1 ?><?= $baseParams ?>" class="px-3 py-1 border rounded">‹ Anterior</a>
+                <?php endif;
+
+                $start = max(1, $page - 2);
+                $end = min($totalPaginas, $page + 2);
+                for ($i = $start; $i <= $end; $i++):
+                    $isActive = ($i == $page);
+                    $class = $isActive ? 'bg-blue-600 text-white' : 'bg-white text-gray-700';
+                    echo "<a href='?page=$i{$baseParams}' class='px-3 py-1 border rounded $class'>$i</a>";
+                endfor;
+
+                if ($page < $totalPaginas): ?>
+                    <a href="?page=<?= $page + 1 ?><?= $baseParams ?>" class="px-3 py-1 border rounded">Siguiente ›</a>
+                    <a href="?page=<?= $totalPaginas ?><?= $baseParams ?>" class="px-3 py-1 border rounded">Última »</a>
+                <?php endif; ?>
             </div>
+        <?php endif; ?>
+
+        <!-- === SEGUNDA SECCIÓN: SELECTOR Y DETALLE === -->
+        <div class="selector-section">
+            <form method="GET">
+                <label class="font-medium mr-2">Seleccione un envío:</label>
+                <select name="codEnvio">
+                    <option value="">-- Código de Envío --</option>
+                    <?php
+                    $todas = mysqli_query($conexion, "SELECT DISTINCT codEnvio FROM com_db_solicitud_cab ORDER BY codEnvio");
+                    while ($r = mysqli_fetch_assoc($todas)):
+                        $sel = ($codEnvioSeleccionado == $r['codEnvio']) ? 'selected' : '';
+                        echo '<option value="' . htmlspecialchars($r['codEnvio']) . "\" $sel>" . htmlspecialchars($r['codEnvio']) . '</option>';
+                    endwhile;
+                    ?>
+                </select>
+                <button type="submit">Cargar Detalle</button>
+            </form>
         </div>
 
-        <!-- Modal para Crear/Editar Muestra Cabecera -->
-        <div id="muestraCabeceraModal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-lg w-full max-w-2xl">
-                <!-- Modal Header -->
-                <div class="flex items-center justify-between p-6 border-b border-gray-200">
-                    <h2 id="muestraCabeceraModalTitle" class="text-xl font-bold text-gray-800">➕ Nuevo Registro de Muestra</h2>
-                    <button onclick="closeMuestraCabeceraModal()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition">
-                        ×
-                    </button>
-                </div>
-
-                <!-- Modal Body -->
-                <div class="p-6">
-                    <form id="muestraCabeceraForm" onsubmit="return saveMuestraCabecera(event)">
-                        <input type="hidden" id="muestraCabeceraModalAction" value="create">
-                        <input type="hidden" id="muestraCabeceraEditCodigo" value="">
-
-                        <!-- Código de Envío -->
-                        <div class="form-field mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Código de Envío <span class="text-red-500">*</span>
-                            </label>
-                            <input 
-                                type="text" 
-                                id="muestraCabeceraModalCodigo" 
-                                name="codigoEnvio" 
-                                maxlength="20" 
-                                placeholder="Ingrese el código de envío"
-                                required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                            >
-                        </div>
-
-                        <!-- Fecha y Hora -->
-                        <div class="dual-group-container mb-4">
-                            <div class="form-field">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Fecha de Envío <span class="text-red-500">*</span>
-                                </label>
-                                <input 
-                                    type="date" 
-                                    id="muestraCabeceraModalFecha" 
-                                    name="fechaEnvio" 
-                                    required
-                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                >
-                            </div>
-
-                            <div class="form-field">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">
-                                    Hora de Envío <span class="text-red-500">*</span>
-                                </label>
-                                <input 
-                                    type="time" 
-                                    id="muestraCabeceraModalHora" 
-                                    name="horaEnvio" 
-                                    required
-                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                >
-                            </div>
-                        </div>
-
-                        <!-- Laboratorio -->
-                        <div class="form-field mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Laboratorio <span class="text-red-500">*</span>
-                            </label>
-                            <select 
-                                id="muestraCabeceraModalLaboratorio" 
-                                name="laboratorio" 
-                                required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                            >
-                                <option value="">Seleccione un laboratorio...</option>
-                                <?php
-                                $query_lab = "SELECT codigo, nombre FROM com_laboratorio ORDER BY nombre";
-                                $result_lab = mysqli_query($conexion, $query_lab);
-                                if ($result_lab) {
-                                    while ($row = mysqli_fetch_assoc($result_lab)) {
-                                        echo '<option value="' . $row['codigo'] . '">' . htmlspecialchars($row['nombre']) . '</option>';
-                                    }
-                                }
-                                ?>
-                            </select>
-                        </div>
-
-                        <!-- Empresa de Transporte -->
-                        <div class="form-field mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Empresa de Transporte <span class="text-red-500">*</span>
-                            </label>
-                            <select 
-                                id="muestraCabeceraModalEmpTrans" 
-                                name="empTrans" 
-                                required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                            >
-                                <option value="">Seleccione empresa de transporte...</option>
-                                <?php
-                                $query_trans = "SELECT codigo, nombre FROM com_emp_trans ORDER BY nombre";
-                                $result_trans = mysqli_query($conexion, $query_trans);
-                                if ($result_trans) {
-                                    while ($row = mysqli_fetch_assoc($result_trans)) {
-                                        echo '<option value="' . $row['codigo'] . '">' . htmlspecialchars($row['nombre']) . '</option>';
-                                    }
-                                }
-                                ?>
-                            </select>
-                        </div>
-
-                        <!-- Usuario Responsable -->
-                        <div class="form-field mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Usuario Responsable <span class="text-red-500">*</span>
-                            </label>
-                            <input 
-                                type="text" 
-                                id="muestraCabeceraModalResponsable" 
-                                name="usuarioResponsable" 
-                                maxlength="100" 
-                                placeholder="Nombre del responsable"
-                                required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                            >
-                        </div>
-
-                        <!-- Autorizado Por -->
-                        <div class="form-field mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Autorizado Por <span class="text-red-500">*</span>
-                            </label>
-                            <input 
-                                type="text" 
-                                id="muestraCabeceraModalAutorizado" 
-                                name="autorizadoPor" 
-                                maxlength="100" 
-                                placeholder="Nombre de quien autoriza"
-                                required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                            >
-                        </div>
-
-                        <!-- Botones -->
-                        <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
-                            <button 
-                                type="button" 
-                                onclick="closeMuestraCabeceraModal()"
-                                class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200"
-                            >
-                                Cancelar
-                            </button>
-                            <button 
-                                type="submit"
-                                class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2">
-                                💾 Guardar
-                            </button>
-                        </div>
-                    </form>
-                </div>
+        <!-- === TABLA DE DETALLE AGRUPADO === -->
+        <?php if ($codEnvioSeleccionado && !empty($detallesAgrupados)): ?>
+            <h2 class="text-xl">Detalle del Envío: <strong><?= htmlspecialchars($codEnvioSeleccionado) ?></strong></h2>
+            <div class="overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Código Referencia</th> <!-- MOVIDO AL PRINCIPIO -->
+                            <th>Pos Solicitud</th>
+                            <th>Código Envío</th>
+                            <th>Fecha Toma</th>
+                            <th>Número de Muestras</th>
+                            <th>Código Muestra</th>
+                            <th>Nombre Muestra</th>
+                            <th>Código Análisis</th>
+                            <th>Nombre Análisis</th>
+                            <th>Observación</th>
+                            <th>ID Detalle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($detallesAgrupados as $pos => $items): ?>
+                            <tr>
+                                <td colspan="11" class="pos-group-header">
+                                    Posición Solicitud: <?= (int) $pos ?>
+                                </td>
+                            </tr>
+                            <?php foreach ($items as $item): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($item['codRef']) ?></td> <!-- PRIMERO -->
+                                    <td><?= (int) $pos ?></td>
+                                    <td><?= htmlspecialchars($item['codEnvio']) ?></td>
+                                    <td><?= $item['fecToma'] ?></td>
+                                    <td><?= (int) $item['numMuestras'] ?></td>
+                                    <td><?= htmlspecialchars($item['codMuestra']) ?></td>
+                                    <td><?= htmlspecialchars($item['tipo_muestra_real'] ?? $item['nomMuestra']) ?></td>
+                                    <td><?= htmlspecialchars($item['codAnalisis']) ?></td>
+                                    <td><?= htmlspecialchars($item['analisis_real'] ?? $item['nomAnalisis']) ?></td>
+                                    <td><?= htmlspecialchars($item['obs'] ?? '') ?></td>
+                                    <td><?= htmlspecialchars($item['id']) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
-        </div>
 
-        <!-- Footer -->
-        <div class="text-center mt-12">
-            <p class="text-gray-500 text-sm">
-                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025
-            </p>
-        </div>
+            <!-- Botón Exportar Detalle -->
+            <div class="mt-4">
+                <a href="#" id="exportDetalle" class="export-btn">📊 Exportar Este Detalle</a>
+            </div>
+
+        <?php elseif ($codEnvioSeleccionado): ?>
+            <p class="text-gray-500">No se encontraron detalles para este envío.</p>
+        <?php endif; ?>
 
     </div>
 
-    <script src="registro-muestra-cabecera.js"></script>
+    <?php if ($codEnvioSeleccionado && !empty($detallesAgrupados)): ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const exportBtn = document.getElementById('exportDetalle');
+                if (exportBtn) {
+                    exportBtn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        let csv = '\uFEFFDETALLE - <?= addslashes($codEnvioSeleccionado) ?>\n';
+                        csv += 'Código Referencia,Posición Solicitud,Código Envío,Fecha Toma,Número de Muestras,Código Muestra,Nombre Muestra,Código Análisis,Nombre Análisis,Observación,ID Detalle\n';
+
+                        <?php foreach ($detallesAgrupados as $pos => $items): ?>
+                            <?php foreach ($items as $item): ?>
+                                csv += <?= json_encode($item['codRef']) ?> + "," +
+                                    <?= (int) $pos ?> + "," +
+                                    <?= json_encode($item['codEnvio']) ?> + "," +
+                                    <?= json_encode($item['fecToma']) ?> + "," +
+                                    <?= json_encode($item['numMuestras']) ?> + "," +
+                                    <?= json_encode($item['codMuestra']) ?> + "," +
+                                    <?= json_encode($item['tipo_muestra_real'] ?? $item['nomMuestra']) ?> + "," +
+                                    <?= json_encode($item['codAnalisis']) ?> + "," +
+                                    <?= json_encode($item['analisis_real'] ?? $item['nomAnalisis']) ?> + "," +
+                                    <?= json_encode($item['obs'] ?? '') ?> + "," +
+                                    <?= json_encode($item['id']) ?> + "\n";
+                            <?php endforeach; ?>
+                        <?php endforeach; ?>
+
+                        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = 'detalle_envio_<?= str_replace(['/', '\\'], '_', addslashes($codEnvioSeleccionado)) ?>.csv';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        alert('✅ Detalle exportado.');
+                    });
+                }
+            });
+        </script>
+    <?php endif; ?>
 </body>
 
 </html>

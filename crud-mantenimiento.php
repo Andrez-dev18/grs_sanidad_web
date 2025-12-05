@@ -5,8 +5,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once 'conexion_grs_joya/conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
     exit();
@@ -14,7 +14,7 @@ if (!$conexion) {
 
 $action = $_POST['action'] ?? '';
 $nombre = trim($_POST['nombre'] ?? '');
-$codigo = isset($_POST['codigo']) ? (int)$_POST['codigo'] : null;
+$codigo = isset($_POST['codigo']) ? (int) $_POST['codigo'] : null;
 
 if (empty($nombre) && $action !== 'delete') {
     echo json_encode(['success' => false, 'message' => 'El nombre es obligatorio.']);
@@ -36,9 +36,10 @@ try {
 
         $stmt = mysqli_prepare($conexion, "INSERT INTO com_emp_trans (nombre) VALUES (?)");
         mysqli_stmt_bind_param($stmt, "s", $nombre);
-        
+
     } elseif ($action === 'update') {
-        if (!$codigo) throw new Exception('Código no válido.');
+        if (!$codigo)
+            throw new Exception('Código no válido.');
 
         // Verificar que no exista otra empresa con el mismo nombre
         $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_emp_trans WHERE nombre = ? AND codigo != ?");
@@ -51,9 +52,10 @@ try {
 
         $stmt = mysqli_prepare($conexion, "UPDATE com_emp_trans SET nombre = ? WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "si", $nombre, $codigo);
-        
+
     } elseif ($action === 'delete') {
-        if (!$codigo) throw new Exception('Código no válido.');
+        if (!$codigo)
+            throw new Exception('Código no válido.');
 
         // Verificar si la empresa está en uso en envíos
         $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_db_muestra_cabecera WHERE empTrans = ?");
@@ -66,7 +68,7 @@ try {
 
         $stmt = mysqli_prepare($conexion, "DELETE FROM com_emp_trans WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "i", $codigo);
-        
+
     } else {
         throw new Exception('Acción no válida.');
     }
@@ -76,7 +78,7 @@ try {
     }
 
     mysqli_commit($conexion);
-    
+
     $mensaje = '';
     switch ($action) {
         case 'create':
@@ -89,7 +91,7 @@ try {
             $mensaje = '✅ Empresa de transporte eliminada correctamente.';
             break;
     }
-    
+
     echo json_encode(['success' => true, 'message' => $mensaje]);
 
 } catch (Exception $e) {

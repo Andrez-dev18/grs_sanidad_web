@@ -5,8 +5,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once 'conexion_grs_joya/conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
     exit();
@@ -14,20 +14,22 @@ if (!$conexion) {
 
 $action = $_POST['action'] ?? '';
 $codigoEnvio = trim($_POST['codigoEnvio'] ?? '');
-$posicionSolicitud = isset($_POST['posicionSolicitud']) ? (int)$_POST['posicionSolicitud'] : null;
+$posicionSolicitud = isset($_POST['posicionSolicitud']) ? (int) $_POST['posicionSolicitud'] : null;
 $fechaToma = $_POST['fechaToma'] ?? '';
 $codigoReferencia = trim($_POST['codigoReferencia'] ?? '');
-$numeroMuestras = isset($_POST['numeroMuestras']) ? (int)$_POST['numeroMuestras'] : null;
+$numeroMuestras = isset($_POST['numeroMuestras']) ? (int) $_POST['numeroMuestras'] : null;
 $observaciones = trim($_POST['observaciones'] ?? '');
 $codigoOriginal = trim($_POST['codigoOriginal'] ?? '');
-$posicionOriginal = isset($_POST['posicionOriginal']) ? (int)$_POST['posicionOriginal'] : null;
+$posicionOriginal = isset($_POST['posicionOriginal']) ? (int) $_POST['posicionOriginal'] : null;
 
 // Campo analisis inicializado vacío (JSON)
 $analisis = '[]';
 
 if ($action !== 'delete') {
-    if (empty($codigoEnvio) || !$posicionSolicitud || empty($fechaToma) || 
-        empty($codigoReferencia) || !$numeroMuestras) {
+    if (
+        empty($codigoEnvio) || !$posicionSolicitud || empty($fechaToma) ||
+        empty($codigoReferencia) || !$numeroMuestras
+    ) {
         echo json_encode(['success' => false, 'message' => 'Todos los campos obligatorios deben ser completados.']);
         exit();
     }
@@ -55,15 +57,27 @@ try {
             throw new Exception('Ya existe un detalle con esa posición para este código de envío.');
         }
 
-        $stmt = mysqli_prepare($conexion, 
+        $stmt = mysqli_prepare(
+            $conexion,
             "INSERT INTO com_db_muestra_detalle 
             (codigoEnvio, posicionSolicitud, fechaToma, codigoReferencia, numeroMuestras, observaciones, analisis) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)");
-        mysqli_stmt_bind_param($stmt, "sississ", $codigoEnvio, $posicionSolicitud, $fechaToma, 
-            $codigoReferencia, $numeroMuestras, $observaciones, $analisis);
-        
+            VALUES (?, ?, ?, ?, ?, ?, ?)"
+        );
+        mysqli_stmt_bind_param(
+            $stmt,
+            "sississ",
+            $codigoEnvio,
+            $posicionSolicitud,
+            $fechaToma,
+            $codigoReferencia,
+            $numeroMuestras,
+            $observaciones,
+            $analisis
+        );
+
     } elseif ($action === 'update') {
-        if (empty($codigoOriginal) || !$posicionOriginal) throw new Exception('Código o posición original no válidos.');
+        if (empty($codigoOriginal) || !$posicionOriginal)
+            throw new Exception('Código o posición original no válidos.');
 
         // Verificar que existe la cabecera
         $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_db_muestra_cabecera WHERE codigoEnvio = ?");
@@ -93,20 +107,33 @@ try {
         $rowAnalisis = mysqli_fetch_assoc($resultAnalisis);
         $analisisExistente = $rowAnalisis['analisis'] ?? '[]';
 
-        $stmt = mysqli_prepare($conexion, 
+        $stmt = mysqli_prepare(
+            $conexion,
             "UPDATE com_db_muestra_detalle 
             SET codigoEnvio = ?, posicionSolicitud = ?, fechaToma = ?, codigoReferencia = ?, 
                 numeroMuestras = ?, observaciones = ? 
-            WHERE codigoEnvio = ? AND posicionSolicitud = ?");
-        mysqli_stmt_bind_param($stmt, "sissiisi", $codigoEnvio, $posicionSolicitud, $fechaToma, 
-            $codigoReferencia, $numeroMuestras, $observaciones, $codigoOriginal, $posicionOriginal);
-        
+            WHERE codigoEnvio = ? AND posicionSolicitud = ?"
+        );
+        mysqli_stmt_bind_param(
+            $stmt,
+            "sissiisi",
+            $codigoEnvio,
+            $posicionSolicitud,
+            $fechaToma,
+            $codigoReferencia,
+            $numeroMuestras,
+            $observaciones,
+            $codigoOriginal,
+            $posicionOriginal
+        );
+
     } elseif ($action === 'delete') {
-        if (empty($codigoEnvio) || !$posicionSolicitud) throw new Exception('Código o posición no válidos.');
+        if (empty($codigoEnvio) || !$posicionSolicitud)
+            throw new Exception('Código o posición no válidos.');
 
         $stmt = mysqli_prepare($conexion, "DELETE FROM com_db_muestra_detalle WHERE codigoEnvio = ? AND posicionSolicitud = ?");
         mysqli_stmt_bind_param($stmt, "si", $codigoEnvio, $posicionSolicitud);
-        
+
     } else {
         throw new Exception('Acción no válida.');
     }
@@ -116,7 +143,7 @@ try {
     }
 
     mysqli_commit($conexion);
-    
+
     $mensaje = '';
     switch ($action) {
         case 'create':
@@ -129,7 +156,7 @@ try {
             $mensaje = '✅ Detalle de muestra eliminado correctamente.';
             break;
     }
-    
+
     echo json_encode(['success' => true, 'message' => $mensaje]);
 
 } catch (Exception $e) {
@@ -139,4 +166,3 @@ try {
 
 mysqli_close($conexion);
 ?>
-

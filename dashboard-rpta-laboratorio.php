@@ -7,8 +7,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-include_once 'conexion_grs_joya\conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -95,7 +95,8 @@ if (!$conexion) {
                 <div class="sidebar-panel">
                     <div class="sidebar-header">
                         <h3>Órdenes Pendientes</h3>
-                        <input type="text" class="search-input" placeholder="Buscar..." onkeyup="filterOrders(this.value)">
+                        <input type="text" class="search-input" placeholder="Buscar..."
+                            onkeyup="filterOrders(this.value)">
                     </div>
                     <div id="pendingOrdersList" class="orders-list-container">
                         <!-- Se llena dinámicamente -->
@@ -133,7 +134,8 @@ if (!$conexion) {
                                 <p>Suba el informe de resultados (PDF, Imagen, Correo)</p>
 
                                 <!-- DROP ZONE -->
-                                <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                                <div class="drop-zone" id="dropZone"
+                                    onclick="document.getElementById('fileInput').click()">
                                     <div class="drop-zone-icon">☁️</div>
                                     <p>Arrastre archivos aquí o <span class="text-primary">explore</span></p>
                                     <input type="file" id="fileInput" multiple onchange="handleFiles(this.files)">
@@ -147,13 +149,15 @@ if (!$conexion) {
                                 <!-- COMMENTS -->
                                 <div class="form-group">
                                     <label for="responseComments">Comentarios Adicionales</label>
-                                    <textarea id="responseComments" rows="3" placeholder="Observaciones sobre los resultados..."></textarea>
+                                    <textarea id="responseComments" rows="3"
+                                        placeholder="Observaciones sobre los resultados..."></textarea>
                                 </div>
 
                                 <!-- ACTION BUTTONS -->
                                 <div class="action-buttons">
                                     <button class="btn btn-secondary" onclick="clearSelection()">Cancelar</button>
-                                    <button class="btn btn-primary" onclick="saveResponse()">💾 Guardar Respuesta</button>
+                                    <button class="btn btn-primary" onclick="saveResponse()">💾 Guardar
+                                        Respuesta</button>
                                 </div>
                             </div>
                         </div>
@@ -162,7 +166,7 @@ if (!$conexion) {
             </div>
         </div>
 
-        
+
 
         <!-- Footer -->
         <div class="text-center mt-12">

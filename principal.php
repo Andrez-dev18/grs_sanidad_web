@@ -7,8 +7,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-include_once 'conexion_grs_joya\conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -268,7 +268,7 @@ if (!$conexion) {
                             alt="Sanidad Logo">
                     </div>
                     <div>
-                        <h2 class="text-white font-bold text-lg">SANIDA</h2>
+                        <h2 class="text-white font-bold text-lg">SANIDAD</h2>
                         <p class="text-blue-300 text-xs">Gestión </p>
                     </div>
                 </div>
@@ -343,17 +343,17 @@ if (!$conexion) {
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-tipo-muestra.php','Tipo muestra', 'tipo muestra')"
                         class="menu-link block text-gray-400 hover:text-white">Tipos de Muestra</a>
                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-paquetes-analisis.php','Paquete analisis', 'Paquete analisis')"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-paquete-analisis.php','Paquete analisis', 'Paquete analisis')"
                         class="menu-link block text-gray-400 hover:text-white">Paquetes de Analisis</a>
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-analisis.php','Analisis', 'Analisis')"
                         class="menu-link block text-gray-400 hover:text-white">Analisis</a>
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-muestras-cabecera.php','Muestra cabecera', 'Muestra cabecera')"
-                        class="menu-link block text-gray-400 hover:text-white">Muestras - Cabecera</a>
+                        class="menu-link block text-gray-400 hover:text-white">Registro - Cabecera</a>
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-detalle-muestras.php','Detalle', 'Detalle')"
-                        class="menu-link block text-gray-400 hover:text-white">Muestras - Detalle</a>
+                        class="menu-link block text-gray-400 hover:text-white">Registro - Detalle</a>
 
 
                 </div>
@@ -395,7 +395,7 @@ if (!$conexion) {
                         <i class="fas fa-bars"></i>
                     </button>
                     <div>
-                        <h1 id="" class="text-2xl font-bold text-gray-800">Sistema de Sanida GRS</h1>
+                        <h1 id="" class="text-2xl font-bold text-gray-800">Sistema de Sanidad GRS</h1>
                         <p id="dashboardTitle" class="text-sm text-gray-500"></p>
                     </div>
 
@@ -405,8 +405,12 @@ if (!$conexion) {
                 <details class="relative">
                     <summary class="flex items-center gap-3 cursor-pointer select-none list-none">
                         <div class="text-right">
-                            <p id="userName" class="text-sm font-semibold text-gray-700"><?php echo htmlspecialchars($_SESSION['usuario'] ?? 'usuario'); ?></p>
-                            <p id="rolUser" class="text-xs text-gray-500"><?php echo htmlspecialchars($_SESSION['nombre'] ?? 'nombre'); ?></p>
+                            <p id="userName" class="text-sm font-semibold text-gray-700">
+                                <?php echo htmlspecialchars($_SESSION['usuario'] ?? 'usuario'); ?>
+                            </p>
+                            <p id="rolUser" class="text-xs text-gray-500">
+                                <?php echo htmlspecialchars($_SESSION['nombre'] ?? 'nombre'); ?>
+                            </p>
                         </div>
                         <div
                             class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
@@ -419,8 +423,7 @@ if (!$conexion) {
                             <i class="fas fa-user text-gray-500 mr-2"></i> Perfil
                         </a>
                         <hr class="border-gray-200 my-1" />
-                        <a href="#" onclick="logout()"
-                            class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                        <a href="#" onclick="logout()" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
                             <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
                         </a>
                     </div>
@@ -490,7 +493,7 @@ if (!$conexion) {
                 'dashboard-laboratorio.php': 'Laboratorios',
 
                 'dashboard-tipo-muestra.php': 'Tipo muestra',
-                'dashboard-paquetes-analisis.php': 'Paquete analisis',
+                'dashboard-paquete-analisis.php': 'Paquete analisis',
                 'dashboard-analisis.php': 'Analisis',
                 'dashboard-registro-muestras-cabecera.php': 'Muestra cabecera',
                 'dashboard-detalle-muestras.php': 'Detalle',
@@ -651,7 +654,7 @@ if (!$conexion) {
         }
     </script>
 
-<script src="logout.js"></script>
+    <script src="logout.js"></script>
 
 </body>
 

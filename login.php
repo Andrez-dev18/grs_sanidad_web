@@ -1,58 +1,4 @@
-<?php
-include_once 'historial_acciones.php';
 
-session_start();
-$alert = '';
-
-if (!empty($_SESSION['active'])) {
-    header('Location: index.php');
-    exit();
-}
-
-if (!empty($_POST)) {
-    $usuario = trim($_POST['usuario']);
-    $clave   = trim($_POST['clave']);
-    $gps = $_POST['gps'] ?? null; //ubicacion gps
-
-    if (empty($usuario) || empty($clave)) {
-        $alert = '<div class="alert alert-danger">Ingrese su usuario y contraseña</div>';
-    } else {
-        //ruta relativa a la conexion
-        include_once 'conexion_grs_joya\conexion.php';
-
-        $conexion = conectar_aqp();
-        if (!$conexion) {
-            die("Error de conexión: " . mysqli_connect_error());
-        }
-
-        $new_password = $clave;
-        $usuario_esc = mysqli_real_escape_string($conexion, $usuario);
-        $clave_esc   = mysqli_real_escape_string($conexion, $new_password);
-
-        $sql2 = "SELECT u.codigo, u.nombre
-         FROM usuario u
-         JOIN conempre c ON c.epre='RS'
-         WHERE u.codigo='$usuario_esc'
-         AND u.password = LEFT(AES_ENCRYPT('$clave_esc', c.enom), 8)";
-
-        $res2 = mysqli_query($conexion, $sql2);
-
-        if (mysqli_num_rows($res2) > 0) {
-            $row = mysqli_fetch_assoc($res2);
-            $_SESSION['active'] = true;
-            $_SESSION['usuario'] = $row['codigo'];
-            $_SESSION['nombre'] = $row['nombre'];
-            registrarAccionLoginLogout("LOGIN", $row['codigo'], $row['nombre'], $gps);
-            header('Location: principal.php');
-            exit();
-        } else {
-            $alert = '<div class="alert alert-danger">Usuario o contraseña incorrecta</div>';
-        }
-
-        mysqli_close($conexion);
-    }
-}
-?>
 <!DOCTYPE html>
 <html lang="es">
 
@@ -76,7 +22,8 @@ if (!empty($_POST)) {
                 <h1>SANIDAD</h1>
 
             </div>
-            <form method="POST">
+          
+           <form id="loginForm" method="POST">
                 <div class="form-group">
                     <label>Usuario</label>
                     <div class="input-wrapper">
@@ -109,6 +56,7 @@ if (!empty($_POST)) {
 
                 <button type="submit" class="btn-login">Iniciar Sesión</button>
             </form>
+            <div id="alertContainer" style="margin-bottom: 15px; color: red; text-align: center; font-weight: bold; font-size: 14px;"></div>
         </div>
     </div>
 
@@ -117,6 +65,47 @@ if (!empty($_POST)) {
          * Intenta obtener la geolocalización y coloca el resultado en el input hidden con id="gpsInput"
          * - timeout y maximumAge para responsividad
          */
+        document.getElementById('loginForm').addEventListener('submit', async function (e) {
+            e.preventDefault(); // ¡Evita la recarga!
+
+            const usuario = document.getElementById('usuario').value.trim();
+            const clave = document.getElementById('clave').value.trim();
+            const gps = document.getElementById('gpsInput').value || 'no-disponible';
+
+            if (!usuario || !clave) {
+                mostrarAlerta('<div class="alert alert-danger">Ingrese su usuario y contraseña</div>');
+                return;
+            }
+
+            // Envía los datos al servidor
+            const formData = new FormData();
+            formData.append('usuario', usuario);
+            formData.append('clave', clave);
+            formData.append('gps', gps);
+
+            try {
+                const response = await fetch('login_handler.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Redirección en caso de éxito
+                    window.location.href = 'principal.php';
+                } else {
+                    // Muestra el mensaje de error
+                    mostrarAlerta('<div class="alert alert-danger">' + result.message + '</div>');
+                }
+            } catch (err) {
+                mostrarAlerta('<div class="alert alert-danger">Error de conexión. Intente nuevamente.</div>');
+            }
+        });
+
+        function mostrarAlerta(html) {
+            document.getElementById('alertContainer').innerHTML = html;
+        }
         async function setGpsHiddenInput() {
             const gpsInput = document.getElementById('gpsInput');
             if (!gpsInput) return;
@@ -145,10 +134,10 @@ if (!empty($_POST)) {
                             resolve('no-disponible');
                         }
                     }, {
-                        enableHighAccuracy: false,
-                        timeout: 8000,
-                        maximumAge: 60 * 1000
-                    }
+                    enableHighAccuracy: false,
+                    timeout: 8000,
+                    maximumAge: 60 * 1000
+                }
                 );
             });
 

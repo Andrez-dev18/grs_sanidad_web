@@ -14,11 +14,11 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 //ruta relativa a la conexion
-include_once 'conexion_grs_joya\conexion.php';
+include_once '../conexion_grs_joya/conexion.php';
 date_default_timezone_set('America/Lima');
 
 // --- Conexión ---
-$conexion = conectar_sanidad();
+$conexion = conectar_joya();
 if (!$conexion) {
     echo json_encode([
         'status' => 500,
@@ -33,6 +33,7 @@ $laboratorios = mysqli_query($conexion, "SELECT codigo, nombre FROM com_laborato
 $emp_trans = mysqli_query($conexion, "SELECT codigo, nombre FROM com_emp_trans ORDER BY nombre DESC");
 $muestras = mysqli_query($conexion, "SELECT * FROM com_tipo_muestra ORDER BY codigo DESC");
 $paquetes = mysqli_query($conexion, "SELECT * FROM com_paquetes_analisis ORDER BY codigo DESC");
+$analisis = mysqli_query($conexion, "SELECT * FROM com_analisis ORDER BY codigo DESC");
 
 
 // --- Convertir a arrays ---
@@ -52,7 +53,7 @@ $data = [
     'emp_trans' => resultToArray($emp_trans),
     'muestras' => resultToArray($muestras),
     'paquetes' => resultToArray($paquetes),
-
+    'analisis' => resultToArray($analisis),
 ];
 
 // --- Respuesta final ---

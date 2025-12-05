@@ -5,8 +5,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 //ruta relativa a la conexion
-include_once 'conexion_grs_joya\conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     http_response_code(500);
     echo json_encode(['error' => 'Error de conexión']);

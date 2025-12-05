@@ -1,126 +1,156 @@
 <?php
 session_start();
 if (empty($_SESSION['active'])) {
-    echo json_encode(['success' => false, 'message' => 'No autorizado']);
-    exit();
+    header('HTTP/1.0 401 Unauthorized');
+    exit('No autorizado');
 }
 
-include_once 'conexion_grs_joya/conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
+
 if (!$conexion) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
     exit();
 }
 
+mysqli_set_charset($conexion, 'utf8');
+
 $action = $_POST['action'] ?? '';
-$nombre = trim($_POST['nombre'] ?? '');
-$tipoMuestra = isset($_POST['tipoMuestra']) ? (int)$_POST['tipoMuestra'] : null;
-$codigo = isset($_POST['codigo']) ? (int)$_POST['codigo'] : null;
-
-if (empty($nombre) && $action !== 'delete') {
-    echo json_encode(['success' => false, 'message' => 'El nombre es obligatorio.']);
-    exit();
-}
-
-if (!$tipoMuestra && $action !== 'delete') {
-    echo json_encode(['success' => false, 'message' => 'Debe seleccionar un tipo de muestra.']);
-    exit();
-}
-
-mysqli_begin_transaction($conexion);
+$response = ['success' => false, 'message' => ''];
 
 try {
-    if ($action === 'create') {
-        // Verificar que el tipo de muestra existe
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_tipo_muestra WHERE codigo = ?");
-        mysqli_stmt_bind_param($check, "i", $tipoMuestra);
-        mysqli_stmt_execute($check);
-        $row = mysqli_stmt_get_result($check)->fetch_assoc();
-        if ($row['cnt'] == 0) {
-            throw new Exception('El tipo de muestra seleccionado no existe.');
-        }
-
-        // Verificar que no exista un paquete con el mismo nombre
-        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_paquetes_analisis WHERE nombre = ?");
-        mysqli_stmt_bind_param($check2, "s", $nombre);
-        mysqli_stmt_execute($check2);
-        $row2 = mysqli_stmt_get_result($check2)->fetch_assoc();
-        if ($row2['cnt'] > 0) {
-            throw new Exception('Ya existe un paquete de análisis con ese nombre.');
-        }
-
-        $stmt = mysqli_prepare($conexion, "INSERT INTO com_paquetes_analisis (nombre, tipoMuestra) VALUES (?, ?)");
-        mysqli_stmt_bind_param($stmt, "si", $nombre, $tipoMuestra);
-        
-    } elseif ($action === 'update') {
-        if (!$codigo) throw new Exception('Código no válido.');
-
-        // Verificar que el tipo de muestra existe
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_tipo_muestra WHERE codigo = ?");
-        mysqli_stmt_bind_param($check, "i", $tipoMuestra);
-        mysqli_stmt_execute($check);
-        $row = mysqli_stmt_get_result($check)->fetch_assoc();
-        if ($row['cnt'] == 0) {
-            throw new Exception('El tipo de muestra seleccionado no existe.');
-        }
-
-        // Verificar que no exista otro paquete con el mismo nombre
-        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_paquetes_analisis WHERE nombre = ? AND codigo != ?");
-        mysqli_stmt_bind_param($check2, "si", $nombre, $codigo);
-        mysqli_stmt_execute($check2);
-        $row2 = mysqli_stmt_get_result($check2)->fetch_assoc();
-        if ($row2['cnt'] > 0) {
-            throw new Exception('Ya existe otro paquete de análisis con ese nombre.');
-        }
-
-        $stmt = mysqli_prepare($conexion, "UPDATE com_paquetes_analisis SET nombre = ?, tipoMuestra = ? WHERE codigo = ?");
-        mysqli_stmt_bind_param($stmt, "sii", $nombre, $tipoMuestra, $codigo);
-        
-    } elseif ($action === 'delete') {
-        if (!$codigo) throw new Exception('Código no válido.');
-
-        // Verificar si el paquete está en uso en análisis
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_analisis WHERE PaqueteAnalisis = ?");
-        mysqli_stmt_bind_param($check, "i", $codigo);
-        mysqli_stmt_execute($check);
-        $row = mysqli_stmt_get_result($check)->fetch_assoc();
-        if ($row['cnt'] > 0) {
-            throw new Exception('No se puede eliminar: el paquete está en uso en ' . $row['cnt'] . ' análisis.');
-        }
-
-        $stmt = mysqli_prepare($conexion, "DELETE FROM com_paquetes_analisis WHERE codigo = ?");
-        mysqli_stmt_bind_param($stmt, "i", $codigo);
-        
-    } else {
-        throw new Exception('Acción no válida.');
-    }
-
-    if (!mysqli_stmt_execute($stmt)) {
-        throw new Exception('Error en la base de datos: ' . mysqli_error($conexion));
-    }
-
-    mysqli_commit($conexion);
-    
-    $mensaje = '';
     switch ($action) {
         case 'create':
-            $mensaje = '✅ Paquete de análisis creado correctamente.';
-            break;
-        case 'update':
-            $mensaje = '✅ Paquete de análisis actualizado correctamente.';
-            break;
-        case 'delete':
-            $mensaje = '✅ Paquete de análisis eliminado correctamente.';
-            break;
-    }
-    
-    echo json_encode(['success' => true, 'message' => $mensaje]);
+            $nombre = trim($_POST['nombre'] ?? '');
+            $tipoMuestra = $_POST['tipoMuestra'] ?? 0;
 
+            if (empty($nombre)) {
+                throw new Exception('El nombre del paquete es obligatorio');
+            }
+
+            if ($tipoMuestra <= 0) {
+                throw new Exception('Debe seleccionar un tipo de muestra válido');
+            }
+
+            // Verificar si ya existe un paquete con el mismo nombre
+            $check = mysqli_prepare($conexion, "SELECT codigo FROM com_paquete_muestra WHERE nombre = ?");
+            mysqli_stmt_bind_param($check, "s", $nombre);
+            mysqli_stmt_execute($check);
+            mysqli_stmt_store_result($check);
+
+            if (mysqli_stmt_num_rows($check) > 0) {
+                throw new Exception('Ya existe un paquete con este nombre');
+            }
+
+            // Verificar que el tipo de muestra exista
+            $checkTipo = mysqli_prepare($conexion, "SELECT codigo FROM com_tipo_muestra WHERE codigo = ?");
+            mysqli_stmt_bind_param($checkTipo, "i", $tipoMuestra);
+            mysqli_stmt_execute($checkTipo);
+            mysqli_stmt_store_result($checkTipo);
+
+            if (mysqli_stmt_num_rows($checkTipo) == 0) {
+                throw new Exception('El tipo de muestra seleccionado no existe');
+            }
+
+            // Insertar nuevo paquete
+            $stmt = mysqli_prepare($conexion, "INSERT INTO com_paquete_muestra (nombre, tipoMuestra) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, "si", $nombre, $tipoMuestra);
+
+            if (mysqli_stmt_execute($stmt)) {
+                $response['success'] = true;
+                $response['message'] = 'Paquete creado exitosamente';
+            } else {
+                throw new Exception('Error al crear el paquete: ' . mysqli_error($conexion));
+            }
+            break;
+
+        case 'update':
+            $codigo = $_POST['codigo'] ?? 0;
+            $nombre = trim($_POST['nombre'] ?? '');
+            $tipoMuestra = $_POST['tipoMuestra'] ?? 0;
+
+            if ($codigo <= 0) {
+                throw new Exception('Código de paquete inválido');
+            }
+
+            if (empty($nombre)) {
+                throw new Exception('El nombre del paquete es obligatorio');
+            }
+
+            if ($tipoMuestra <= 0) {
+                throw new Exception('Debe seleccionar un tipo de muestra válido');
+            }
+
+            // Verificar si ya existe otro paquete con el mismo nombre
+            $check = mysqli_prepare($conexion, "SELECT codigo FROM com_paquete_muestra WHERE nombre = ? AND codigo != ?");
+            mysqli_stmt_bind_param($check, "si", $nombre, $codigo);
+            mysqli_stmt_execute($check);
+            mysqli_stmt_store_result($check);
+
+            if (mysqli_stmt_num_rows($check) > 0) {
+                throw new Exception('Ya existe otro paquete con este nombre');
+            }
+
+            // Verificar que el tipo de muestra exista
+            $checkTipo = mysqli_prepare($conexion, "SELECT codigo FROM com_tipo_muestra WHERE codigo = ?");
+            mysqli_stmt_bind_param($checkTipo, "i", $tipoMuestra);
+            mysqli_stmt_execute($checkTipo);
+            mysqli_stmt_store_result($checkTipo);
+
+            if (mysqli_stmt_num_rows($checkTipo) == 0) {
+                throw new Exception('El tipo de muestra seleccionado no existe');
+            }
+
+            // Actualizar paquete
+            $stmt = mysqli_prepare($conexion, "UPDATE com_paquete_muestra SET nombre = ?, tipoMuestra = ? WHERE codigo = ?");
+            mysqli_stmt_bind_param($stmt, "sii", $nombre, $tipoMuestra, $codigo);
+
+            if (mysqli_stmt_execute($stmt)) {
+                $response['success'] = true;
+                $response['message'] = 'Paquete actualizado exitosamente';
+            } else {
+                throw new Exception('Error al actualizar el paquete: ' . mysqli_error($conexion));
+            }
+            break;
+
+        case 'delete':
+            $codigo = $_POST['codigo'] ?? 0;
+
+            if ($codigo <= 0) {
+                throw new Exception('Código de paquete inválido');
+            }
+
+            // Verificar si hay análisis usando este paquete
+            $check = mysqli_prepare($conexion, "SELECT COUNT(*) as total FROM com_analisis WHERE paquete = ?");
+            mysqli_stmt_bind_param($check, "i", $codigo);
+            mysqli_stmt_execute($check);
+            mysqli_stmt_bind_result($check, $count);
+            mysqli_stmt_fetch($check);
+            mysqli_stmt_close($check);
+
+            if ($count > 0) {
+                throw new Exception('No se puede eliminar este paquete porque tiene análisis asociados');
+            }
+
+            // Eliminar paquete
+            $stmt = mysqli_prepare($conexion, "DELETE FROM com_paquete_muestra WHERE codigo = ?");
+            mysqli_stmt_bind_param($stmt, "i", $codigo);
+
+            if (mysqli_stmt_execute($stmt)) {
+                $response['success'] = true;
+                $response['message'] = 'Paquete eliminado exitosamente';
+            } else {
+                throw new Exception('Error al eliminar el paquete: ' . mysqli_error($conexion));
+            }
+            break;
+
+        default:
+            throw new Exception('Acción no válida');
+    }
 } catch (Exception $e) {
-    mysqli_rollback($conexion);
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    $response['message'] = $e->getMessage();
 }
 
+echo json_encode($response);
 mysqli_close($conexion);
 ?>
-

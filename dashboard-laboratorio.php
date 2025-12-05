@@ -7,8 +7,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-include_once 'conexion_grs_joya\conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -91,10 +91,17 @@ if (!$conexion) {
             <div class="form-container max-w-7xl mx-auto">
                 <!-- Botones de acción -->
                 <div class="mb-6 flex justify-between items-center flex-wrap gap-3">
-                    <button type="button" class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2" onclick="exportarLaboratorios()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);" onmouseover="this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'" onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
+                    <button type="button"
+                        class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
+                        onclick="exportarLaboratorios()"
+                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);"
+                        onmouseover="this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'"
+                        onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
                         📊 Exportar a Excel
                     </button>
-                    <button type="button" class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2" onclick="openLaboratorioModal('create')">
+                    <button type="button"
+                        class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
+                        onclick="openLaboratorioModal('create')">
                         ➕ Nuevo Laboratorio
                     </button>
                 </div>
@@ -111,7 +118,7 @@ if (!$conexion) {
                         </thead>
                         <tbody id="laboratorioTableBody" class="divide-y divide-gray-200">
                             <?php
-                            $query = "SELECT codigo, nombre FROM com_laboratorio ORDER BY Codigo";
+                            $query = "SELECT codigo, nombre FROM com_laboratorio ORDER BY codigo";
                             $result = mysqli_query($conexion, $query);
                             if ($result && mysqli_num_rows($result) > 0) {
                                 while ($row = mysqli_fetch_assoc($result)) {
@@ -142,12 +149,14 @@ if (!$conexion) {
         </div>
 
         <!-- Modal para Crear/Editar Laboratorio -->
-        <div id="laboratorioModal" style="display: none;" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div id="laboratorioModal" style="display: none;"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-2xl shadow-lg w-full max-w-md">
                 <!-- Modal Header -->
                 <div class="flex items-center justify-between p-6 border-b border-gray-200">
                     <h2 id="laboratorioModalTitle" class="text-xl font-bold text-gray-800">➕ Nuevo Laboratorio</h2>
-                    <button onclick="closeLaboratorioModal()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition">
+                    <button onclick="closeLaboratorioModal()"
+                        class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition">
                         ×
                     </button>
                 </div>
@@ -163,28 +172,18 @@ if (!$conexion) {
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Nombre del Laboratorio <span class="text-red-500">*</span>
                             </label>
-                            <input 
-                                type="text" 
-                                id="laboratorioModalNombre" 
-                                name="nombre" 
-                                maxlength="255" 
-                                placeholder="Ingrese el nombre del laboratorio"
-                                required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                            >
+                            <input type="text" id="laboratorioModalNombre" name="nombre" maxlength="255"
+                                placeholder="Ingrese el nombre del laboratorio" required
+                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
                         </div>
 
                         <!-- Botones -->
                         <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
-                            <button 
-                                type="button" 
-                                onclick="closeLaboratorioModal()"
-                                class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200"
-                            >
+                            <button type="button" onclick="closeLaboratorioModal()"
+                                class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200">
                                 Cancelar
                             </button>
-                            <button 
-                                type="submit"
+                            <button type="submit"
                                 class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2">
                                 💾 Guardar
                             </button>

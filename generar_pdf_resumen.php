@@ -1,13 +1,11 @@
 <?php
 session_start();
 if (empty($_SESSION['active'])) {
-    http_response_code(401);
-    exit('No autorizado');
+    header('Location: login.php');
+    exit();
 }
-
-//ruta relativa a la conexion
-include_once 'conexion_grs_joya\conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión.");
 }
@@ -19,71 +17,112 @@ if (!$codigoEnvio) {
     die("Código de envío no proporcionado.");
 }
 
-// --- Cabecera ---
-$cab = mysqli_fetch_assoc(mysqli_query($conexion, "
+// === Cabecera ===
+$stmt = mysqli_prepare($conexion, "
     SELECT
-        c.fechaEnvio,
+        c.fecEnvio AS fechaEnvio,
         c.horaEnvio,
-        c.codigoEnvio,
-        l.nombre AS laboratorio,
-        e.nombre AS empresa_transporte,
+        c.codEnvio AS codigoEnvio,
+        c.nomLab AS laboratorio,
+        c.nomEmpTrans AS empresa_transporte,
         c.usuarioRegistrador,
         c.autorizadoPor
-    FROM com_db_muestra_cabecera c
-    JOIN com_laboratorio l ON c.laboratorio = l.codigo
-    JOIN com_emp_trans e ON c.empTrans = e.codigo
-    WHERE c.codigoEnvio = '" . mysqli_real_escape_string($conexion, $codigoEnvio) . "'
-"));
+    FROM com_db_solicitud_cab c
+    WHERE c.codEnvio = ?
+");
+mysqli_stmt_bind_param($stmt, "s", $codigoEnvio);
+mysqli_stmt_execute($stmt);
+$cab = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+mysqli_stmt_close($stmt);
 
 if (!$cab) {
     die("Registro no encontrado.");
 }
 
-// --- Detalles ---
-$detalles = [];
-$res_det = mysqli_query($conexion, "
-    SELECT posicionSolicitud, fechaToma, codigoReferencia, numeroMuestras, observaciones, analisis
-    FROM com_db_muestra_detalle
-    WHERE codigoEnvio = '" . mysqli_real_escape_string($conexion, $codigoEnvio) . "'
-    ORDER BY posicionSolicitud
+// === Detalles: traer todos los registros ===
+$stmt = mysqli_prepare($conexion, "
+    SELECT posSolicitud, fecToma, codRef, numMuestras, obs, codAnalisis
+    FROM com_db_solicitud_det
+    WHERE codEnvio = ?
+    ORDER BY posSolicitud
 ");
-
+mysqli_stmt_bind_param($stmt, "s", $codigoEnvio);
+mysqli_stmt_execute($stmt);
+$res_det = mysqli_stmt_get_result($stmt);
+$detalles_raw = [];
 while ($row = mysqli_fetch_assoc($res_det)) {
-    // Obtener nombres de análisis
-    $analisisCodigos = array_filter(array_map('trim', explode(',', $row['analisis'] ?? '')));
-    $analisisNombres = [];
+    $detalles_raw[] = $row;
+}
+mysqli_stmt_close($stmt);
+
+// === AGRUPAR POR codRef ===
+$grupos = [];
+foreach ($detalles_raw as $row) {
+    $codRef = $row['codRef'];
+    if (!isset($grupos[$codRef])) {
+        $grupos[$codRef] = [
+            'codRef' => $codRef,
+            'fecToma' => $row['fecToma'],
+            'numMuestras' => $row['numMuestras'],
+            'obs' => $row['obs'] ?? '',
+            'analisis_codigos' => [],
+            'tipo_muestra' => '-'
+        ];
+    }
+    if (!empty($row['codAnalisis'])) {
+        $grupos[$codRef]['analisis_codigos'][] = $row['codAnalisis'];
+    }
+    if (empty($grupos[$codRef]['obs']) && !empty($row['obs'])) {
+        $grupos[$codRef]['obs'] = $row['obs'];
+    }
+}
+
+// === Procesar cada grupo ===
+$detalles_agrupados = [];
+foreach ($grupos as $grupo) {
+    $analisisCodigos = array_unique($grupo['analisis_codigos']);
+    $analisisConPaquete = [];
+    $tipo_muestra = '-';
+
     if (!empty($analisisCodigos)) {
         $placeholders = str_repeat('?,', count($analisisCodigos) - 1) . '?';
-        $stmt = mysqli_prepare($conexion, "SELECT nombre FROM com_analisis WHERE codigo IN ($placeholders)");
-        mysqli_stmt_bind_param($stmt, str_repeat('s', count($analisisCodigos)), ...$analisisCodigos);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
+        $sql = "
+            SELECT 
+                a.nombre AS analisis_nombre,
+                p.nombre AS paquete_nombre,
+                tm.nombre AS tipo_muestra_nombre
+            FROM com_analisis a
+            JOIN com_paquete_muestra p ON a.paquete = p.codigo
+            JOIN com_tipo_muestra tm ON p.tipoMuestra = tm.codigo
+            WHERE a.codigo IN ($placeholders)
+            ORDER BY p.nombre, a.nombre
+        ";
+        $stmt2 = mysqli_prepare($conexion, $sql);
+        mysqli_stmt_bind_param($stmt2, str_repeat('s', count($analisisCodigos)), ...$analisisCodigos);
+        mysqli_stmt_execute($stmt2);
+        $result = mysqli_stmt_get_result($stmt2);
+
+        $paquetes = [];
         while ($a = mysqli_fetch_assoc($result)) {
-            $analisisNombres[] = htmlspecialchars($a['nombre']);
+            $paquete = htmlspecialchars($a['paquete_nombre']);
+            $analisisNombre = htmlspecialchars($a['analisis_nombre']);
+            $paquetes[$paquete][] = $analisisNombre;
+            if ($tipo_muestra === '-') {
+                $tipo_muestra = htmlspecialchars($a['tipo_muestra_nombre']);
+            }
         }
-        mysqli_stmt_close($stmt);
+        mysqli_stmt_close($stmt2);
+
+        foreach ($paquetes as $paq => $analisisLista) {
+            $analisisConPaquete[] = '<b>' . $paq . ':</b> ' . implode(', ', $analisisLista);
+        }
     }
 
-    // Tipo de muestra (del primer análisis)
-    $tipoMuestra = '-';
-    if (!empty($analisisCodigos)) {
-        $stmt = mysqli_prepare($conexion, "SELECT tm.nombre FROM com_analisis a JOIN com_tipo_muestra tm ON a.tipoMuestra = tm.codigo WHERE a.codigo = ?");
-        mysqli_stmt_bind_param($stmt, "s", $analisisCodigos[0]);
-        mysqli_stmt_execute($stmt);
-        $tmRow = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-        $tipoMuestra = htmlspecialchars($tmRow['nombre'] ?? '-');
-        mysqli_stmt_close($stmt);
-    }
+    $analisisTexto = implode('<br>', $analisisConPaquete);
 
-    $detalles[] = [
-        'posicion' => $row['posicionSolicitud'],
-        'fechaToma' => $row['fechaToma'] ?? '-',
-        'codigoReferencia' => $row['codigoReferencia'] ?? '',
-        'numeroMuestras' => $row['numeroMuestras'] ?? '1',
-        'observaciones' => $row['observaciones'] ?? 'Ninguna',
-        'analisis' => implode(', ', $analisisNombres),
-        'tipoMuestra' => $tipoMuestra
-    ];
+    $grupo['analisis_nombres'] = $analisisTexto ?: 'Ninguno';
+    $grupo['tipo_muestra'] = $tipo_muestra;
+    $detalles_agrupados[] = $grupo;
 }
 
 mysqli_close($conexion);
@@ -117,30 +156,101 @@ $mpdf->SetHTMLHeader('
     </table>
 ');
 
-$html = '<h3 style="text-align:center; margin:10px 0;"> Resumen del Envío</h3>';
-$html .= '<div style="font-size:11px; line-height:1.5;">';
-$html .= '<strong>Código de Envío:</strong> ' . htmlspecialchars($cab['codigoEnvio']) . '<br>';
-$html .= '<strong>Laboratorio:</strong> ' . htmlspecialchars($cab['laboratorio']) . '<br>';
-$html .= '<strong>Fecha de Envío:</strong> ' . htmlspecialchars($cab['fechaEnvio']) . '<br>';
-$html .= '<strong>Hora de Envío:</strong> ' . substr(htmlspecialchars($cab['horaEnvio']), 0, 5) . '<br>';
-$html .= '<strong>Empresa de Transporte:</strong> ' . htmlspecialchars($cab['empresa_transporte']) . '<br>';
-$html .= '<strong>Autorizado por:</strong> ' . htmlspecialchars($cab['autorizadoPor']) . '<br>';
-$html .= '<strong>Usuario Registrador:</strong> ' . htmlspecialchars($cab['usuarioRegistrador']) . '<br>';
-$html .= '<strong>Número de Muestras:</strong> ' . count($detalles) . '<br>';
-$html .= '</div><hr>';
+/**
+ * Función para calcular el ancho necesario basado en el campo más largo
+ */
+function calcularAnchoCampo($campos)
+{
+    $maxLongitud = 0;
+    foreach (array_keys($campos) as $etiqueta) {
+        // Aproximación: 1 carácter ≈ 0.5% en A4 con fuente 11px
+        $longitud = strlen($etiqueta);
+        if ($longitud > $maxLongitud) {
+            $maxLongitud = $longitud;
+        }
+    }
+    // Ajuste empírico: 35% para campos normales, 40% para campos más largos
+    if ($maxLongitud > 20) {
+        return '40%';
+    } elseif ($maxLongitud > 15) {
+        return '35%';
+    } else {
+        return '30%';
+    }
+}
 
-$html .= '<h3 style="margin-top:20px;"> Solicitudes</h3>';
+/**
+ * Función para generar tabla con campos alineados a la izquierda y dos puntos alineados
+ */
+function generarTablaAlineada($campos, $titulo = '')
+{
+    $anchoCampo = calcularAnchoCampo($campos);
 
-foreach ($detalles as $i => $d) {
-    $html .= '<div style="border:1px solid #ccc; padding:12px; margin:12px 0; border-radius:6px; font-size:10px;">';
-    $html .= '<h4 style="margin:0 0 10px; color:#2d3748;">Solicitud #' . ($i + 1) . '</h4>';
-    $html .= '<strong>Tipo de Muestra:</strong> ' . $d['tipoMuestra'] . '<br>';
-    $html .= '<strong>Fecha de Toma:</strong> ' . $d['fechaToma'] . '<br>';
-    $html .= '<strong>N° de Muestras:</strong> ' . $d['numeroMuestras'] . '<br>';
-    $html .= '<strong>Código de Referencia:</strong> ' . $d['codigoReferencia'] . '<br>';
-    $html .= '<strong>Observaciones:</strong> ' . $d['observaciones'] . '<br>';
-    $html .= '<strong>Análisis Solicitados:</strong><br>';
-    $html .= '<span style="display:inline-block; margin-top:4px; padding:4px 8px; background:#f0f0f0; border-radius:4px;">' . ($d['analisis'] ?: 'Ninguno') . '</span>';
+    $html = '';
+    if ($titulo) {
+        $html .= '<h4 style="margin:0 0 10px; color:#2d3748; font-size:13px; font-weight:bold;">' . $titulo . '</h4>';
+    }
+
+    $html .= '<table style="border-collapse: collapse; width: 100%; font-size:11px; line-height:1.6;">';
+
+    foreach ($campos as $etiqueta => $valor) {
+        $html .= '<tr>';
+        // Campo alineado a la IZQUIERDA
+        $html .= '<td style="padding: 3px 0 3px 0; vertical-align: top; text-align: left; width: ' . $anchoCampo . '; white-space: nowrap;"><strong>' . $etiqueta . '</strong></td>';
+        // Dos puntos - ANCHO MÍNIMO FIJO
+        $html .= '<td style="padding: 3px 5px; vertical-align: top; text-align: center; width: 15px; min-width: 15px; max-width: 15px;"><strong>:</strong></td>';
+        // Valor
+        $html .= '<td style="padding: 3px 0; vertical-align: top; text-align: left;">' . htmlspecialchars($valor) . '</td>';
+        $html .= '</tr>';
+    }
+
+    $html .= '</table>';
+
+    return $html;
+}
+
+$html = '<h3 style="text-align:center; margin:10px 0;">Resumen del Envío</h3>';
+
+// ===== TABLA CABECERA =====
+$html .= '<div style="margin-bottom:20px;">';
+
+$camposCabecera = [
+    'Fecha de Envío' => $cab['fechaEnvio'],
+    'Hora de Envío' => substr($cab['horaEnvio'], 0, 5),
+    'Código de Envío' => $cab['codigoEnvio'],
+    'Laboratorio' => $cab['laboratorio'],
+    'Empresa de Transporte' => $cab['empresa_transporte'],
+    'Autorizado por' => $cab['autorizadoPor'],
+    'Usuario Registrador' => $cab['usuarioRegistrador']
+];
+
+$html .= generarTablaAlineada($camposCabecera);
+$html .= '</div>';
+
+$html .= '<hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">';
+
+$html .= '<h3 style="margin-top:20px;">Solicitudes</h3>';
+
+foreach ($detalles_agrupados as $i => $d) {
+    $html .= '<div style="margin:15px 0; padding:10px; background:#fff; font-size:10px;">';
+
+    // ===== TABLA SOLICITUD =====
+    $camposSolicitud = [
+        'Tipo de Muestra' => $d['tipo_muestra'],
+        'Fecha de Toma' => $d['fecToma'],
+        'N° de Muestras' => $d['numMuestras'],
+        'Código de Referencia' => $d['codRef'],
+        'Observaciones' => $d['obs'],
+    ];
+
+    $html .= generarTablaAlineada($camposSolicitud, 'Solicitud #' . ($i + 1));
+
+    // ===== ANÁLISIS SOLICITADOS =====
+    $html .= '<div style="margin-top:12px;">';
+    $html .= '<div style="margin-bottom:4px;"><strong>Análisis Solicitados:</strong></div>';
+    $html .= '<div style="padding:6px 10px; background:#f8f9fa; border:1px solid #eee; border-radius:4px; font-family: monospace; white-space: pre-line;">' . $d['analisis_nombres'] . '</div>';
+    $html .= '</div>';
+
     $html .= '</div>';
 }
 

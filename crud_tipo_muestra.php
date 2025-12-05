@@ -5,8 +5,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once 'conexion_grs_joya/conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
     exit();
@@ -15,16 +15,16 @@ if (!$conexion) {
 $action = $_POST['action'] ?? '';
 $nombre = trim($_POST['nombre'] ?? '');
 $descripcion = trim($_POST['descripcion'] ?? '');
-$longitud_codigo = isset($_POST['longitud_codigo']) ? (int)$_POST['longitud_codigo'] : 8;
-$codigo = isset($_POST['codigo']) ? (int)$_POST['codigo'] : null;
+$longitud_codigo = isset($_POST['longitud_codigo']) ? (int) $_POST['longitud_codigo'] : 8;
+$codigo = isset($_POST['codigo']) ? (int) $_POST['codigo'] : null;
 
 if (empty($nombre) && $action !== 'delete') {
     echo json_encode(['success' => false, 'message' => 'El nombre es obligatorio.']);
     exit();
 }
 
-if ($action !== 'delete' && ($longitud_codigo < 1 || $longitud_codigo > 20)) {
-    echo json_encode(['success' => false, 'message' => 'La longitud de código debe estar entre 1 y 20.']);
+if ($action !== 'delete' && ($longitud_codigo < 1)) {
+    echo json_encode(['success' => false, 'message' => 'La longitud de código debe ser mayor que 1.']);
     exit();
 }
 
@@ -41,11 +41,12 @@ try {
             throw new Exception('Ya existe un tipo de muestra con ese nombre.');
         }
 
-        $stmt = mysqli_prepare($conexion, "INSERT INTO com_tipo_muestra (nombre, descripcion, longitud_codigo) VALUES (?, ?, ?)");
+        $stmt = mysqli_prepare($conexion, "INSERT INTO com_tipo_muestra (nombre, descripcion, lonCod) VALUES (?, ?, ?)");
         mysqli_stmt_bind_param($stmt, "ssi", $nombre, $descripcion, $longitud_codigo);
-        
+
     } elseif ($action === 'update') {
-        if (!$codigo) throw new Exception('Código no válido.');
+        if (!$codigo)
+            throw new Exception('Código no válido.');
 
         // Verificar que no exista otro tipo de muestra con el mismo nombre
         $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_tipo_muestra WHERE nombre = ? AND codigo != ?");
@@ -56,14 +57,15 @@ try {
             throw new Exception('Ya existe otro tipo de muestra con ese nombre.');
         }
 
-        $stmt = mysqli_prepare($conexion, "UPDATE com_tipo_muestra SET nombre = ?, descripcion = ?, longitud_codigo = ? WHERE codigo = ?");
+        $stmt = mysqli_prepare($conexion, "UPDATE com_tipo_muestra SET nombre = ?, descripcion = ?, lonCod = ? WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "ssii", $nombre, $descripcion, $longitud_codigo, $codigo);
-        
+
     } elseif ($action === 'delete') {
-        if (!$codigo) throw new Exception('Código no válido.');
+        if (!$codigo)
+            throw new Exception('Código no válido.');
 
         // Verificar si el tipo de muestra está en uso en paquetes de análisis
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_paquetes_analisis WHERE tipoMuestra = ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_paquete_muestra WHERE tipoMuestra = ?");
         mysqli_stmt_bind_param($check, "i", $codigo);
         mysqli_stmt_execute($check);
         $row = mysqli_stmt_get_result($check)->fetch_assoc();
@@ -72,7 +74,9 @@ try {
         }
 
         // Verificar si el tipo de muestra está en uso en análisis
-        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_analisis WHERE tipoMuestra = ?");
+        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_analisis a
+        JOIN com_paquete_muestra pm ON a.paquete = pm.codigo
+        WHERE pm.tipoMuestra = ?");
         mysqli_stmt_bind_param($check2, "i", $codigo);
         mysqli_stmt_execute($check2);
         $row2 = mysqli_stmt_get_result($check2)->fetch_assoc();
@@ -82,7 +86,7 @@ try {
 
         $stmt = mysqli_prepare($conexion, "DELETE FROM com_tipo_muestra WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "i", $codigo);
-        
+
     } else {
         throw new Exception('Acción no válida.');
     }
@@ -92,7 +96,7 @@ try {
     }
 
     mysqli_commit($conexion);
-    
+
     $mensaje = '';
     switch ($action) {
         case 'create':
@@ -105,7 +109,7 @@ try {
             $mensaje = '✅ Tipo de muestra eliminado correctamente.';
             break;
     }
-    
+
     echo json_encode(['success' => true, 'message' => $mensaje]);
 
 } catch (Exception $e) {
@@ -115,4 +119,3 @@ try {
 
 mysqli_close($conexion);
 ?>
-

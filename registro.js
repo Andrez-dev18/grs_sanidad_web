@@ -657,7 +657,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let summaryHTML = `
         <h3>📋 Resumen del Envío</h3>
         <br>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 20px;">
+        <div style="font-family: Arial, sans-serif; max-width: 1800px; min-width: 1000px; padding: 10px;">
   <!-- Grupo 1 (envío) -->
   <div style="display: flex; flex-direction: column; gap: 8px;">
     <div><strong>Código de Envío:</strong> <span id="resumenCodigoEnvio"></span></div>
@@ -744,6 +744,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.getElementById("resumenCodigoEnvio").textContent =
       document.getElementById("codigoEnvio").value;
+    currentZoom = 1.0;
+    document.getElementById("summaryContent").style.transform = "scale(1)";
+    if (document.getElementById("zoomLevel")) {
+      document.getElementById("zoomLevel").textContent = "100%";
+    }
   }
   window.confirmSubmit = async function () {
     const formData = new FormData(document.getElementById("sampleForm"));

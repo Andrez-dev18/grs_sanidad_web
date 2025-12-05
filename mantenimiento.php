@@ -6,8 +6,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-include_once 'conexion_grs_joya\conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
     exit();
@@ -15,7 +15,7 @@ if (!$conexion) {
 
 $action = $_POST['action'] ?? '';
 $nombre = trim($_POST['nombre'] ?? '');
-$codigo = isset($_POST['codigo']) ? (int)$_POST['codigo'] : null;
+$codigo = isset($_POST['codigo']) ? (int) $_POST['codigo'] : null;
 
 if (empty($nombre)) {
     echo json_encode(['success' => false, 'message' => 'El nombre es obligatorio.']);
@@ -29,11 +29,13 @@ try {
         $stmt = mysqli_prepare($conexion, "INSERT INTO com_emp_trans (nombre) VALUES (?)");
         mysqli_stmt_bind_param($stmt, "s", $nombre);
     } elseif ($action === 'update') {
-        if (!$codigo) throw new Exception('Código no válido.');
+        if (!$codigo)
+            throw new Exception('Código no válido.');
         $stmt = mysqli_prepare($conexion, "UPDATE com_emp_trans SET nombre = ? WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "si", $nombre, $codigo);
     } elseif ($action === 'delete') {
-        if (!$codigo) throw new Exception('Código no válido.');
+        if (!$codigo)
+            throw new Exception('Código no válido.');
         // Verifica uso en envíos
         $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_db_muestra_cabecera WHERE empTrans = ?");
         mysqli_stmt_bind_param($check, "i", $codigo);

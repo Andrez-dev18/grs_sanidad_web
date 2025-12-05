@@ -1,18 +1,16 @@
 <?php
 session_start();
 if (empty($_SESSION['active'])) {
-    http_response_code(401);
-    exit('No autorizado');
+    header('Location: login.php');
+    exit();
 }
 
-//ruta relativa a la conexion
-include_once 'conexion_grs_joya\conexion.php';
-$conexion = conectar_sanidad();
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión.");
 }
 
-// Asegurar modo de excepciones para depuración clara
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 $codigoEnvio = $_GET['codigo'] ?? '';
@@ -21,96 +19,130 @@ if (!$codigoEnvio) {
 }
 
 // --- Cabecera ---
-$cab = mysqli_fetch_assoc(mysqli_query($conexion, "
+$queryCab = "
     SELECT
-        c.fechaEnvio,
+        c.fecEnvio AS fechaEnvio,
         c.horaEnvio,
-        c.codigoEnvio,
-        l.nombre AS laboratorio,
-        e.nombre AS empresa_transporte,
+        c.codEnvio AS codigoEnvio,
+        c.nomLab AS laboratorio,
+        c.nomEmpTrans AS empresa_transporte,
         c.usuarioRegistrador AS responsable_envio,
+        c.usuarioResponsable AS usuario_responsable,
         c.autorizadoPor
-    FROM com_db_muestra_cabecera c
-    JOIN com_laboratorio l ON c.laboratorio = l.codigo
-    JOIN com_emp_trans e ON c.empTrans = e.codigo
-    WHERE c.codigoEnvio = '" . mysqli_real_escape_string($conexion, $codigoEnvio) . "'
-"));
+    FROM com_db_solicitud_cab c
+    WHERE c.codEnvio = ?
+";
+$stmtCab = mysqli_prepare($conexion, $queryCab);
+mysqli_stmt_bind_param($stmtCab, "s", $codigoEnvio);
+mysqli_stmt_execute($stmtCab);
+$cab = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtCab));
+mysqli_stmt_close($stmtCab);
 
 if (!$cab) {
     die("Registro no encontrado.");
 }
 
-// --- Tipos de muestra ---
+// --- Tipos de muestra (para columnas) ---
 $tipos_muestra = [];
-$res_tm = mysqli_query($conexion, "SELECT nombre FROM com_tipo_muestra ORDER BY nombre");
+$res_tm = mysqli_query($conexion, "SELECT nombre FROM com_tipo_muestra ORDER BY codigo");
 while ($r = mysqli_fetch_assoc($res_tm)) {
     $tipos_muestra[] = htmlspecialchars($r['nombre']);
 }
 
-// --- Detalles ---
+// --- Detalles: traer todos los registros ---
 $detalles_raw = [];
 $res_det = mysqli_query($conexion, "
-    SELECT posicionSolicitud, fechaToma, codigoReferencia, numeroMuestras, observaciones, analisis
-    FROM com_db_muestra_detalle
-    WHERE codigoEnvio = '" . mysqli_real_escape_string($conexion, $codigoEnvio) . "'
-    ORDER BY posicionSolicitud
+    SELECT posSolicitud, fecToma, codRef, numMuestras, obs, codAnalisis
+    FROM com_db_solicitud_det
+    WHERE codEnvio = '" . mysqli_real_escape_string($conexion, $codigoEnvio) . "'
+    ORDER BY posSolicitud
 ");
 while ($row = mysqli_fetch_assoc($res_det)) {
     $detalles_raw[] = $row;
 }
 
-// Procesar detalles
-$detalles = [];
+// === AGRUPAR POR codRef ===
+$grupos = [];
 foreach ($detalles_raw as $row) {
-    // Limpiar y filtrar códigos de análisis
-    $analisis = $row['analisis'] ?? '';
-    $analisisCodigos = array_filter(array_map('trim', explode(',', $analisis)), function($v) {
-        return !empty($v);
-    });
-    $analisisNombres = [];
+    $codRef = $row['codRef'];
+    if (!isset($grupos[$codRef])) {
+        $grupos[$codRef] = [
+            'codRef' => $codRef,
+            'fecToma' => $row['fecToma'],
+            'numMuestras' => $row['numMuestras'],
+            'obs' => $row['obs'] ?? '',
+            'analisis_codigos' => [],
+            'tipo_muestra' => '-'
+        ];
+    }
+    // Acumular códigos de análisis
+    if (!empty($row['codAnalisis'])) {
+        $grupos[$codRef]['analisis_codigos'][] = $row['codAnalisis'];
+    }
+    // Si aún no tiene observación y esta no está vacía, tomarla
+    if (empty($grupos[$codRef]['obs']) && !empty($row['obs'])) {
+        $grupos[$codRef]['obs'] = $row['obs'];
+    }
+}
+
+// === Procesar cada grupo: obtener análisis, paquetes y tipo de muestra ===
+$detalles_agrupados = [];
+foreach ($grupos as $grupo) {
+    $analisisCodigos = array_unique($grupo['analisis_codigos']);
+    $analisisConPaquete = [];
     $tipo_muestra = '-';
 
     if (!empty($analisisCodigos)) {
-        // Preparar consulta con IN dinámico
         $placeholders = str_repeat('?,', count($analisisCodigos) - 1) . '?';
-        $sql = "SELECT nombre FROM com_analisis WHERE codigo IN ($placeholders)";
+        $sql = "
+            SELECT 
+                a.nombre AS analisis_nombre,
+                p.nombre AS paquete_nombre,
+                tm.nombre AS tipo_muestra_nombre
+            FROM com_analisis a
+            JOIN com_paquete_muestra p ON a.paquete = p.codigo
+            JOIN com_tipo_muestra tm ON p.tipoMuestra = tm.codigo
+            WHERE a.codigo IN ($placeholders)
+            ORDER BY p.nombre, a.nombre
+        ";
         $stmt = mysqli_prepare($conexion, $sql);
-        if ($stmt) {
-            mysqli_stmt_bind_param($stmt, str_repeat('s', count($analisisCodigos)), ...$analisisCodigos);
-            mysqli_stmt_execute($stmt);
-            $result = mysqli_stmt_get_result($stmt);
-            while ($a = mysqli_fetch_assoc($result)) {
-                $analisisNombres[] = htmlspecialchars($a['nombre']);
-            }
-            mysqli_stmt_close($stmt);
-        }
+        mysqli_stmt_bind_param($stmt, str_repeat('s', count($analisisCodigos)), ...$analisisCodigos);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
 
-        // Obtener tipo de muestra (del primer análisis)
-        $primerCodigo = reset($analisisCodigos);
-        $stmt_tm = mysqli_prepare($conexion, "SELECT tm.nombre FROM com_analisis a JOIN com_tipo_muestra tm ON a.tipoMuestra = tm.codigo WHERE a.codigo = ?");
-        if ($stmt_tm) {
-            mysqli_stmt_bind_param($stmt_tm, "s", $primerCodigo);
-            mysqli_stmt_execute($stmt_tm);
-            $tipo_row = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt_tm));
-            $tipo_muestra = htmlspecialchars($tipo_row['nombre'] ?? '-');
-            mysqli_stmt_close($stmt_tm);
+        $paquetes = [];
+        while ($a = mysqli_fetch_assoc($result)) {
+            $paquete = htmlspecialchars($a['paquete_nombre']);
+            $analisisNombre = htmlspecialchars($a['analisis_nombre']);
+            $paquetes[$paquete][] = $analisisNombre;
+            // Tomar el tipo de muestra (debería ser el mismo en todos)
+            if ($tipo_muestra === '-') {
+                $tipo_muestra = htmlspecialchars($a['tipo_muestra_nombre']);
+            }
+        }
+        mysqli_stmt_close($stmt);
+
+        // Formato: "<b>Paquete X:</b> anal1, anal2"
+        foreach ($paquetes as $paq => $analisisLista) {
+            $analisisConPaquete[] = '<b>' . $paq . ':</b> ' . implode(', ', $analisisLista);
         }
     }
 
-    // Formatear análisis: 2 por línea
+    // Formatear en líneas de hasta 2 paquetes por línea
     $analisisFormateados = [];
-    for ($i = 0; $i < count($analisisNombres); $i += 2) {
-        $linea = implode(', ', array_slice($analisisNombres, $i, 2));
+    for ($i = 0; $i < count($analisisConPaquete); $i += 2) {
+        $linea = implode(', ', array_slice($analisisConPaquete, $i, 2));
         $analisisFormateados[] = $linea;
     }
-    $row['analisis_nombres'] = implode("\n", $analisisFormateados);
-    $row['tipo_muestra'] = $tipo_muestra;
-    $detalles[] = $row;
+
+    $grupo['analisis_nombres'] = implode("\n", $analisisFormateados);
+    $grupo['tipo_muestra'] = $tipo_muestra;
+    $detalles_agrupados[] = $grupo;
 }
 
 mysqli_close($conexion);
 
-// === Generar PDF con mPDF ===
+// === Generar PDF ===
 require_once __DIR__ . '/vendor/autoload.php';
 use Mpdf\Mpdf;
 
@@ -124,7 +156,7 @@ $mpdf = new Mpdf([
     'default_font_size' => 8
 ]);
 
-// === Encabezado ===
+// Encabezado
 $logo = '';
 if (file_exists(__DIR__ . '/logo.png')) {
     $logo = '<img src="' . __DIR__ . '/logo.png" style="height: 20px; vertical-align: top;">';
@@ -144,15 +176,50 @@ $mpdf->SetHTMLHeader('
     </table>
 ');
 
-// === Contenido ===
+// Contenido
 $html = '';
 
-$html .= '<div style="font-size:10px; font-weight:bold; margin-bottom:15px;">';
-$html .= "Fecha de envío: {$cab['fechaEnvio']} - Hora: " . substr($cab['horaEnvio'], 0, 5) . '<br>';
-$html .= "Código de envío: {$codigoEnvio}<br>";
-$html .= "Laboratorio: {$cab['laboratorio']}";
-$html .= '</div>';
+// ===== CABECERA EN DOS COLUMNAS CON ALINEACIÓN DE DOS PUNTOS =====
+// ===== CABECERA EN 2 COLUMNAS CON ALINEACIÓN INTERNA (etiqueta : valor) =====
+$html .= '<table style="border-collapse: collapse; width: 100%; font-size: 10px; margin-bottom: 15px; line-height: 1.6;">';
+$html .= '<tr>';
 
+// Columna 1: Fecha de envío + Hora de envío
+$html .= '<td style="width: 50%; vertical-align: top; padding-right: 10px;">';
+$html .= '<table style="border-collapse: collapse; width: 100%;">';
+$html .= '<tr>';
+$html .= '<td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Fecha de envío</strong></td>';
+$html .= '<td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>';
+$html .= '<td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">' . htmlspecialchars($cab['fechaEnvio']) . '</td>';
+$html .= '</tr>';
+$html .= '<tr>';
+$html .= '<td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Hora de envío</strong></td>';
+$html .= '<td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>';
+$html .= '<td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">' . substr(htmlspecialchars($cab['horaEnvio']), 0, 8) . '</td>';
+$html .= '</tr>';
+$html .= '</table>';
+$html .= '</td>';
+
+// Columna 2: Código de envío + Laboratorio
+$html .= '<td style="width: 50%; vertical-align: top; padding-left: 10px;">';
+$html .= '<table style="border-collapse: collapse; width: 100%;">';
+$html .= '<tr>';
+$html .= '<td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Código de envío</strong></td>';
+$html .= '<td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>';
+$html .= '<td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">' . htmlspecialchars($cab['codigoEnvio']) . '</td>';
+$html .= '</tr>';
+$html .= '<tr>';
+$html .= '<td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Laboratorio</strong></td>';
+$html .= '<td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>';
+$html .= '<td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">' . htmlspecialchars($cab['laboratorio']) . '</td>';
+$html .= '</tr>';
+$html .= '</table>';
+$html .= '</td>';
+
+$html .= '</tr>';
+$html .= '</table>';
+
+// Tabla de detalles
 $html .= '<table style="border-collapse: collapse; width: 100%; font-size: 8px;">';
 
 // Cabecera
@@ -169,30 +236,54 @@ $html .= '<th style="border:1px solid #000; padding:4px; text-align:center; back
 $html .= '<th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">Observaciones</th>';
 $html .= '</tr></thead>';
 
-// Cuerpo
+// Cuerpo — AHORA USAMOS $detalles_agrupados
 $html .= '<tbody>';
-foreach ($detalles as $d) {
+foreach ($detalles_agrupados as $d) {
     $html .= '<tr>';
-    $html .= '<td style="border:1px solid #000; padding:3px; text-align:center; background-color:#fff;">' . htmlspecialchars($d['codigoReferencia']) . '</td>';
-    $html .= '<td style="border:1px solid #000; padding:3px; text-align:center; background-color:#fff;">' . htmlspecialchars($d['fechaToma']) . '</td>';
-    $html .= '<td style="border:1px solid #000; padding:3px; text-align:center; background-color:#fff;">' . htmlspecialchars($d['numeroMuestras']) . '</td>';
+    $html .= '<td style="border:1px solid #000; padding:3px; text-align:center;">' . htmlspecialchars($d['codRef']) . '</td>';
+    $html .= '<td style="border:1px solid #000; padding:3px; text-align:center;">' . htmlspecialchars($d['fecToma']) . '</td>';
+    $html .= '<td style="border:1px solid #000; padding:3px; text-align:center;">' . htmlspecialchars($d['numMuestras']) . '</td>';
 
     foreach ($tipos_muestra as $tm) {
         $mark = ($tm === $d['tipo_muestra']) ? 'x' : '';
-        $html .= '<td style="border:1px solid #000; padding:3px; text-align:center; background-color:#fff;">' . $mark . '</td>';
+        $html .= '<td style="border:1px solid #000; padding:3; text-align:center;">' . $mark . '</td>';
     }
 
-    $html .= '<td style="border:1px solid #000; padding:3px; vertical-align:top; white-space:pre-wrap; word-break:break-word; background-color:#fff;">' . htmlspecialchars($d['analisis_nombres']) . '</td>';
-    $html .= '<td style="border:1px solid #000; padding:3px; vertical-align:top; white-space:pre-wrap; word-break:break-word; background-color:#fff;">' . htmlspecialchars($d['observaciones'] ?? '') . '</td>';
+    $html .= '<td style="border:1px solid #000; padding:3px; vertical-align:top; white-space:pre-wrap; word-break:break-word;">' . nl2br($d['analisis_nombres']) . '</td>';
+    $html .= '<td style="border:1px solid #000; padding:3px; vertical-align:top; white-space:pre-wrap; word-break:break-word;">' . htmlspecialchars($d['obs'] ?? '') . '</td>';
     $html .= '</tr>';
 }
 $html .= '</tbody></table>';
 
-// === Pie centrado con subrayado moderado ===
+// === Pie con datos reales (campos a la izquierda, dos puntos centrados, valor subrayado, todo centrado en página) ===
+$usuarioResponsable = htmlspecialchars($cab['usuario_responsable'] ?? 'No especificado');
+$empresa = htmlspecialchars($cab['empresa_transporte'] ?? 'No especificado');
+$autorizado = htmlspecialchars($cab['autorizadoPor'] ?? 'No especificado');
+
 $html .= '<div style="margin-top:20px; font-size:10px; text-align:center;">';
-$html .= '<table width="60%" style="border-collapse:collapse; margin:0 auto;">';
-$html .= '<tr><td style="width:30%; padding:5px; text-align:right;">Empresa:</td><td style="width:70%; border-bottom:1px solid #000; padding:5px; text-align:left;">COMITÉ 4</td></tr>';
-$html .= '<tr><td style="width:30%; padding:5px; text-align:right;">Autorizado por:</td><td style="width:70%; border-bottom:1px solid #000; padding:5px; text-align:left;">Dr. Julio Alvan</td></tr>';
+$html .= '<table style="border-collapse: collapse; width: 60%; margin: 0 auto; font-size:10px; line-height:1.5;">';
+
+// Responsable de envío
+$html .= '<tr>';
+$html .= '<td style="padding: 3px 0; vertical-align: top; text-align: left; width: 40%; white-space: nowrap;"><strong>Responsable de envío</strong></td>';
+$html .= '<td style="padding: 3px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>';
+$html .= '<td style="padding: 3px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">' . $usuarioResponsable . '</td>';
+$html .= '</tr>';
+
+// Empresa
+$html .= '<tr>';
+$html .= '<td style="padding: 3px 0; vertical-align: top; text-align: left; width: 40%; white-space: nowrap;"><strong>Empresa</strong></td>';
+$html .= '<td style="padding: 3px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>';
+$html .= '<td style="padding: 3px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">' . $empresa . '</td>';
+$html .= '</tr>';
+
+// Autorizado por
+$html .= '<tr>';
+$html .= '<td style="padding: 3px 0; vertical-align: top; text-align: left; width: 40%; white-space: nowrap;"><strong>Autorizado por</strong></td>';
+$html .= '<td style="padding: 3px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>';
+$html .= '<td style="padding: 3px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">' . $autorizado . '</td>';
+$html .= '</tr>';
+
 $html .= '</table>';
 $html .= '</div>';
 

@@ -2,11 +2,12 @@
 // ---- CONFIGURACIÓN ----
 
 // Ruta a tu archivo de conexión
-include_once 'conexion_grs_joya/conexion.php';
+include_once '../conexion_grs_joya/conexion.php';
 
 // Crear conexión global
-function obtenerConexion() {
-    $conexion = conectar_sanidad();
+function obtenerConexion()
+{
+    $conexion = conectar_joya();
     if (!$conexion) {
         die("Error de conexión auditoria: " . mysqli_connect_error());
     }
@@ -17,33 +18,47 @@ function obtenerConexion() {
 //  UTILIDADES DE SISTEMA
 // ------------------------
 
-function obtenerIP() {
+function obtenerIP()
+{
     return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 }
 
-function obtenerUserAgent() {
+function obtenerUserAgent()
+{
     return $_SERVER['HTTP_USER_AGENT'] ?? 'desconocido';
 }
 
-function obtenerNavegadorOS() {
+function obtenerNavegadorOS()
+{
     $ua = obtenerUserAgent();
     $navegador = "Desconocido";
     $os = "Desconocido";
 
     // Detectar sistema operativo
-    if (preg_match('/windows/i', $ua)) $os = "Windows";
-    elseif (preg_match('/linux/i', $ua)) $os = "Linux";
-    elseif (preg_match('/macintosh|mac os x/i', $ua)) $os = "Mac OS";
-    elseif (preg_match('/android/i', $ua)) $os = "Android";
-    elseif (preg_match('/iphone|ipad/i', $ua)) $os = "iOS";
+    if (preg_match('/windows/i', $ua))
+        $os = "Windows";
+    elseif (preg_match('/linux/i', $ua))
+        $os = "Linux";
+    elseif (preg_match('/macintosh|mac os x/i', $ua))
+        $os = "Mac OS";
+    elseif (preg_match('/android/i', $ua))
+        $os = "Android";
+    elseif (preg_match('/iphone|ipad/i', $ua))
+        $os = "iOS";
 
     // Detectar navegador
-    if (preg_match('/chrome/i', $ua)) $navegador = "Chrome";
-    elseif (preg_match('/firefox/i', $ua)) $navegador = "Firefox";
-    elseif (preg_match('/safari/i', $ua)) $navegador = "Safari";
-    elseif (preg_match('/edge/i', $ua)) $navegador = "Edge";
-    elseif (preg_match('/opera|opr/i', $ua)) $navegador = "Opera";
-    elseif (preg_match('/msie|trident/i', $ua)) $navegador = "Internet Explorer";
+    if (preg_match('/chrome/i', $ua))
+        $navegador = "Chrome";
+    elseif (preg_match('/firefox/i', $ua))
+        $navegador = "Firefox";
+    elseif (preg_match('/safari/i', $ua))
+        $navegador = "Safari";
+    elseif (preg_match('/edge/i', $ua))
+        $navegador = "Edge";
+    elseif (preg_match('/opera|opr/i', $ua))
+        $navegador = "Opera";
+    elseif (preg_match('/msie|trident/i', $ua))
+        $navegador = "Internet Explorer";
 
     return [$navegador, $os];
 }
@@ -80,9 +95,20 @@ function insertarHistorial(
 
     $stmt->bind_param(
         "ssssssssssssss",
-        $cod_usuario, $nom_usuario, $accion, $tabla_afectada, $registro_id,
-        $datos_previos, $datos_nuevos, $descripcion, $ip,
-        $ubicacion, $dispositivo, $os, $navegador, $user_agent
+        $cod_usuario,
+        $nom_usuario,
+        $accion,
+        $tabla_afectada,
+        $registro_id,
+        $datos_previos,
+        $datos_nuevos,
+        $descripcion,
+        $ip,
+        $ubicacion,
+        $dispositivo,
+        $os,
+        $navegador,
+        $user_agent
     );
 
     $stmt->execute();
@@ -94,7 +120,8 @@ function insertarHistorial(
 //  FUNCIÓN ESPECIAL PARA LOGIN Y LOGOUT (GUARDA TODO)
 // -------------------------------------------------------
 
-function registrarAccionLoginLogout($accion, $cod_usuario, $nom_usuario, $ubicacion) {
+function registrarAccionLoginLogout($accion, $cod_usuario, $nom_usuario, $ubicacion)
+{
 
     $ip = obtenerIP();
     $user_agent = obtenerUserAgent();
@@ -144,7 +171,12 @@ function registrarAccionCRUD(
         $datos_previos,
         $datos_nuevos,
         $descripcion,
-        null, null, null, null, null, null // sin información del equipo
+        null,
+        null,
+        null,
+        null,
+        null,
+        null // sin información del equipo
     );
 }
 

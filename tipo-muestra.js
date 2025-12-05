@@ -40,12 +40,12 @@ function saveTipoMuestra(event) {
         return false;
     }
 
-    if (!longitud || longitud < 1 || longitud > 20) {
-        alert('⚠️ La longitud de código debe estar entre 1 y 20.');
+    if (!longitud || longitud < 1) {
+        alert('⚠️ La longitud de código debe ser mayor que 1.');
         return false;
     }
 
-    const params = { action, nombre, descripcion, longitud_codigo: longitud };
+    const params = { action, nombre, descripcion, lonCod: longitud };
     if (action === 'update') params.codigo = codigo;
 
     fetch('crud_tipo_muestra.php', {
