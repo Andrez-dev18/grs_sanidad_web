@@ -7,6 +7,7 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
+
 include_once '../conexion_grs_joya/conexion.php';
 $conexion = conectar_joya();
 if (!$conexion) {
