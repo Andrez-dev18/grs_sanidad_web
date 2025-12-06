@@ -10,8 +10,42 @@ if (empty($_SESSION['active'])) {
 include_once '../conexion_grs_joya/conexion.php';
 $conexion = conectar_joya();
 if (!$conexion) {
-    die("Error de conexión: " . mysqli_connect_error());
+    die("Error de conexión: WHERE c.estado = 'pendiente'" . mysqli_connect_error());
 }
+
+$query = "
+    SELECT 
+        d.codEnvio,
+        d.posSolicitud,
+        d.fecToma,
+        d.codRef,
+        d.numMuestras AS numeroMuestras,
+        
+        GROUP_CONCAT(d.nomAnalisis ORDER BY d.nomAnalisis SEPARATOR ', ') AS analisis,
+        
+        GROUP_CONCAT(d.codAnalisis ORDER BY d.codAnalisis SEPARATOR ',') AS analisisCodigos,
+        
+        GROUP_CONCAT(d.obs ORDER BY d.posSolicitud SEPARATOR ' | ') AS observaciones
+
+    FROM com_db_solicitud_det d
+    INNER JOIN com_db_solicitud_cab c
+           ON d.codEnvio = c.codEnvio
+    
+    GROUP BY 
+        d.codEnvio,
+        d.posSolicitud,
+        d.fecToma,
+        d.codRef,
+        d.numMuestras
+
+    ORDER BY d.codEnvio DESC,
+        d.fecToma DESC,
+        d.posSolicitud ASC;
+";
+
+$result = $conexion->query($query);
+
+
 ?>
 
 <!DOCTYPE html>
@@ -23,7 +57,7 @@ if (!$conexion) {
     <title>Dashboard - Respuesta lab</title>
 
     <!-- Tailwind CSS -->
-    <link rel="stylesheet" href="css/output.css">
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
@@ -80,91 +114,417 @@ if (!$conexion) {
 <body class="bg-gray-50">
     <div class="container mx-auto px-6 py-12">
 
+        <div class="flex flex-col h-screen bg-[#f5f6f8]">
 
-        <!-- VISTA RESPUESTA LABORATORIO -->
-        <div class="container-main">
             <!-- HEADER -->
-            <div class="header-section">
-                <h1>📨 Respuesta de Laboratorio</h1>
-                <p>Adjunte los resultados enviados por el laboratorio</p>
-            </div>
+            <header class="bg-white px-8 py-6 border-b border-[#e5e7eb]">
+                <h1 class="text-2xl font-semibold text-[#2c3e50]">🧪 Respuesta de Laboratorio</h1>
+                <p class="text-sm text-[#6c757d] mt-1">Adjunte los resultados enviados por el laboratorio</p>
+            </header>
 
-            <!-- CONTENIDO PRINCIPAL -->
-            <div class="content-wrapper">
-                <!-- SIDEBAR - ÓRDENES PENDIENTES -->
-                <div class="sidebar-panel">
-                    <div class="sidebar-header">
-                        <h3>Órdenes Pendientes</h3>
-                        <input type="text" class="search-input" placeholder="Buscar..."
-                            onkeyup="filterOrders(this.value)">
-                    </div>
-                    <div id="pendingOrdersList" class="orders-list-container">
-                        <!-- Se llena dinámicamente -->
-                    </div>
-                </div>
+            <div class="flex flex-1 overflow-hidden flex-col md:flex-row">
 
-                <!-- MAIN CONTENT AREA -->
-                <div class="main-content">
-                    <!-- EMPTY STATE -->
-                    <div id="emptyStatePanel" class="empty-state">
-                        <h3>Seleccione una orden</h3>
-                        <p>Elija una orden de la lista para adjuntar su respuesta</p>
+                <!-- SIDEBAR -->
+                <aside class="bg-white w-full md:w-[280px] border-r border-[#e5e7eb] flex flex-col">
+                    <div class="px-6 py-5 border-b border-[#e5e7eb]">
+                        <h3 class="text-base font-semibold text-[#2c3e50]">Solicitudes Pendientes</h3>
+
+                        <input
+                            id="searchInput"
+                            type="text"
+                            placeholder="Buscar..."
+                            onkeyup="filterOrders(this.value)"
+                            class="mt-3 w-full px-3 py-2 border border-[#d0d7de] rounded-md text-sm placeholder-[#a0aec0]
+                                focus:outline-none focus:ring-2 focus:ring-[#0066cc]/30">
                     </div>
 
-                    <!-- DETAIL PANEL (Hidden by default) -->
-                    <div id="responseDetailPanel" class="detail-panel hidden">
-                        <div class="detail-card">
-                            <!-- HEADER DETALLE -->
-                            <div class="detail-header">
-                                <div class="detail-header-top">
-                                    <div>
-                                        <h2 id="detailCodigo" class="detail-codigo">SAN-000000</h2>
-                                        <span class="badge badge-pending">Pendiente de Respuesta</span>
+                    <!-- Lista de solicitudes -->
+                    <div id="pendingOrdersList" class="flex-1 overflow-y-auto p-4 space-y-3">
+                        <?php
+
+                        if ($result && $result->num_rows > 0):
+                            while ($row = $result->fetch_assoc()):
+
+                        ?>
+                                <button id="item-<?php echo $row['codEnvio']; ?>"
+                                    onclick="openDetail('<?php echo $row['codEnvio']; ?>',
+                                                        '<?php echo date('d/m/Y', strtotime($row['fecToma'])) ?>',
+                                                        '<?php echo $row['posSolicitud']; ?>')"
+                                    class="w-full text-left p-3 rounded-md hover:bg-gray-50 transition border border-transparent hover:border-gray-100">
+
+                                    <div class="font-medium text-sm text-[#1f2937]">
+                                        <?php echo htmlspecialchars($row['codEnvio']); ?>
                                     </div>
-                                    <div class="detail-meta">
-                                        <span id="detailFecha">📅 01/01/2024</span>
-                                        <span id="detailLab">🔬 Laboratorio</span>
+
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        Fecha: <?php echo date('d/m/Y', strtotime($row['fecToma'])); ?>
+                                        • Ref: <?php echo htmlspecialchars($row['codRef']); ?>
+                                        • N° Solicitud: <?php echo htmlspecialchars($row['posSolicitud']); ?>
                                     </div>
+
+                                </button>
+
+                            <?php
+                            endwhile;
+                        else:
+                            ?>
+
+                            <div class="text-gray-500 text-sm">No hay solicitudes pendientes.</div>
+
+                        <?php endif; ?>
+                    </div>
+                </aside>
+
+                <!-- MAIN CONTENT -->
+                <main class="flex-1 overflow-y-auto p-6 md:p-10">
+
+                    <!-- EMPTY STATE (lo que se ve al inicio) -->
+                    <div id="emptyStatePanel" class="mx-auto max-w-6xl">
+                        <div class="border-2 border-dashed border-[#cfd8e3] rounded-md p-12 md:p-32 bg-white flex items-center justify-center">
+                            <div class="text-center">
+                                <h3 class="text-lg font-medium text-[#374151] mb-1">Seleccione una solicitud</h3>
+                                <p class="text-sm text-[#9ca3af]">Elija una orden de la lista para adjuntar su respuesta</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DETAIL PANEL (oculto por defecto) -->
+                    <div id="responseDetailPanel" class="hidden mx-auto max-w-6xl">
+                        <div class="bg-white rounded-lg shadow-sm p-8">
+
+                            <!-- Cabecera detalle -->
+                            <div class="pb-4 border-b border-[#e5e7eb] mb-6 flex flex-col md:flex-row justify-between items-start gap-4">
+                                <div>
+                                    <h2 id="detailCodigo" class="text-3xl font-bold text-[#1f2937]">SAN-000000</h2>
+                                    <span id="badgeStatus" class="inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium">Pendiente de Respuesta</span>
+                                </div>
+
+                                <div class="text-sm text-gray-600 mt-3 md:mt-0 flex flex-col gap-1">
+                                    <span id="detailFecha">📅 01/01/2024</span>
+                                    <span id="detailLab">🔬 Laboratorio</span>
                                 </div>
                             </div>
 
-                            <!-- UPLOAD SECTION -->
-                            <div class="upload-section">
-                                <h3>Adjuntar Respuesta</h3>
-                                <p>Suba el informe de resultados (PDF, Imagen, Correo)</p>
+                            <!-- analisis section -->
+                            <div>
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="text-lg font-semibold text-gray-800">Seleccionar resultados de análisis</h3>
 
-                                <!-- DROP ZONE -->
-                                <div class="drop-zone" id="dropZone"
-                                    onclick="document.getElementById('fileInput').click()">
-                                    <div class="drop-zone-icon">☁️</div>
-                                    <p>Arrastre archivos aquí o <span class="text-primary">explore</span></p>
-                                    <input type="file" id="fileInput" multiple onchange="handleFiles(this.files)">
+                                    <button id="addAnalisis"
+                                        class="px-5 py-2 rounded-md text-white bg-green-600 hover:bg-green-700">
+                                        ➕ Agregar nuevo análisis
+                                    </button>
                                 </div>
 
-                                <!-- FILE PREVIEW -->
-                                <div id="filePreviewList" class="file-preview-list">
-                                    <!-- Archivos adjuntos -->
-                                </div>
+                                <div id="analisisContainer" class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4"></div>
 
-                                <!-- COMMENTS -->
-                                <div class="form-group">
-                                    <label for="responseComments">Comentarios Adicionales</label>
-                                    <textarea id="responseComments" rows="3"
-                                        placeholder="Observaciones sobre los resultados..."></textarea>
-                                </div>
 
-                                <!-- ACTION BUTTONS -->
-                                <div class="action-buttons">
-                                    <button class="btn btn-secondary" onclick="clearSelection()">Cancelar</button>
-                                    <button class="btn btn-primary" onclick="saveResponse()">💾 Guardar
-                                        Respuesta</button>
+                                <!-- Botones -->
+                                <div class="mt-6 flex justify-end gap-3">
+                                    <button onclick="closeDetail()" class="px-5 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100">Cancelar</button>
+                                    <button onclick="guardarResultados()" class="px-5 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700">💾 Guardar Respuesta</button>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+
+                </main>
             </div>
         </div>
+
+
+        <!-- Modal Selección Múltiple de Análisis -->
+        <div id="modalAnalisis" class="fixed inset-0 bg-black bg-opacity-40 hidden flex justify-center items-center">
+            <div class="bg-white rounded-lg p-6 w-[950px] shadow-lg max-h-[85vh] overflow-y-auto relative">
+
+                <!-- Botón X para cerrar -->
+                <button onclick="cerrarModalAnalisis()"
+                    class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold">
+                    ✕
+                </button>
+
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Agregar análisis</h2>
+
+                <div id="listaAnalisis" class="space-y-3">
+                    <!-- Aquí se cargarán los grupos con checkboxes -->
+                </div>
+
+                <div class="flex justify-end mt-6 gap-3">
+                    <button onclick="cerrarModalAnalisis()" class="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
+                    <button onclick="confirmarAnalisisMultiples()"
+                        class="px-4 py-2 bg-blue-600 text-white rounded">
+                        Agregar Seleccionados
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+
+
+
+
+        <!-- JS funcional para el dropzone y toggles -->
+        <script>
+            async function openDetail(code, fechaToma, posicion) {
+
+                document.getElementById('emptyStatePanel').classList.add('hidden');
+                document.getElementById('responseDetailPanel').classList.remove('hidden');
+                document.getElementById('detailCodigo').textContent = code;
+
+                document.getElementById('detailFecha').textContent = fechaToma;
+
+                const cont = document.getElementById("analisisContainer");
+                cont.innerHTML = "<div class='text-gray-500 text-sm'>Cargando análisis...</div>";
+
+                let res = await fetch("getAnalisisDetalle.php?codigoEnvio=" + code + "&posicion=" + posicion);
+                let data = await res.json();
+
+                cont.innerHTML = "";
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    cont.innerHTML = "<div class='text-gray-500 text-sm'>No hay análisis disponibles.</div>";
+                    return;
+                }
+
+                data.forEach(item => {
+                    crearBloqueAnalisis(item.analisisCodigo, item.nombre, item.resultados);
+                });
+            }
+
+            function closeDetail() {
+                document.getElementById('responseDetailPanel').classList.add('hidden');
+                document.getElementById('emptyStatePanel').classList.remove('hidden');
+            }
+
+            async function guardarResultados() {
+                const code = document.getElementById("detailCodigo").textContent;
+                const cont = document.getElementById("analisisContainer");
+
+                let datos = [];
+
+                cont.querySelectorAll("select").forEach(sel => {
+
+                    let codigoAnalisis = sel.dataset.codigo;
+                    let nombre = sel.dataset.nombre;
+                    let resultado = sel.value;
+
+                    // 🔥 OBTENER EL COMMENT DEL MISMO BLOQUE DEL SELECT
+                    let block = sel.closest(".bloque-analisis");
+                    let observaciones = block.querySelector("textarea").value;
+
+                    datos.push({
+                        analisisCodigo: codigoAnalisis,
+                        analisisNombre: nombre,
+                        resultado: resultado,
+                        observaciones: observaciones
+                    });
+                });
+
+                let res = await fetch("guardarResultAnalisis.php", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        codigoEnvio: code,
+                        analisis: datos
+                    })
+                });
+
+                let r = await res.json();
+
+                if (r.success) {
+                    closeDetail();
+                    alert("Resultados guardados correctamente");
+                } else {
+                    alert("Error al guardar: " + r.error);
+                }
+            }
+        </script>
+
+        <script>
+            document.getElementById("addAnalisis").addEventListener("click", abrirModalAnalisis);
+
+            async function abrirModalAnalisis() {
+                const modal = document.getElementById("modalAnalisis");
+                modal.classList.remove("hidden");
+
+                const cont = document.getElementById("listaAnalisis");
+                cont.innerHTML = "<div class='text-gray-500 text-sm'>Cargando...</div>";
+
+                try {
+                    const resp = await fetch("getAnalisisLista.php", {
+                        cache: "no-store"
+                    });
+                    if (!resp.ok) throw new Error("Error en la petición");
+
+                    const lista = await resp.json();
+                    cont.innerHTML = "";
+
+                    // lista viene así:
+                    // { "Aves vivas": [ {codigo, nombre},... ], "Sueros": [...], ... }
+
+                    Object.keys(lista).forEach(tipo => {
+
+                        // Encabezado del grupo
+                        const titulo = document.createElement("h3");
+                        titulo.className = "text-md font-semibold text-gray-800 mt-4 mb-2";
+                        titulo.textContent = "📌 " + tipo;
+                        cont.appendChild(titulo);
+
+                        // Contenedor grid horizontal
+                        const grid = document.createElement("div");
+                        grid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-3";
+
+                        lista[tipo].forEach(a => {
+                            const item = document.createElement("label");
+                            item.className =
+                                "flex items-center gap-2 p-2 rounded-lg border border-gray-200 shadow-sm bg-gray-50 hover:bg-gray-100 cursor-pointer transition";
+
+                            item.innerHTML = `
+                                        <input type="checkbox" class="chkAnalisis h-4 w-4" 
+                                            value="${a.codigo}" 
+                                            data-nombre="${escapeHtml(a.nombre)}">
+
+                                        <span class="truncate text-gray-800 text-sm font-medium">
+                                            ${escapeHtml(a.nombre)} ${a.codigo ? `(${a.codigo})` : ""}
+                                        </span>
+                                    `;
+
+
+                            grid.appendChild(item);
+                        });
+
+                        cont.appendChild(grid);
+                    });
+
+                } catch (err) {
+                    console.error(err);
+                    cont.innerHTML = "<div class='text-red-500 text-sm'>Error cargando análisis.</div>";
+                }
+
+                function escapeHtml(str) {
+                    return String(str).replace(/[&<>"']/g, s => ({
+                        "&": "&amp;",
+                        "<": "&lt;",
+                        ">": "&gt;",
+                        '"': "&quot;",
+                        "'": "&#39;"
+                    } [s]));
+                }
+            }
+
+
+
+
+            function cerrarModalAnalisis() {
+                document.getElementById("modalAnalisis").classList.add("hidden");
+            }
+
+            async function confirmarAnalisisMultiples() {
+
+                const seleccionados = [...document.querySelectorAll(".chkAnalisis:checked")];
+
+                if (seleccionados.length === 0) {
+                    cerrarModalAnalisis();
+                    return;
+                }
+
+                for (let chk of seleccionados) {
+
+                    let codigo = chk.value;
+                    let nombre = chk.dataset.nombre;
+
+                    let res = await fetch("getTiposResultado.php?codigoAnalisis=" + codigo);
+                    let resultados = await res.json();
+
+                    crearBloqueAnalisis(codigo, nombre, resultados, true);
+                }
+
+                cerrarModalAnalisis();
+            }
+
+
+            function crearBloqueAnalisis(codigo, nombre, resultados, esManual = false) {
+
+                const cont = document.getElementById("analisisContainer");
+
+                let block = document.createElement("div");
+                block.className = "bloque-analisis relative bg-white shadow-sm border rounded-xl p-3";
+
+                // --- Botón para eliminar (solo manuales) ---
+                if (esManual) {
+                    let removeBtn = document.createElement("button");
+                    removeBtn.innerHTML = "x";
+                    removeBtn.className =
+                        "absolute top-2 right-2 text-gray-500 hover:text-red-600 px-2 py-1";
+                    removeBtn.title = "Eliminar análisis";
+
+                    // eliminar bloque
+                    removeBtn.onclick = () => {
+                        block.remove();
+                    };
+
+                    block.appendChild(removeBtn);
+                }
+
+                // --- Título ---
+                let title = document.createElement("div");
+                title.className = "text-[13px] font-semibold text-gray-700 mb-2";
+                title.textContent = `${nombre} (${codigo})`;
+
+                // --- Select ---
+                let select = document.createElement("select");
+                select.className =
+                    "w-full px-2 py-2 border border-gray-300 text-sm rounded-md focus:ring-2 focus:ring-blue-300";
+                select.name = "resultado_" + codigo;
+                select.dataset.nombre = nombre;
+                select.dataset.codigo = codigo;
+
+                // Default option
+                select.innerHTML = `<option value="" selected disabled>Seleccionar resultado</option>`;
+
+                // 👉 Si NO hay resultados, agregar "Sin resultados"
+                if (!resultados || resultados.length === 0) {
+                    let opt = document.createElement("option");
+                    opt.value = "";
+                    opt.textContent = "Sin resultados";
+                    opt.disabled = true;
+                    select.appendChild(opt);
+
+                    // Opcional: deshabilitar el select para que no puedan elegir nada
+                    // select.disabled = true;
+                } else {
+                    resultados.forEach(r => {
+                        let opt = document.createElement("option");
+                        opt.value = r;
+                        opt.textContent = r;
+                        select.appendChild(opt);
+                    });
+                }
+
+                resultados.forEach(r => {
+                    let opt = document.createElement("option");
+                    opt.value = r;
+                    opt.textContent = r;
+                    select.appendChild(opt);
+                });
+
+                // --- Textarea ---
+                let textarea = document.createElement("textarea");
+                textarea.placeholder = "Observaciones...";
+                textarea.className =
+                    "w-full mt-2 p-2 border rounded-md text-sm h-20 resize-none focus:ring-2 focus:ring-blue-300";
+                textarea.name = "comentario_" + codigo;
+
+                block.appendChild(title);
+                block.appendChild(select);
+                block.appendChild(textarea);
+
+                cont.appendChild(block);
+            }
+        </script>
 
 
 
