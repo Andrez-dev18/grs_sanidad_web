@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 
@@ -22,8 +21,8 @@
                 <h1>SANIDAD</h1>
 
             </div>
-          
-           <form id="loginForm" method="POST">
+
+            <form id="loginForm" method="POST">
                 <div class="form-group">
                     <label>Usuario</label>
                     <div class="input-wrapper">
@@ -56,7 +55,8 @@
 
                 <button type="submit" class="btn-login">Iniciar Sesión</button>
             </form>
-            <div id="alertContainer" style="margin-bottom: 15px; color: red; text-align: center; font-weight: bold; font-size: 14px;"></div>
+            <div id="alertContainer"
+                style="margin-bottom: 15px; color: red; text-align: center; font-weight: bold; font-size: 14px;"></div>
         </div>
     </div>
 
@@ -93,7 +93,7 @@
 
                 if (result.success) {
                     // Redirección en caso de éxito
-                    window.location.href = 'principal.php';
+                    window.location.href = 'index.php';
                 } else {
                     // Muestra el mensaje de error
                     mostrarAlerta('<div class="alert alert-danger">' + result.message + '</div>');

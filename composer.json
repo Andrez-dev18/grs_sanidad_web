@@ -1,5 +1,17 @@
 {
+    "name": "sistemaslap5/grs_sanidad_web_2",
+    "autoload": {
+        "psr-4": {
+            "Sistemaslap5\\GrsSanidadWeb2\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "fenyx144",
+            "email": "diego.rivas.revilla@ucsp.edu.pe"
+        }
+    ],
     "require": {
-        "mpdf/mpdf": "7.0"
+        "mpdf/mpdf": "8.0"
     }
 }

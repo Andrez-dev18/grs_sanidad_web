@@ -4,13 +4,21 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit760755971400c703d8714e36e2136031
+class ComposerStaticInit3629ccdb19ab6e7be4c92cf659b2c8f2
 {
     public static $files = array (
-        '5255c38a0faeba867671b61dfda6d864' => __DIR__ . '/..' . '/paragonie/random_compat/lib/random.php',
+        '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
     );
 
     public static $prefixLengthsPsr4 = array (
+        's' => 
+        array (
+            'setasign\\Fpdi\\' => 14,
+        ),
+        'S' => 
+        array (
+            'Sistemaslap5\\GrsSanidadWeb2\\' => 28,
+        ),
         'P' => 
         array (
             'Psr\\Log\\' => 8,
@@ -19,9 +27,21 @@ class ComposerStaticInit760755971400c703d8714e36e2136031
         array (
             'Mpdf\\' => 5,
         ),
+        'D' => 
+        array (
+            'DeepCopy\\' => 9,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
+        'setasign\\Fpdi\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/setasign/fpdi/src',
+        ),
+        'Sistemaslap5\\GrsSanidadWeb2\\' => 
+        array (
+            0 => __DIR__ . '/../..' . '/src',
+        ),
         'Psr\\Log\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/log/Psr/Log',
@@ -30,25 +50,22 @@ class ComposerStaticInit760755971400c703d8714e36e2136031
         array (
             0 => __DIR__ . '/..' . '/mpdf/mpdf/src',
         ),
+        'DeepCopy\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy',
+        ),
     );
 
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
-        'FPDF_TPL' => __DIR__ . '/..' . '/setasign/fpdi/fpdf_tpl.php',
-        'FPDI' => __DIR__ . '/..' . '/setasign/fpdi/fpdi.php',
-        'FilterASCII85' => __DIR__ . '/..' . '/setasign/fpdi/filters/FilterASCII85.php',
-        'FilterASCIIHexDecode' => __DIR__ . '/..' . '/setasign/fpdi/filters/FilterASCIIHexDecode.php',
-        'FilterLZW' => __DIR__ . '/..' . '/setasign/fpdi/filters/FilterLZW.php',
-        'fpdi_pdf_parser' => __DIR__ . '/..' . '/setasign/fpdi/fpdi_pdf_parser.php',
-        'pdf_context' => __DIR__ . '/..' . '/setasign/fpdi/pdf_context.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit760755971400c703d8714e36e2136031::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit760755971400c703d8714e36e2136031::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit760755971400c703d8714e36e2136031::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit3629ccdb19ab6e7be4c92cf659b2c8f2::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit3629ccdb19ab6e7be4c92cf659b2c8f2::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit3629ccdb19ab6e7be4c92cf659b2c8f2::$classMap;
 
         }, null, ClassLoader::class);
     }
