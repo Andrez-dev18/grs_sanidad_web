@@ -233,7 +233,7 @@ if (!$conexion) {
                                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer">
                                                 <option value="">Seleccionar...</option>
                                                 <?php
-                                                $query = "SELECT codigo, nombre FROM com_laboratorio ORDER BY nombre";
+                                                $query = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre";
                                                 $result = mysqli_query($conexion, $query);
                                                 if ($result && mysqli_num_rows($result) > 0) {
                                                     while ($row = mysqli_fetch_assoc($result)) {
@@ -266,7 +266,7 @@ if (!$conexion) {
                                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer">
                                                 <option value="">Seleccionar...</option>
                                                 <?php
-                                                $query = "SELECT codigo, nombre FROM com_emp_trans ORDER BY nombre";
+                                                $query = "SELECT codigo, nombre FROM san_dim_emptrans ORDER BY nombre";
                                                 $result = mysqli_query($conexion, $query);
                                                 if ($result && mysqli_num_rows($result) > 0) {
                                                     while ($row = mysqli_fetch_assoc($result)) {

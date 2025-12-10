@@ -37,47 +37,52 @@ try {
 
     function generarCodigoEnvio($conexion)
     {
-        mysqli_autocommit($conexion, false);
-        mysqli_begin_transaction($conexion);
+        // Bloqueamos la tabla para evitar duplicados
+        mysqli_query($conexion, "LOCK TABLES san_fact_solicitud_cab WRITE");
 
         try {
-            $anio_actual = date('y');
+            $anio_actual = date('y'); // "25" para 2025
 
-            // Bloquear y leer el contador
-            $res = mysqli_query($conexion, "SELECT ultimo_numero, anio FROM com_contador_codigo WHERE id = 1 FOR UPDATE");
+            // Obtener el último código generado
+            $q = "
+            SELECT codEnvio
+            FROM san_fact_solicitud_cab
+            WHERE codEnvio LIKE 'SAN-0{$anio_actual}%'
+            ORDER BY codEnvio DESC
+            LIMIT 1
+        ";
 
-            if (!$res || mysqli_num_rows($res) === 0) {
-                // Inicializar
-                mysqli_query($conexion, "INSERT INTO com_contador_codigo (id, ultimo_numero, anio) VALUES (1, 0, '$anio_actual')");
-                $ultimo_numero = 0;
-                $anio_db = $anio_actual;
-            } else {
+            $res = mysqli_query($conexion, $q);
+
+            if ($res && mysqli_num_rows($res) > 0) {
                 $row = mysqli_fetch_assoc($res);
-                $ultimo_numero = (int) $row['ultimo_numero'];
-                $anio_db = $row['anio'];
-            }
+                $ultimo = $row['codEnvio'];   // Ej. SAN-0250002
 
-            if ($anio_db !== $anio_actual) {
-                $nuevo_numero = 1;
-                mysqli_query($conexion, "UPDATE com_contador_codigo SET ultimo_numero = 1, anio = '$anio_actual' WHERE id = 1");
+                // Extraemos el número final
+                $numero = intval(substr($ultimo, -4)); // 0002 → 2
+                $nuevo_numero = $numero + 1;
             } else {
-                $nuevo_numero = $ultimo_numero + 1;
-                mysqli_query($conexion, "UPDATE com_contador_codigo SET ultimo_numero = $nuevo_numero WHERE id = 1");
+                // Si no hay registros este año, empezamos desde 1
+                $nuevo_numero = 1;
             }
 
+            // Construimos el nuevo código
             $codigo = "SAN-0{$anio_actual}" . str_pad($nuevo_numero, 4, '0', STR_PAD_LEFT);
 
-            mysqli_commit($conexion);
-            mysqli_autocommit($conexion, true);
+            // IMPORTANTE: liberar tabla
+            mysqli_query($conexion, "UNLOCK TABLES");
 
             return $codigo;
-
         } catch (Exception $e) {
-            mysqli_rollback($conexion);
-            mysqli_autocommit($conexion, true);
-            throw new Exception("Error al generar el código de envío: " . $e->getMessage());
+
+            mysqli_query($conexion, "UNLOCK TABLES");
+            throw new Exception("Error generando código: " . $e->getMessage());
         }
     }
+
+
+
+
     function generar_uuid_v4()
     {
         return sprintf(
@@ -105,7 +110,7 @@ try {
     $codigoEnvio = generarCodigoEnvio($conexion);
 
 
-    $stmt = mysqli_prepare($conexion, "SELECT nombre FROM com_laboratorio WHERE codigo = ?");
+    $stmt = mysqli_prepare($conexion, "SELECT nombre FROM san_dim_laboratorio WHERE codigo = ?");
     mysqli_stmt_bind_param($stmt, "s", $codLab);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
@@ -116,7 +121,7 @@ try {
     }
     $nomLab = $laboratorio['nombre'];
 
-    $stmt = mysqli_prepare($conexion, "SELECT nombre FROM com_emp_trans WHERE codigo = ?");
+    $stmt = mysqli_prepare($conexion, "SELECT nombre FROM san_dim_emptrans WHERE codigo = ?");
 
 
     mysqli_stmt_bind_param($stmt, "s", $codEmpTrans);
@@ -130,7 +135,7 @@ try {
     }
     $nomEmpTrans = $empTrans['nombre'];
 
-    $queryCabecera = "INSERT INTO com_db_solicitud_cab (
+    $queryCabecera = "INSERT INTO san_fact_solicitud_cab (
             codEnvio, fecEnvio, horaEnvio, codLab, nomLab, codEmpTrans, nomEmpTrans, 
             usuarioRegistrador, usuarioResponsable, autorizadoPor, fechaHoraRegistro
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
@@ -164,7 +169,7 @@ try {
         $analisisSeleccionados = $_POST["analisis_{$i}"] ?? [];
 
 
-        $stmt = mysqli_prepare($conexion, "SELECT nombre FROM com_tipo_muestra WHERE codigo = ?");
+        $stmt = mysqli_prepare($conexion, "SELECT nombre FROM san_dim_tipo_muestra WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "s", $codTipoMuestra);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
@@ -172,7 +177,7 @@ try {
         $nomTipoMuestra = $tipoMuestra['nombre'];
 
         if (!empty($analisisSeleccionados)) {
-            $queryDetalle = "INSERT INTO com_db_solicitud_det (
+            $queryDetalle = "INSERT INTO san_dim_solicitud_det (
                     codEnvio, posSolicitud, fecToma, numMuestras, codMuestra, nomMuestra, codAnalisis, nomAnalisis, codRef, obs, id
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmtDetalle = mysqli_prepare($conexion, $queryDetalle);
@@ -181,7 +186,7 @@ try {
             foreach ($analisisSeleccionados as $idAnalisis) {
                 $uuid = generar_uuid_v4();
 
-                $stmtAnalisis = mysqli_prepare($conexion, "SELECT nombre FROM com_analisis WHERE codigo = ?");
+                $stmtAnalisis = mysqli_prepare($conexion, "SELECT nombre FROM san_dim_analisis WHERE codigo = ?");
                 mysqli_stmt_bind_param($stmtAnalisis, "s", $idAnalisis);
                 mysqli_stmt_execute($stmtAnalisis);
                 $result = mysqli_stmt_get_result($stmtAnalisis);
@@ -207,9 +212,7 @@ try {
                 );
 
                 mysqli_stmt_execute($stmtDetalle);
-
             }
-
         }
     }
 
@@ -222,7 +225,6 @@ try {
         'message' => 'Registro guardado exitosamente',
         'codigoEnvio' => $codigoEnvio
     ]);
-
 } catch (Exception $e) {
 
     mysqli_rollback($conexion);
@@ -231,4 +233,3 @@ try {
 }
 
 mysqli_close($conexion);
-?>
