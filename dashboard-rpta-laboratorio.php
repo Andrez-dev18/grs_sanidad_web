@@ -11,7 +11,7 @@ if (empty($_SESSION['active'])) {
 include_once '../conexion_grs_joya/conexion.php';
 $conexion = conectar_joya();
 if (!$conexion) {
-    die("Error de conexión: WHERE c.estado = 'pendiente'" . mysqli_connect_error());
+    die("Error de conexión: " . mysqli_connect_error());
 }
 
 $query = "
@@ -31,7 +31,9 @@ $query = "
     FROM com_db_solicitud_det d
     INNER JOIN com_db_solicitud_cab c
            ON d.codEnvio = c.codEnvio
-    
+            
+    WHERE d.estado = 'pendiente'
+
     GROUP BY 
         d.codEnvio,
         d.posSolicitud,
@@ -267,11 +269,13 @@ $result = $conexion->query($query);
 
         <!-- JS funcional para el dropzone y toggles -->
         <script>
+            let currentPosition = null;
             async function openDetail(code, fechaToma, posicion) {
 
                 document.getElementById('emptyStatePanel').classList.add('hidden');
                 document.getElementById('responseDetailPanel').classList.remove('hidden');
                 document.getElementById('detailCodigo').textContent = code;
+                currentPosition = posicion;
 
                 document.getElementById('detailFecha').textContent = fechaToma;
 
@@ -329,6 +333,7 @@ $result = $conexion->query($query);
                     },
                     body: JSON.stringify({
                         codigoEnvio: code,
+                        posicion: currentPosition,
                         analisis: datos
                     })
                 });
@@ -336,7 +341,21 @@ $result = $conexion->query($query);
                 let r = await res.json();
 
                 if (r.success) {
+                    // 🔥 1. Cerrar panel detalle
                     closeDetail();
+
+                    // 🔥 2. Remover la tarjeta del sidebar
+                    const item = document.getElementById("item-" + code);
+                    if (item) item.remove();
+
+                    // 🔥 3. Limpiar contenedor
+                    document.getElementById("analisisContainer").innerHTML = "";
+
+                    // 🔥 4. Si ya no quedan pendientes, mostrar mensaje
+                    const list = document.getElementById("pendingOrdersList");
+                    if (list.children.length === 0) {
+                        list.innerHTML = `<div class="text-gray-500 text-sm">No hay solicitudes pendientes.</div>`;
+                    }
                     alert("Resultados guardados correctamente");
                 } else {
                     alert("Error al guardar: " + r.error);
@@ -504,13 +523,6 @@ $result = $conexion->query($query);
                         select.appendChild(opt);
                     });
                 }
-
-                resultados.forEach(r => {
-                    let opt = document.createElement("option");
-                    opt.value = r;
-                    opt.textContent = r;
-                    select.appendChild(opt);
-                });
 
                 // --- Textarea ---
                 let textarea = document.createElement("textarea");

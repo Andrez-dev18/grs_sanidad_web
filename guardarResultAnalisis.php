@@ -9,35 +9,35 @@ $input = json_decode(file_get_contents("php://input"), true);
 
 $codigoEnvio = $input["codigoEnvio"] ?? "";
 $analisis = $input["analisis"] ?? [];
+$pos = $input["posicion"] ?? ""; // ← La posición enviada por el front
 
-if ($codigoEnvio == "" || empty($analisis)) {
+if ($codigoEnvio == "" || empty($analisis) || $pos == "") {
     echo json_encode(["error" => "Datos incompletos"]);
     exit;
 }
 
+// Obtener info base correctamente usando la posición enviada
 $q = "
     SELECT 
-        posSolicitud,
         codRef,
         fecToma
     FROM com_db_solicitud_det
     WHERE codEnvio = '$codigoEnvio'
+      AND posSolicitud = '$pos'
     LIMIT 1
 ";
 
 $res = $conn->query($q);
 
 if (!$res || $res->num_rows == 0) {
-    echo json_encode(["error" => "No existe detalle para este códigoEnvio"]);
+    echo json_encode(["error" => "No existe detalle para este códigoEnvio + posición"]);
     exit;
 }
 
 $base = $res->fetch_assoc();
 
-$pos = $base["posSolicitud"];
 $ref = $base["codRef"];
 $fecha = $base["fecToma"];
-
 
 foreach ($analisis as $a) {
 
@@ -45,23 +45,49 @@ foreach ($analisis as $a) {
     $nom = $conn->real_escape_string($a["analisisNombre"]);
     $resul = $conn->real_escape_string($a["resultado"]);
 
-    // observaciones opcional
+    // Observación opcional
     $obs = isset($a["observaciones"]) && trim($a["observaciones"]) !== ""
         ? $conn->real_escape_string($a["observaciones"])
         : NULL;
 
+    // Insertar resultado
     $sql = "
         INSERT INTO com_resultado_analisis 
         (codEnvio, posSolicitud, codRef, fecToma, analisis_codigo, analisis_nombre, resultado, obs)
         VALUES 
-        ('$codigoEnvio', '$pos', '$ref', '$fecha', '$cod', '$nom', '$resul', " . 
+        ('$codigoEnvio', '$pos', '$ref', '$fecha', '$cod', '$nom', '$resul', " .
         ($obs === NULL ? "NULL" : "'$obs'") . "
         )
     ";
-
     $conn->query($sql);
+
+    // Actualizar estado del análisis
+    $conn->query("
+        UPDATE com_db_solicitud_det 
+        SET estado = 'completado'
+        WHERE codEnvio = '$codigoEnvio'
+          AND posSolicitud = '$pos'
+          AND codAnalisis = '$cod'
+    ");
 }
-//actualizar estado de cabecera
-//$conn->query("UPDATE com_db_muestra_cabecera SET estado = 'completado' WHERE codigoEnvio = '$codigoEnvio'");
+
+// Verificar si quedan pendientes
+$check = $conn->query("
+    SELECT COUNT(*) AS pendientes
+    FROM com_db_solicitud_det
+    WHERE codEnvio = '$codigoEnvio'
+      AND estado = 'pendiente'
+");
+
+$row = $check->fetch_assoc();
+
+// Si no quedan pendientes → completar cabecera
+if ($row["pendientes"] == 0) {
+    $conn->query("
+        UPDATE com_db_solicitud_cab
+        SET estado = 'completado'
+        WHERE codEnvio = '$codigoEnvio'
+    ");
+}
 
 echo json_encode(["success" => true]);
