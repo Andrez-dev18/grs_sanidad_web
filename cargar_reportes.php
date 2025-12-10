@@ -8,7 +8,7 @@ if (empty($_SESSION['active'])) {
 include_once '../conexion_grs_joya/conexion.php';
 $conexion = conectar_joya();
 if (!$conexion) {
-    echo '<div style="text-align:center; padding:20px; color:red;">Error de conexión.</div>';
+    echo '<div class="text-center py-5 text-red-600">Error de conexión.</div>';
     exit;
 }
 
@@ -27,7 +27,7 @@ if ($busqueda !== '') {
     $params[] = "%$busqueda%";
 }
 
-// Contar total (solo en primera página)
+// Contar total (solo cuando se pide)
 $total = false;
 if (isset($_GET['get_total'])) {
     $sqlTotal = "SELECT COUNT(*) AS total FROM com_db_solicitud_cab c " . $condicion;
@@ -41,7 +41,7 @@ if (isset($_GET['get_total'])) {
     mysqli_stmt_close($stmt);
 }
 
-// Consulta: solo campos de la cabecera
+// Consulta de registros
 $sql = "
     SELECT 
         c.codEnvio,
@@ -80,32 +80,67 @@ $result = mysqli_stmt_get_result($stmt);
             'Autorizado por' => $row['autorizadoPor'] ?? '–',
         ];
         ?>
-        <div class="report-card" data-codigo="<?php echo htmlspecialchars($row['codEnvio']); ?>">
-            <div class="report-cabecera-resumen"
-                style="font-family: ui-monospace, monospace; font-size: 0.875rem; line-height: 1.4; margin-bottom: 12px;">
-                <?php foreach ($campos as $label => $valor): ?>
-                    <div style="display: flex; margin-bottom: 3px;">
-                        <span style="font-weight: bold; min-width: 190px;"><?php echo htmlspecialchars($label); ?>:</span>
-                        <span><?php echo htmlspecialchars($valor ?? '–'); ?></span>
+        <div
+            class="report-card bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow mb-6">
+
+            <!-- Campos en pares -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mb-6 text-sm">
+                <?php
+                $campos = [
+                    'Código de Envío' => $row['codEnvio'],
+                    'Fecha de Envío' => $row['fecEnvio'],
+                    'Hora de Envío' => substr($row['horaEnvio'], 0, 5),
+                    'Laboratorio' => $row['nomLab'],
+                    'Empresa de Transporte' => $row['nomEmpTrans'] ?? '–',
+                    'Usuario Registrador' => $row['usuarioRegistrador'] ?? '–',
+                    'Usuario Responsable' => $row['usuarioResponsable'] ?? '–',
+                    'Autorizado por' => $row['autorizadoPor'] ?? '–',
+                ];
+
+                $campoArray = array_chunk(array_map(
+                    function ($label, $valor) {
+                        return  [
+                        'label' => htmlspecialchars($label),
+                        'value' => htmlspecialchars($valor ?? '–')
+                        ];
+                    },
+                    array_keys($campos),
+                    array_values($campos)
+                ), 2);
+
+                foreach ($campoArray as $par): ?>
+                    <div class="flex flex-col">
+                        <span class="font-medium text-gray-700"><?= $par[0]['label'] ?>:</span>
+                        <span class="text-gray-900"><?= $par[0]['value'] ?></span>
                     </div>
+                    <?php if (isset($par[1])): ?>
+                        <div class="flex flex-col">
+                            <span class="font-medium text-gray-700"><?= $par[1]['label'] ?>:</span>
+                            <span class="text-gray-900"><?= $par[1]['value'] ?></span>
+                        </div>
+                    <?php else: ?>
+                        <div></div> <!-- Espacio vacío para mantener el grid balanceado -->
+                    <?php endif; ?>
                 <?php endforeach; ?>
             </div>
-            <div class="report-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <button class="btn-download-pdf"
-                    onclick="window.open('generar_pdf.php?codigo=<?php echo urlencode($row['codEnvio']); ?>', '_blank')"
-                    style="background-color: #dc2626; color: white; font-weight: bold; padding: 0.375rem 0.5rem; border-radius: 0.375rem; border: none; cursor: pointer; font-size: 0.875rem;">
+
+            <!-- Botones alineados en fila, ocupando todo el ancho -->
+            <div class="flex flex-col sm:flex-row gap-3 w-full">
+                <button onclick="window.open('generar_pdf.php?codigo=<?php echo urlencode($row['codEnvio']); ?>', '_blank')"
+                    class="flex-1 px-6 py-2.5 min-w-[140px] bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-medium rounded-lg transition duration-200 inline-flex items-center justify-center gap-2">
                     📄 PDF Tabla
                 </button>
-                <button class="btn-download-pdf"
+                <button
                     onclick="window.open('generar_pdf_resumen.php?codigo=<?php echo urlencode($row['codEnvio']); ?>', '_blank')"
-                    style="background-color: #dc2626; color: white; font-weight: bold; padding: 0.375rem 0.5rem; border-radius: 0.375rem; border: none; cursor: pointer; font-size: 0.875rem;">
+                    class="flex-1 px-6 py-2.5 min-w-[140px] bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-medium rounded-lg transition duration-200 inline-flex items-center justify-center gap-2">
                     📋 PDF Resumen
                 </button>
             </div>
+
         </div>
     <?php endwhile; ?>
 <?php else: ?>
-    <div style="text-align: center; padding: 40px; color: #718096;">
+    <div class="text-center py-10 text-gray-500 text-sm">
         <p>No se encontraron registros.</p>
     </div>
 <?php endif; ?>

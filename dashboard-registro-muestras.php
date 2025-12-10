@@ -418,32 +418,34 @@ if (!$conexion) {
             </div>
         </div>
 
-        <!-- Modal de confirmación -->
-        <!-- Modal de confirmación mejorado -->
-        <!-- Modal de confirmación mejorado -->
         <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-lg shadow-lg w-full max-w-6xl max-h-[90vh] flex flex-col">
+            <div class="bg-white rounded-2xl shadow-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
                 <!-- Header -->
-                <div class="flex justify-between items-center px-6 py-4 border-b">
-                    <h2 class="text-xl font-semibold">📋 Confirmar Envío de Muestras</h2>
-                    <button class="text-gray-500 text-2xl hover:text-gray-700"
+                <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-xl font-bold text-gray-800">📋 Confirmar Envío de Muestras</h2>
+                    <button class="text-gray-500 text-2xl hover:text-gray-700 transition"
                         onclick="closeConfirmModal()">&times;</button>
                 </div>
-                <!-- Body con scroll interno y zoom opcional -->
-                <div class="overflow-hidden flex-1 p-4">
-                    <div id="summaryContent" style="overflow: auto; max-height: 60vh; transform-origin: top left;">
+
+                <!-- Body con scroll interno -->
+                <div class="flex-1 p-6 overflow-hidden">
+                    <div id="summaryContent" class="overflow-auto max-h-[60vh]">
+                        <!-- Aquí se inyectará la tabla -->
                     </div>
                 </div>
 
-                <!-- Footer -->
-                <div class="px-6 py-4 border-t flex justify-end gap-3 bg-white">
-                    <button class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md" onclick="closeConfirmModal()">
-                        Cancelar
-                    </button>
-                    <button class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-md"
-                        onclick="confirmSubmit()">
-                        ✅ Confirmar y Guardar
-                    </button>
+                <!-- Footer con botones estilo sistema -->
+                <div class="px-6 py-4 border-t border-gray-200 bg-white rounded-b-2xl">
+                    <div class="flex flex-col sm:flex-row justify-end gap-3">
+                        <button type="button" onclick="closeConfirmModal()"
+                            class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200">
+                            Cancelar
+                        </button>
+                        <button type="button" onclick="confirmSubmit()"
+                            class="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2">
+                            ✅ Confirmar y Guardar
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -519,7 +521,7 @@ if (!$conexion) {
         }
 
         // === Función para cargar tipos de muestra ===
-        async function cargarTiposMuestra(selectId, sampleIndex) {
+        /*async function cargarTiposMuestra(selectId, sampleIndex) {
             try {
                 const res = await fetch("get_tipos_muestra.php");
                 const tipos = await res.json();
@@ -544,6 +546,41 @@ if (!$conexion) {
                 console.error("Error al cargar tipos de muestra:", error);
                 alert("⚠️ No se pudieron cargar los tipos de muestra.");
             }
+        }*/
+        async function cargarTiposMuestra(selectId, sampleIndex) {
+            try {
+                const res = await fetch("get_tipos_muestra.php");
+                const tipos = await res.json();
+                if (tipos.error) throw new Error(tipos.error);
+                allTiposMuestra = tipos;
+                const select = document.getElementById(selectId);
+                select.innerHTML = '<option value="">Seleccionar...</option>';
+                tipos.forEach((tipo) => {
+                    const option = document.createElement('option');
+                    option.value = tipo.codigo;
+                    option.textContent = tipo.nombre;
+                    select.appendChild(option);
+                });
+
+                // ✅ FIX: Remover listeners previos antes de agregar uno nuevo
+                select.removeEventListener('change', handleTipoMuestraChange);
+
+                // ✅ Usar una función nombrada para poder removerla después
+                select.addEventListener('change', handleTipoMuestraChange);
+
+                // Guardar el índice en el elemento para usarlo en el handler
+                select.dataset.sampleIndex = sampleIndex;
+
+            } catch (error) {
+                allTiposMuestra = [];
+                console.error("Error al cargar tipos de muestra:", error);
+                alert("⚠️ No se pudieron cargar los tipos de muestra.");
+            }
+        }
+        function handleTipoMuestraChange(event) {
+            const select = event.target;
+            const sampleIndex = parseInt(select.dataset.sampleIndex);
+            updateCodigoReferencia(sampleIndex);
         }
 
         // === Función para actualizar el código de referencia ===
@@ -1406,6 +1443,156 @@ if (!$conexion) {
             const fechaEnvio = formData.get("fechaEnvio") || "-";
             const horaEnvio = formData.get("horaEnvio") || "-";
             const codigoEnvio = document.getElementById("codigoEnvio")?.value || "Pendiente";
+
+            const laboratorioSelect = document.getElementById("laboratorio");
+            const laboratorioNombre = laboratorioSelect?.selectedOptions[0]?.text || "No seleccionado";
+
+            const empresaSelect = document.getElementById("empresa_transporte");
+            const empresaNombre = empresaSelect?.selectedOptions[0]?.text || "No seleccionado";
+
+            const responsableEnvio = formData.get("responsable_envio") || "No especificado";
+            const autorizadoPor = formData.get("autorizado_por") || "No especificado";
+
+            let summaryHTML = `
+    <div style="padding: 10px; font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; background: white;">
+        <!-- === CABECERA IDÉNTICA AL PDF === -->
+        <table width="100%" style="border-collapse: collapse; border: 1px solid #000; margin-bottom: 15px;">
+            <tr>
+                <td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 12px;">
+                    <img src="logo.png" style="height: 20px; vertical-align: top;"> GRANJA RINCONADA DEL SUR S.A.
+                </td>
+                <td style="width: 60%; text-align: center; padding: 5px; background-color: #6c5b7b; color: white; font-weight: bold; font-size: 14px;">
+                    REGISTRO DE ENVÍO DE MUESTRAS
+                </td>
+                <td style="width: 20%; background-color: #fff;"></td>
+            </tr>
+        </table>
+
+        <!-- === DATOS GENERALES EN DOS COLUMNAS, FORMATO PDF === -->
+        <table style="border-collapse: collapse; width: 100%; font-size: 10px; margin-bottom: 15px; line-height: 1.6;">
+            <tr>
+                <!-- Columna 1 -->
+                <td style="width: 50%; vertical-align: top; padding-right: 10px;">
+                    <table style="border-collapse: collapse; width: 100%;">
+                        <tr>
+                            <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Fecha de envío</strong></td>
+                            <td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                            <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${fechaEnvio}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Hora de envío</strong></td>
+                            <td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                            <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${horaEnvio.substring(0, 8)}</td>
+                        </tr>
+                    </table>
+                </td>
+
+                <!-- Columna 2 -->
+                <td style="width: 50%; vertical-align: top; padding-left: 10px;">
+                    <table style="border-collapse: collapse; width: 100%;">
+                        <tr>
+                            <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Código de envío</strong></td>
+                            <td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                            <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${codigoEnvio}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Laboratorio</strong></td>
+                            <td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                            <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${laboratorioNombre}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+
+        <!-- === TABLA DE DETALLE === -->
+        <table style="border-collapse: collapse; width: 100%; font-size: 8px; margin-bottom: 20px;">
+            <thead>
+                <tr>
+                    <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">Cód. Ref.</th>
+                    <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">Toma de muestra</th>
+                    <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white; height:80px; vertical-align:middle;">
+                        <div style="transform: rotate(-90deg); transform-origin: center;">N° muestras</div>
+                    </th>
+    `;
+
+            // Columnas de tipos de muestra (rotadas)
+            allTiposMuestra.forEach(tm => {
+                summaryHTML += `
+                    <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white; height:80px; vertical-align:middle;">
+                        <div style="transform: rotate(-90deg); transform-origin: center;">${tm.nombre}</div>
+                    </th>
+        `;
+            });
+
+            summaryHTML += `
+                    <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">TIPO DE ANÁLISIS</th>
+                    <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+            // Filas de solicitudes
+            for (let i = 0; i < numeroSolicitudes; i++) {
+                const tipoMuestraSelect = document.getElementById(`tipoMuestra_${i}`);
+                const tipoMuestraCodigo = tipoMuestraSelect?.value || "";
+                const fechaToma = document.getElementById(`fechaToma_${i}`)?.value || "-";
+                const numeroMuestras = document.getElementById(`numeroMuestras_${i}`)?.value || "1";
+                const codigoRef = document.getElementById(`codigoReferenciaValue_${i}`)?.value || "";
+                const observaciones = document.getElementById(`observaciones_${i}`)?.value || "Ninguna";
+                const analisisResumenEl = document.getElementById(`analisisResumen_${i}`);
+                const analisisResumen = analisisResumenEl?.innerHTML || "Ninguno";
+
+                summaryHTML += `<tr>`;
+                summaryHTML += `<td style="border:1px solid #000; padding:3px; text-align:center;">${codigoRef}</td>`;
+                summaryHTML += `<td style="border:1px solid #000; padding:3px; text-align:center;">${fechaToma}</td>`;
+                summaryHTML += `<td style="border:1px solid #000; padding:3px; text-align:center;">${numeroMuestras}</td>`;
+
+                allTiposMuestra.forEach(tm => {
+                    const mark = (tm.codigo === tipoMuestraCodigo) ? 'x' : '';
+                    summaryHTML += `<td style="border:1px solid #000; padding:3px; text-align:center;">${mark}</td>`;
+                });
+
+                summaryHTML += `<td style="border:1px solid #000; padding:3px; vertical-align:top; white-space:pre-wrap; word-break:break-word;">${analisisResumen}</td>`;
+                summaryHTML += `<td style="border:1px solid #000; padding:3px; vertical-align:top; white-space:pre-wrap; word-break:break-word;">${observaciones}</td>`;
+                summaryHTML += `</tr>`;
+            }
+
+            summaryHTML += `
+            </tbody>
+        </table>
+
+        <!-- === PIE IDÉNTICO AL PDF === -->
+        <div style="margin-top:20px; font-size:10px; text-align:center;">
+            <table style="border-collapse: collapse; width: 60%; margin: 0 auto; font-size:10px; line-height:1.5;">
+                <tr>
+                    <td style="padding: 3px 0; vertical-align: top; text-align: left; width: 40%; white-space: nowrap;"><strong>Responsable de envío</strong></td>
+                    <td style="padding: 3px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                    <td style="padding: 3px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${responsableEnvio}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 3px 0; vertical-align: top; text-align: left; width: 40%; white-space: nowrap;"><strong>Empresa</strong></td>
+                    <td style="padding: 3px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                    <td style="padding: 3px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${empresaNombre}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 3px 0; vertical-align: top; text-align: left; width: 40%; white-space: nowrap;"><strong>Autorizado por</strong></td>
+                    <td style="padding: 3px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                    <td style="padding: 3px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${autorizadoPor}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    `;
+
+            document.getElementById("summaryContent").innerHTML = summaryHTML;
+        }
+        /*function generateSummary(formData) {
+            const numeroSolicitudes = parseInt(formData.get("numeroSolicitudes")) || 0;
+            const fechaEnvio = formData.get("fechaEnvio") || "-";
+            const horaEnvio = formData.get("horaEnvio") || "-";
+            const codigoEnvio = document.getElementById("codigoEnvio")?.value || "Pendiente";
             const laboratorioSelect = document.getElementById("laboratorio");
             const laboratorioNombre = laboratorioSelect?.selectedOptions[0]?.text || "No seleccionado";
             const autorizadoPor = formData.get("autorizado_por") || "No especificado";
@@ -1508,7 +1695,7 @@ if (!$conexion) {
   `;
 
             document.getElementById("summaryContent").innerHTML = summaryHTML;
-        }
+        }*/
 
         // === Función para confirmar el envío ===
         window.confirmSubmit = async function (descargarPdf = false) {

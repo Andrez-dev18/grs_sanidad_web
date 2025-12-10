@@ -10,7 +10,6 @@ if (!$conexion) {
     die("Error de conexión.");
 }
 
-// ===== EXPORTAR TODO EL DETALLE CRUDO (IGNORA PAGINACIÓN) =====
 if (isset($_GET['export_crudo_all'])) {
     $query = "SELECT * FROM com_db_solicitud_det ORDER BY codEnvio, posSolicitud, codMuestra, codAnalisis, id";
     $result = mysqli_query($conexion, $query);
@@ -19,7 +18,6 @@ if (isset($_GET['export_crudo_all'])) {
         die("No hay datos para exportar.");
     }
 
-    // Obtener nombres de columnas
     $cols = [];
     $fieldInfo = mysqli_fetch_fields($result);
     foreach ($fieldInfo as $field) {
@@ -27,7 +25,9 @@ if (isset($_GET['export_crudo_all'])) {
     }
 
     $csv = "\uFEFF";
-    $csv .= '"' . implode('","', array_map(fn($c) => str_replace('"', '""', $c), $cols)) . '"' . "\n";
+    $csv .= '"' . implode('","', array_map(function ($c) {
+        return str_replace('"', '""', $c);
+    }, $cols)) . '"' . "\n";
 
     while ($row = mysqli_fetch_row($result)) {
         $escapedRow = array_map(function ($value) {
@@ -44,19 +44,17 @@ if (isset($_GET['export_crudo_all'])) {
     exit();
 }
 
-// ===== PAGINACIÓN PARA VISUALIZACIÓN =====
+// PAGINACIÓN
 $registrosPorPagina = 20;
 $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
 $page = max(1, $page);
 $offset = ($page - 1) * $registrosPorPagina;
 
-// Contar total
 $totalQuery = "SELECT COUNT(*) as total FROM com_db_solicitud_det";
 $totalResult = mysqli_query($conexion, $totalQuery);
 $totalRegistros = mysqli_fetch_assoc($totalResult)['total'];
 $totalPaginas = ceil($totalRegistros / $registrosPorPagina);
 
-// Obtener datos paginados (con orden correcto)
 $detallesQuery = "
     SELECT * 
     FROM com_db_solicitud_det 
@@ -65,13 +63,14 @@ $detallesQuery = "
 ";
 $detalles = mysqli_query($conexion, $detallesQuery);
 
-// Obtener nombres de columnas (para la tabla)
+// Obtener siempre los nombres de las columnas, incluso si no hay registros
 $columnNames = [];
-if (mysqli_num_rows($detalles) > 0) {
-    mysqli_data_seek($detalles, 0);
-    $sampleRow = mysqli_fetch_assoc($detalles);
-    $columnNames = array_keys($sampleRow);
-    mysqli_data_seek($detalles, 0);
+$metaQuery = mysqli_query($conexion, "SELECT * FROM com_db_solicitud_det LIMIT 0");
+if ($metaQuery) {
+    $fieldInfo = mysqli_fetch_fields($metaQuery);
+    foreach ($fieldInfo as $field) {
+        $columnNames[] = $field->name;
+    }
 }
 ?>
 
@@ -82,173 +81,192 @@ if (mysqli_num_rows($detalles) > 0) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Muestras - Detalle (Crudo)</title>
+
+    <!-- Tailwind CSS -->
     <link rel="stylesheet" href="css/output.css">
+
+    <!-- Font Awesome (opcional) -->
+    <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
+
     <style>
         body {
-            background-color: #f9fafb;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            color: #1f2937;
+            background: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
 
-        .container {
-            max-width: 1600px;
-        }
-
-        h1 {
-            font-weight: 700;
-            color: #111827;
-            margin-bottom: 1.5rem;
-        }
-
-        .export-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.625rem 1.25rem;
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .export-btn:hover {
-            background: linear-gradient(135deg, #059669, #047857);
-        }
-
-        .raw-table {
+        .data-table {
             width: 100%;
             border-collapse: collapse;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-            margin-top: 1rem;
-            font-size: 0.85rem;
         }
 
-        .raw-table th {
-            background-color: #f3f4f6;
-            padding: 0.6rem 0.8rem;
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
             text-align: left;
+            font-size: 0.875rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table th {
+            background-color: #f9fafb;
             font-weight: 600;
             color: #374151;
-            border-bottom: 1px solid #e5e7eb;
         }
 
-        .raw-table td {
-            padding: 0.6rem 0.8rem;
-            border-bottom: 1px solid #e5e7eb;
-            vertical-align: top;
-            font-size: 0.85rem;
-        }
-
-        .raw-table tr:last-child td {
+        .data-table tr:last-child td {
             border-bottom: none;
         }
 
-        .raw-table tr:hover {
+        .data-table tr:hover {
             background-color: #f9fafb;
         }
 
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-top: 1.5rem;
-        }
+        @media (max-width: 768px) {
 
-        .pagination a,
-        .pagination span {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            border-radius: 6px;
-            font-weight: 600;
-            text-decoration: none;
-        }
+            .data-table,
+            .data-table thead,
+            .data-table tbody,
+            .data-table th,
+            .data-table td,
+            .data-table tr {
+                display: block;
+            }
 
-        .pagination a {
-            color: #2563eb;
-            background: white;
-            border: 1px solid #d1d5db;
-        }
+            .data-table thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
 
-        .pagination a:hover {
-            background: #eff6ff;
-        }
+            .data-table tr {
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
 
-        .pagination .current {
-            background: #2563eb;
-            color: white;
-            border: 1px solid #2563eb;
+            .data-table td {
+                text-align: right;
+                padding-left: 50% !important;
+                position: relative;
+                border: none;
+            }
+
+            .data-table td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 1rem;
+                font-weight: 600;
+                color: #374151;
+            }
         }
     </style>
 </head>
 
 <body class="bg-gray-50">
-    <div class="container mx-auto px-4 py-8">
-        <h1 class="text-2xl">Registro Cabecera</h1>
+    <div class="container mx-auto px-6 py-12">
 
-        <!-- Botón de exportación (exporta TODO, no solo la página) -->
-        <div class="mb-6">
-            <a href="?export_crudo_all=1" class="export-btn">📊 Exportar Todos los Registros a CSV</a>
+        <!-- TÍTULO -->
+        <div class="content-header max-w-7xl mx-auto mb-8">
+            <div class="flex items-center gap-3 mb-2">
+                <span class="text-4xl">🗃️</span>
+                <h1 class="text-3xl font-bold text-gray-800">Registro Detalle</h1>
+            </div>
+            <p class="text-gray-600 text-sm">Vea los detalles de los registros en el sistema</p>
         </div>
 
-        <!-- Tabla -->
-        <div class="overflow-x-auto">
-            <?php if (!empty($columnNames) && mysqli_num_rows($detalles) > 0): ?>
-                    <table class="raw-table">
-                        <thead>
-                            <tr>
+        <!-- BOTÓN EXPORTAR -->
+        <div class="max-w-7xl mx-auto mb-6">
+            <a href="?export_crudo_all=1"
+                class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
+                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);"
+                onmouseover="this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'"
+                onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
+                📊 Exportar Todos los Registros a CSV
+            </a>
+        </div>
+
+        <!-- TABLA -->
+        <div class="max-w-7xl mx-auto">
+            <div class="table-container border border-gray-300 rounded-2xl bg-white overflow-x-auto">
+                <table class="data-table w-full">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <?php if (!empty($columnNames)): ?>
                                 <?php foreach ($columnNames as $col): ?>
-                                        <th><?= htmlspecialchars($col) ?></th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">
+                                        <?= htmlspecialchars($col) ?></th>
                                 <?php endforeach; ?>
-                            </tr>
-                        </thead>
-                        <tbody>
+                            <?php else: ?>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Sin columnas disponibles
+                                </th>
+                            <?php endif; ?>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <?php if (mysqli_num_rows($detalles) > 0): ?>
                             <?php while ($row = mysqli_fetch_assoc($detalles)): ?>
-                                    <tr>
-                                        <?php foreach ($columnNames as $col): ?>
-                                                <td><?= htmlspecialchars($row[$col] ?? 'NULL') ?></td>
-                                        <?php endforeach; ?>
-                                    </tr>
+                                <tr class="hover:bg-gray-50 transition">
+                                    <?php foreach ($columnNames as $col): ?>
+                                        <td class="px-6 py-4 text-gray-700" data-label="<?= htmlspecialchars($col) ?>">
+                                            <?= htmlspecialchars($row[$col] ?? 'NULL') ?>
+                                        </td>
+                                    <?php endforeach; ?>
+                                </tr>
                             <?php endwhile; ?>
-                        </tbody>
-                    </table>
-            <?php else: ?>
-                    <p class="text-gray-500">No hay registros en <code>com_db_solicitud_det</code>.</p>
-            <?php endif; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="<?= count($columnNames) ?: 1 ?>" class="px-6 py-8 text-center text-gray-500">
+                                    No hay registros.
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Paginación -->
+        <!-- PAGINACIÓN -->
         <?php if ($totalPaginas > 1): ?>
-                <div class="pagination">
-                    <?php if ($page > 1): ?>
-                            <a href="?page=1">&laquo;</a>
-                            <a href="?page=<?= $page - 1 ?>">‹</a>
+            <div class="max-w-7xl mx-auto mt-8">
+                <div class="flex flex-wrap justify-center gap-1">
+                    <?php
+                    if ($page > 1): ?>
+                        <a href="?page=1"
+                            class="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">«
+                            Primera</a>
+                        <a href="?page=<?= $page - 1 ?>"
+                            class="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">‹
+                            Anterior</a>
                     <?php endif;
 
                     $start = max(1, $page - 2);
                     $end = min($totalPaginas, $page + 2);
                     for ($i = $start; $i <= $end; $i++):
                         $isActive = ($i == $page);
-                        if ($isActive):
-                            echo "<span class='current'>$i</span>";
-                        else:
-                            echo "<a href='?page=$i'>$i</a>";
-                        endif;
+                        $class = $isActive ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300';
+                        echo "<a href='?page=$i' class='px-3 py-1.5 rounded-lg transition hover:bg-gray-100 $class'>$i</a>";
                     endfor;
 
                     if ($page < $totalPaginas): ?>
-                            <a href="?page=<?= $page + 1 ?>">›</a>
-                            <a href="?page=<?= $totalPaginas ?>">&raquo;</a>
+                        <a href="?page=<?= $page + 1 ?>"
+                            class="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">Siguiente
+                            ›</a>
+                        <a href="?page=<?= $totalPaginas ?>"
+                            class="px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">Última
+                            »</a>
                     <?php endif; ?>
                 </div>
+            </div>
         <?php endif; ?>
+
+        <!-- FOOTER -->
+        <div class="text-center mt-12">
+            <p class="text-gray-500 text-sm">
+                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025
+            </p>
+        </div>
+
     </div>
 </body>
 
