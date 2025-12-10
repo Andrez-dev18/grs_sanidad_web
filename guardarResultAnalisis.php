@@ -1,6 +1,6 @@
 <?php
 include_once '../conexion_grs_joya/conexion.php';
-$conn = conectar_sanidad();
+$conn = conectar_joya();
 if (!$conn) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -21,7 +21,7 @@ $q = "
     SELECT 
         codRef,
         fecToma
-    FROM com_db_solicitud_det
+    FROM san_dim_solicitud_det
     WHERE codEnvio = '$codigoEnvio'
       AND posSolicitud = '$pos'
     LIMIT 1
@@ -52,7 +52,7 @@ foreach ($analisis as $a) {
 
     // Insertar resultado
     $sql = "
-        INSERT INTO com_resultado_analisis 
+        INSERT INTO san_fact_resultado_analisis 
         (codEnvio, posSolicitud, codRef, fecToma, analisis_codigo, analisis_nombre, resultado, obs)
         VALUES 
         ('$codigoEnvio', '$pos', '$ref', '$fecha', '$cod', '$nom', '$resul', " .
@@ -63,7 +63,7 @@ foreach ($analisis as $a) {
 
     // Actualizar estado del análisis
     $conn->query("
-        UPDATE com_db_solicitud_det 
+        UPDATE san_dim_solicitud_det 
         SET estado = 'completado'
         WHERE codEnvio = '$codigoEnvio'
           AND posSolicitud = '$pos'
@@ -74,7 +74,7 @@ foreach ($analisis as $a) {
 // Verificar si quedan pendientes
 $check = $conn->query("
     SELECT COUNT(*) AS pendientes
-    FROM com_db_solicitud_det
+    FROM san_dim_solicitud_det
     WHERE codEnvio = '$codigoEnvio'
       AND estado = 'pendiente'
 ");
@@ -84,7 +84,7 @@ $row = $check->fetch_assoc();
 // Si no quedan pendientes → completar cabecera
 if ($row["pendientes"] == 0) {
     $conn->query("
-        UPDATE com_db_solicitud_cab
+        UPDATE san_fact_solicitud_cab
         SET estado = 'completado'
         WHERE codEnvio = '$codigoEnvio'
     ");

@@ -28,8 +28,8 @@ $query = "
         
         GROUP_CONCAT(d.obs ORDER BY d.posSolicitud SEPARATOR ' | ') AS observaciones
 
-    FROM com_db_solicitud_det d
-    INNER JOIN com_db_solicitud_cab c
+    FROM san_dim_solicitud_det d
+    INNER JOIN san_fact_solicitud_cab c
            ON d.codEnvio = c.codEnvio
             
     WHERE d.estado = 'pendiente'
@@ -356,7 +356,7 @@ $result = $conexion->query($query);
                     if (list.children.length === 0) {
                         list.innerHTML = `<div class="text-gray-500 text-sm">No hay solicitudes pendientes.</div>`;
                     }
-                    alert("Resultados guardados correctamente");
+                    alert("✔️Resultados guardados correctamente");
                 } else {
                     alert("Error al guardar: " + r.error);
                 }
