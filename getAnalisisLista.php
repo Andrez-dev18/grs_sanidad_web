@@ -13,7 +13,7 @@ $q = "
     FROM san_dim_tiporesultado tr
     INNER JOIN san_dim_analisis a
         ON a.codigo = tr.analisis
-    LEFT JOIN com_dim_paquete pm
+    LEFT JOIN san_dim_paquete pm
         ON pm.codigo = a.paquete
     LEFT JOIN san_dim_tipo_muestra tm
         ON tm.codigo = pm.tipoMuestra

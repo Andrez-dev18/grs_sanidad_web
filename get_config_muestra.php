@@ -119,7 +119,7 @@ try {
     $paquetes = [];
     $paquetes_res = mysqli_query($conexion, "
         SELECT codigo, nombre 
-        FROM com_dim_paquete 
+        FROM san_dim_paquete 
         WHERE tipoMuestra = " . (int) $tipoMuestraId . " 
         ORDER BY nombre
     ");
@@ -132,7 +132,7 @@ try {
     $analisis_res = mysqli_query($conexion, "
             SELECT A.codigo, A.nombre, A.paquete 
             FROM san_dim_analisis A
-            JOIN com_dim_paquete P ON A.paquete = P.codigo
+            JOIN san_dim_paquete P ON A.paquete = P.codigo
             WHERE P.tipoMuestra = " . (int) $tipoMuestraId . " 
             ORDER BY nombre
     ");

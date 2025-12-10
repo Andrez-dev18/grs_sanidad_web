@@ -29,7 +29,7 @@ $queryCab = "
         c.usuarioRegistrador AS responsable_envio,
         c.usuarioResponsable AS usuario_responsable,
         c.autorizadoPor
-    FROM com_db_solicitud_cab c
+    FROM san_fact_solicitud_cab c
     WHERE c.codEnvio = ?
 ";
 $stmtCab = mysqli_prepare($conexion, $queryCab);
@@ -44,7 +44,7 @@ if (!$cab) {
 
 // --- Tipos de muestra (para columnas) ---
 $tipos_muestra = [];
-$res_tm = mysqli_query($conexion, "SELECT nombre FROM com_tipo_muestra ORDER BY codigo");
+$res_tm = mysqli_query($conexion, "SELECT nombre FROM san_dim_tipo_muestra ORDER BY codigo");
 while ($r = mysqli_fetch_assoc($res_tm)) {
     $tipos_muestra[] = htmlspecialchars($r['nombre']);
 }
@@ -53,7 +53,7 @@ while ($r = mysqli_fetch_assoc($res_tm)) {
 $detalles_raw = [];
 $res_det = mysqli_query($conexion, "
     SELECT posSolicitud, fecToma, codRef, numMuestras, obs, codAnalisis
-    FROM com_db_solicitud_det
+    FROM san_dim_solicitud_det
     WHERE codEnvio = '" . mysqli_real_escape_string($conexion, $codigoEnvio) . "'
     ORDER BY posSolicitud
 ");
@@ -99,9 +99,9 @@ foreach ($grupos as $grupo) {
                 a.nombre AS analisis_nombre,
                 p.nombre AS paquete_nombre,
                 tm.nombre AS tipo_muestra_nombre
-            FROM com_analisis a
-            JOIN com_paquete_muestra p ON a.paquete = p.codigo
-            JOIN com_tipo_muestra tm ON p.tipoMuestra = tm.codigo
+            FROM san_dim_analisis a
+            JOIN san_dim_paquete p ON a.paquete = p.codigo
+            JOIN san_dim_tipo_muestra tm ON p.tipoMuestra = tm.codigo
             WHERE a.codigo IN ($placeholders)
             ORDER BY p.nombre, a.nombre
         ";
