@@ -53,7 +53,7 @@ while ($r = mysqli_fetch_assoc($res_tm)) {
 $detalles_raw = [];
 $res_det = mysqli_query($conexion, "
     SELECT posSolicitud, fecToma, codRef, numMuestras, obs, codAnalisis
-    FROM san_dim_solicitud_det
+    FROM san_fact_solicitud_det
     WHERE codEnvio = '" . mysqli_real_escape_string($conexion, $codigoEnvio) . "'
     ORDER BY posSolicitud
 ");

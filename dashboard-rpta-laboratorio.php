@@ -28,7 +28,7 @@ $query = "
         
         GROUP_CONCAT(d.obs ORDER BY d.posSolicitud SEPARATOR ' | ') AS observaciones
 
-    FROM san_dim_solicitud_det d
+    FROM san_fact_solicitud_det d
     INNER JOIN san_fact_solicitud_cab c
            ON d.codEnvio = c.codEnvio
             
@@ -221,6 +221,40 @@ $result = $conexion->query($query);
 
                                 <div id="analisisContainer" class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4"></div>
 
+                                <div class="mt-6">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Subir archivo PDF (opcional)
+                                    </label>
+
+                                    <!-- Contenedor relativo para colocar la X -->
+                                    <div class="relative">
+
+                                        <input type="file"
+                                            id="archivoPdf"
+                                            name="archivoPdf"
+                                            accept="application/pdf"
+                                            class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4
+                                            file:rounded-md file:border-0
+                                            file:text-sm file:font-semibold
+                                            file:bg-blue-600 file:text-white
+                                            hover:file:bg-blue-700
+                                            border border-gray-300 rounded-md p-1" />
+
+                                        <!-- Botón para quitar archivo -->
+                                        <button id="clearPdfBtn"
+                                            class="hidden absolute top-1/2 right-3 -translate-y-1/2 text-red-600 hover:text-red-800 text-xl font-bold leading-none"
+                                            title="Quitar archivo">
+                                            ×
+                                        </button>
+                                    </div>
+
+                                    <!-- Nombre del archivo -->
+                                    <p id="pdfName" class="text-sm text-gray-600 mt-2"></p>
+
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Solo se permite subir PDF.
+                                    </p>
+                                </div>
 
                                 <!-- Botones -->
                                 <div class="mt-6 flex justify-end gap-3">
@@ -234,7 +268,6 @@ $result = $conexion->query($query);
                 </main>
             </div>
         </div>
-
 
         <!-- Modal Selección Múltiple de Análisis -->
         <div id="modalAnalisis" class="fixed inset-0 bg-black bg-opacity-40 hidden flex justify-center items-center">
@@ -357,8 +390,40 @@ $result = $conexion->query($query);
                         list.innerHTML = `<div class="text-gray-500 text-sm">No hay solicitudes pendientes.</div>`;
                     }
                     alert("✔️Resultados guardados correctamente");
+                    guardarPDF();
                 } else {
                     alert("Error al guardar: " + r.error);
+                }
+            }
+
+            async function guardarPDF() {
+                const file = document.getElementById("archivoPdf").files[0];
+
+                if (!file) {
+                    alert("Selecciona un PDF antes de guardar.");
+                    return;
+                }
+
+                const codigoEnvio = document.getElementById("detailCodigo").textContent;
+                const pos = currentPosition; // ya lo usas en guardarResultados()
+
+                let formData = new FormData();
+                formData.append("pdf", file);
+                formData.append("codigoEnvio", codigoEnvio);
+                formData.append("posSolicitud", pos);
+
+                let res = await fetch("guardarResultadoAnalisisPDF.php", {
+                    method: "POST",
+                    body: formData
+                });
+
+                let r = await res.json();
+
+                if (r.success) {
+                    alert("📄 PDF guardado correctamente");
+                    limpiarPDF();
+                } else {
+                    alert("Error: " + r.error);
                 }
             }
         </script>
@@ -537,6 +602,28 @@ $result = $conexion->query($query);
 
                 cont.appendChild(block);
             }
+
+            const inputPDF = document.getElementById("archivoPdf");
+            const clearBtn = document.getElementById("clearPdfBtn");
+            const pdfName = document.getElementById("pdfName");
+
+            // 🔥 Función reutilizable
+            function limpiarPDF() {
+                inputPDF.value = "";
+                pdfName.textContent = "";
+                clearBtn.classList.add("hidden");
+            }
+
+            // Cuando el usuario selecciona un archivo
+            inputPDF.addEventListener("change", () => {
+                if (inputPDF.files.length > 0) {
+                    pdfName.textContent = "Archivo seleccionado: " + inputPDF.files[0].name;
+                    clearBtn.classList.remove("hidden");
+                }
+            });
+
+            // Botón X usa la función
+            clearBtn.addEventListener("click", limpiarPDF);
         </script>
 
 

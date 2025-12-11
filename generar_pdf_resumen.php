@@ -42,7 +42,7 @@ if (!$cab) {
 // === Detalles: traer todos los registros ===
 $stmt = mysqli_prepare($conexion, "
     SELECT posSolicitud, fecToma, codRef, numMuestras, obs, codAnalisis
-    FROM san_dim_solicitud_det
+    FROM san_fact_solicitud_det
     WHERE codEnvio = ?
     ORDER BY posSolicitud
 ");

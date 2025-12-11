@@ -177,7 +177,7 @@ try {
         $nomTipoMuestra = $tipoMuestra['nombre'];
 
         if (!empty($analisisSeleccionados)) {
-            $queryDetalle = "INSERT INTO san_dim_solicitud_det (
+            $queryDetalle = "INSERT INTO san_fact_solicitud_det (
                     codEnvio, posSolicitud, fecToma, numMuestras, codMuestra, nomMuestra, codAnalisis, nomAnalisis, codRef, obs, id
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmtDetalle = mysqli_prepare($conexion, $queryDetalle);

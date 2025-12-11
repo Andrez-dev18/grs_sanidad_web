@@ -21,7 +21,7 @@ $q = "
     SELECT 
         codRef,
         fecToma
-    FROM san_dim_solicitud_det
+    FROM san_fact_solicitud_det
     WHERE codEnvio = '$codigoEnvio'
       AND posSolicitud = '$pos'
     LIMIT 1
@@ -63,7 +63,7 @@ foreach ($analisis as $a) {
 
     // Actualizar estado del análisis
     $conn->query("
-        UPDATE san_dim_solicitud_det 
+        UPDATE san_fact_solicitud_det 
         SET estado = 'completado'
         WHERE codEnvio = '$codigoEnvio'
           AND posSolicitud = '$pos'
@@ -74,7 +74,7 @@ foreach ($analisis as $a) {
 // Verificar si quedan pendientes
 $check = $conn->query("
     SELECT COUNT(*) AS pendientes
-    FROM san_dim_solicitud_det
+    FROM san_fact_solicitud_det
     WHERE codEnvio = '$codigoEnvio'
       AND estado = 'pendiente'
 ");
