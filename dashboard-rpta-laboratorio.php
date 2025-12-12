@@ -32,7 +32,7 @@ $query = "
     INNER JOIN san_fact_solicitud_cab c
            ON d.codEnvio = c.codEnvio
             
-    WHERE d.estado = 'pendiente'
+    WHERE d.estado_cuali = 'pendiente'
 
     GROUP BY 
         d.codEnvio,
@@ -76,6 +76,13 @@ $result = $conexion->query($query);
         .card {
             transition: all 0.3s ease;
             cursor: pointer;
+        }
+
+        .selected-order {
+            background-color: #e6f0ff;
+            /* azul muy suave */
+            border-color: #3b82f6 !important;
+            /* azul */
         }
 
         .card:hover {
@@ -149,7 +156,7 @@ $result = $conexion->query($query);
                             while ($row = $result->fetch_assoc()):
 
                         ?>
-                                <button id="item-<?php echo $row['codEnvio']; ?>"
+                                <button id="item-<?php echo $row['codEnvio'] . '-' . $row['posSolicitud']; ?>"
                                     onclick="openDetail('<?php echo $row['codEnvio']; ?>',
                                                         '<?php echo date('d/m/Y', strtotime($row['fecToma'])) ?>',
                                                         '<?php echo $row['posSolicitud']; ?>')"
@@ -200,11 +207,22 @@ $result = $conexion->query($query);
                                 <div>
                                     <h2 id="detailCodigo" class="text-3xl font-bold text-[#1f2937]">SAN-000000</h2>
                                     <span id="badgeStatus" class="inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium">Pendiente de Respuesta</span>
+                                    <!-- INFO ADICIONAL CABECERA -->
+                                    <div id="extraInfoCabecera" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+
+                                        <div><span class="font-semibold text-gray-800">🔬 Laboratorio:</span> <span id="cabLaboratorio">--</span></div>
+                                        <div><span class="font-semibold text-gray-800">🚚 Transporte:</span> <span id="cabTransporte">--</span></div>
+
+                                        <div><span class="font-semibold text-gray-800">👤 Registrado por:</span> <span id="cabRegistrador">--</span></div>
+                                        <div><span class="font-semibold text-gray-800">🧪 Responsable:</span> <span id="cabResponsable">--</span></div>
+
+                                        <div><span class="font-semibold text-gray-800">✔️ Autorizado por:</span> <span id="cabAutorizado">--</span></div>
+
+                                    </div>
                                 </div>
 
                                 <div class="text-sm text-gray-600 mt-3 md:mt-0 flex flex-col gap-1">
                                     <span id="detailFecha">📅 01/01/2024</span>
-                                    <span id="detailLab">🔬 Laboratorio</span>
                                 </div>
                             </div>
 
@@ -218,43 +236,41 @@ $result = $conexion->query($query);
                                         ➕ Agregar nuevo análisis
                                     </button>
                                 </div>
+                                <!-- NUEVA FECHA DE REGISTRO -->
+                                <div class="mt-6 mb-3">
+                                    <label for="fechaRegistroLab" class="block text-sm font-medium text-gray-700 mb-1">
+                                        📅 Fecha de registro del laboratorio
+                                    </label>
 
+                                    <input type="date"
+                                        id="fechaRegistroLab"
+                                        class="block w-full max-w-xs text-sm border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" />
+                                </div>
                                 <div id="analisisContainer" class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4"></div>
 
                                 <div class="mt-6">
                                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                                        Subir archivo PDF (opcional)
+                                        Subir archivos (PDF, Word, Excel, Imágenes, etc.) — Opcional
                                     </label>
 
-                                    <!-- Contenedor relativo para colocar la X -->
-                                    <div class="relative">
-
-                                        <input type="file"
-                                            id="archivoPdf"
-                                            name="archivoPdf"
-                                            accept="application/pdf"
-                                            class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4
+                                    <input type="file"
+                                        id="archivoPdf"
+                                        name="archivoPdf[]"
+                                        multiple
+                                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg"
+                                        class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4
                                             file:rounded-md file:border-0
                                             file:text-sm file:font-semibold
                                             file:bg-blue-600 file:text-white
                                             hover:file:bg-blue-700
                                             border border-gray-300 rounded-md p-1" />
 
-                                        <!-- Botón para quitar archivo -->
-                                        <button id="clearPdfBtn"
-                                            class="hidden absolute top-1/2 right-3 -translate-y-1/2 text-red-600 hover:text-red-800 text-xl font-bold leading-none"
-                                            title="Quitar archivo">
-                                            ×
-                                        </button>
-                                    </div>
+                                    <div id="fileList" class="mt-3 space-y-2"></div>
 
-                                    <!-- Nombre del archivo -->
-                                    <p id="pdfName" class="text-sm text-gray-600 mt-2"></p>
-
-                                    <p class="text-xs text-gray-500 mt-1">
-                                        Solo se permite subir PDF.
-                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">(Máx. 10 MB por archivo)</p>
                                 </div>
+
+
 
                                 <!-- Botones -->
                                 <div class="mt-6 flex justify-end gap-3">
@@ -297,335 +313,8 @@ $result = $conexion->query($query);
         </div>
 
 
-
-
-
-        <!-- JS funcional para el dropzone y toggles -->
-        <script>
-            let currentPosition = null;
-            async function openDetail(code, fechaToma, posicion) {
-
-                document.getElementById('emptyStatePanel').classList.add('hidden');
-                document.getElementById('responseDetailPanel').classList.remove('hidden');
-                document.getElementById('detailCodigo').textContent = code;
-                currentPosition = posicion;
-
-                document.getElementById('detailFecha').textContent = fechaToma;
-
-                const cont = document.getElementById("analisisContainer");
-                cont.innerHTML = "<div class='text-gray-500 text-sm'>Cargando análisis...</div>";
-
-                let res = await fetch("getAnalisisDetalle.php?codigoEnvio=" + code + "&posicion=" + posicion);
-                let data = await res.json();
-
-                cont.innerHTML = "";
-
-                if (!Array.isArray(data) || data.length === 0) {
-                    cont.innerHTML = "<div class='text-gray-500 text-sm'>No hay análisis disponibles.</div>";
-                    return;
-                }
-
-                data.forEach(item => {
-                    crearBloqueAnalisis(item.analisisCodigo, item.nombre, item.resultados);
-                });
-            }
-
-            function closeDetail() {
-                document.getElementById('responseDetailPanel').classList.add('hidden');
-                document.getElementById('emptyStatePanel').classList.remove('hidden');
-            }
-
-            async function guardarResultados() {
-                const code = document.getElementById("detailCodigo").textContent;
-                const cont = document.getElementById("analisisContainer");
-
-                let datos = [];
-
-                cont.querySelectorAll("select").forEach(sel => {
-
-                    let codigoAnalisis = sel.dataset.codigo;
-                    let nombre = sel.dataset.nombre;
-                    let resultado = sel.value;
-
-                    // 🔥 OBTENER EL COMMENT DEL MISMO BLOQUE DEL SELECT
-                    let block = sel.closest(".bloque-analisis");
-                    let observaciones = block.querySelector("textarea").value;
-
-                    datos.push({
-                        analisisCodigo: codigoAnalisis,
-                        analisisNombre: nombre,
-                        resultado: resultado,
-                        observaciones: observaciones
-                    });
-                });
-
-                let res = await fetch("guardarResultAnalisis.php", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        codigoEnvio: code,
-                        posicion: currentPosition,
-                        analisis: datos
-                    })
-                });
-
-                let r = await res.json();
-
-                if (r.success) {
-                    // 🔥 1. Cerrar panel detalle
-                    closeDetail();
-
-                    // 🔥 2. Remover la tarjeta del sidebar
-                    const item = document.getElementById("item-" + code);
-                    if (item) item.remove();
-
-                    // 🔥 3. Limpiar contenedor
-                    document.getElementById("analisisContainer").innerHTML = "";
-
-                    // 🔥 4. Si ya no quedan pendientes, mostrar mensaje
-                    const list = document.getElementById("pendingOrdersList");
-                    if (list.children.length === 0) {
-                        list.innerHTML = `<div class="text-gray-500 text-sm">No hay solicitudes pendientes.</div>`;
-                    }
-                    alert("✔️Resultados guardados correctamente");
-                    guardarPDF();
-                } else {
-                    alert("Error al guardar: " + r.error);
-                }
-            }
-
-            async function guardarPDF() {
-                const file = document.getElementById("archivoPdf").files[0];
-
-                if (!file) {
-                    alert("Selecciona un PDF antes de guardar.");
-                    return;
-                }
-
-                const codigoEnvio = document.getElementById("detailCodigo").textContent;
-                const pos = currentPosition; // ya lo usas en guardarResultados()
-
-                let formData = new FormData();
-                formData.append("pdf", file);
-                formData.append("codigoEnvio", codigoEnvio);
-                formData.append("posSolicitud", pos);
-
-                let res = await fetch("guardarResultadoAnalisisPDF.php", {
-                    method: "POST",
-                    body: formData
-                });
-
-                let r = await res.json();
-
-                if (r.success) {
-                    alert("📄 PDF guardado correctamente");
-                    limpiarPDF();
-                } else {
-                    alert("Error: " + r.error);
-                }
-            }
-        </script>
-
-        <script>
-            document.getElementById("addAnalisis").addEventListener("click", abrirModalAnalisis);
-
-            async function abrirModalAnalisis() {
-                const modal = document.getElementById("modalAnalisis");
-                modal.classList.remove("hidden");
-
-                const cont = document.getElementById("listaAnalisis");
-                cont.innerHTML = "<div class='text-gray-500 text-sm'>Cargando...</div>";
-
-                try {
-                    const resp = await fetch("getAnalisisLista.php", {
-                        cache: "no-store"
-                    });
-                    if (!resp.ok) throw new Error("Error en la petición");
-
-                    const lista = await resp.json();
-                    cont.innerHTML = "";
-
-                    // lista viene así:
-                    // { "Aves vivas": [ {codigo, nombre},... ], "Sueros": [...], ... }
-
-                    Object.keys(lista).forEach(tipo => {
-
-                        // Encabezado del grupo
-                        const titulo = document.createElement("h3");
-                        titulo.className = "text-md font-semibold text-gray-800 mt-4 mb-2";
-                        titulo.textContent = "📌 " + tipo;
-                        cont.appendChild(titulo);
-
-                        // Contenedor grid horizontal
-                        const grid = document.createElement("div");
-                        grid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-3";
-
-                        lista[tipo].forEach(a => {
-                            const item = document.createElement("label");
-                            item.className =
-                                "flex items-center gap-2 p-2 rounded-lg border border-gray-200 shadow-sm bg-gray-50 hover:bg-gray-100 cursor-pointer transition";
-
-                            item.innerHTML = `
-                                        <input type="checkbox" class="chkAnalisis h-4 w-4" 
-                                            value="${a.codigo}" 
-                                            data-nombre="${escapeHtml(a.nombre)}">
-
-                                        <span class="truncate text-gray-800 text-sm font-medium">
-                                            ${escapeHtml(a.nombre)} ${a.codigo ? `(${a.codigo})` : ""}
-                                        </span>
-                                    `;
-
-
-                            grid.appendChild(item);
-                        });
-
-                        cont.appendChild(grid);
-                    });
-
-                } catch (err) {
-                    console.error(err);
-                    cont.innerHTML = "<div class='text-red-500 text-sm'>Error cargando análisis.</div>";
-                }
-
-                function escapeHtml(str) {
-                    return String(str).replace(/[&<>"']/g, s => ({
-                        "&": "&amp;",
-                        "<": "&lt;",
-                        ">": "&gt;",
-                        '"': "&quot;",
-                        "'": "&#39;"
-                    } [s]));
-                }
-            }
-
-
-
-
-            function cerrarModalAnalisis() {
-                document.getElementById("modalAnalisis").classList.add("hidden");
-            }
-
-            async function confirmarAnalisisMultiples() {
-
-                const seleccionados = [...document.querySelectorAll(".chkAnalisis:checked")];
-
-                if (seleccionados.length === 0) {
-                    cerrarModalAnalisis();
-                    return;
-                }
-
-                for (let chk of seleccionados) {
-
-                    let codigo = chk.value;
-                    let nombre = chk.dataset.nombre;
-
-                    let res = await fetch("getTiposResultado.php?codigoAnalisis=" + codigo);
-                    let resultados = await res.json();
-
-                    crearBloqueAnalisis(codigo, nombre, resultados, true);
-                }
-
-                cerrarModalAnalisis();
-            }
-
-
-            function crearBloqueAnalisis(codigo, nombre, resultados, esManual = false) {
-
-                const cont = document.getElementById("analisisContainer");
-
-                let block = document.createElement("div");
-                block.className = "bloque-analisis relative bg-white shadow-sm border rounded-xl p-3";
-
-                // --- Botón para eliminar (solo manuales) ---
-                if (esManual) {
-                    let removeBtn = document.createElement("button");
-                    removeBtn.innerHTML = "x";
-                    removeBtn.className =
-                        "absolute top-2 right-2 text-gray-500 hover:text-red-600 px-2 py-1";
-                    removeBtn.title = "Eliminar análisis";
-
-                    // eliminar bloque
-                    removeBtn.onclick = () => {
-                        block.remove();
-                    };
-
-                    block.appendChild(removeBtn);
-                }
-
-                // --- Título ---
-                let title = document.createElement("div");
-                title.className = "text-[13px] font-semibold text-gray-700 mb-2";
-                title.textContent = `${nombre} (${codigo})`;
-
-                // --- Select ---
-                let select = document.createElement("select");
-                select.className =
-                    "w-full px-2 py-2 border border-gray-300 text-sm rounded-md focus:ring-2 focus:ring-blue-300";
-                select.name = "resultado_" + codigo;
-                select.dataset.nombre = nombre;
-                select.dataset.codigo = codigo;
-
-                // Default option
-                select.innerHTML = `<option value="" selected disabled>Seleccionar resultado</option>`;
-
-                // 👉 Si NO hay resultados, agregar "Sin resultados"
-                if (!resultados || resultados.length === 0) {
-                    let opt = document.createElement("option");
-                    opt.value = "";
-                    opt.textContent = "Sin resultados";
-                    opt.disabled = true;
-                    select.appendChild(opt);
-
-                    // Opcional: deshabilitar el select para que no puedan elegir nada
-                    // select.disabled = true;
-                } else {
-                    resultados.forEach(r => {
-                        let opt = document.createElement("option");
-                        opt.value = r;
-                        opt.textContent = r;
-                        select.appendChild(opt);
-                    });
-                }
-
-                // --- Textarea ---
-                let textarea = document.createElement("textarea");
-                textarea.placeholder = "Observaciones...";
-                textarea.className =
-                    "w-full mt-2 p-2 border rounded-md text-sm h-20 resize-none focus:ring-2 focus:ring-blue-300";
-                textarea.name = "comentario_" + codigo;
-
-                block.appendChild(title);
-                block.appendChild(select);
-                block.appendChild(textarea);
-
-                cont.appendChild(block);
-            }
-
-            const inputPDF = document.getElementById("archivoPdf");
-            const clearBtn = document.getElementById("clearPdfBtn");
-            const pdfName = document.getElementById("pdfName");
-
-            // 🔥 Función reutilizable
-            function limpiarPDF() {
-                inputPDF.value = "";
-                pdfName.textContent = "";
-                clearBtn.classList.add("hidden");
-            }
-
-            // Cuando el usuario selecciona un archivo
-            inputPDF.addEventListener("change", () => {
-                if (inputPDF.files.length > 0) {
-                    pdfName.textContent = "Archivo seleccionado: " + inputPDF.files[0].name;
-                    clearBtn.classList.remove("hidden");
-                }
-            });
-
-            // Botón X usa la función
-            clearBtn.addEventListener("click", limpiarPDF);
-        </script>
-
+        <!--  -->
+        <script src="rptaLaboratorio.js"></script>
 
 
         <!-- Footer -->

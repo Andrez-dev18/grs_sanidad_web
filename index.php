@@ -375,6 +375,9 @@ if (!$conexion) {
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-detalle-muestras.php','Detalle', 'Detalle')"
                         class="menu-link block text-gray-400 hover:text-white">Registro - Detalle</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados.php','Resultados', 'Resultados')"
+                        class="menu-link block text-gray-400 hover:text-white">Registro - Resultados</a>
 
 
                 </div>
@@ -521,6 +524,7 @@ if (!$conexion) {
 
                 'dashboard-rpta-laboratorio.php': title,
                 'dashboard-reportes.php': title,
+                'dashboard-registro-resultados.php': "Registro de resultados de solicitudes"
                 //seguir agregando mas si hay mas ventanas
 
             };

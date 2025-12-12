@@ -16,43 +16,57 @@ if ($codigoEnvio == "" || $pos == "") {
 }
 
 if (!isset($_FILES["pdf"])) {
-    echo json_encode(["error" => "No se recibió PDF"]);
+    echo json_encode(["error" => "No se recibió archivo"]);
     exit;
 }
 
-// Crear carpeta destino si no existe
+$file = $_FILES["pdf"];
+
+//  VALIDACIÓN DE TAMAÑO (20 MB)
+$maxSize = 20 * 1024 * 1024; // 20 MB
+if ($file["size"] > $maxSize) {
+    echo json_encode(["error" => "El archivo supera el límite de 20 MB"]);
+    exit;
+}
+
+//  VALIDACIÓN DE EXTENSIONES PERMITIDAS
+$permitidos = [
+    "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+    "jpg", "jpeg", "png", "txt", "csv"
+];
+
+$nombreOriginal = $file["name"];
+$ext = strtolower(pathinfo($nombreOriginal, PATHINFO_EXTENSION));
+
+if (!in_array($ext, $permitidos)) {
+    echo json_encode(["error" => "Tipo de archivo no permitido"]);
+    exit;
+}
+
+//  Crear carpeta destino si no existe
 $carpeta = "uploads/resultados/";
 if (!is_dir($carpeta)) {
     mkdir($carpeta, 0777, true);
 }
 
-// Generar nombre único
-$nombreOriginal = $_FILES["pdf"]["name"];
-$ext = pathinfo($nombreOriginal, PATHINFO_EXTENSION);
-
-$nombreArchivo = $codigoEnvio . "_" . $pos . "_" . time() . "." . $ext;
+//  NOMBRE FINAL DEL ARCHIVO (sin cambiar nombre original)
+$nombreArchivo = $codigoEnvio . "_" . $pos . "_" . $nombreOriginal;
+$nombreArchivo = str_replace(" ", "_", $nombreArchivo); // evitar espacios
 
 $rutaFinal = $carpeta . $nombreArchivo;
 
-// Mover archivo
-if (!move_uploaded_file($_FILES["pdf"]["tmp_name"], $rutaFinal)) {
+//  Guardar archivo
+if (!move_uploaded_file($file["tmp_name"], $rutaFinal)) {
     echo json_encode(["error" => "No se pudo guardar el archivo"]);
     exit;
 }
 
-// Obtener número siguiente de posArchivo
-$q = "
-    SELECT IFNULL(MAX(posArchivo), 0) + 1 AS nextPos
-    FROM san_fact_resultadopdf
-";
-$res = $conn->query($q);
-$row = $res->fetch_assoc();
-$nextPos = $row["nextPos"];
+$tipo = "cualitativo";
 
-// Insertar registro
+//  Insertar registro
 $sql = "
-    INSERT INTO san_fact_resultadopdf (codEnvio, posSolicitud, archRuta, posArchivo)
-    VALUES ('$codigoEnvio', '$pos', '$rutaFinal', '$nextPos')
+    INSERT INTO san_fact_resultado_archivo (codEnvio, posSolicitud, archRuta, tipo)
+    VALUES ('$codigoEnvio', '$pos', '$rutaFinal', '$tipo')
 ";
 
 if ($conn->query($sql)) {
@@ -60,3 +74,4 @@ if ($conn->query($sql)) {
 } else {
     echo json_encode(["error" => $conn->error]);
 }
+?>
