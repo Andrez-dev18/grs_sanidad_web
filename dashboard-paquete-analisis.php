@@ -180,8 +180,8 @@ if (!$conexion) {
                                         pm.tipoMuestra,
                                         tm.nombre as tipo_muestra_nombre,
                                         tm.codigo as tipo_muestra_codigo
-                                      FROM com_paquete_muestra pm
-                                      LEFT JOIN com_tipo_muestra tm ON pm.tipoMuestra = tm.codigo
+                                      FROM san_dim_paquete pm
+                                      LEFT JOIN san_dim_tipo_muestra tm ON pm.tipoMuestra = tm.codigo
                                       ORDER BY pm.codigo";
 
                             $result = mysqli_query($conexion, $query);
@@ -276,7 +276,7 @@ if (!$conexion) {
                                 <option value="">Seleccione un tipo de muestra...</option>
                                 <?php
                                 // Obtener tipos de muestra con código y nombre
-                                $query_tipos = "SELECT codigo, nombre FROM com_tipo_muestra ORDER BY codigo";
+                                $query_tipos = "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY codigo";
                                 $result_tipos = mysqli_query($conexion, $query_tipos);
                                 if ($result_tipos) {
                                     while ($tipo = mysqli_fetch_assoc($result_tipos)) {

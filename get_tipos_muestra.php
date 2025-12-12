@@ -13,7 +13,7 @@ if (!$conexion) {
     exit();
 }
 
-$result = mysqli_query($conexion, "SELECT codigo, nombre FROM com_tipo_muestra ORDER BY codigo");
+$result = mysqli_query($conexion, "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY codigo");
 $tipos = [];
 while ($row = mysqli_fetch_assoc($result)) {
     $tipos[] = $row;

@@ -27,8 +27,9 @@ mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 // --- Parámetros ---
 $registrosPorPagina = 10;
-$pagina = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-if ($pagina < 1) $pagina = 1;
+$pagina = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+if ($pagina < 1)
+    $pagina = 1;
 $offset = ($pagina - 1) * $registrosPorPagina;
 
 $busqueda = trim($_GET['q'] ?? '');
@@ -36,15 +37,14 @@ $condicion = '';
 $params = [];
 $types = '';
 
-if ($busqueda !== '') {
-    // Ahora buscamos en `codEnvio` (no `codigoEnvio`)
+if ($busqueda !== '') {   
     $condicion = "WHERE c.codEnvio LIKE ?";
     $params[] = "%$busqueda%";
     $types .= 's';
 }
 
 // --- Contar total ---
-$sqlTotal = "SELECT COUNT(*) AS total FROM com_db_solicitud_cab c $condicion";
+$sqlTotal = "SELECT COUNT(*) AS total FROM san_fact_solicitud_cab c $condicion";
 if (!empty($params)) {
     $stmtTotal = mysqli_prepare($conexion, $sqlTotal);
     mysqli_stmt_bind_param($stmtTotal, $types, ...$params);
@@ -68,8 +68,8 @@ $sql = "
         c.nomLab AS laboratorio,
         COUNT(d.posSolicitud) AS total_muestras,
         MIN(d.codRef) AS primer_codigo_ref
-    FROM com_db_solicitud_cab c
-    LEFT JOIN com_db_solicitud_det d ON c.codEnvio = d.codEnvio
+    FROM san_fact_solicitud_cab c
+    LEFT JOIN san_fact_solicitud_det d ON c.codEnvio = d.codEnvio
     $condicion
     GROUP BY c.codEnvio, c.fecEnvio, c.horaEnvio, c.nomLab, c.fechaHoraRegistro
     ORDER BY c.fechaHoraRegistro DESC
@@ -92,7 +92,7 @@ while ($row = mysqli_fetch_assoc($result)) {
         'fechaEnvio' => $row['fecEnvio'],
         'horaEnvio' => $row['horaEnvio'],
         'laboratorio' => $row['laboratorio'],
-        'total_muestras' => (int)($row['total_muestras'] ?? 0),
+        'total_muestras' => (int) ($row['total_muestras'] ?? 0),
         'primer_codigo_ref' => $row['primer_codigo_ref'] ?? '–',
     ];
 }

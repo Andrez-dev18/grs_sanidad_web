@@ -33,7 +33,7 @@ try {
             }
 
             // Verificar si ya existe un paquete con el mismo nombre
-            $check = mysqli_prepare($conexion, "SELECT codigo FROM com_paquete_muestra WHERE nombre = ?");
+            $check = mysqli_prepare($conexion, "SELECT codigo FROM san_dim_paquete WHERE nombre = ?");
             mysqli_stmt_bind_param($check, "s", $nombre);
             mysqli_stmt_execute($check);
             mysqli_stmt_store_result($check);
@@ -43,7 +43,7 @@ try {
             }
 
             // Verificar que el tipo de muestra exista
-            $checkTipo = mysqli_prepare($conexion, "SELECT codigo FROM com_tipo_muestra WHERE codigo = ?");
+            $checkTipo = mysqli_prepare($conexion, "SELECT codigo FROM san_dim_tipo_muestra WHERE codigo = ?");
             mysqli_stmt_bind_param($checkTipo, "i", $tipoMuestra);
             mysqli_stmt_execute($checkTipo);
             mysqli_stmt_store_result($checkTipo);
@@ -53,7 +53,7 @@ try {
             }
 
             // Insertar nuevo paquete
-            $stmt = mysqli_prepare($conexion, "INSERT INTO com_paquete_muestra (nombre, tipoMuestra) VALUES (?, ?)");
+            $stmt = mysqli_prepare($conexion, "INSERT INTO san_dim_paquete (nombre, tipoMuestra) VALUES (?, ?)");
             mysqli_stmt_bind_param($stmt, "si", $nombre, $tipoMuestra);
 
             if (mysqli_stmt_execute($stmt)) {
@@ -82,7 +82,7 @@ try {
             }
 
             // Verificar si ya existe otro paquete con el mismo nombre
-            $check = mysqli_prepare($conexion, "SELECT codigo FROM com_paquete_muestra WHERE nombre = ? AND codigo != ?");
+            $check = mysqli_prepare($conexion, "SELECT codigo FROM san_dim_paquete WHERE nombre = ? AND codigo != ?");
             mysqli_stmt_bind_param($check, "si", $nombre, $codigo);
             mysqli_stmt_execute($check);
             mysqli_stmt_store_result($check);
@@ -92,7 +92,7 @@ try {
             }
 
             // Verificar que el tipo de muestra exista
-            $checkTipo = mysqli_prepare($conexion, "SELECT codigo FROM com_tipo_muestra WHERE codigo = ?");
+            $checkTipo = mysqli_prepare($conexion, "SELECT codigo FROM san_dim_tipo_muestra WHERE codigo = ?");
             mysqli_stmt_bind_param($checkTipo, "i", $tipoMuestra);
             mysqli_stmt_execute($checkTipo);
             mysqli_stmt_store_result($checkTipo);
@@ -102,7 +102,7 @@ try {
             }
 
             // Actualizar paquete
-            $stmt = mysqli_prepare($conexion, "UPDATE com_paquete_muestra SET nombre = ?, tipoMuestra = ? WHERE codigo = ?");
+            $stmt = mysqli_prepare($conexion, "UPDATE san_dim_paquete SET nombre = ?, tipoMuestra = ? WHERE codigo = ?");
             mysqli_stmt_bind_param($stmt, "sii", $nombre, $tipoMuestra, $codigo);
 
             if (mysqli_stmt_execute($stmt)) {
@@ -121,7 +121,7 @@ try {
             }
 
             // Verificar si hay análisis usando este paquete
-            $check = mysqli_prepare($conexion, "SELECT COUNT(*) as total FROM com_analisis WHERE paquete = ?");
+            $check = mysqli_prepare($conexion, "SELECT COUNT(*) as total FROM san_dim_analisis WHERE paquete = ?");
             mysqli_stmt_bind_param($check, "i", $codigo);
             mysqli_stmt_execute($check);
             mysqli_stmt_bind_result($check, $count);
@@ -133,7 +133,7 @@ try {
             }
 
             // Eliminar paquete
-            $stmt = mysqli_prepare($conexion, "DELETE FROM com_paquete_muestra WHERE codigo = ?");
+            $stmt = mysqli_prepare($conexion, "DELETE FROM san_dim_paquete WHERE codigo = ?");
             mysqli_stmt_bind_param($stmt, "i", $codigo);
 
             if (mysqli_stmt_execute($stmt)) {

@@ -15,7 +15,7 @@ if (!$codEnvio)
 
 $cab = mysqli_fetch_assoc(mysqli_query(
     $conexion,
-    "SELECT * FROM com_db_solicitud_cab WHERE codEnvio = '" . mysqli_real_escape_string($conexion, $codEnvio) . "'"
+    "SELECT * FROM san_fact_solicitud_cab WHERE codEnvio = '" . mysqli_real_escape_string($conexion, $codEnvio) . "'"
 ));
 if (!$cab)
     die("Envío no encontrado.");
@@ -25,9 +25,9 @@ $det = mysqli_query($conexion, "
         d.*,
         tm.nombre AS tipo_muestra_real,
         a.nombre AS analisis_real
-    FROM com_db_solicitud_det d
-    LEFT JOIN com_tipo_muestra tm ON d.codMuestra = tm.codigo
-    LEFT JOIN com_analisis a ON d.codAnalisis = a.codigo
+    FROM san_fact_solicitud_det d
+    LEFT JOIN san_dim_tipo_muestra tm ON d.codMuestra = tm.codigo
+    LEFT JOIN san_dim_analisis a ON d.codAnalisis = a.codigo
     WHERE d.codEnvio = '" . mysqli_real_escape_string($conexion, $codEnvio) . "'
     ORDER BY d.posSolicitud, d.codAnalisis
 ");
@@ -92,30 +92,30 @@ while ($row = mysqli_fetch_assoc($det)) {
         </p>
 
         <?php if (!empty($agrupado)): ?>
-                <?php foreach ($agrupado as $pos => $items): ?>
-                        <div class="pos-group">
-                            <h2 class="font-bold text-lg text-green-800">Posición Solicitud: <?= (int) $pos ?></h2>
-                            <?php foreach ($items as $item): ?>
-                                    <div class="detalle-item">
-                                        <div class="font-medium">
-                                            <?= htmlspecialchars($item['analisis_real'] ?? $item['nomAnalisis']) ?>
-                                        </div>
-                                        <div class="text-sm text-gray-600 mt-1">
-                                            Ref: <code><?= htmlspecialchars($item['codRef']) ?></code> |
-                                            Tipo Muestra: <?= htmlspecialchars($item['tipo_muestra_real'] ?? $item['nomMuestra']) ?>
-                                        </div>
-                                        <div class="text-sm text-gray-500 mt-1">
-                                            Fecha Toma: <?= $item['fecToma'] ?> | Muestras: <?= $item['numMuestras'] ?>
-                                        </div>
-                                        <?php if (!empty($item['obs'])): ?>
-                                                <div class="text-xs italic text-gray-500 mt-1">Obs: <?= htmlspecialchars($item['obs']) ?></div>
-                                        <?php endif; ?>
-                                    </div>
-                            <?php endforeach; ?>
+            <?php foreach ($agrupado as $pos => $items): ?>
+                <div class="pos-group">
+                    <h2 class="font-bold text-lg text-green-800">Posición Solicitud: <?= (int) $pos ?></h2>
+                    <?php foreach ($items as $item): ?>
+                        <div class="detalle-item">
+                            <div class="font-medium">
+                                <?= htmlspecialchars($item['analisis_real'] ?? $item['nomAnalisis']) ?>
+                            </div>
+                            <div class="text-sm text-gray-600 mt-1">
+                                Ref: <code><?= htmlspecialchars($item['codRef']) ?></code> |
+                                Tipo Muestra: <?= htmlspecialchars($item['tipo_muestra_real'] ?? $item['nomMuestra']) ?>
+                            </div>
+                            <div class="text-sm text-gray-500 mt-1">
+                                Fecha Toma: <?= $item['fecToma'] ?> | Muestras: <?= $item['numMuestras'] ?>
+                            </div>
+                            <?php if (!empty($item['obs'])): ?>
+                                <div class="text-xs italic text-gray-500 mt-1">Obs: <?= htmlspecialchars($item['obs']) ?></div>
+                            <?php endif; ?>
                         </div>
-                <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </div>
+            <?php endforeach; ?>
         <?php else: ?>
-                <p class="text-gray-500">Este envío no tiene muestras asociadas.</p>
+            <p class=" text-gray-500">Este envío no tiene muestras asociadas.</p>
         <?php endif; ?>
     </div>
 

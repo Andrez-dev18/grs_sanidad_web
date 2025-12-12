@@ -26,7 +26,7 @@ mysqli_begin_transaction($conexion);
 try {
     if ($action === 'create') {
         // Verificar que no exista una empresa con el mismo nombre
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_emp_trans WHERE nombre = ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_emptrans WHERE nombre = ?");
         mysqli_stmt_bind_param($check, "s", $nombre);
         mysqli_stmt_execute($check);
         $row = mysqli_stmt_get_result($check)->fetch_assoc();
@@ -34,7 +34,7 @@ try {
             throw new Exception('Ya existe una empresa de transporte con ese nombre.');
         }
 
-        $stmt = mysqli_prepare($conexion, "INSERT INTO com_emp_trans (nombre) VALUES (?)");
+        $stmt = mysqli_prepare($conexion, "INSERT INTO san_dim_emptrans (nombre) VALUES (?)");
         mysqli_stmt_bind_param($stmt, "s", $nombre);
 
     } elseif ($action === 'update') {
@@ -42,7 +42,7 @@ try {
             throw new Exception('Código no válido.');
 
         // Verificar que no exista otra empresa con el mismo nombre
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_emp_trans WHERE nombre = ? AND codigo != ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_emptrans WHERE nombre = ? AND codigo != ?");
         mysqli_stmt_bind_param($check, "si", $nombre, $codigo);
         mysqli_stmt_execute($check);
         $row = mysqli_stmt_get_result($check)->fetch_assoc();
@@ -50,7 +50,7 @@ try {
             throw new Exception('Ya existe otra empresa de transporte con ese nombre.');
         }
 
-        $stmt = mysqli_prepare($conexion, "UPDATE com_emp_trans SET nombre = ? WHERE codigo = ?");
+        $stmt = mysqli_prepare($conexion, "UPDATE san_dim_emptrans SET nombre = ? WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "si", $nombre, $codigo);
 
     } elseif ($action === 'delete') {
@@ -58,7 +58,7 @@ try {
             throw new Exception('Código no válido.');
 
         // Verificar si la empresa está en uso en envíos
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_db_muestra_cabecera WHERE empTrans = ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_fact_solicitud_cab WHERE empTrans = ?");
         mysqli_stmt_bind_param($check, "i", $codigo);
         mysqli_stmt_execute($check);
         $row = mysqli_stmt_get_result($check)->fetch_assoc();
@@ -66,7 +66,7 @@ try {
             throw new Exception('No se puede eliminar: la empresa de transporte está en uso en ' . $row['cnt'] . ' envío(s).');
         }
 
-        $stmt = mysqli_prepare($conexion, "DELETE FROM com_emp_trans WHERE codigo = ?");
+        $stmt = mysqli_prepare($conexion, "DELETE FROM san_dim_emptrans WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "i", $codigo);
 
     } else {

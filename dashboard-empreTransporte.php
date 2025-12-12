@@ -113,7 +113,7 @@ if (!$conexion) {
                         </thead>
                         <tbody id="empTransTableBody" class="divide-y divide-gray-200">
                             <?php
-                            $query = "SELECT codigo, nombre FROM com_emp_trans ORDER BY nombre";
+                            $query = "SELECT codigo, nombre FROM san_dim_emptrans ORDER BY nombre";
                             $result = mysqli_query($conexion, $query);
                             if ($result && mysqli_num_rows($result) > 0) {
                                 while ($row = mysqli_fetch_assoc($result)) {

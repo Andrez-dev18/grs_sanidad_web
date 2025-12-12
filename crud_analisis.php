@@ -28,7 +28,7 @@ try {
     if ($action === 'create') {
         // Validar paquete si se envió
         if ($paquete !== null) {
-            $stmt = $conexion->prepare("SELECT 1 FROM com_paquete_muestra WHERE codigo = ?");
+            $stmt = $conexion->prepare("SELECT 1 FROM san_dim_paquete WHERE codigo = ?");
             $stmt->bind_param("i", $paquete);
             $stmt->execute();
             if (!$stmt->get_result()->fetch_row()) {
@@ -37,14 +37,14 @@ try {
         }
 
         // Evitar duplicados por nombre
-        $stmt = $conexion->prepare("SELECT 1 FROM com_analisis WHERE nombre = ?");
+        $stmt = $conexion->prepare("SELECT 1 FROM san_dim_analisis WHERE nombre = ?");
         $stmt->bind_param("s", $nombre);
         $stmt->execute();
         if ($stmt->get_result()->fetch_row()) {
             throw new Exception('Ya existe un análisis con ese nombre.');
         }
 
-        $stmt = $conexion->prepare("INSERT INTO com_analisis (nombre, paquete) VALUES (?, ?)");
+        $stmt = $conexion->prepare("INSERT INTO san_dim_analisis (nombre, paquete) VALUES (?, ?)");
         $stmt->bind_param("si", $nombre, $paquete);
 
     } elseif ($action === 'update') {
@@ -52,7 +52,7 @@ try {
             throw new Exception('Código no válido.');
 
         if ($paquete !== null) {
-            $stmt = $conexion->prepare("SELECT 1 FROM com_paquete_muestra WHERE codigo = ?");
+            $stmt = $conexion->prepare("SELECT 1 FROM san_dim_paquete WHERE codigo = ?");
             $stmt->bind_param("i", $paquete);
             $stmt->execute();
             if (!$stmt->get_result()->fetch_row()) {
@@ -60,22 +60,22 @@ try {
             }
         }
 
-        $stmt = $conexion->prepare("SELECT 1 FROM com_analisis WHERE nombre = ? AND codigo != ?");
+        $stmt = $conexion->prepare("SELECT 1 FROM san_dim_analisis WHERE nombre = ? AND codigo != ?");
         $stmt->bind_param("si", $nombre, $codigo);
         $stmt->execute();
         if ($stmt->get_result()->fetch_row()) {
             throw new Exception('Ya existe otro análisis con ese nombre.');
         }
 
-        $stmt = $conexion->prepare("UPDATE com_analisis SET nombre = ?, paquete = ? WHERE codigo = ?");
+        $stmt = $conexion->prepare("UPDATE san_dim_analisis SET nombre = ?, paquete = ? WHERE codigo = ?");
         $stmt->bind_param("sii", $nombre, $paquete, $codigo);
 
     } elseif ($action === 'delete') {
         if (!$codigo)
             throw new Exception('Código no válido.');
 
-        // Verificar uso en com_db_solicitud_det
-        $stmt = $conexion->prepare("SELECT COUNT(*) FROM com_db_solicitud_det WHERE codAnalisis = ?");
+        // Verificar uso en san_fact_solicitud_det
+        $stmt = $conexion->prepare("SELECT COUNT(*) FROM san_fact_solicitud_det WHERE codAnalisis = ?");
         $stmt->bind_param("i", $codigo);
         $stmt->execute();
         $count = $stmt->get_result()->fetch_row()[0];
@@ -83,7 +83,7 @@ try {
             throw new Exception("No se puede eliminar: el análisis está en uso en $count registro(s) de muestra.");
         }
 
-        $stmt = $conexion->prepare("DELETE FROM com_analisis WHERE codigo = ?");
+        $stmt = $conexion->prepare("DELETE FROM san_dim_analisis WHERE codigo = ?");
         $stmt->bind_param("i", $codigo);
 
     } else {

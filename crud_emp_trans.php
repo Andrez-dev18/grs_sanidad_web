@@ -23,7 +23,7 @@ if ($action === 'create') {
         echo json_encode(['success' => false, 'message' => 'Nombre es obligatorio.']);
         exit();
     }
-    $stmt = $conexion->prepare("INSERT INTO com_emp_trans (nombre) VALUES (?)");
+    $stmt = $conexion->prepare("INSERT INTO san_dim_emptrans (nombre) VALUES (?)");
     if ($stmt && $stmt->bind_param("s", $nombre) && $stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Empresa creada correctamente.']);
     } else {
@@ -34,7 +34,7 @@ if ($action === 'create') {
         echo json_encode(['success' => false, 'message' => 'Datos incompletos.']);
         exit();
     }
-    $stmt = $conexion->prepare("UPDATE com_emp_trans SET nombre = ? WHERE codigo = ?");
+    $stmt = $conexion->prepare("UPDATE san_dim_emptrans SET nombre = ? WHERE codigo = ?");
     if ($stmt && $stmt->bind_param("si", $nombre, $codigo) && $stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Empresa actualizada correctamente.']);
     } else {
@@ -46,7 +46,7 @@ if ($action === 'create') {
         exit();
     }
     // Opcional: verificar si está en uso antes de eliminar
-    $stmt = $conexion->prepare("DELETE FROM com_emp_trans WHERE codigo = ?");
+    $stmt = $conexion->prepare("DELETE FROM san_dim_emptrans WHERE codigo = ?");
     if ($stmt && $stmt->bind_param("i", $codigo) && $stmt->execute()) {
         echo json_encode(['success' => true, 'message' => 'Empresa eliminada correctamente.']);
     } else {

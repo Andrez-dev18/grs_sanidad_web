@@ -233,7 +233,7 @@ if (!$conexion) {
                                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer">
                                                 <option value="">Seleccionar...</option>
                                                 <?php
-                                                $query = "SELECT codigo, nombre FROM com_laboratorio ORDER BY nombre";
+                                                $query = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre";
                                                 $result = mysqli_query($conexion, $query);
                                                 if ($result && mysqli_num_rows($result) > 0) {
                                                     while ($row = mysqli_fetch_assoc($result)) {
@@ -266,7 +266,7 @@ if (!$conexion) {
                                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer">
                                                 <option value="">Seleccionar...</option>
                                                 <?php
-                                                $query = "SELECT codigo, nombre FROM com_emp_trans ORDER BY nombre";
+                                                $query = "SELECT codigo, nombre FROM san_dim_emptrans ORDER BY nombre";
                                                 $result = mysqli_query($conexion, $query);
                                                 if ($result && mysqli_num_rows($result) > 0) {
                                                     while ($row = mysqli_fetch_assoc($result)) {
@@ -418,23 +418,25 @@ if (!$conexion) {
             </div>
         </div>
 
-        <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
+        <div id="confirmModal"
+            class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-lg w-full max-w-6xl max-h-[90vh] flex flex-col">
                 <!-- Header -->
                 <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200">
                     <h2 class="text-xl font-bold text-gray-800">📋 Confirmar Envío de Muestras</h2>
-                    <button class="text-gray-500 text-2xl hover:text-gray-700 transition"
-                        onclick="closeConfirmModal()">&times;</button>
+                    <button class="text-gray-500 text-2xl hover:text-gray-700 transition" onclick="closeConfirmModal()">
+                        &times;
+                    </button>
                 </div>
 
-                <!-- Body con scroll interno -->
-                <div class="flex-1 p-6 overflow-hidden">
-                    <div id="summaryContent" class="overflow-auto max-h-[60vh]">
+                <!-- Body con scroll interno (vertical y horizontal) -->
+                <div class="flex-1 overflow-y-auto overflow-x-auto p-6">
+                    <div id="summaryContent" class="min-w-max">
                         <!-- Aquí se inyectará la tabla -->
                     </div>
                 </div>
 
-                <!-- Footer con botones estilo sistema -->
+                <!-- Footer -->
                 <div class="px-6 py-4 border-t border-gray-200 bg-white rounded-b-2xl">
                     <div class="flex flex-col sm:flex-row justify-end gap-3">
                         <button type="button" onclick="closeConfirmModal()"
@@ -449,7 +451,6 @@ if (!$conexion) {
                 </div>
             </div>
         </div>
-
         <!-- Footer -->
         <div class="text-center mt-12">
             <p class="text-gray-500 text-sm">
@@ -1450,7 +1451,7 @@ if (!$conexion) {
             const empresaSelect = document.getElementById("empresa_transporte");
             const empresaNombre = empresaSelect?.selectedOptions[0]?.text || "No seleccionado";
 
-            const responsableEnvio = formData.get("responsable_envio") || "No especificado";
+            const responsableEnvio = formData.get("usuario_responsable") || "No especificado";
             const autorizadoPor = formData.get("autorizado_por") || "No especificado";
 
             let summaryHTML = `

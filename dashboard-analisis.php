@@ -96,9 +96,9 @@ if (!$conexion) {
                                         pm.nombre AS paq_nombre,
                                         tm.codigo AS tm_codigo,
                                         tm.nombre AS tm_nombre
-                                      FROM com_analisis a
-                                      LEFT JOIN com_paquete_muestra pm ON a.paquete = pm.codigo
-                                      LEFT JOIN com_tipo_muestra tm ON pm.tipoMuestra = tm.codigo
+                                      FROM san_dim_analisis a
+                                      LEFT JOIN san_dim_paquete pm ON a.paquete = pm.codigo
+                                      LEFT JOIN san_dim_tipo_muestra tm ON pm.tipoMuestra = tm.codigo
                                       ORDER BY a.codigo";
                             $result = mysqli_query($conexion, $query);
                             if ($result && mysqli_num_rows($result) > 0) {
@@ -181,8 +181,8 @@ if (!$conexion) {
                                                     pm.nombre AS paq_nombre,
                                                     tm.codigo AS tm_codigo,
                                                     tm.nombre AS tm_nombre
-                                                  FROM com_paquete_muestra pm
-                                                  LEFT JOIN com_tipo_muestra tm ON pm.tipoMuestra = tm.codigo
+                                                  FROM san_dim_paquete pm
+                                                  LEFT JOIN san_dim_tipo_muestra tm ON pm.tipoMuestra = tm.codigo
                                                   ORDER BY pm.codigo";
                                 $result_paquetes = mysqli_query($conexion, $query_paquetes);
                                 if ($result_paquetes) {

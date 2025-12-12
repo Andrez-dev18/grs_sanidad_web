@@ -33,7 +33,7 @@ mysqli_begin_transaction($conexion);
 try {
     if ($action === 'create') {
         // Verificar que no exista un tipo de muestra con el mismo nombre
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_tipo_muestra WHERE nombre = ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_tipo_muestra WHERE nombre = ?");
         mysqli_stmt_bind_param($check, "s", $nombre);
         mysqli_stmt_execute($check);
         $row = mysqli_stmt_get_result($check)->fetch_assoc();
@@ -41,7 +41,7 @@ try {
             throw new Exception('Ya existe un tipo de muestra con ese nombre.');
         }
 
-        $stmt = mysqli_prepare($conexion, "INSERT INTO com_tipo_muestra (nombre, descripcion, lonCod) VALUES (?, ?, ?)");
+        $stmt = mysqli_prepare($conexion, "INSERT INTO san_dim_tipo_muestra (nombre, descripcion, lonCod) VALUES (?, ?, ?)");
         mysqli_stmt_bind_param($stmt, "ssi", $nombre, $descripcion, $longitud_codigo);
 
     } elseif ($action === 'update') {
@@ -49,7 +49,7 @@ try {
             throw new Exception('Código no válido.');
 
         // Verificar que no exista otro tipo de muestra con el mismo nombre
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_tipo_muestra WHERE nombre = ? AND codigo != ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_tipo_muestra WHERE nombre = ? AND codigo != ?");
         mysqli_stmt_bind_param($check, "si", $nombre, $codigo);
         mysqli_stmt_execute($check);
         $row = mysqli_stmt_get_result($check)->fetch_assoc();
@@ -57,7 +57,7 @@ try {
             throw new Exception('Ya existe otro tipo de muestra con ese nombre.');
         }
 
-        $stmt = mysqli_prepare($conexion, "UPDATE com_tipo_muestra SET nombre = ?, descripcion = ?, lonCod = ? WHERE codigo = ?");
+        $stmt = mysqli_prepare($conexion, "UPDATE san_dim_tipo_muestra SET nombre = ?, descripcion = ?, lonCod = ? WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "ssii", $nombre, $descripcion, $longitud_codigo, $codigo);
 
     } elseif ($action === 'delete') {
@@ -65,7 +65,7 @@ try {
             throw new Exception('Código no válido.');
 
         // Verificar si el tipo de muestra está en uso en paquetes de análisis
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_paquete_muestra WHERE tipoMuestra = ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_paquete WHERE tipoMuestra = ?");
         mysqli_stmt_bind_param($check, "i", $codigo);
         mysqli_stmt_execute($check);
         $row = mysqli_stmt_get_result($check)->fetch_assoc();
@@ -74,8 +74,8 @@ try {
         }
 
         // Verificar si el tipo de muestra está en uso en análisis
-        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_analisis a
-        JOIN com_paquete_muestra pm ON a.paquete = pm.codigo
+        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_analisis a
+        JOIN san_dim_paquete pm ON a.paquete = pm.codigo
         WHERE pm.tipoMuestra = ?");
         mysqli_stmt_bind_param($check2, "i", $codigo);
         mysqli_stmt_execute($check2);
@@ -84,7 +84,7 @@ try {
             throw new Exception('No se puede eliminar: el tipo de muestra está en uso en ' . $row2['cnt'] . ' análisis.');
         }
 
-        $stmt = mysqli_prepare($conexion, "DELETE FROM com_tipo_muestra WHERE codigo = ?");
+        $stmt = mysqli_prepare($conexion, "DELETE FROM san_dim_tipo_muestra WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "i", $codigo);
 
     } else {

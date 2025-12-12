@@ -18,7 +18,7 @@ if (isset($_GET['export_all_cabeceras'])) {
             codEnvio, fecEnvio, horaEnvio, codLab, nomLab, 
             codEmpTrans, nomEmpTrans, usuarioRegistrador, 
             usuarioResponsable, autorizadoPor, fechaHoraRegistro
-        FROM com_db_solicitud_cab 
+        FROM san_fact_solicitud_cab 
         ORDER BY fecEnvio DESC, horaEnvio DESC
     ";
     $result = mysqli_query($conexion, $query);
@@ -52,7 +52,7 @@ $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
 $page = max(1, $page);
 $offset = ($page - 1) * $registrosPorPagina;
 
-$totalQuery = "SELECT COUNT(*) as total FROM com_db_solicitud_cab";
+$totalQuery = "SELECT COUNT(*) as total FROM san_fact_solicitud_cab";
 $totalResult = mysqli_query($conexion, $totalQuery);
 $totalRegistros = mysqli_fetch_assoc($totalResult)['total'];
 $totalPaginas = ceil($totalRegistros / $registrosPorPagina);
@@ -62,7 +62,7 @@ $cabecerasQuery = "
         codEnvio, fecEnvio, horaEnvio, codLab, nomLab, 
         codEmpTrans, nomEmpTrans, usuarioRegistrador, 
         usuarioResponsable, autorizadoPor, fechaHoraRegistro
-    FROM com_db_solicitud_cab 
+    FROM san_fact_solicitud_cab 
     ORDER BY fecEnvio DESC, horaEnvio DESC 
     LIMIT $registrosPorPagina OFFSET $offset
 ";
@@ -81,9 +81,9 @@ if ($codEnvioSeleccionado) {
             d.obs, d.id, d.posSolicitud,
             tm.nombre AS tipo_muestra_real,
             a.nombre AS analisis_real
-        FROM com_db_solicitud_det d
-        LEFT JOIN com_tipo_muestra tm ON d.codMuestra = tm.codigo
-        LEFT JOIN com_analisis a ON d.codAnalisis = a.codigo
+        FROM san_fact_solicitud_det d
+        LEFT JOIN san_dim_tipo_muestra tm ON d.codMuestra = tm.codigo
+        LEFT JOIN san_dim_analisis a ON d.codAnalisis = a.codigo
         WHERE d.codEnvio = '$codEnvioEscapado'
         ORDER BY d.posSolicitud ASC, d.codMuestra ASC, d.codAnalisis ASC
     ";
@@ -346,7 +346,7 @@ if ($codEnvioSeleccionado) {
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                             <option value="">-- Código de Envío --</option>
                             <?php
-                            $todas = mysqli_query($conexion, "SELECT DISTINCT codEnvio FROM com_db_solicitud_cab ORDER BY codEnvio");
+                            $todas = mysqli_query($conexion, "SELECT DISTINCT codEnvio FROM san_fact_solicitud_cab ORDER BY codEnvio");
                             while ($r = mysqli_fetch_assoc($todas)):
                                 $sel = ($codEnvioSeleccionado == $r['codEnvio']) ? 'selected' : '';
                                 echo '<option value="' . htmlspecialchars($r['codEnvio']) . "\" $sel>" . htmlspecialchars($r['codEnvio']) . '</option>';
@@ -354,10 +354,10 @@ if ($codEnvioSeleccionado) {
                             ?>
                         </select>
                     </div>
-                   <button type="submit"
-    class="px-6 py-2.5 min-w-[250px] w-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200">
-    Cargar Detalle
-</button>
+                    <button type="submit"
+                        class="px-6 py-2.5 min-w-[250px] w-auto bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200">
+                        Cargar Detalle
+                    </button>
                 </form>
             </div>
         </div>

@@ -39,7 +39,7 @@ mysqli_begin_transaction($conexion);
 try {
     if ($action === 'create') {
         // Verificar que no exista el código de envío
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_db_muestra_cabecera WHERE codigoEnvio = ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_fact_solicitud_cab WHERE codigoEnvio = ?");
         mysqli_stmt_bind_param($check, "s", $codigoEnvio);
         mysqli_stmt_execute($check);
         $row = mysqli_stmt_get_result($check)->fetch_assoc();
@@ -48,7 +48,7 @@ try {
         }
 
         // Verificar que el laboratorio existe
-        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_laboratorio WHERE codigo = ?");
+        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_laboratorio WHERE codigo = ?");
         mysqli_stmt_bind_param($check2, "i", $laboratorio);
         mysqli_stmt_execute($check2);
         $row2 = mysqli_stmt_get_result($check2)->fetch_assoc();
@@ -57,7 +57,7 @@ try {
         }
 
         // Verificar que la empresa de transporte existe
-        $check3 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_emp_trans WHERE codigo = ?");
+        $check3 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_emptrans WHERE codigo = ?");
         mysqli_stmt_bind_param($check3, "i", $empTrans);
         mysqli_stmt_execute($check3);
         $row3 = mysqli_stmt_get_result($check3)->fetch_assoc();
@@ -67,7 +67,7 @@ try {
 
         $stmt = mysqli_prepare(
             $conexion,
-            "INSERT INTO com_db_muestra_cabecera 
+            "INSERT INTO san_fact_solicitud_cab 
             (codigoEnvio, fechaEnvio, horaEnvio, laboratorio, empTrans, usuarioRegistrador, usuarioResponsable, autorizadoPor) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         );
@@ -89,7 +89,7 @@ try {
             throw new Exception('Código original no válido.');
 
         // Verificar que el laboratorio existe
-        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_laboratorio WHERE codigo = ?");
+        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_laboratorio WHERE codigo = ?");
         mysqli_stmt_bind_param($check2, "i", $laboratorio);
         mysqli_stmt_execute($check2);
         $row2 = mysqli_stmt_get_result($check2)->fetch_assoc();
@@ -98,7 +98,7 @@ try {
         }
 
         // Verificar que la empresa de transporte existe
-        $check3 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_emp_trans WHERE codigo = ?");
+        $check3 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_emptrans WHERE codigo = ?");
         mysqli_stmt_bind_param($check3, "i", $empTrans);
         mysqli_stmt_execute($check3);
         $row3 = mysqli_stmt_get_result($check3)->fetch_assoc();
@@ -108,7 +108,7 @@ try {
 
         // Si cambió el código de envío, verificar que no exista
         if ($codigoEnvio !== $codigoOriginal) {
-            $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_db_muestra_cabecera WHERE codigoEnvio = ?");
+            $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_fact_solicitud_cab WHERE codigoEnvio = ?");
             mysqli_stmt_bind_param($check, "s", $codigoEnvio);
             mysqli_stmt_execute($check);
             $row = mysqli_stmt_get_result($check)->fetch_assoc();
@@ -117,7 +117,7 @@ try {
             }
 
             // Actualizar también los detalles asociados
-            $updateDetalle = mysqli_prepare($conexion, "UPDATE com_db_muestra_detalle SET codigoEnvio = ? WHERE codigoEnvio = ?");
+            $updateDetalle = mysqli_prepare($conexion, "UPDATE san_fact_solicitud_det SET codigoEnvio = ? WHERE codigoEnvio = ?");
             mysqli_stmt_bind_param($updateDetalle, "ss", $codigoEnvio, $codigoOriginal);
             if (!mysqli_stmt_execute($updateDetalle)) {
                 throw new Exception('Error al actualizar detalles asociados.');
@@ -126,7 +126,7 @@ try {
 
         $stmt = mysqli_prepare(
             $conexion,
-            "UPDATE com_db_muestra_cabecera 
+            "UPDATE san_fact_solicitud_cab 
             SET codigoEnvio = ?, fechaEnvio = ?, horaEnvio = ?, laboratorio = ?, empTrans = ?, 
                 usuarioResponsable = ?, autorizadoPor = ? 
             WHERE codigoEnvio = ?"
@@ -149,11 +149,11 @@ try {
             throw new Exception('Código no válido.');
 
         // Eliminar primero los detalles asociados
-        $deleteDetalle = mysqli_prepare($conexion, "DELETE FROM com_db_muestra_detalle WHERE codigoEnvio = ?");
+        $deleteDetalle = mysqli_prepare($conexion, "DELETE FROM san_fact_solicitud_det WHERE codigoEnvio = ?");
         mysqli_stmt_bind_param($deleteDetalle, "s", $codigoEnvio);
         mysqli_stmt_execute($deleteDetalle);
 
-        $stmt = mysqli_prepare($conexion, "DELETE FROM com_db_muestra_cabecera WHERE codigoEnvio = ?");
+        $stmt = mysqli_prepare($conexion, "DELETE FROM san_fact_solicitud_cab WHERE codigoEnvio = ?");
         mysqli_stmt_bind_param($stmt, "s", $codigoEnvio);
 
     } else {

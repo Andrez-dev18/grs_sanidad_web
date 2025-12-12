@@ -30,7 +30,7 @@ if ($busqueda !== '') {
 // Contar total (solo cuando se pide)
 $total = false;
 if (isset($_GET['get_total'])) {
-    $sqlTotal = "SELECT COUNT(*) AS total FROM com_db_solicitud_cab c " . $condicion;
+    $sqlTotal = "SELECT COUNT(*) AS total FROM san_fact_solicitud_cab c " . $condicion;
     $stmt = mysqli_prepare($conexion, $sqlTotal);
     if (!empty($params)) {
         mysqli_stmt_bind_param($stmt, str_repeat('s', count($params)), ...$params);
@@ -52,7 +52,7 @@ $sql = "
         c.usuarioRegistrador,
         c.usuarioResponsable,
         c.autorizadoPor
-    FROM com_db_solicitud_cab c
+    FROM san_fact_solicitud_cab c
     $condicion
     ORDER BY c.fechaHoraRegistro DESC
     LIMIT $registrosPorPagina OFFSET $offset

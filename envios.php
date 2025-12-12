@@ -66,27 +66,27 @@ if (!$conexion)
 
         <div class="max-w-5xl mx-auto" id="listaEnvios">
             <?php
-            $sql = "SELECT * FROM com_db_solicitud_cab ORDER BY fecEnvio DESC, horaEnvio DESC";
+            $sql = "SELECT * FROM san_fact_solicitud_cab ORDER BY fecEnvio DESC, horaEnvio DESC";
             $res = mysqli_query($conexion, $sql);
             if (mysqli_num_rows($res) > 0):
                 while ($row = mysqli_fetch_assoc($res)):
                     ?>
-                            <div class="envio-card" onclick="verDetalles('<?= addslashes($row['codEnvio']) ?>')">
-                                <div class="cod-envio"><?= htmlspecialchars($row['codEnvio']) ?></div>
-                                <div class="text-sm text-gray-600 mt-1">
-                                    <?= $row['fecEnvio'] ?>                 <?= $row['horaEnvio'] ?> |
-                                    Lab: <?= htmlspecialchars($row['nomLab']) ?> |
-                                    Transporte: <?= htmlspecialchars($row['nomEmpTrans']) ?>
-                                </div>
-                                <div class="text-xs text-gray-500 mt-1">
-                                    Registrado por: <?= htmlspecialchars($row['usuarioRegistrador']) ?>
-                                </div>
-                            </div>
-                            <?php
+                    <div class="envio-card" onclick="verDetalles('<?= addslashes($row['codEnvio']) ?>')">
+                        <div class="cod-envio"><?= htmlspecialchars($row['codEnvio']) ?></div>
+                        <div class="text-sm text-gray-600 mt-1">
+                            <?= $row['fecEnvio'] ?>         <?= $row['horaEnvio'] ?> |
+                            Lab: <?= htmlspecialchars($row['nomLab']) ?> |
+                            Transporte: <?= htmlspecialchars($row['nomEmpTrans']) ?>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">
+                            Registrado por: <?= htmlspecialchars($row['usuarioRegistrador']) ?>
+                        </div>
+                    </div>
+                    <?php
                 endwhile;
             else:
                 ?>
-                    <div class="text-center py-12 text-gray-500">No hay envíos registrados.</div>
+                <div class="text-center py-12 text-gray-500">No hay envíos registrados.</div>
             <?php endif; ?>
         </div>
     </div>

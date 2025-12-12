@@ -34,7 +34,7 @@ $stmt = mysqli_prepare($conexion, "
         c.nomEmpTrans AS empresa_transporte,
         c.usuarioRegistrador,
         c.autorizadoPor
-    FROM com_db_solicitud_cab c
+    FROM san_fact_solicitud_cab c
     WHERE c.codEnvio = ?
 ");
 mysqli_stmt_bind_param($stmt, "s", $codigoEnvio);
@@ -49,7 +49,7 @@ if (!$cab) {
 // === Detalles: traer todos los registros ===
 $stmt = mysqli_prepare($conexion, "
     SELECT posSolicitud, fecToma, codRef, numMuestras, obs, codAnalisis
-    FROM com_db_solicitud_det
+    FROM san_fact_solicitud_det
     WHERE codEnvio = ?
     ORDER BY posSolicitud
 ");
@@ -98,9 +98,9 @@ foreach ($grupos as $grupo) {
                 a.nombre AS analisis_nombre,
                 p.nombre AS paquete_nombre,
                 tm.nombre AS tipo_muestra_nombre
-            FROM com_analisis a
-            JOIN com_paquete_muestra p ON a.paquete = p.codigo
-            JOIN com_tipo_muestra tm ON p.tipoMuestra = tm.codigo
+            FROM san_dim_analisis a
+            JOIN san_dim_paquete p ON a.paquete = p.codigo
+            JOIN san_dim_tipo_muestra tm ON p.tipoMuestra = tm.codigo
             WHERE a.codigo IN ($placeholders)
             ORDER BY p.nombre, a.nombre
         ";
@@ -135,7 +135,7 @@ foreach ($grupos as $grupo) {
 mysqli_close($conexion);
 
 // === Generar PDF con mPDF ===
-require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 use Mpdf\Mpdf;
 
 $mpdf = new Mpdf([
