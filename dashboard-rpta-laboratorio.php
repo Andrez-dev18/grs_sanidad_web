@@ -78,6 +78,13 @@ $result = $conexion->query($query);
             cursor: pointer;
         }
 
+        .selected-order {
+            background-color: #e6f0ff;
+            /* azul muy suave */
+            border-color: #3b82f6 !important;
+            /* azul */
+        }
+
         .card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
@@ -235,6 +242,36 @@ $result = $conexion->query($query);
             </div>
         </div>
 
+        <!-- Modal Selección Múltiple de Análisis -->
+        <div id="modalAnalisis" class="fixed inset-0 bg-black bg-opacity-40 hidden flex justify-center items-center">
+            <div class="bg-white rounded-lg p-6 w-[950px] shadow-lg max-h-[85vh] overflow-y-auto relative">
+
+                <!-- Botón X para cerrar -->
+                <button onclick="cerrarModalAnalisis()"
+                    class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold">
+                    ✕
+                </button>
+
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Agregar análisis</h2>
+
+                <div id="listaAnalisis" class="space-y-3">
+                    <!-- Aquí se cargarán los grupos con checkboxes -->
+                </div>
+
+                <div class="flex justify-end mt-6 gap-3">
+                    <button onclick="cerrarModalAnalisis()" class="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
+                    <button onclick="confirmarAnalisisMultiples()"
+                        class="px-4 py-2 bg-blue-600 text-white rounded">
+                        Agregar Seleccionados
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+
+        <!--  -->
+        <script src="rptaLaboratorio.js"></script>
 
         <!-- Modal Selección Múltiple de Análisis -->
         <div id="modalAnalisis" class="fixed inset-0 bg-black bg-opacity-40 hidden flex justify-center items-center">
