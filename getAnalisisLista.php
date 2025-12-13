@@ -1,6 +1,6 @@
 <?php
 include_once '../conexion_grs_joya/conexion.php';
-$conn = conectar_sanidad();
+$conn = conectar_joya();
 
 $q = "
     SELECT 
@@ -10,12 +10,12 @@ $q = "
         tm.nombre AS tipoMuestraNombre,
 
         tr.tipo AS resultadoTipo
-    FROM com_tipo_resultado tr
-    INNER JOIN com_analisis a
+    FROM san_dim_tiporesultado tr
+    INNER JOIN san_dim_analisis a
         ON a.codigo = tr.analisis
-    LEFT JOIN com_paquete_muestra pm
+    LEFT JOIN san_dim_paquete pm
         ON pm.codigo = a.paquete
-    LEFT JOIN com_tipo_muestra tm
+    LEFT JOIN san_dim_tipo_muestra tm
         ON tm.codigo = pm.tipoMuestra
     ORDER BY tm.nombre ASC, a.nombre ASC, tr.tipo ASC
 ";

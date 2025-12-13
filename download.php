@@ -29,11 +29,11 @@ if (!$conexion) {
 }
 
 // --- Consultas ---
-$laboratorios = mysqli_query($conexion, "SELECT codigo, nombre FROM com_laboratorio ORDER BY nombre DESC");
-$emp_trans = mysqli_query($conexion, "SELECT codigo, nombre FROM com_emp_trans ORDER BY nombre DESC");
-$muestras = mysqli_query($conexion, "SELECT * FROM com_tipo_muestra ORDER BY codigo DESC");
-$paquetes = mysqli_query($conexion, "SELECT * FROM com_paquetes_analisis ORDER BY codigo DESC");
-$analisis = mysqli_query($conexion, "SELECT * FROM com_analisis ORDER BY codigo DESC");
+$laboratorios = mysqli_query($conexion, "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre DESC");
+$emp_trans = mysqli_query($conexion, "SELECT codigo, nombre FROM san_dim_emptrans ORDER BY nombre DESC");
+$muestras = mysqli_query($conexion, "SELECT * FROM san_dim_tipo_muestra ORDER BY codigo DESC");
+$paquetes = mysqli_query($conexion, "SELECT * FROM san_fdim_paquete ORDER BY codigo DESC");
+$analisis = mysqli_query($conexion, "SELECT * FROM san_dim_analisis ORDER BY codigo DESC");
 
 
 // --- Convertir a arrays ---

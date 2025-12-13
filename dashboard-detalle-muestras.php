@@ -11,7 +11,7 @@ if (!$conexion) {
 }
 
 if (isset($_GET['export_crudo_all'])) {
-    $query = "SELECT * FROM com_db_solicitud_det ORDER BY codEnvio, posSolicitud, codMuestra, codAnalisis, id";
+    $query = "SELECT * FROM san_fact_solicitud_det ORDER BY codEnvio, posSolicitud, codMuestra, codAnalisis, id";
     $result = mysqli_query($conexion, $query);
 
     if (!$result || mysqli_num_rows($result) === 0) {
@@ -50,14 +50,14 @@ $page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
 $page = max(1, $page);
 $offset = ($page - 1) * $registrosPorPagina;
 
-$totalQuery = "SELECT COUNT(*) as total FROM com_db_solicitud_det";
+$totalQuery = "SELECT COUNT(*) as total FROM san_fact_solicitud_det";
 $totalResult = mysqli_query($conexion, $totalQuery);
 $totalRegistros = mysqli_fetch_assoc($totalResult)['total'];
 $totalPaginas = ceil($totalRegistros / $registrosPorPagina);
 
 $detallesQuery = "
     SELECT * 
-    FROM com_db_solicitud_det 
+    FROM san_fact_solicitud_det 
     ORDER BY codEnvio, posSolicitud, codMuestra, codAnalisis, id
     LIMIT $registrosPorPagina OFFSET $offset
 ";
@@ -65,7 +65,7 @@ $detalles = mysqli_query($conexion, $detallesQuery);
 
 // Obtener siempre los nombres de las columnas, incluso si no hay registros
 $columnNames = [];
-$metaQuery = mysqli_query($conexion, "SELECT * FROM com_db_solicitud_det LIMIT 0");
+$metaQuery = mysqli_query($conexion, "SELECT * FROM san_fact_solicitud_det LIMIT 0");
 if ($metaQuery) {
     $fieldInfo = mysqli_fetch_fields($metaQuery);
     foreach ($fieldInfo as $field) {
@@ -195,7 +195,8 @@ if ($metaQuery) {
                             <?php if (!empty($columnNames)): ?>
                                 <?php foreach ($columnNames as $col): ?>
                                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">
-                                        <?= htmlspecialchars($col) ?></th>
+                                        <?= htmlspecialchars($col) ?>
+                                    </th>
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Sin columnas disponibles

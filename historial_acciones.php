@@ -86,7 +86,7 @@ function insertarHistorial(
     $conexion = obtenerConexion();
 
     $stmt = $conexion->prepare("
-        INSERT INTO com_historial_acciones (
+        INSERT INTO san_dim_historial_acciones (
             cod_usuario, nom_usuario, accion, tabla_afectada, registro_id,
             datos_previos, datos_nuevos, descripcion, fechaHora, ip,
             ubicacion_gps, dispositivo, sistema_operativo, navegador, user_agent

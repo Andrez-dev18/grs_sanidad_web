@@ -34,36 +34,37 @@ if (!$conexion) {
 
 // --- 4. Lógica de reserva de código ---
 try {
-    mysqli_autocommit($conexion, false);
-    $anio_actual = date('y'); // Ej. "25" para 2025
+   // BLOQUEAR TABLA
+    mysqli_query($conexion, "LOCK TABLES san_fact_solicitud_cab WRITE");
 
-    // Leer y bloquear el contador
-    $res = mysqli_query($conexion, "SELECT ultimo_numero, anio FROM com_contador_codigo WHERE id = 1 FOR UPDATE");
+    $anio_actual = date('y');
 
-    if (!$res || mysqli_num_rows($res) === 0) {
-        // Inicializar el contador si no existe
-        mysqli_query($conexion, "INSERT INTO com_contador_codigo (id, ultimo_numero, anio) VALUES (1, 0, '$anio_actual')");
-        $ultimo_numero = 0;
-        $anio_db = $anio_actual;
-    } else {
+    // Obtener último código
+    $sql = "
+        SELECT codEnvio
+        FROM san_fact_solicitud_cab
+        WHERE codEnvio LIKE 'SAN-0{$anio_actual}%'
+        ORDER BY codEnvio DESC
+        LIMIT 1
+    ";
+
+    $res = mysqli_query($conexion, $sql);
+
+    if ($res && mysqli_num_rows($res) > 0) {
         $row = mysqli_fetch_assoc($res);
-        $ultimo_numero = (int) $row['ultimo_numero'];
-        $anio_db = $row['anio'];
-    }
-
-    // Reiniciar si es un año nuevo
-    if ($anio_db !== $anio_actual) {
-        $nuevo_numero = 1;
-        mysqli_query($conexion, "UPDATE com_contador_codigo SET ultimo_numero = 1, anio = '$anio_actual' WHERE id = 1");
+        $ultimo = $row['codEnvio'];
+        $numero = intval(substr($ultimo, -4));
+        $nuevo_numero = $numero + 1;
     } else {
-        $nuevo_numero = $ultimo_numero + 1;
-
+        $nuevo_numero = 1;
     }
 
-    $codigo = "SAN-0{$anio_actual}" . str_pad($nuevo_numero, 4, '0', STR_PAD_LEFT);
+    // Generar código final
+    $codigo = "SAN-0{$anio_actual}" . str_pad($nuevo_numero, 4, "0", STR_PAD_LEFT);
 
-    mysqli_commit($conexion);
-    mysqli_autocommit($conexion, true);
+    // LIBERAR TABLAS
+    mysqli_query($conexion, "UNLOCK TABLES");
+
 
     // ✅ Respuesta exitosa
     echo json_encode([

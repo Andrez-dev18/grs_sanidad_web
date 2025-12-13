@@ -26,25 +26,25 @@ mysqli_begin_transaction($conexion);
 
 try {
     if ($action === 'create') {
-        $stmt = mysqli_prepare($conexion, "INSERT INTO com_emp_trans (nombre) VALUES (?)");
+        $stmt = mysqli_prepare($conexion, "INSERT INTO san_dim_emptrans (nombre) VALUES (?)");
         mysqli_stmt_bind_param($stmt, "s", $nombre);
     } elseif ($action === 'update') {
         if (!$codigo)
             throw new Exception('Código no válido.');
-        $stmt = mysqli_prepare($conexion, "UPDATE com_emp_trans SET nombre = ? WHERE codigo = ?");
+        $stmt = mysqli_prepare($conexion, "UPDATE san_dim_emptrans SET nombre = ? WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "si", $nombre, $codigo);
     } elseif ($action === 'delete') {
         if (!$codigo)
             throw new Exception('Código no válido.');
         // Verifica uso en envíos
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_db_muestra_cabecera WHERE empTrans = ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_fact_solicitud_cab WHERE empTrans = ?");
         mysqli_stmt_bind_param($check, "i", $codigo);
         mysqli_stmt_execute($check);
         $row = mysqli_stmt_get_result($check)->fetch_assoc();
         if ($row['cnt'] > 0) {
             throw new Exception('No se puede eliminar: la empresa ya está en uso en envíos.');
         }
-        $stmt = mysqli_prepare($conexion, "DELETE FROM com_emp_trans WHERE codigo = ?");
+        $stmt = mysqli_prepare($conexion, "DELETE FROM san_dim_emptrans WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "i", $codigo);
     } else {
         throw new Exception('Acción no válida.');

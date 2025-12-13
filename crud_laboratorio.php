@@ -27,7 +27,7 @@ mysqli_begin_transaction($conexion);
 try {
     if ($action === 'create') {
         // Opcional: evitar duplicados
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_laboratorio WHERE nombre = ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_laboratorio WHERE nombre = ?");
         mysqli_stmt_bind_param($check, "s", $nombre);
         mysqli_stmt_execute($check);
         $row = mysqli_stmt_get_result($check)->fetch_assoc();
@@ -35,7 +35,7 @@ try {
             throw new Exception('Ya existe un laboratorio con ese nombre.');
         }
 
-        $stmt = mysqli_prepare($conexion, "INSERT INTO com_laboratorio (nombre) VALUES (?)");
+        $stmt = mysqli_prepare($conexion, "INSERT INTO san_dim_laboratorio (nombre) VALUES (?)");
         mysqli_stmt_bind_param($stmt, "s", $nombre);
 
     } elseif ($action === 'update') {
@@ -43,7 +43,7 @@ try {
             throw new Exception('Código no válido.');
 
         // Opcional: evitar duplicados (excluyendo el actual)
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_laboratorio WHERE nombre = ? AND codigo != ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_laboratorio WHERE nombre = ? AND codigo != ?");
         mysqli_stmt_bind_param($check, "si", $nombre, $codigo);
         mysqli_stmt_execute($check);
         $row = mysqli_stmt_get_result($check)->fetch_assoc();
@@ -51,14 +51,14 @@ try {
             throw new Exception('Ya existe otro laboratorio con ese nombre.');
         }
 
-        $stmt = mysqli_prepare($conexion, "UPDATE com_laboratorio SET nombre = ? WHERE codigo = ?");
+        $stmt = mysqli_prepare($conexion, "UPDATE san_dim_laboratorio SET nombre = ? WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "si", $nombre, $codigo);
 
     } elseif ($action === 'delete') {
         if (!$codigo)
             throw new Exception('Código no válido.');
 
-        $stmt = mysqli_prepare($conexion, "DELETE FROM com_laboratorio WHERE codigo = ?");
+        $stmt = mysqli_prepare($conexion, "DELETE FROM san_dim_laboratorio WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "i", $codigo);
 
     } else {

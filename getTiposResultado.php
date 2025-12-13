@@ -1,12 +1,12 @@
 <?php
 include_once '../conexion_grs_joya/conexion.php';
-$conn = conectar_sanidad();
+$conn = conectar_joya();
 
 $codigo = $_GET["codigoAnalisis"];
 
 $q = "
 SELECT codigo, tipo 
-FROM com_tipo_resultado 
+FROM san_dim_tiporesultado 
 WHERE analisis = '$codigo'
 ORDER BY tipo
 ";

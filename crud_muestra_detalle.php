@@ -40,7 +40,7 @@ mysqli_begin_transaction($conexion);
 try {
     if ($action === 'create') {
         // Verificar que existe la cabecera
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_db_muestra_cabecera WHERE codigoEnvio = ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_fact_solicitud_cab WHERE codigoEnvio = ?");
         mysqli_stmt_bind_param($check, "s", $codigoEnvio);
         mysqli_stmt_execute($check);
         $row = mysqli_stmt_get_result($check)->fetch_assoc();
@@ -49,7 +49,7 @@ try {
         }
 
         // Verificar que no exista la combinación código-posición
-        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_db_muestra_detalle WHERE codigoEnvio = ? AND posicionSolicitud = ?");
+        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_fact_solicitud_det WHERE codigoEnvio = ? AND posicionSolicitud = ?");
         mysqli_stmt_bind_param($check2, "si", $codigoEnvio, $posicionSolicitud);
         mysqli_stmt_execute($check2);
         $row2 = mysqli_stmt_get_result($check2)->fetch_assoc();
@@ -59,7 +59,7 @@ try {
 
         $stmt = mysqli_prepare(
             $conexion,
-            "INSERT INTO com_db_muestra_detalle 
+            "INSERT INTO san_fact_solicitud_det 
             (codigoEnvio, posicionSolicitud, fechaToma, codigoReferencia, numeroMuestras, observaciones, analisis) 
             VALUES (?, ?, ?, ?, ?, ?, ?)"
         );
@@ -80,7 +80,7 @@ try {
             throw new Exception('Código o posición original no válidos.');
 
         // Verificar que existe la cabecera
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_db_muestra_cabecera WHERE codigoEnvio = ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_fact_solicitud_cab WHERE codigoEnvio = ?");
         mysqli_stmt_bind_param($check, "s", $codigoEnvio);
         mysqli_stmt_execute($check);
         $row = mysqli_stmt_get_result($check)->fetch_assoc();
@@ -90,7 +90,7 @@ try {
 
         // Si cambió el código de envío o posición, verificar que no exista
         if ($codigoEnvio !== $codigoOriginal || $posicionSolicitud !== $posicionOriginal) {
-            $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM com_db_muestra_detalle WHERE codigoEnvio = ? AND posicionSolicitud = ?");
+            $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_fact_solicitud_det WHERE codigoEnvio = ? AND posicionSolicitud = ?");
             mysqli_stmt_bind_param($check2, "si", $codigoEnvio, $posicionSolicitud);
             mysqli_stmt_execute($check2);
             $row2 = mysqli_stmt_get_result($check2)->fetch_assoc();
@@ -100,7 +100,7 @@ try {
         }
 
         // Mantener el campo análisis existente
-        $queryAnalisis = mysqli_prepare($conexion, "SELECT analisis FROM com_db_muestra_detalle WHERE codigoEnvio = ? AND posicionSolicitud = ?");
+        $queryAnalisis = mysqli_prepare($conexion, "SELECT analisis FROM san_fact_solicitud_det WHERE codigoEnvio = ? AND posicionSolicitud = ?");
         mysqli_stmt_bind_param($queryAnalisis, "si", $codigoOriginal, $posicionOriginal);
         mysqli_stmt_execute($queryAnalisis);
         $resultAnalisis = mysqli_stmt_get_result($queryAnalisis);
@@ -109,7 +109,7 @@ try {
 
         $stmt = mysqli_prepare(
             $conexion,
-            "UPDATE com_db_muestra_detalle 
+            "UPDATE san_fact_solicitud_det 
             SET codigoEnvio = ?, posicionSolicitud = ?, fechaToma = ?, codigoReferencia = ?, 
                 numeroMuestras = ?, observaciones = ? 
             WHERE codigoEnvio = ? AND posicionSolicitud = ?"
@@ -131,7 +131,7 @@ try {
         if (empty($codigoEnvio) || !$posicionSolicitud)
             throw new Exception('Código o posición no válidos.');
 
-        $stmt = mysqli_prepare($conexion, "DELETE FROM com_db_muestra_detalle WHERE codigoEnvio = ? AND posicionSolicitud = ?");
+        $stmt = mysqli_prepare($conexion, "DELETE FROM san_fact_solicitud_det WHERE codigoEnvio = ? AND posicionSolicitud = ?");
         mysqli_stmt_bind_param($stmt, "si", $codigoEnvio, $posicionSolicitud);
 
     } else {

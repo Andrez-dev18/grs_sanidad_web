@@ -320,12 +320,24 @@ if (!$conexion) {
 
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'dashboard-rpta-laboratorio.php', 'respuestalab', 'Respuesta de laboratorio')">
+                    onclick="toggleSubmenu('submenu-repuestasLab')">
                     <span class="flex items-center gap-3">
                         <i class="fa-solid fa-atom"></i>
                         <span class="font-medium">3.- Respuesta Laboratorio</span>
                     </span>
+                    <i class="fas fa-chevron-down text-sm"></i>
                 </button>
+
+                <div id="submenu-repuestasLab" class="submenu hidden pl-10 mt-2 space-y-2">
+
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-rpta-laboratorio.php', 'respuestalab', 'Respuesta de laboratorio')"
+                        class="menu-link block text-gray-400 hover:text-white">Resultados Cualitativos</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData()"
+                        class="menu-link block text-gray-400 hover:text-white">Resultados Cuantitativos</a>
+                    
+                </div>
 
             </div>
 

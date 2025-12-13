@@ -119,7 +119,7 @@ if (!$conexion) {
                         </thead>
                         <tbody id="tipoMuestraTableBody" class="divide-y divide-gray-200">
                             <?php
-                            $query = "SELECT codigo, nombre, descripcion, lonCod FROM com_tipo_muestra ORDER BY codigo";
+                            $query = "SELECT codigo, nombre, descripcion, lonCod FROM san_dim_tipo_muestra ORDER BY codigo";
                             $result = mysqli_query($conexion, $query);
                             if ($result && mysqli_num_rows($result) > 0) {
                                 while ($row = mysqli_fetch_assoc($result)) {

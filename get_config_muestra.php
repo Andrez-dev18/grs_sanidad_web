@@ -102,7 +102,7 @@ try {
     // Consultar tipo de muestra
     $tm = mysqli_fetch_assoc(mysqli_query($conexion, "
         SELECT codigo, nombre, lonCod 
-        FROM com_tipo_muestra 
+        FROM san_dim_tipo_muestra 
         WHERE codigo = " . (int) $tipoMuestraId . "
         
     "));
@@ -119,7 +119,7 @@ try {
     $paquetes = [];
     $paquetes_res = mysqli_query($conexion, "
         SELECT codigo, nombre 
-        FROM com_paquete_muestra 
+        FROM san_dim_paquete 
         WHERE tipoMuestra = " . (int) $tipoMuestraId . " 
         ORDER BY nombre
     ");
@@ -131,8 +131,8 @@ try {
     $analisis = [];
     $analisis_res = mysqli_query($conexion, "
             SELECT A.codigo, A.nombre, A.paquete 
-            FROM com_analisis A
-            JOIN com_paquete_muestra P ON A.paquete = P.codigo
+            FROM san_dim_analisis A
+            JOIN san_dim_paquete P ON A.paquete = P.codigo
             WHERE P.tipoMuestra = " . (int) $tipoMuestraId . " 
             ORDER BY nombre
     ");

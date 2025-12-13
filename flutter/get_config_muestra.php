@@ -45,7 +45,7 @@ $tipoCodigo = mysqli_real_escape_string($conexion, trim($tipoCodigo));
 // --- 1. Consultar tipo de muestra ---
 $tmQuery = mysqli_query($conexion, "
     SELECT codigo, nombre, lonCod
-    FROM com_tipo_muestra 
+    FROM san_dim_tipo_muestra 
     WHERE codigo = '$tipoCodigo'
     LIMIT 1
 ");
@@ -65,7 +65,7 @@ if (!$tipoMuestra) {
 $paquetes = [];
 $paqQuery = mysqli_query($conexion, "
     SELECT codigo, nombre 
-    FROM com_paquete_muestra
+    FROM san_dim_paquete
     WHERE tipoMuestra = '$tipoCodigo'
     ORDER BY nombre
 ");
@@ -77,8 +77,8 @@ while ($row = mysqli_fetch_assoc($paqQuery)) {
 $analisis = [];
 $anaQuery = mysqli_query($conexion, "
     SELECT A.codigo, A.nombre, A.paquete 
-            FROM com_analisis A
-            JOIN com_paquete_muestra P ON A.paquete = P.codigo
+            FROM san_dim_analisis A
+            JOIN san_dim_paquete P ON A.paquete = P.codigo
             WHERE P.tipoMuestra = '$tipoCodigo' 
             ORDER BY nombre
 ");

@@ -29,13 +29,13 @@ if (!$conexion) {
 }
 
 // --- Consultas ---
-$laboratorios = mysqli_query($conexion, "SELECT codigo, nombre FROM com_laboratorio ORDER BY nombre DESC");
-$emp_trans = mysqli_query($conexion, "SELECT codigo, nombre FROM com_emp_trans ORDER BY nombre DESC");
-$muestras = mysqli_query($conexion, "SELECT * FROM com_tipo_muestra ORDER BY codigo ASC");
-$paquetes = mysqli_query($conexion, "SELECT * FROM com_paquete_muestra ORDER BY codigo DESC");
-$analisis = mysqli_query($conexion, "SELECT * FROM com_analisis ORDER BY codigo DESC");
-$solicitud_cab = mysqli_query($conexion, "SELECT * FROM com_db_solicitud_cab ORDER BY codigo DESC");
-$solicitud_det = mysqli_query($conexion, "SELECT * FROM com_db_solicitud_det ORDER BY codigo DESC");
+$laboratorios = mysqli_query($conexion, "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre DESC");
+$emp_trans = mysqli_query($conexion, "SELECT codigo, nombre FROM san_dim_emptrans ORDER BY nombre DESC");
+$muestras = mysqli_query($conexion, "SELECT * FROM san_dim_tipo_muestra ORDER BY codigo ASC");
+$paquetes = mysqli_query($conexion, "SELECT * FROM san_dim_paquete ORDER BY codigo DESC");
+$analisis = mysqli_query($conexion, "SELECT * FROM san_dim_analisis ORDER BY codigo DESC");
+$solicitud_cab = mysqli_query($conexion, "SELECT * FROM san_fact_solicitud_cab ORDER BY codigo DESC");
+$solicitud_det = mysqli_query($conexion, "SELECT * FROM san_fact_solicitud_det ORDER BY codigo DESC");
 
 
 // --- Convertir a arrays ---
@@ -56,7 +56,7 @@ $data = [
     'muestras' => resultToArray($muestras),
     'paquetes' => resultToArray($paquetes),
     'analisis' => resultToArray($analisis),
-    'cabeceras' => resultToArray($$solicitud_cab),
+    'cabeceras' => resultToArray($solicitud_cab),
     'detalles' => resultToArray($solicitud_det),
 ];
 
