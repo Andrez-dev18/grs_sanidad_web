@@ -14,6 +14,37 @@ if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
 
+// Recibir filtros si vienen del AJAX
+$fechaInicio = $_GET['fechaInicio'] ?? null;
+$fechaFin    = $_GET['fechaFin'] ?? null;
+$estado      = $_GET['estado'] ?? 'pendiente';  // default
+
+// Construir condiciones dinámicas
+$conditions = [];
+
+// ESTADO
+if ($estado !== "todos") {
+    $conditions[] = "d.estado_cuali = '$estado'";
+}
+
+// FECHA INICIO
+if (!empty($fechaInicio)) {
+    $conditions[] = "d.fecToma >= '$fechaInicio'";
+}
+
+// FECHA FIN
+if (!empty($fechaFin)) {
+    $conditions[] = "d.fecToma <= '$fechaFin'";
+}
+
+// Si no hay filtros, igual ponemos default pendiente
+if (count($conditions) === 0) {
+    $conditions[] = "d.estado_cuali = 'pendiente'";
+}
+
+// Convertir array a WHERE
+$where = "WHERE " . implode(" AND ", $conditions);
+
 $query = "
     SELECT 
         d.codEnvio,
@@ -23,16 +54,14 @@ $query = "
         d.numMuestras AS numeroMuestras,
         
         GROUP_CONCAT(d.nomAnalisis ORDER BY d.nomAnalisis SEPARATOR ', ') AS analisis,
-        
         GROUP_CONCAT(d.codAnalisis ORDER BY d.codAnalisis SEPARATOR ',') AS analisisCodigos,
-        
         GROUP_CONCAT(d.obs ORDER BY d.posSolicitud SEPARATOR ' | ') AS observaciones
 
-    FROM san_dim_solicitud_det d
+    FROM san_fact_solicitud_det d
     INNER JOIN san_fact_solicitud_cab c
            ON d.codEnvio = c.codEnvio
             
-    WHERE d.estado = 'pendiente'
+    $where
 
     GROUP BY 
         d.codEnvio,
@@ -78,6 +107,13 @@ $result = $conexion->query($query);
             cursor: pointer;
         }
 
+        .selected-order {
+            background-color: #e6f0ff;
+            /* azul muy suave */
+            border-color: #3b82f6 !important;
+            /* azul */
+        }
+
         .card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
@@ -115,71 +151,102 @@ $result = $conexion->query($query);
 </head>
 
 <body class="bg-gray-50">
-    <div class="container mx-auto px-6 py-12">
+    <div class="container mx-auto px-3 py-6">
 
-        <div class="flex flex-col h-screen bg-[#f5f6f8]">
+        <div class="flex flex-col h-screen">
 
             <!-- HEADER -->
-            <header class="bg-white px-8 py-6 border-b border-[#e5e7eb]">
-                <h1 class="text-2xl font-semibold text-[#2c3e50]">🧪 Respuesta de Laboratorio</h1>
-                <p class="text-sm text-[#6c757d] mt-1">Adjunte los resultados enviados por el laboratorio</p>
+            <header class="mx- mt-6 bg-white p-8 rounded-xl shadow-sm border border-[#e5e7eb]">
+                <h1 class="text-2xl font-semibold text-[#2c3e50]">🧪 Respuesta de Laboratorio cualitativo</h1>
+                <!-- DIVISOR -->
+                <div class="w-full h-px bg-gray-200 my-6"></div>
+
+                <!-- FILTROS -->
+                <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+
+                    <!-- HEADER FILTROS (con botón plegable) -->
+                    <div class="flex items-center justify-between cursor-pointer"
+                        onclick="toggleFiltros()">
+                        <h3 class="text-sm font-semibold text-[#2c3e50]">
+                            🔍 Filtros de búsqueda
+                        </h3>
+
+                        <!-- Botón plegable -->
+                        <button id="btnToggleFiltros"
+                            class="text-gray-600 text-lg font-bold w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200">
+                            ➕
+                        </button>
+                    </div>
+
+                    <!-- CONTENIDO PLEGABLE -->
+                    <div id="filtrosContent"
+                        class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mt-4 transition-all duration-300 origin-top hidden">
+
+                        <!-- FECHA INICIO -->
+                        <div>
+                            <label class="text-xs font-medium text-gray-600 mb-1 block">Fecha Inicio</label>
+                            <input type="date" id="filtroFechaInicio"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
+                        </div>
+
+                        <!-- FECHA FIN -->
+                        <div>
+                            <label class="text-xs font-medium text-gray-600 mb-1 block">Fecha Fin</label>
+                            <input type="date" id="filtroFechaFin"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
+                        </div>
+
+                        <!-- ESTADO -->
+                        <div>
+                            <label class="text-xs font-medium text-gray-600 mb-1 block">Estado</label>
+                            <select id="filtroEstado"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
+                                <option value="todos">Todos</option>
+                                <option value="pendiente">Pendientes</option>
+                                <option value="completado">Completados</option>
+                            </select>
+                        </div>
+
+                        <!-- BOTÓN -->
+                        <div class="flex">
+                            <button onclick="aplicarFiltros()"
+                                class="w-full md:w-auto px-5 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm">
+                                Filtrar
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+
             </header>
 
             <div class="flex flex-1 overflow-hidden flex-col md:flex-row">
 
                 <!-- SIDEBAR -->
-                <aside class="bg-white w-full md:w-[280px] border-r border-[#e5e7eb] flex flex-col">
+                <aside class="bg-white w-full md:w-[300px] rounded-xl shadow-sm border border-[#e5e7eb] mt-4 mr-3 flex flex-col">
                     <div class="px-6 py-5 border-b border-[#e5e7eb]">
-                        <h3 class="text-base font-semibold text-[#2c3e50]">Solicitudes Pendientes</h3>
+                        <h3 class="text-base font-semibold text-[#2c3e50]">Solicitudes</h3>
 
                         <input
                             id="searchInput"
                             type="text"
                             placeholder="Buscar..."
-                            onkeyup="filterOrders(this.value)"
+
                             class="mt-3 w-full px-3 py-2 border border-[#d0d7de] rounded-md text-sm placeholder-[#a0aec0]
                                 focus:outline-none focus:ring-2 focus:ring-[#0066cc]/30">
                     </div>
 
                     <!-- Lista de solicitudes -->
                     <div id="pendingOrdersList" class="flex-1 overflow-y-auto p-4 space-y-3">
-                        <?php
 
-                        if ($result && $result->num_rows > 0):
-                            while ($row = $result->fetch_assoc()):
-
-                        ?>
-                                <button id="item-<?php echo $row['codEnvio']; ?>"
-                                    onclick="openDetail('<?php echo $row['codEnvio']; ?>',
-                                                        '<?php echo date('d/m/Y', strtotime($row['fecToma'])) ?>',
-                                                        '<?php echo $row['posSolicitud']; ?>')"
-                                    class="w-full text-left p-3 rounded-md hover:bg-gray-50 transition border border-transparent hover:border-gray-100">
-
-                                    <div class="font-medium text-sm text-[#1f2937]">
-                                        <?php echo htmlspecialchars($row['codEnvio']); ?>
-                                    </div>
-
-                                    <div class="text-xs text-gray-500 mt-1">
-                                        Fecha: <?php echo date('d/m/Y', strtotime($row['fecToma'])); ?>
-                                        • Ref: <?php echo htmlspecialchars($row['codRef']); ?>
-                                        • N° Solicitud: <?php echo htmlspecialchars($row['posSolicitud']); ?>
-                                    </div>
-
-                                </button>
-
-                            <?php
-                            endwhile;
-                        else:
-                            ?>
-
-                            <div class="text-gray-500 text-sm">No hay solicitudes pendientes.</div>
-
-                        <?php endif; ?>
                     </div>
+                    <div id="paginationControls" class="p-4 flex justify-between text-sm text-gray-600"></div>
+
                 </aside>
 
                 <!-- MAIN CONTENT -->
-                <main class="flex-1 overflow-y-auto p-6 md:p-10">
+                <main class="flex-1 overflow-y-auto mt-4 bg-white rounded-xl shadow-sm border border-[#e5e7eb] p-6 md:p-10">
 
                     <!-- EMPTY STATE (lo que se ve al inicio) -->
                     <div id="emptyStatePanel" class="mx-auto max-w-6xl">
@@ -200,11 +267,22 @@ $result = $conexion->query($query);
                                 <div>
                                     <h2 id="detailCodigo" class="text-3xl font-bold text-[#1f2937]">SAN-000000</h2>
                                     <span id="badgeStatus" class="inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium">Pendiente de Respuesta</span>
+                                    <!-- INFO ADICIONAL CABECERA -->
+                                    <div id="extraInfoCabecera" class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
+
+                                        <div><span class="font-semibold text-gray-800">🔬 Laboratorio:</span> <span id="cabLaboratorio">--</span></div>
+                                        <div><span class="font-semibold text-gray-800">🚚 Transporte:</span> <span id="cabTransporte">--</span></div>
+
+                                        <div><span class="font-semibold text-gray-800">👤 Registrado por:</span> <span id="cabRegistrador">--</span></div>
+                                        <div><span class="font-semibold text-gray-800">🧪 Responsable:</span> <span id="cabResponsable">--</span></div>
+
+                                        <div><span class="font-semibold text-gray-800">✔️ Autorizado por:</span> <span id="cabAutorizado">--</span></div>
+
+                                    </div>
                                 </div>
 
                                 <div class="text-sm text-gray-600 mt-3 md:mt-0 flex flex-col gap-1">
                                     <span id="detailFecha">📅 01/01/2024</span>
-                                    <span id="detailLab">🔬 Laboratorio</span>
                                 </div>
                             </div>
 
@@ -218,8 +296,40 @@ $result = $conexion->query($query);
                                         ➕ Agregar nuevo análisis
                                     </button>
                                 </div>
+                                <!-- NUEVA FECHA DE REGISTRO -->
+                                <div class="mt-6 mb-3">
+                                    <label for="fechaRegistroLab" class="block text-sm font-medium text-gray-700 mb-1">
+                                        📅 Fecha de registro del laboratorio
+                                    </label>
 
+                                    <input type="date"
+                                        id="fechaRegistroLab"
+                                        class="block w-full max-w-xs text-sm border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" />
+                                </div>
                                 <div id="analisisContainer" class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4"></div>
+
+                                <div class="mt-6">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Subir archivos (PDF, Word, Excel, Imágenes, etc.) — Opcional
+                                    </label>
+
+                                    <input type="file"
+                                        id="archivoPdf"
+                                        name="archivoPdf[]"
+                                        multiple
+                                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg"
+                                        class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4
+                                            file:rounded-md file:border-0
+                                            file:text-sm file:font-semibold
+                                            file:bg-blue-600 file:text-white
+                                            hover:file:bg-blue-700
+                                            border border-gray-300 rounded-md p-1" />
+
+                                    <div id="fileList" class="mt-3 space-y-2"></div>
+
+                                    <p class="text-xs text-gray-500 mt-1">(Máx. 10 MB por archivo)</p>
+                                </div>
+
 
 
                                 <!-- Botones -->
@@ -234,7 +344,6 @@ $result = $conexion->query($query);
                 </main>
             </div>
         </div>
-
 
         <!-- Modal Selección Múltiple de Análisis -->
         <div id="modalAnalisis" class="fixed inset-0 bg-black bg-opacity-40 hidden flex justify-center items-center">
@@ -264,281 +373,8 @@ $result = $conexion->query($query);
         </div>
 
 
-
-
-
-        <!-- JS funcional para el dropzone y toggles -->
-        <script>
-            let currentPosition = null;
-            async function openDetail(code, fechaToma, posicion) {
-
-                document.getElementById('emptyStatePanel').classList.add('hidden');
-                document.getElementById('responseDetailPanel').classList.remove('hidden');
-                document.getElementById('detailCodigo').textContent = code;
-                currentPosition = posicion;
-
-                document.getElementById('detailFecha').textContent = fechaToma;
-
-                const cont = document.getElementById("analisisContainer");
-                cont.innerHTML = "<div class='text-gray-500 text-sm'>Cargando análisis...</div>";
-
-                let res = await fetch("getAnalisisDetalle.php?codigoEnvio=" + code + "&posicion=" + posicion);
-                let data = await res.json();
-
-                cont.innerHTML = "";
-
-                if (!Array.isArray(data) || data.length === 0) {
-                    cont.innerHTML = "<div class='text-gray-500 text-sm'>No hay análisis disponibles.</div>";
-                    return;
-                }
-
-                data.forEach(item => {
-                    crearBloqueAnalisis(item.analisisCodigo, item.nombre, item.resultados);
-                });
-            }
-
-            function closeDetail() {
-                document.getElementById('responseDetailPanel').classList.add('hidden');
-                document.getElementById('emptyStatePanel').classList.remove('hidden');
-            }
-
-            async function guardarResultados() {
-                const code = document.getElementById("detailCodigo").textContent;
-                const cont = document.getElementById("analisisContainer");
-
-                let datos = [];
-
-                cont.querySelectorAll("select").forEach(sel => {
-
-                    let codigoAnalisis = sel.dataset.codigo;
-                    let nombre = sel.dataset.nombre;
-                    let resultado = sel.value;
-
-                    // 🔥 OBTENER EL COMMENT DEL MISMO BLOQUE DEL SELECT
-                    let block = sel.closest(".bloque-analisis");
-                    let observaciones = block.querySelector("textarea").value;
-
-                    datos.push({
-                        analisisCodigo: codigoAnalisis,
-                        analisisNombre: nombre,
-                        resultado: resultado,
-                        observaciones: observaciones
-                    });
-                });
-
-                let res = await fetch("guardarResultAnalisis.php", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        codigoEnvio: code,
-                        posicion: currentPosition,
-                        analisis: datos
-                    })
-                });
-
-                let r = await res.json();
-
-                if (r.success) {
-                    // 🔥 1. Cerrar panel detalle
-                    closeDetail();
-
-                    // 🔥 2. Remover la tarjeta del sidebar
-                    const item = document.getElementById("item-" + code);
-                    if (item) item.remove();
-
-                    // 🔥 3. Limpiar contenedor
-                    document.getElementById("analisisContainer").innerHTML = "";
-
-                    // 🔥 4. Si ya no quedan pendientes, mostrar mensaje
-                    const list = document.getElementById("pendingOrdersList");
-                    if (list.children.length === 0) {
-                        list.innerHTML = `<div class="text-gray-500 text-sm">No hay solicitudes pendientes.</div>`;
-                    }
-                    alert("✔️Resultados guardados correctamente");
-                } else {
-                    alert("Error al guardar: " + r.error);
-                }
-            }
-        </script>
-
-        <script>
-            document.getElementById("addAnalisis").addEventListener("click", abrirModalAnalisis);
-
-            async function abrirModalAnalisis() {
-                const modal = document.getElementById("modalAnalisis");
-                modal.classList.remove("hidden");
-
-                const cont = document.getElementById("listaAnalisis");
-                cont.innerHTML = "<div class='text-gray-500 text-sm'>Cargando...</div>";
-
-                try {
-                    const resp = await fetch("getAnalisisLista.php", {
-                        cache: "no-store"
-                    });
-                    if (!resp.ok) throw new Error("Error en la petición");
-
-                    const lista = await resp.json();
-                    cont.innerHTML = "";
-
-                    // lista viene así:
-                    // { "Aves vivas": [ {codigo, nombre},... ], "Sueros": [...], ... }
-
-                    Object.keys(lista).forEach(tipo => {
-
-                        // Encabezado del grupo
-                        const titulo = document.createElement("h3");
-                        titulo.className = "text-md font-semibold text-gray-800 mt-4 mb-2";
-                        titulo.textContent = "📌 " + tipo;
-                        cont.appendChild(titulo);
-
-                        // Contenedor grid horizontal
-                        const grid = document.createElement("div");
-                        grid.className = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-3";
-
-                        lista[tipo].forEach(a => {
-                            const item = document.createElement("label");
-                            item.className =
-                                "flex items-center gap-2 p-2 rounded-lg border border-gray-200 shadow-sm bg-gray-50 hover:bg-gray-100 cursor-pointer transition";
-
-                            item.innerHTML = `
-                                        <input type="checkbox" class="chkAnalisis h-4 w-4" 
-                                            value="${a.codigo}" 
-                                            data-nombre="${escapeHtml(a.nombre)}">
-
-                                        <span class="truncate text-gray-800 text-sm font-medium">
-                                            ${escapeHtml(a.nombre)} ${a.codigo ? `(${a.codigo})` : ""}
-                                        </span>
-                                    `;
-
-
-                            grid.appendChild(item);
-                        });
-
-                        cont.appendChild(grid);
-                    });
-
-                } catch (err) {
-                    console.error(err);
-                    cont.innerHTML = "<div class='text-red-500 text-sm'>Error cargando análisis.</div>";
-                }
-
-                function escapeHtml(str) {
-                    return String(str).replace(/[&<>"']/g, s => ({
-                        "&": "&amp;",
-                        "<": "&lt;",
-                        ">": "&gt;",
-                        '"': "&quot;",
-                        "'": "&#39;"
-                    } [s]));
-                }
-            }
-
-
-
-
-            function cerrarModalAnalisis() {
-                document.getElementById("modalAnalisis").classList.add("hidden");
-            }
-
-            async function confirmarAnalisisMultiples() {
-
-                const seleccionados = [...document.querySelectorAll(".chkAnalisis:checked")];
-
-                if (seleccionados.length === 0) {
-                    cerrarModalAnalisis();
-                    return;
-                }
-
-                for (let chk of seleccionados) {
-
-                    let codigo = chk.value;
-                    let nombre = chk.dataset.nombre;
-
-                    let res = await fetch("getTiposResultado.php?codigoAnalisis=" + codigo);
-                    let resultados = await res.json();
-
-                    crearBloqueAnalisis(codigo, nombre, resultados, true);
-                }
-
-                cerrarModalAnalisis();
-            }
-
-
-            function crearBloqueAnalisis(codigo, nombre, resultados, esManual = false) {
-
-                const cont = document.getElementById("analisisContainer");
-
-                let block = document.createElement("div");
-                block.className = "bloque-analisis relative bg-white shadow-sm border rounded-xl p-3";
-
-                // --- Botón para eliminar (solo manuales) ---
-                if (esManual) {
-                    let removeBtn = document.createElement("button");
-                    removeBtn.innerHTML = "x";
-                    removeBtn.className =
-                        "absolute top-2 right-2 text-gray-500 hover:text-red-600 px-2 py-1";
-                    removeBtn.title = "Eliminar análisis";
-
-                    // eliminar bloque
-                    removeBtn.onclick = () => {
-                        block.remove();
-                    };
-
-                    block.appendChild(removeBtn);
-                }
-
-                // --- Título ---
-                let title = document.createElement("div");
-                title.className = "text-[13px] font-semibold text-gray-700 mb-2";
-                title.textContent = `${nombre} (${codigo})`;
-
-                // --- Select ---
-                let select = document.createElement("select");
-                select.className =
-                    "w-full px-2 py-2 border border-gray-300 text-sm rounded-md focus:ring-2 focus:ring-blue-300";
-                select.name = "resultado_" + codigo;
-                select.dataset.nombre = nombre;
-                select.dataset.codigo = codigo;
-
-                // Default option
-                select.innerHTML = `<option value="" selected disabled>Seleccionar resultado</option>`;
-
-                // 👉 Si NO hay resultados, agregar "Sin resultados"
-                if (!resultados || resultados.length === 0) {
-                    let opt = document.createElement("option");
-                    opt.value = "";
-                    opt.textContent = "Sin resultados";
-                    opt.disabled = true;
-                    select.appendChild(opt);
-
-                    // Opcional: deshabilitar el select para que no puedan elegir nada
-                    // select.disabled = true;
-                } else {
-                    resultados.forEach(r => {
-                        let opt = document.createElement("option");
-                        opt.value = r;
-                        opt.textContent = r;
-                        select.appendChild(opt);
-                    });
-                }
-
-                // --- Textarea ---
-                let textarea = document.createElement("textarea");
-                textarea.placeholder = "Observaciones...";
-                textarea.className =
-                    "w-full mt-2 p-2 border rounded-md text-sm h-20 resize-none focus:ring-2 focus:ring-blue-300";
-                textarea.name = "comentario_" + codigo;
-
-                block.appendChild(title);
-                block.appendChild(select);
-                block.appendChild(textarea);
-
-                cont.appendChild(block);
-            }
-        </script>
-
+        <!--  -->
+        <script src="rptaLaboratorio.js"></script>
 
 
         <!-- Footer -->
@@ -549,6 +385,125 @@ $result = $conexion->query($query);
         </div>
 
     </div>
+
+    <script>
+        let currentPage = 1;
+        let limit = 10;
+        let debounceTimer = null;
+
+        /** carga la lista (pagina). page opcional */
+        function loadSidebar(page = 1) {
+            currentPage = page;
+
+            // filtros
+            const fechaInicio = encodeURIComponent(document.getElementById("filtroFechaInicio").value || "");
+            const fechaFin = encodeURIComponent(document.getElementById("filtroFechaFin").value || "");
+            const estado = encodeURIComponent(document.getElementById("filtroEstado").value || "pendiente");
+            const q = encodeURIComponent(document.getElementById("searchInput").value.trim() || "");
+
+            const url = `get_solicitudes.php?page=${page}&limit=${limit}&fechaInicio=${fechaInicio}&fechaFin=${fechaFin}&estado=${estado}&q=${q}`;
+
+            fetch(url)
+                .then(r => r.json())
+                .then(res => {
+                    const list = document.getElementById("pendingOrdersList");
+                    list.innerHTML = "";
+
+                    res.data.forEach(row => {
+                        const btn = document.createElement("button");
+                        // id único por codEnvio + pos
+                        btn.id = `item-${row.codEnvio}-${row.posSolicitud}`;
+                        btn.className = "w-full text-left p-3 rounded-md hover:bg-gray-50 transition border border-transparent hover:border-gray-100";
+
+                        btn.onclick = () => {
+                            // resaltar visualmente
+                            resaltarItemSidebar(row.codEnvio, row.posSolicitud);
+                            cargarCabecera(row.codEnvio, row.fecToma, row.posSolicitud);
+                        };
+
+                        btn.innerHTML = `
+                    <div class="font-medium text-sm text-[#1f2937]">${escapeHtml(row.codEnvio)}</div>
+                    <div class="text-xs text-gray-500 mt-1">
+                        Fecha: ${formatDate(row.fecToma)} • Ref: ${escapeHtml(row.codRef)} • Solicitud: ${escapeHtml(row.posSolicitud)}
+                    </div>
+                `;
+
+                        list.appendChild(btn);
+                    });
+
+                    // PAGINACIÓN
+                    renderPagination(res.page, res.total, res.limit);
+                })
+                .catch(err => {
+                    console.error("Error cargando solicitudes:", err);
+                });
+        }
+
+        /** render simple paginación */
+        function renderPagination(page, total, limit) {
+            const totalPages = Math.max(1, Math.ceil(total / limit));
+            const container = document.getElementById("paginationControls");
+
+            container.innerHTML = `
+        <button onclick="if(${page} > 1) loadSidebar(${page - 1});"
+            class="px-3 py-1 rounded ${page <= 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-200'}">
+            ← Anterior
+        </button>
+
+        <span>Página ${page} de ${totalPages}</span>
+
+        <button onclick="if(${page} < ${totalPages}) loadSidebar(${page + 1});"
+            class="px-3 py-1 rounded ${page >= totalPages ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-200'}">
+            Siguiente →
+        </button>
+    `;
+        }
+
+        /** aplica filtros (llama loadSidebar a página 1) */
+        function aplicarFiltros() {
+            loadSidebar(1);
+        }
+
+        /** debounce wrapper para el searchInput */
+        function debouncedSearch() {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                loadSidebar(1);
+            }, 300);
+        }
+
+        /** formato fecha para mostrar */
+        function formatDate(str) {
+            if (!str) return "-";
+            const d = new Date(str);
+            return d.toLocaleDateString("es-PE");
+        }
+
+        /** escapar texto simple para seguridad en innerHTML */
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        /** conectar input search al debouncedSearch */
+        document.addEventListener("DOMContentLoaded", () => {
+            const input = document.getElementById("searchInput");
+            if (input) {
+                input.addEventListener("input", debouncedSearch);
+            }
+
+            // cargar primera página
+            loadSidebar(1);
+        });
+    </script>
+
+
+
 
     <script src="funciones.js"></script>
     <script src="planificacion.js"></script>

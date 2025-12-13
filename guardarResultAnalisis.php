@@ -1,10 +1,6 @@
 <?php
 include_once '../conexion_grs_joya/conexion.php';
-<<<<<<< HEAD
-$conn = conectar_sanidad();
-=======
 $conn = conectar_joya();
->>>>>>> da6bccea67d1c917d13f7fe94e0da7960cbcb295
 if (!$conn) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -13,23 +9,22 @@ $input = json_decode(file_get_contents("php://input"), true);
 
 $codigoEnvio = $input["codigoEnvio"] ?? "";
 $analisis = $input["analisis"] ?? [];
-$pos = $input["posicion"] ?? ""; // ← La posición enviada por el front
+$pos = $input["posicion"] ?? "";
 
 if ($codigoEnvio == "" || empty($analisis) || $pos == "") {
     echo json_encode(["error" => "Datos incompletos"]);
     exit;
 }
 
-// Obtener info base correctamente usando la posición enviada
+$fechaLabRegistro = null;
+if (!empty($analisis) && isset($analisis[0]["fechaLabRegistro"])) {
+    $fechaLabRegistro = $conn->real_escape_string($analisis[0]["fechaLabRegistro"]);
+}
+
+// Obtener datos base
 $q = "
-    SELECT 
-        codRef,
-        fecToma
-<<<<<<< HEAD
-    FROM com_db_solicitud_det
-=======
-    FROM san_dim_solicitud_det
->>>>>>> da6bccea67d1c917d13f7fe94e0da7960cbcb295
+    SELECT codRef, fecToma
+    FROM san_fact_solicitud_det
     WHERE codEnvio = '$codigoEnvio'
       AND posSolicitud = '$pos'
     LIMIT 1
@@ -43,59 +38,96 @@ if (!$res || $res->num_rows == 0) {
 }
 
 $base = $res->fetch_assoc();
-
 $ref = $base["codRef"];
 $fecha = $base["fecToma"];
 
+// GUARDAR RESULTADOS CUALITATIVOS + MARCAR estado_cuali
 foreach ($analisis as $a) {
 
     $cod = $a["analisisCodigo"];
     $nom = $conn->real_escape_string($a["analisisNombre"]);
     $resul = $conn->real_escape_string($a["resultado"]);
 
-    // Observación opcional
     $obs = isset($a["observaciones"]) && trim($a["observaciones"]) !== ""
         ? $conn->real_escape_string($a["observaciones"])
         : NULL;
 
     // Insertar resultado
     $sql = "
-        INSERT INTO san_fact_resultado_analisis 
-        (codEnvio, posSolicitud, codRef, fecToma, analisis_codigo, analisis_nombre, resultado, obs)
-        VALUES 
-        ('$codigoEnvio', '$pos', '$ref', '$fecha', '$cod', '$nom', '$resul', " .
-        ($obs === NULL ? "NULL" : "'$obs'") . "
-        )
-    ";
+         INSERT INTO san_fact_resultado_analisis 
+            (codEnvio, posSolicitud, codRef, fecToma, analisis_codigo, analisis_nombre, resultado, obs, fechaLabRegistro)
+            VALUES 
+            (
+                '$codigoEnvio', 
+                '$pos', 
+                '$ref', 
+                '$fecha', 
+                '$cod', 
+                '$nom', 
+                '$resul', 
+                " . ($obs === NULL ? "NULL" : "'$obs'") . ",
+                " . ($fechaLabRegistro === null ? "NULL" : "'$fechaLabRegistro'") . "
+            )
+
+        ";
     $conn->query($sql);
 
-    // Actualizar estado del análisis
+    //  MARCAR SOLO LO CUALITATIVO
     $conn->query("
-        UPDATE san_dim_solicitud_det 
-        SET estado = 'completado'
+        UPDATE san_fact_solicitud_det 
+        SET estado_cuali = 'completado'
         WHERE codEnvio = '$codigoEnvio'
           AND posSolicitud = '$pos'
           AND codAnalisis = '$cod'
     ");
 }
 
-// Verificar si quedan pendientes
-$check = $conn->query("
+// ------------------------------------------------------------
+// VERIFICAR SI TODA ESTA POSICIÓN YA TIENE AMBOS ESTADOS OK
+// ------------------------------------------------------------
+
+$checkPos = $conn->query("
     SELECT COUNT(*) AS pendientes
-    FROM san_dim_solicitud_det
+    FROM san_fact_solicitud_det
     WHERE codEnvio = '$codigoEnvio'
-      AND estado = 'pendiente'
+      AND posSolicitud = '$pos'
+      AND (
+            estado_cuali = 'pendiente'
+         OR estado_cuanti = 'pendiente'
+      )
 ");
 
-$row = $check->fetch_assoc();
+$rowPos = $checkPos->fetch_assoc();
+$posCompleta = ($rowPos["pendientes"] == 0);
 
-// Si no quedan pendientes → completar cabecera
-if ($row["pendientes"] == 0) {
-    $conn->query("
-        UPDATE san_fact_solicitud_cab
-        SET estado = 'completado'
+// ------------------------------------------------------------
+//  SI TODAS LAS POSICIONES DE ESTE ENVÍO ESTÁN COMPLETAS 
+// (cuali y cuanti), SE COMPLETA LA CABECERA
+// ------------------------------------------------------------
+
+if ($posCompleta) {
+
+    // Revisar si TODAS las posiciones están completas
+    $checkCab = $conn->query("
+        SELECT COUNT(*) AS pendientes
+        FROM san_fact_solicitud_det
         WHERE codEnvio = '$codigoEnvio'
+          AND (
+                estado_cuali = 'pendiente'
+             OR estado_cuanti = 'pendiente'
+          )
     ");
+
+    $rowCab = $checkCab->fetch_assoc();
+
+    if ($rowCab["pendientes"] == 0) {
+        // 🔥 COMPLETAR CABECERA SOLO SI NADA FALTA
+        $conn->query("
+            UPDATE san_fact_solicitud_cab
+            SET estado = 'completado'
+            WHERE codEnvio = '$codigoEnvio'
+        ");
+    }
 }
 
 echo json_encode(["success" => true]);
