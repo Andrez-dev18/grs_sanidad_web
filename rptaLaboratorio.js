@@ -2,7 +2,7 @@ let currentPosition = null;
 async function openDetail(code, fechaToma, posicion) {
 
     resaltarItemSidebar(code, posicion);
-    cargarCabecera(code);
+    //cargarCabecera(code, posicion);
 
     document.getElementById('emptyStatePanel').classList.add('hidden');
     document.getElementById('responseDetailPanel').classList.remove('hidden');
@@ -63,8 +63,9 @@ function resaltarItemSidebar(code, pos) {
     }
 }
 
-function cargarCabecera(codEnvio) {
-    fetch(`get_solicitud_cabecera.php?codEnvio=${codEnvio}`)
+function cargarCabecera(codEnvio, fecToma, pos) {
+    openDetail(codEnvio, fecToma, pos);
+    fetch(`get_solicitud_cabecera.php?codEnvio=${codEnvio}&posSolicitud=${pos}`)
         .then(r => r.json())
         .then(data => {
 
@@ -82,7 +83,7 @@ function cargarCabecera(codEnvio) {
 
             // Cambia badge
             const badge = document.getElementById("badgeStatus");
-            if (data.estado === "completado") {
+            if (data.estado_cuali_general=== "completado") {
                 badge.textContent = "Completado";
                 badge.className = "inline-block mt-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium";
             } else {
@@ -92,6 +93,21 @@ function cargarCabecera(codEnvio) {
 
         });
 }
+
+
+function toggleFiltros() {
+    let box = document.getElementById("filtrosContent");
+    let btn = document.getElementById("btnToggleFiltros");
+
+    if (box.classList.contains("hidden")) {
+        box.classList.remove("hidden");
+        btn.textContent = "➖";
+    } else {
+        box.classList.add("hidden");
+        btn.textContent = "➕";
+    }
+}
+
 
 
 async function guardarResultados() {

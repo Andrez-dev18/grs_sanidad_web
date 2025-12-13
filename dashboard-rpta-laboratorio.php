@@ -14,6 +14,37 @@ if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
 
+// Recibir filtros si vienen del AJAX
+$fechaInicio = $_GET['fechaInicio'] ?? null;
+$fechaFin    = $_GET['fechaFin'] ?? null;
+$estado      = $_GET['estado'] ?? 'pendiente';  // default
+
+// Construir condiciones dinámicas
+$conditions = [];
+
+// ESTADO
+if ($estado !== "todos") {
+    $conditions[] = "d.estado_cuali = '$estado'";
+}
+
+// FECHA INICIO
+if (!empty($fechaInicio)) {
+    $conditions[] = "d.fecToma >= '$fechaInicio'";
+}
+
+// FECHA FIN
+if (!empty($fechaFin)) {
+    $conditions[] = "d.fecToma <= '$fechaFin'";
+}
+
+// Si no hay filtros, igual ponemos default pendiente
+if (count($conditions) === 0) {
+    $conditions[] = "d.estado_cuali = 'pendiente'";
+}
+
+// Convertir array a WHERE
+$where = "WHERE " . implode(" AND ", $conditions);
+
 $query = "
     SELECT 
         d.codEnvio,
@@ -23,16 +54,14 @@ $query = "
         d.numMuestras AS numeroMuestras,
         
         GROUP_CONCAT(d.nomAnalisis ORDER BY d.nomAnalisis SEPARATOR ', ') AS analisis,
-        
         GROUP_CONCAT(d.codAnalisis ORDER BY d.codAnalisis SEPARATOR ',') AS analisisCodigos,
-        
         GROUP_CONCAT(d.obs ORDER BY d.posSolicitud SEPARATOR ' | ') AS observaciones
 
     FROM san_fact_solicitud_det d
     INNER JOIN san_fact_solicitud_cab c
            ON d.codEnvio = c.codEnvio
             
-    WHERE d.estado_cuali = 'pendiente'
+    $where
 
     GROUP BY 
         d.codEnvio,
@@ -122,71 +151,102 @@ $result = $conexion->query($query);
 </head>
 
 <body class="bg-gray-50">
-    <div class="container mx-auto px-6 py-12">
+    <div class="container mx-auto px-3 py-6">
 
-        <div class="flex flex-col h-screen bg-[#f5f6f8]">
+        <div class="flex flex-col h-screen">
 
             <!-- HEADER -->
-            <header class="bg-white px-8 py-6 border-b border-[#e5e7eb]">
-                <h1 class="text-2xl font-semibold text-[#2c3e50]">🧪 Respuesta de Laboratorio</h1>
-                <p class="text-sm text-[#6c757d] mt-1">Adjunte los resultados enviados por el laboratorio</p>
+            <header class="mx- mt-6 bg-white p-8 rounded-xl shadow-sm border border-[#e5e7eb]">
+                <h1 class="text-2xl font-semibold text-[#2c3e50]">🧪 Respuesta de Laboratorio cualitativo</h1>
+                <!-- DIVISOR -->
+                <div class="w-full h-px bg-gray-200 my-6"></div>
+
+                <!-- FILTROS -->
+                <div class="mt-6 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+
+                    <!-- HEADER FILTROS (con botón plegable) -->
+                    <div class="flex items-center justify-between cursor-pointer"
+                        onclick="toggleFiltros()">
+                        <h3 class="text-sm font-semibold text-[#2c3e50]">
+                            🔍 Filtros de búsqueda
+                        </h3>
+
+                        <!-- Botón plegable -->
+                        <button id="btnToggleFiltros"
+                            class="text-gray-600 text-lg font-bold w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200">
+                            ➕
+                        </button>
+                    </div>
+
+                    <!-- CONTENIDO PLEGABLE -->
+                    <div id="filtrosContent"
+                        class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mt-4 transition-all duration-300 origin-top hidden">
+
+                        <!-- FECHA INICIO -->
+                        <div>
+                            <label class="text-xs font-medium text-gray-600 mb-1 block">Fecha Inicio</label>
+                            <input type="date" id="filtroFechaInicio"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
+                        </div>
+
+                        <!-- FECHA FIN -->
+                        <div>
+                            <label class="text-xs font-medium text-gray-600 mb-1 block">Fecha Fin</label>
+                            <input type="date" id="filtroFechaFin"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
+                        </div>
+
+                        <!-- ESTADO -->
+                        <div>
+                            <label class="text-xs font-medium text-gray-600 mb-1 block">Estado</label>
+                            <select id="filtroEstado"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
+                                <option value="todos">Todos</option>
+                                <option value="pendiente">Pendientes</option>
+                                <option value="completado">Completados</option>
+                            </select>
+                        </div>
+
+                        <!-- BOTÓN -->
+                        <div class="flex">
+                            <button onclick="aplicarFiltros()"
+                                class="w-full md:w-auto px-5 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm">
+                                Filtrar
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+
+
             </header>
 
             <div class="flex flex-1 overflow-hidden flex-col md:flex-row">
 
                 <!-- SIDEBAR -->
-                <aside class="bg-white w-full md:w-[280px] border-r border-[#e5e7eb] flex flex-col">
+                <aside class="bg-white w-full md:w-[300px] rounded-xl shadow-sm border border-[#e5e7eb] mt-4 mr-3 flex flex-col">
                     <div class="px-6 py-5 border-b border-[#e5e7eb]">
-                        <h3 class="text-base font-semibold text-[#2c3e50]">Solicitudes Pendientes</h3>
+                        <h3 class="text-base font-semibold text-[#2c3e50]">Solicitudes</h3>
 
                         <input
                             id="searchInput"
                             type="text"
                             placeholder="Buscar..."
-                            onkeyup="filterOrders(this.value)"
+
                             class="mt-3 w-full px-3 py-2 border border-[#d0d7de] rounded-md text-sm placeholder-[#a0aec0]
                                 focus:outline-none focus:ring-2 focus:ring-[#0066cc]/30">
                     </div>
 
                     <!-- Lista de solicitudes -->
                     <div id="pendingOrdersList" class="flex-1 overflow-y-auto p-4 space-y-3">
-                        <?php
 
-                        if ($result && $result->num_rows > 0):
-                            while ($row = $result->fetch_assoc()):
-
-                        ?>
-                                <button id="item-<?php echo $row['codEnvio'] . '-' . $row['posSolicitud']; ?>"
-                                    onclick="openDetail('<?php echo $row['codEnvio']; ?>',
-                                                        '<?php echo date('d/m/Y', strtotime($row['fecToma'])) ?>',
-                                                        '<?php echo $row['posSolicitud']; ?>')"
-                                    class="w-full text-left p-3 rounded-md hover:bg-gray-50 transition border border-transparent hover:border-gray-100">
-
-                                    <div class="font-medium text-sm text-[#1f2937]">
-                                        <?php echo htmlspecialchars($row['codEnvio']); ?>
-                                    </div>
-
-                                    <div class="text-xs text-gray-500 mt-1">
-                                        Fecha: <?php echo date('d/m/Y', strtotime($row['fecToma'])); ?>
-                                        • Ref: <?php echo htmlspecialchars($row['codRef']); ?>
-                                        • N° Solicitud: <?php echo htmlspecialchars($row['posSolicitud']); ?>
-                                    </div>
-
-                                </button>
-
-                            <?php
-                            endwhile;
-                        else:
-                            ?>
-
-                            <div class="text-gray-500 text-sm">No hay solicitudes pendientes.</div>
-
-                        <?php endif; ?>
                     </div>
+                    <div id="paginationControls" class="p-4 flex justify-between text-sm text-gray-600"></div>
+
                 </aside>
 
                 <!-- MAIN CONTENT -->
-                <main class="flex-1 overflow-y-auto p-6 md:p-10">
+                <main class="flex-1 overflow-y-auto mt-4 bg-white rounded-xl shadow-sm border border-[#e5e7eb] p-6 md:p-10">
 
                     <!-- EMPTY STATE (lo que se ve al inicio) -->
                     <div id="emptyStatePanel" class="mx-auto max-w-6xl">
@@ -208,7 +268,7 @@ $result = $conexion->query($query);
                                     <h2 id="detailCodigo" class="text-3xl font-bold text-[#1f2937]">SAN-000000</h2>
                                     <span id="badgeStatus" class="inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium">Pendiente de Respuesta</span>
                                     <!-- INFO ADICIONAL CABECERA -->
-                                    <div id="extraInfoCabecera" class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                                    <div id="extraInfoCabecera" class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
 
                                         <div><span class="font-semibold text-gray-800">🔬 Laboratorio:</span> <span id="cabLaboratorio">--</span></div>
                                         <div><span class="font-semibold text-gray-800">🚚 Transporte:</span> <span id="cabTransporte">--</span></div>
@@ -325,6 +385,125 @@ $result = $conexion->query($query);
         </div>
 
     </div>
+
+    <script>
+        let currentPage = 1;
+        let limit = 10;
+        let debounceTimer = null;
+
+        /** carga la lista (pagina). page opcional */
+        function loadSidebar(page = 1) {
+            currentPage = page;
+
+            // filtros
+            const fechaInicio = encodeURIComponent(document.getElementById("filtroFechaInicio").value || "");
+            const fechaFin = encodeURIComponent(document.getElementById("filtroFechaFin").value || "");
+            const estado = encodeURIComponent(document.getElementById("filtroEstado").value || "pendiente");
+            const q = encodeURIComponent(document.getElementById("searchInput").value.trim() || "");
+
+            const url = `get_solicitudes.php?page=${page}&limit=${limit}&fechaInicio=${fechaInicio}&fechaFin=${fechaFin}&estado=${estado}&q=${q}`;
+
+            fetch(url)
+                .then(r => r.json())
+                .then(res => {
+                    const list = document.getElementById("pendingOrdersList");
+                    list.innerHTML = "";
+
+                    res.data.forEach(row => {
+                        const btn = document.createElement("button");
+                        // id único por codEnvio + pos
+                        btn.id = `item-${row.codEnvio}-${row.posSolicitud}`;
+                        btn.className = "w-full text-left p-3 rounded-md hover:bg-gray-50 transition border border-transparent hover:border-gray-100";
+
+                        btn.onclick = () => {
+                            // resaltar visualmente
+                            resaltarItemSidebar(row.codEnvio, row.posSolicitud);
+                            cargarCabecera(row.codEnvio, row.fecToma, row.posSolicitud);
+                        };
+
+                        btn.innerHTML = `
+                    <div class="font-medium text-sm text-[#1f2937]">${escapeHtml(row.codEnvio)}</div>
+                    <div class="text-xs text-gray-500 mt-1">
+                        Fecha: ${formatDate(row.fecToma)} • Ref: ${escapeHtml(row.codRef)} • Solicitud: ${escapeHtml(row.posSolicitud)}
+                    </div>
+                `;
+
+                        list.appendChild(btn);
+                    });
+
+                    // PAGINACIÓN
+                    renderPagination(res.page, res.total, res.limit);
+                })
+                .catch(err => {
+                    console.error("Error cargando solicitudes:", err);
+                });
+        }
+
+        /** render simple paginación */
+        function renderPagination(page, total, limit) {
+            const totalPages = Math.max(1, Math.ceil(total / limit));
+            const container = document.getElementById("paginationControls");
+
+            container.innerHTML = `
+        <button onclick="if(${page} > 1) loadSidebar(${page - 1});"
+            class="px-3 py-1 rounded ${page <= 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-200'}">
+            ← Anterior
+        </button>
+
+        <span>Página ${page} de ${totalPages}</span>
+
+        <button onclick="if(${page} < ${totalPages}) loadSidebar(${page + 1});"
+            class="px-3 py-1 rounded ${page >= totalPages ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-200'}">
+            Siguiente →
+        </button>
+    `;
+        }
+
+        /** aplica filtros (llama loadSidebar a página 1) */
+        function aplicarFiltros() {
+            loadSidebar(1);
+        }
+
+        /** debounce wrapper para el searchInput */
+        function debouncedSearch() {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                loadSidebar(1);
+            }, 300);
+        }
+
+        /** formato fecha para mostrar */
+        function formatDate(str) {
+            if (!str) return "-";
+            const d = new Date(str);
+            return d.toLocaleDateString("es-PE");
+        }
+
+        /** escapar texto simple para seguridad en innerHTML */
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        /** conectar input search al debouncedSearch */
+        document.addEventListener("DOMContentLoaded", () => {
+            const input = document.getElementById("searchInput");
+            if (input) {
+                input.addEventListener("input", debouncedSearch);
+            }
+
+            // cargar primera página
+            loadSidebar(1);
+        });
+    </script>
+
+
+
 
     <script src="funciones.js"></script>
     <script src="planificacion.js"></script>
