@@ -1,5 +1,6 @@
 <?php
 include_once '../conexion_grs_joya/conexion.php';
+session_start();
 $conn = conectar_joya();
 
 if (!$conn) {
@@ -9,6 +10,7 @@ if (!$conn) {
 
 $codigoEnvio = $_POST["codigoEnvio"] ?? "";
 $pos = $_POST["posSolicitud"] ?? "";
+$user = $_SESSION['usuario'] ?? "";
 
 if ($codigoEnvio == "" || $pos == "") {
     echo json_encode(["error" => "Datos incompletos"]);
@@ -65,8 +67,8 @@ $tipo = "cualitativo";
 
 //  Insertar registro
 $sql = "
-    INSERT INTO san_fact_resultado_archivo (codEnvio, posSolicitud, archRuta, tipo)
-    VALUES ('$codigoEnvio', '$pos', '$rutaFinal', '$tipo')
+    INSERT INTO san_fact_resultado_archivo (codEnvio, posSolicitud, archRuta, tipo, usuarioRegistrador)
+    VALUES ('$codigoEnvio', '$pos', '$rutaFinal', '$tipo', '$user')
 ";
 
 if ($conn->query($sql)) {

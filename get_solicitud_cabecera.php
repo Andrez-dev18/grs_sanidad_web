@@ -14,6 +14,7 @@ if ($codigo == "") {
 $q = "
     SELECT 
         c.codEnvio,
+        MAX(d.codRef) AS codRef,
         c.fecEnvio,
         c.horaEnvio,
         c.codLab,

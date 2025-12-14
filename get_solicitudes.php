@@ -9,6 +9,7 @@ $offset = ($page - 1) * $limit;
 $fechaInicio = $_GET['fechaInicio'] ?? null;
 $fechaFin    = $_GET['fechaFin'] ?? null;
 $estado      = $_GET['estado'] ?? "pendiente";
+$nomLab = trim($_GET['lab'] ?? '');
 $qSearch     = trim($_GET['q'] ?? '');
 
 // Construir condiciones
@@ -17,24 +18,31 @@ $conditions = [];
 if ($estado !== "todos") {
     $conditions[] = "d.estado_cuali = '" . $conn->real_escape_string($estado) . "'";
 }
+
 if (!empty($fechaInicio)) {
     $conditions[] = "d.fecToma >= '" . $conn->real_escape_string($fechaInicio) . "'";
 }
+
 if (!empty($fechaFin)) {
     $conditions[] = "d.fecToma <= '" . $conn->real_escape_string($fechaFin) . "'";
 }
+
 if (!empty($qSearch)) {
     $qEsc = $conn->real_escape_string($qSearch);
-    // buscar por codigo envio o referencia (LIKE)
     $conditions[] = "(d.codEnvio LIKE '%$qEsc%' OR d.codRef LIKE '%$qEsc%')";
 }
 
-// Si no hay condiciones, mostrar pendientes por defecto
+if (!empty($nomLab)) {
+    $labEsc = $conn->real_escape_string($nomLab);
+    $conditions[] = "c.nomLab = '$labEsc'";
+}
+
 if (count($conditions) === 0) {
     $conditions[] = "d.estado_cuali = 'pendiente'";
 }
 
 $where = "WHERE " . implode(" AND ", $conditions);
+
 
 // -------- TOTAL --------
 $countQuery = "
@@ -42,10 +50,13 @@ $countQuery = "
     FROM (
         SELECT d.codEnvio, d.posSolicitud
         FROM san_fact_solicitud_det d
+        INNER JOIN san_fact_solicitud_cab c
+            ON c.codEnvio = d.codEnvio
         $where
         GROUP BY d.codEnvio, d.posSolicitud
     ) AS temp
 ";
+
 $resCount = $conn->query($countQuery);
 if (!$resCount) {
     die("SQL ERROR COUNT: " . $conn->error . " --- QUERY: $countQuery");
@@ -57,15 +68,27 @@ $query = "
     SELECT 
         d.codEnvio,
         d.posSolicitud,
+
+        CASE 
+            WHEN SUM(d.estado_cuali = 'pendiente') > 0 THEN 'pendiente'
+            ELSE 'completado'
+        END AS estado_cuali,
+
         MIN(d.fecToma) AS fecToma,
         MIN(d.codRef) AS codRef,
-        MIN(d.numMuestras) AS numeroMuestras
+        MIN(d.numMuestras) AS numeroMuestras,
+        MIN(c.nomLab) AS nomLab
+
     FROM san_fact_solicitud_det d
+    INNER JOIN san_fact_solicitud_cab c
+        ON c.codEnvio = d.codEnvio
+
     $where
     GROUP BY d.codEnvio, d.posSolicitud
     ORDER BY d.codEnvio DESC, fecToma DESC
     LIMIT $limit OFFSET $offset
 ";
+
 
 $result = $conn->query($query);
 if (!$result) {
