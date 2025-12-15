@@ -309,12 +309,29 @@ if (!$conexion) {
 
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'dashboard-reportes.php', 'reportes', 'Gestión de Reportes')">
+                    onclick="toggleSubmenu('submenu-reporte')">
                     <span class="flex items-center gap-3">
                         <i class="fa-solid fa-file"></i>
                         <span class="font-medium">2.- Reportes</span>
                     </span>
+                    <i class="fas fa-chevron-down text-sm"></i>
                 </button>
+
+                <div id="submenu-reporte" class="submenu hidden pl-10 mt-2 space-y-2">
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-reportes.php', 'reportes', 'Gestión de Reportes')"
+                        class="menu-link block text-gray-400 hover:text-white">Formato de Muestras</a>                    
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-muestras-cabecera.php','Muestra cabecera', 'Muestra cabecera')"
+                        class="menu-link block text-gray-400 hover:text-white">Listado de Muestras</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-detalle-muestras.php','Detalle', 'Detalle')"
+                        class="menu-link block text-gray-400 hover:text-white">Listado de Solicitudes</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados.php','Resultados', 'Resultados')"
+                        class="menu-link block text-gray-400 hover:text-white">Resultados cualitativos</a>    
+                </div>
+
             </div>
 
 
@@ -347,7 +364,7 @@ if (!$conexion) {
                     onclick="toggleSubmenu('submenu-maestros-sistema')">
                     <span class="flex items-center gap-3">
                         <i class="fas fa-cogs w-5"></i>
-                        <span class="font-medium">4.- Mantenimientos</span>
+                        <span class="font-medium">4.- Configuracion</span>
                     </span>
                     <i class="fas fa-chevron-down text-sm"></i>
                 </button>
@@ -369,17 +386,7 @@ if (!$conexion) {
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-analisis.php','Analisis', 'Analisis')"
                         class="menu-link block text-gray-400 hover:text-white">Analisis</a>
-                    <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-muestras-cabecera.php','Muestra cabecera', 'Muestra cabecera')"
-                        class="menu-link block text-gray-400 hover:text-white">Registro - Cabecera</a>
-                    <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-detalle-muestras.php','Detalle', 'Detalle')"
-                        class="menu-link block text-gray-400 hover:text-white">Registro - Detalle</a>
-                    <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados.php','Resultados', 'Resultados')"
-                        class="menu-link block text-gray-400 hover:text-white">Registro - Resultados</a>
-
-
+                    
                 </div>
             </div>
 

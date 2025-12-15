@@ -139,49 +139,114 @@ if (!$conexion) {
 
                     <!-- padding interno para DataTables -->
                     <div class="p-6">
-                        <table id="tablaResultados" class="data-table w-full">
-                            <thead class="bg-gray-50 border-b border-gray-200">
-                                <tr>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Cod. Envio</th>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Pos. Solicitud</th>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Cod. Ref</th>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Analisis</th>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Resultado</th>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Observaciones</th>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">User. Registrador</th>
-                                    
-                                </tr>
-                            </thead>
+                        <div class="overflow-x-auto">
+                            <table id="tablaResultados" class="data-table w-full">
+                                <thead class="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                        <!-- CABECERA -->
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Cod. Envío</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Fecha Envío</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Hora</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Laboratorio</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Empresa</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Responsable</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Autorizado Por</th>
 
-                            <tbody id="" class="divide-y divide-gray-200">
-                                <?php
-                                $query = "SELECT * FROM san_fact_resultado_analisis ORDER BY codEnvio desc";
-                                $result = mysqli_query($conexion, $query);
-                                if ($result && mysqli_num_rows($result) > 0) {
-                                    while ($row = mysqli_fetch_assoc($result)) {
-                                        echo '<tr class="hover:bg-gray-50 transition">';
-                                        echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['codEnvio']) . '</td>';
-                                        echo '<td class="px-6 py-4 text-gray-700 font-medium">' . htmlspecialchars($row['posSolicitud']);
+                                        <!-- DETALLE -->
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Pos.</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Cod. Ref</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Fecha Toma</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Muestras</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Muestra</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Análisis (Detalle)</th>
+
+                                        <!-- RESULTADO -->
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Fecha Reg.</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Fecha Lab</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Análisis (Resultado)</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Resultado</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Observaciones</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Usuario</th>
+                                    </tr>
+                                </thead>
 
 
+                                <tbody id="" class="divide-y divide-gray-200">
+                                    <?php
+                                    $query = "
+                                        SELECT 
+                                            a.codEnvio,
+                                            a.fecEnvio,
+                                            a.horaEnvio,
+                                            a.nomLab,
+                                            a.nomEmpTrans,
+                                            a.usuarioResponsable,
+                                            a.autorizadoPor,
 
-                                        echo '</td>';
-                                        echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['codRef']) . '</td>';
-                                        echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['analisis_nombre']) . '</td>';
-                                        echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['resultado']) . '</td>';
-                                        echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['obs']) . '</td>';
-                                        echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['usuarioRegistrador']) . '</td>';
-                                        
+                                            b.posSolicitud,
+                                            b.codRef,
+                                            b.fecToma,
+                                            b.numMuestras,
+                                            b.nomMuestra,
+                                            b.nomAnalisis,
+
+                                            c.fechaHoraRegistro,
+                                            c.fechaLabRegistro,
+                                            c.analisis_nombre,
+                                            c.resultado,
+                                            c.obs,
+                                            c.usuarioRegistrador
+                                        FROM san_fact_solicitud_cab a
+                                        INNER JOIN san_fact_solicitud_det b 
+                                            ON a.codEnvio = b.codEnvio
+                                        LEFT JOIN san_fact_resultado_analisis c 
+                                            ON b.codEnvio = c.codEnvio
+                                            AND b.codRef = c.codRef
+                                            AND b.posSolicitud = c.posSolicitud
+                                            AND b.codAnalisis = c.analisis_codigo
+                                        ORDER BY a.codEnvio DESC, b.posSolicitud;                            
+                                ";
+                                    $result = mysqli_query($conexion, $query);
+                                    if ($result && mysqli_num_rows($result) > 0) {
+                                        while ($row = mysqli_fetch_assoc($result)) {
+                                            echo '<tr class="hover:bg-gray-50 transition">';
+
+                                            /* CABECERA */
+                                            echo '<td>' . htmlspecialchars($row['codEnvio']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['fecEnvio']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['horaEnvio']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['nomLab']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['nomEmpTrans']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['usuarioResponsable']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['autorizadoPor']) . '</td>';
+
+                                            /* DETALLE */
+                                            echo '<td class="font-medium">' . htmlspecialchars($row['posSolicitud']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['codRef']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['fecToma']) . '</td>';
+                                            echo '<td class="text-center">' . htmlspecialchars($row['numMuestras']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['nomMuestra']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['nomAnalisis']) . '</td>';
+
+                                            /* RESULTADO */
+                                            echo '<td>' . htmlspecialchars($row['fechaHoraRegistro']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['fechaLabRegistro']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['analisis_nombre']) . '</td>';
+                                            echo '<td class="font-semibold text-blue-700">' . htmlspecialchars($row['resultado']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['obs']) . '</td>';
+                                            echo '<td>' . htmlspecialchars($row['usuarioRegistrador']) . '</td>';
+
+                                            echo '</tr>';
+                                        }
+                                    } else {
+                                        echo '<tr>';
+                                        echo '<td colspan="3" class="px-6 py-8 text-center text-gray-500">No hay resultados cualitativos registradas</td>';
                                         echo '</tr>';
                                     }
-                                } else {
-                                    echo '<tr>';
-                                    echo '<td colspan="3" class="px-6 py-8 text-center text-gray-500">No hay empresas de transporte registradas</td>';
-                                    echo '</tr>';
-                                }
-                                ?>
-                            </tbody>
-                        </table>
+                                    ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 

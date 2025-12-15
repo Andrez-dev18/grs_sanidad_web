@@ -60,7 +60,7 @@
         <div class="content-header max-w-7xl mx-auto mb-8">
             <div class="flex items-center gap-3 mb-2">
                 <span class="text-4xl">📊</span>
-                <h1 class="text-3xl font-bold text-gray-800">Reportes de Registros</h1>
+                <h1 class="text-3xl font-bold text-gray-800">Reportes de muestras</h1>
             </div>
             <p class="text-gray-600 text-sm">Historial de muestras registradas por su cuenta</p>
         </div>
