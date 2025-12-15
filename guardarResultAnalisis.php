@@ -1,5 +1,6 @@
 <?php
 include_once '../conexion_grs_joya/conexion.php';
+session_start();
 $conn = conectar_joya();
 if (!$conn) {
     die("Error de conexión: " . mysqli_connect_error());
@@ -9,19 +10,23 @@ $input = json_decode(file_get_contents("php://input"), true);
 
 $codigoEnvio = $input["codigoEnvio"] ?? "";
 $analisis = $input["analisis"] ?? [];
-$pos = $input["posicion"] ?? ""; // ← La posición enviada por el front
+$pos = $input["posicion"] ?? "";
+$user = $_SESSION['usuario'] ?? null;
 
 if ($codigoEnvio == "" || empty($analisis) || $pos == "") {
     echo json_encode(["error" => "Datos incompletos"]);
     exit;
 }
 
-// Obtener info base correctamente usando la posición enviada
+$fechaLabRegistro = null;
+if (!empty($analisis) && isset($analisis[0]["fechaLabRegistro"])) {
+    $fechaLabRegistro = $conn->real_escape_string($analisis[0]["fechaLabRegistro"]);
+}
+
+// Obtener datos base
 $q = "
-    SELECT 
-        codRef,
-        fecToma
-    FROM san_dim_solicitud_det
+    SELECT codRef, fecToma
+    FROM san_fact_solicitud_det
     WHERE codEnvio = '$codigoEnvio'
       AND posSolicitud = '$pos'
     LIMIT 1
@@ -35,59 +40,147 @@ if (!$res || $res->num_rows == 0) {
 }
 
 $base = $res->fetch_assoc();
-
 $ref = $base["codRef"];
 $fecha = $base["fecToma"];
 
+//variables para la respuesta
+$insertados = 0;
+$actualizados = 0;
+$estadosActualizados = 0;
+$cabeceraCompletada = false;
+
+
+// GUARDAR RESULTADOS CUALITATIVOS + MARCAR estado_cuali
 foreach ($analisis as $a) {
 
     $cod = $a["analisisCodigo"];
     $nom = $conn->real_escape_string($a["analisisNombre"]);
     $resul = $conn->real_escape_string($a["resultado"]);
 
-    // Observación opcional
     $obs = isset($a["observaciones"]) && trim($a["observaciones"]) !== ""
         ? $conn->real_escape_string($a["observaciones"])
         : NULL;
 
-    // Insertar resultado
-    $sql = "
-        INSERT INTO san_fact_resultado_analisis 
-        (codEnvio, posSolicitud, codRef, fecToma, analisis_codigo, analisis_nombre, resultado, obs)
-        VALUES 
-        ('$codigoEnvio', '$pos', '$ref', '$fecha', '$cod', '$nom', '$resul', " .
-        ($obs === NULL ? "NULL" : "'$obs'") . "
-        )
-    ";
-    $conn->query($sql);
+    $idResultado = $a["id"] ?? null;
 
-    // Actualizar estado del análisis
-    $conn->query("
-        UPDATE san_dim_solicitud_det 
-        SET estado = 'completado'
-        WHERE codEnvio = '$codigoEnvio'
-          AND posSolicitud = '$pos'
-          AND codAnalisis = '$cod'
-    ");
+    // NORMALIZAR id
+    if ($idResultado === "null" || $idResultado === "" || $idResultado === null) {
+        $idResultado = null;
+    }
+
+    if ($idResultado !== null) {
+
+        // 🔁 UPDATE
+        $sql = "
+            UPDATE san_fact_resultado_analisis
+            SET 
+                resultado = '$resul',
+                obs = " . ($obs === NULL ? "NULL" : "'$obs'") . ",
+                fechaLabRegistro = " . ($fechaLabRegistro === null ? "NULL" : "'$fechaLabRegistro'") . "
+            WHERE id = '$idResultado'
+        ";
+
+        if ($conn->query($sql)) {
+            $actualizados++;
+        }
+
+    } else {
+
+        // ➕ INSERT
+        $sql = "
+            INSERT INTO san_fact_resultado_analisis 
+            (codEnvio, posSolicitud, codRef, fecToma, analisis_codigo, analisis_nombre, resultado, obs, usuarioRegistrador, fechaLabRegistro)
+            VALUES 
+            (
+                '$codigoEnvio', 
+                '$pos', 
+                '$ref', 
+                '$fecha', 
+                '$cod', 
+                '$nom', 
+                '$resul', 
+                " . ($obs === NULL ? "NULL" : "'$obs'") . ",
+                " . ($user === null ? "NULL" : "'$user'") . ",
+                " . ($fechaLabRegistro === null ? "NULL" : "'$fechaLabRegistro'") . "
+            )
+        ";
+
+        if ($conn->query($sql)) {
+            $insertados++;
+
+            // ✅ ESTADO SOLO AL INSERTAR
+            $conn->query("
+                UPDATE san_fact_solicitud_det 
+                SET estado_cuali = 'completado'
+                WHERE codEnvio = '$codigoEnvio'
+                  AND posSolicitud = '$pos'
+                  AND codAnalisis = '$cod'
+            ");
+
+            if ($conn->affected_rows > 0) {
+                $estadosActualizados++;
+            }
+        }
+    }
 }
 
-// Verificar si quedan pendientes
-$check = $conn->query("
+// ------------------------------------------------------------
+// VERIFICAR SI TODA ESTA POSICIÓN YA TIENE AMBOS ESTADOS OK
+// ------------------------------------------------------------
+
+$checkPos = $conn->query("
     SELECT COUNT(*) AS pendientes
-    FROM san_dim_solicitud_det
+    FROM san_fact_solicitud_det
     WHERE codEnvio = '$codigoEnvio'
-      AND estado = 'pendiente'
+      AND posSolicitud = '$pos'
+      AND (
+            estado_cuali = 'pendiente'
+         OR estado_cuanti = 'pendiente'
+      )
 ");
 
-$row = $check->fetch_assoc();
+$rowPos = $checkPos->fetch_assoc();
+$posCompleta = ($rowPos["pendientes"] == 0);
 
-// Si no quedan pendientes → completar cabecera
-if ($row["pendientes"] == 0) {
-    $conn->query("
-        UPDATE san_fact_solicitud_cab
-        SET estado = 'completado'
+// ------------------------------------------------------------
+//  SI TODAS LAS POSICIONES DE ESTE ENVÍO ESTÁN COMPLETAS 
+// (cuali y cuanti), SE COMPLETA LA CABECERA
+// ------------------------------------------------------------
+
+if ($posCompleta) {
+
+    $checkCab = $conn->query("
+        SELECT COUNT(*) AS pendientes
+        FROM san_fact_solicitud_det
         WHERE codEnvio = '$codigoEnvio'
+          AND (
+                estado_cuali = 'pendiente'
+             OR estado_cuanti = 'pendiente'
+          )
     ");
+
+    $rowCab = $checkCab->fetch_assoc();
+
+    if ($rowCab["pendientes"] == 0) {
+        $conn->query("
+            UPDATE san_fact_solicitud_cab
+            SET estado = 'completado'
+            WHERE codEnvio = '$codigoEnvio'
+        ");
+
+        if ($conn->affected_rows > 0) {
+            $cabeceraCompletada = true;
+        }
+    }
 }
 
-echo json_encode(["success" => true]);
+
+echo json_encode([
+    "success" => true,
+    "insertados" => $insertados,
+    "actualizados" => $actualizados,
+    "estadosActualizados" => $estadosActualizados,
+    "posicionCompletada" => $posCompleta,
+    "cabeceraCompletada" => $cabeceraCompletada
+]);
+

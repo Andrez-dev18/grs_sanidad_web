@@ -334,7 +334,7 @@ if (!$conexion) {
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-rpta-laboratorio.php', 'respuestalab', 'Respuesta de laboratorio')"
                         class="menu-link block text-gray-400 hover:text-white">Resultados Cualitativos</a>
                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData()"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-serologia.php', 'respuestalab', 'Respuesta de laboratorio')"
                         class="menu-link block text-gray-400 hover:text-white">Resultados Cuantitativos</a>
                     
                 </div>
@@ -457,7 +457,7 @@ if (!$conexion) {
 
 
         <!-- Dashboard Content -->
-        <main class="p-6 relative">
+        <main class="">
             <div id="loadingIndicator" class="loading hidden">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
@@ -517,14 +517,16 @@ if (!$conexion) {
                 'dashboard-laboratorio.php': 'Laboratorios',
 
                 'dashboard-tipo-muestra.php': 'Tipo muestra',
-                'dashboard-paquete-analisis.php': 'Paquete analisis',
+                'dashboard-paquetes-analisis.php': 'Paquete analisis',
                 'dashboard-analisis.php': 'Analisis',
                 'dashboard-registro-muestras-cabecera.php': 'Muestra cabecera',
                 'dashboard-detalle-muestras.php': 'Detalle',
 
                 'dashboard-rpta-laboratorio.php': title,
                 'dashboard-reportes.php': title,
-                'dashboard-registro-resultados.php': "Registro de resultados de solicitudes"
+                //'dashboard-pollo-bb.php': title,
+
+
                 //seguir agregando mas si hay mas ventanas
 
             };
@@ -561,6 +563,7 @@ if (!$conexion) {
 
             if (window.innerWidth < 1024) toggleSidebarCollapse();
         }
+
 
         // Loading functions
         function showLoading() {

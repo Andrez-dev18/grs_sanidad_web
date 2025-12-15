@@ -1,5 +1,5 @@
 <?php
-include_once '../conexion_grs_joya\conexion.php';
+include_once '../conexion_grs_joya/conexion.php';
 $conn = conectar_joya();
 if (!$conn) {
     die("Error de conexión: " . mysqli_connect_error());
@@ -19,7 +19,7 @@ if ($codigoEnvio == "") {
 // 1Obtener todos los análisis del detalle para este envío
 $q = "
     SELECT codAnalisis, nomAnalisis
-    FROM san_dim_solicitud_det
+    FROM san_fact_solicitud_det
     WHERE codEnvio = '$codigoEnvio'
     AND posSolicitud = '$posicion'
 ";

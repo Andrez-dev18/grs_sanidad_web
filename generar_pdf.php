@@ -61,13 +61,14 @@ while ($row = mysqli_fetch_assoc($res_det)) {
     $detalles_raw[] = $row;
 }
 
-// === AGRUPAR POR codRef ===
+// === AGRUPAR POR posSolicitud ===
 $grupos = [];
 foreach ($detalles_raw as $row) {
-    $codRef = $row['codRef'];
-    if (!isset($grupos[$codRef])) {
-        $grupos[$codRef] = [
-            'codRef' => $codRef,
+    $posSolicitud = $row['posSolicitud'];
+    if (!isset($grupos[$posSolicitud])) {
+        $grupos[$posSolicitud] = [
+            'posSolicitud' => $posSolicitud,
+            'codRef' => $row['codRef'],
             'fecToma' => $row['fecToma'],
             'numMuestras' => $row['numMuestras'],
             'obs' => $row['obs'] ?? '',
@@ -77,11 +78,11 @@ foreach ($detalles_raw as $row) {
     }
     // Acumular códigos de análisis
     if (!empty($row['codAnalisis'])) {
-        $grupos[$codRef]['analisis_codigos'][] = $row['codAnalisis'];
+        $grupos[$posSolicitud]['analisis_codigos'][] = $row['codAnalisis'];
     }
     // Si aún no tiene observación y esta no está vacía, tomarla
-    if (empty($grupos[$codRef]['obs']) && !empty($row['obs'])) {
-        $grupos[$codRef]['obs'] = $row['obs'];
+    if (empty($grupos[$posSolicitud]['obs']) && !empty($row['obs'])) {
+        $grupos[$posSolicitud]['obs'] = $row['obs'];
     }
 }
 
@@ -153,7 +154,8 @@ $mpdf = new Mpdf([
     'margin_bottom' => 20,
     'margin_left' => 12,
     'margin_right' => 12,
-    'default_font_size' => 8
+    'default_font_size' => 8,
+    'tempDir' => __DIR__ . '/pdf_tmp',
 ]);
 
 // Encabezado

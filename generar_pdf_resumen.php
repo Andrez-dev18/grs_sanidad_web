@@ -55,13 +55,14 @@ while ($row = mysqli_fetch_assoc($res_det)) {
 }
 mysqli_stmt_close($stmt);
 
-// === AGRUPAR POR codRef ===
+// === AGRUPAR POR posSolicitud ===
 $grupos = [];
 foreach ($detalles_raw as $row) {
-    $codRef = $row['codRef'];
-    if (!isset($grupos[$codRef])) {
-        $grupos[$codRef] = [
-            'codRef' => $codRef,
+    $posSolicitud = $row['posSolicitud'];
+    if (!isset($grupos[$posSolicitud])) {
+        $grupos[$posSolicitud] = [
+            'posSolicitud' => $posSolicitud,
+            'codRef' => $row['codRef'],
             'fecToma' => $row['fecToma'],
             'numMuestras' => $row['numMuestras'],
             'obs' => $row['obs'] ?? '',
@@ -69,11 +70,13 @@ foreach ($detalles_raw as $row) {
             'tipo_muestra' => '-'
         ];
     }
+    // Acumular códigos de análisis
     if (!empty($row['codAnalisis'])) {
-        $grupos[$codRef]['analisis_codigos'][] = $row['codAnalisis'];
+        $grupos[$posSolicitud]['analisis_codigos'][] = $row['codAnalisis'];
     }
-    if (empty($grupos[$codRef]['obs']) && !empty($row['obs'])) {
-        $grupos[$codRef]['obs'] = $row['obs'];
+    // Si aún no tiene observación y esta no está vacía, tomarla
+    if (empty($grupos[$posSolicitud]['obs']) && !empty($row['obs'])) {
+        $grupos[$posSolicitud]['obs'] = $row['obs'];
     }
 }
 
