@@ -335,7 +335,98 @@ $claseCuanti = ($estadoCuanti === 'completado')
             </div>
         </div>
 
- 
+        <!-- MODAL DETALLE -->
+<div id="modalDetalle"
+    class="fixed inset-0 bg-black bg-opacity-50 hidden
+           flex items-center justify-center z-50">
+
+    <!-- CAJA FIJA -->
+    <div class="bg-white w-[90vw] max-w-6xl h-[85vh]
+                rounded-xl shadow-xl
+                flex flex-col overflow-hidden">
+
+        <!-- HEADER (FIJO) -->
+        <div class="px-6 py-4 border-b
+                    flex justify-between items-center
+                    flex-shrink-0">
+            <h2 class="text-lg font-semibold">Detalle de Solicitud</h2>
+            <button onclick="cerrarModalDetalle()"
+                class="text-xl text-gray-600 hover:text-red-600">
+                ✕
+            </button>
+        </div>
+
+        <!-- TABS (FIJOS) -->
+        <div class="px-6 border-b flex-shrink-0">
+            <div class="flex gap-6">
+                <button class="tab-btn tab-active" onclick="cambiarTab(1)">Detalle</button>
+                <button class="tab-btn" onclick="cambiarTab(2)">Resultado Cualitativo</button>
+                <button class="tab-btn" onclick="cambiarTab(3)">Resultado Cuantitativo</button>
+            </div>
+        </div>
+
+        <!-- CONTENEDOR DE TABS (ALTURA CONTROLADA) -->
+        <div class="flex-1 min-h-0 overflow-hidden">
+
+            <!-- TAB 1 -->
+            <div id="tab-1"
+                class="tab-content h-full w-full overflow-auto">
+
+                <table class="border border-gray-200 min-w-max">
+                    <thead class="bg-blue-50 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-4 py-2">Cod Envio</th>
+                            <th class="px-4 py-2">Pos</th>
+                            <th class="px-4 py-2">Cod Ref</th>
+                            <th class="px-4 py-2">Fecha</th>
+                            <th class="px-4 py-2">N° Muestra</th>
+                            <th class="px-4 py-2">Muestra</th>
+                            <th class="px-4 py-2">Análisis</th>
+                            <th class="px-4 py-2">Estado Cuali</th>
+                            <th class="px-4 py-2">Estado Cuanti</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detalleBody"></tbody>
+                </table>
+            </div>
+
+            <!-- TAB 2 -->
+            <div id="tab-2"
+                class="tab-content hidden h-full w-full overflow-auto">
+
+                <table class="border border-gray-200 min-w-max">
+                    <thead class="bg-green-50 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-4 py-2">Pos</th>
+                            <th class="px-4 py-2">Análisis</th>
+                            <th class="px-4 py-2">Resultado</th>
+                            <th class="px-4 py-2">Obs</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultadoCualiBody"></tbody>
+                </table>
+            </div>
+
+            <!-- TAB 3 -->
+            <div id="tab-3"
+                class="tab-content hidden h-full w-full overflow-auto">
+
+                <table class="border border-gray-200 min-w-max">
+                    <thead class="bg-purple-50 sticky top-0 z-10">
+                        <tr>
+                            <th class="px-4 py-2">Pos</th>
+                            <th class="px-4 py-2">Análisis</th>
+                            <th class="px-4 py-2">Resultado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultadoCuantiBody"></tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 
 
 
