@@ -27,6 +27,7 @@ if (!$conexion) {
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
 
+
     <style>
         body {
             background: #f8f9fa;
@@ -71,6 +72,38 @@ if (!$conexion) {
             height: 90%;
             object-fit: contain;
         }
+
+        /* Evitar estilos default de DataTables */
+        .dataTables_wrapper table {
+            border-collapse: separate !important;
+            border-spacing: 0;
+        }
+
+        /* Mantener separación visual entre filas */
+        .dataTables_wrapper tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        /* Inputs y selects integrados con Tailwind */
+        .dataTables_wrapper input[type="search"],
+        .dataTables_wrapper select {
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        /* Paginación más limpia */
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.35rem 0.75rem;
+            border-radius: 0.5rem;
+            border: 1px solid transparent;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background-color: #2563eb !important;
+            color: white !important;
+        }
     </style>
 </head>
 
@@ -92,66 +125,66 @@ if (!$conexion) {
                 <div class="mb-6 flex justify-between items-center flex-wrap gap-3">
                     <button type="button"
                         class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
-                        onclick="exportarEmpresasTransporte()"
+                        onclick="exportarReporteExcel()"
                         style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);"
                         onmouseover="this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'"
                         onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
                         📊 Exportar a Excel
                     </button>
-                    
+
                 </div>
 
-                <!-- Tabla de empresas -->
-                <div class="table-container border border-gray-300 rounded-2xl bg-white overflow-x-auto">
-                    <table class="data-table w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Cod. Envio</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Pos. Solicitud</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Cod. Ref</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Analisis</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="empTransTableBody" class="divide-y divide-gray-200">
-                            <?php
-                            $query = "SELECT * FROM san_fact_resultado_analisis ORDER BY codEnvio";
-                            $result = mysqli_query($conexion, $query);
-                            if ($result && mysqli_num_rows($result) > 0) {
-                                while ($row = mysqli_fetch_assoc($result)) {
-                                    echo '<tr class="hover:bg-gray-50 transition">';
-                                    echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['codEnvio']) . '</td>';
-                                    echo '<td class="px-6 py-4 text-gray-700 font-medium">' . htmlspecialchars($row['posSolicitud']);
+                <!-- Tabla  -->
+                <div class="table-container border border-gray-300 rounded-2xl bg-white overflow-hidden">
+
+                    <!-- padding interno para DataTables -->
+                    <div class="p-6">
+                        <table id="tablaResultados" class="data-table w-full">
+                            <thead class="bg-gray-50 border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Cod. Envio</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Pos. Solicitud</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Cod. Ref</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Analisis</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Resultado</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Observaciones</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">User. Registrador</th>
+                                    
+                                </tr>
+                            </thead>
+
+                            <tbody id="" class="divide-y divide-gray-200">
+                                <?php
+                                $query = "SELECT * FROM san_fact_resultado_analisis ORDER BY codEnvio desc";
+                                $result = mysqli_query($conexion, $query);
+                                if ($result && mysqli_num_rows($result) > 0) {
+                                    while ($row = mysqli_fetch_assoc($result)) {
+                                        echo '<tr class="hover:bg-gray-50 transition">';
+                                        echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['codEnvio']) . '</td>';
+                                        echo '<td class="px-6 py-4 text-gray-700 font-medium">' . htmlspecialchars($row['posSolicitud']);
 
 
 
-                                    echo '</td>';
-                                    echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['codRef']) . '</td>';
-                                    echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['analisis_nombre']) . '</td>';
-                                    echo '<td class="px-6 py-4 flex gap-2">
-                                        <button class="btn-icon p-2 text-lg hover:bg-blue-100 rounded-lg transition" 
-                                                title="Editar" 
-                                                onclick="openModal(\'edit\', ' . (int) $row['id'] . ', \'' .
-                                        addslashes(htmlspecialchars($row['analisis_nombre'])) . '\')">
-                                            ✏️
-                                        </button>
-                                        <button class="btn-icon p-2 text-lg hover:bg-red-100 rounded-lg transition" 
-                                                title="Eliminar" 
-                                                onclick="confirmDelete(' . (int) $row['id'] . ')">
-                                            🗑️
-                                        </button>
-                                    </td>';
+                                        echo '</td>';
+                                        echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['codRef']) . '</td>';
+                                        echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['analisis_nombre']) . '</td>';
+                                        echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['resultado']) . '</td>';
+                                        echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['obs']) . '</td>';
+                                        echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['usuarioRegistrador']) . '</td>';
+                                        
+                                        echo '</tr>';
+                                    }
+                                } else {
+                                    echo '<tr>';
+                                    echo '<td colspan="3" class="px-6 py-8 text-center text-gray-500">No hay empresas de transporte registradas</td>';
                                     echo '</tr>';
                                 }
-                            } else {
-                                echo '<tr>';
-                                echo '<td colspan="3" class="px-6 py-8 text-center text-gray-500">No hay empresas de transporte registradas</td>';
-                                echo '</tr>';
-                            }
-                            ?>
-                        </tbody>
-                    </table>
+                                ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
             </div>
         </div>
 
@@ -210,7 +243,59 @@ if (!$conexion) {
 
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+
+
     <script src="empresas_transporte.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#tablaResultados').DataTable({
+                pageLength: 10,
+                lengthChange: true,
+                lengthMenu: [10, 20, 50, 100],
+                ordering: false,
+                searching: true,
+                info: true,
+                autoWidth: false,
+
+                language: {
+                    lengthMenu: "Mostrar _MENU_ filas",
+                    search: "Buscar:",
+                    zeroRecords: "No se encontraron resultados",
+                    info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                    infoEmpty: "No hay registros disponibles",
+                    paginate: {
+                        previous: "Anterior",
+                        next: "Siguiente"
+                    }
+                },
+
+                dom: `
+            <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4"
+                <"flex items-center gap-4"
+                    <"text-sm text-gray-600" l>
+                    <"text-sm text-gray-600" i>
+                >
+                <"flex items-center gap-2" f>
+            >
+            rt
+            <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-6"
+                <"text-sm text-gray-600" p>
+            >
+        `
+            });
+        });
+    </script>
+
+    <script>
+        function exportarReporteExcel() {
+            window.location.href = "exportar_excel_resultados.php";
+        }
+    </script>
+
+
 
 </body>
 
