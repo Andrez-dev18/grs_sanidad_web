@@ -329,7 +329,10 @@ if (!$conexion) {
                         class="menu-link block text-gray-400 hover:text-white">Listado de Solicitudes</a>
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados.php','Resultados', 'Resultados')"
-                        class="menu-link block text-gray-400 hover:text-white">Resultados cualitativos</a>    
+                        class="menu-link block text-gray-400 hover:text-white">Resultados cualitativos</a> 
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-seguimiento.php','seguimiento', 'Reporte de seguimiento')"
+                        class="menu-link block text-gray-400 hover:text-white">Seguimiento</a>   
                 </div>
 
             </div>
@@ -531,7 +534,8 @@ if (!$conexion) {
 
                 'dashboard-rpta-laboratorio.php': title,
                 'dashboard-reportes.php': title,
-                'dashboard-registro-resultados.php': "Registro de resultados de solicitudes"
+                'dashboard-registro-resultados.php': "Registro de resultados de solicitudes",
+                'dashboard-seguimiento.php': title
                 //seguir agregando mas si hay mas ventanas
 
             };
