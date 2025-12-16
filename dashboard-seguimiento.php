@@ -576,25 +576,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                     class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
                                     <option value="">Seleccionar</option>
                                     <?php
-                                    $sql = "
-                                        SELECT codigo, nombre
-                                        FROM ccos
-                                        WHERE LENGTH(codigo)=3
-                                        AND swac='A'
-                                        AND LEFT(codigo,1)='6'
-                                        AND codigo NOT IN ('650','668','669','600')
-                                        ORDER BY nombre
-                                        LIMIT 13
-                                    ";
-
-                                    $res = mysqli_query($conexion, $sql);
-
-                                    if ($res && mysqli_num_rows($res) > 0) {
-                                        while ($row = mysqli_fetch_assoc($res)) {
-                                            echo '<option value="' . htmlspecialchars($row['codigo']) . '">'
-                                                . htmlspecialchars($row['nombre']) .
-                                                '</option>';
-                                        }
+                                    for ($i = 1; $i <= 13; $i++) {
+                                        $valor = str_pad($i, 2, '0', STR_PAD_LEFT); // 01, 02, ...
+                                        echo "<option value=\"$valor\">$valor</option>";
                                     }
                                     ?>
                                 </select>
@@ -603,9 +587,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             <!-- Edad -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Edad</label>
-                                <input type="number" id="filtroEdad"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+
+                                <div class="flex gap-2">
+                                    <input type="number"
+                                        id="filtroEdadDesde"
+                                        placeholder="Desde"
+                                        min="0"
+                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+
+                                    <input type="number"
+                                        id="filtroEdadHasta"
+                                        placeholder="Hasta"
+                                        min="0"
+                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                </div>
                             </div>
+
                         </div>
 
                         <!-- ACCIONES -->
@@ -924,6 +921,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             var laboratorio = $('#filtroLaboratorio').val();
             var muestra = $('#filtroTipoMuestra').val();
             var analisis = $('#filtroTipoAnalisis').val();
+            var granja = $('#filtroGranja').val();
+            var galpon = $('#filtroGalpon').val();
+            var edadDesde = $('#filtroEdadDesde').val();
+            var edadHasta = $('#filtroEdadHasta').val();
+
 
             // Inicializar/Reinicializar DataTable
             table = $('#tablaResultados').DataTable({
@@ -955,6 +957,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         laboratorio: laboratorio,
                         muestra: muestra,
                         analisis: analisis,
+                        granja: granja,
+                        galpon: galpon,
+                        edadDesde: edadDesde,
+                        edadHasta: edadHasta,
                     }
                 },
                 columns: [{
@@ -989,8 +995,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         data: 'nomAnalisis'
                     },
                     {
-                        data: 'estado'
+                        data: 'estado',
+                        className: 'text-center',
+                        render: function(data) {
+
+                            if (data === 'pendiente') {
+                                return `
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full 
+                                                text-xs font-semibold
+                                                bg-yellow-100 text-yellow-800">
+                                        Pendiente
+                                    </span>
+                                `;
+                            }
+
+                            if (data === 'completado') {
+                                return `
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full 
+                                                text-xs font-semibold
+                                                bg-green-100 text-green-800">
+                                        Completado
+                                    </span>
+                                `;
+                            }
+
+                            return data; // fallback por si aparece otro estado
+                        }
                     },
+
                     {
                         data: 'obs'
                     },
@@ -1057,6 +1089,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 $('#filtroTipoMuestra').val('');
                 //limpiar select2
                 $('#filtroTipoAnalisis').val(null).trigger('change');
+                $('#filtroGalpon').val('');
+                $('#filtroGranja').val('');
+                $('#filtroEdadDesde').val('');
+                $('#filtroEdadHasta').val('');
                 cargarTabla();
             });
         });
@@ -1377,7 +1413,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
     <script>
         function exportarReporteExcel() {
-            window.location.href = "";
+            window.location.href = "exportar_excel_resultados.php";
         }
     </script>
 

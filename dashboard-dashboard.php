@@ -29,15 +29,14 @@
             </div>
             <p class="text-gray-600 text-sm">Resumen visual de muestras y envíos registrados</p>
         </div>
-        <!-- 📊 Recuadros de métricas clave (con skeleton) -->
-        <div id="metrics-cards"
-            class="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
-            <div class="bg-gray-100 rounded-xl h-20 animate-pulse"></div>
-            <div class="bg-gray-100 rounded-xl h-20 animate-pulse"></div>
-            <div class="bg-gray-100 rounded-xl h-20 animate-pulse"></div>
-            <div class="bg-gray-100 rounded-xl h-20 animate-pulse"></div>
-            <div class="bg-gray-100 rounded-xl h-20 animate-pulse"></div>
-        </div>
+    <div id="metrics-cards" class="max-w-6xl mx-auto grid grid-cols-2 gap-4 mb-6">
+    <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
+    <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
+    <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
+    <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
+    <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
+    <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
+</div>
         <!-- Filtro por año -->
         <div class="max-w-4xl mx-auto mb-6">
             <label for="yearFilter" class="block text-sm font-medium text-gray-700 mb-2">Filtrar por año:</label>
@@ -164,87 +163,67 @@
                 });
             });
 
-            function renderMetricsCards({
-                totalEnvios,
-                pctCompletasGeneral,
-                pctCuantCompletas,
-                pctCualiCompletas,
-                topMuestras,
-                topAnalisis
-            }) {
-                const cardContainer = document.getElementById('metrics-cards');
-                if (!cardContainer) return;
+           function renderMetricsCards({
+    totalEnvios,
+    pctCompletasGeneral,
+    pctCuantCompletas,
+    pctCualiCompletas,
+    topMuestras,
+    topAnalisis
+}) {
+    const cardContainer = document.getElementById('metrics-cards');
+    if (!cardContainer) return;
 
-                const [m1, m2, m3] = topMuestras || [{ nomMuestra: '-', total: 0 }];
-                const [a1, a2, a3] = topAnalisis || [{ nomAnalisis: '-', total: 0 }];
+    const [m1, m2, m3] = topMuestras || [{ nomMuestra: '-', total: 0 }];
+    const [a1, a2, a3] = topAnalisis || [{ nomAnalisis: '-', total: 0 }];
 
-                cardContainer.innerHTML = `
-        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-200 text-center">
-            <p class="text-xs text-gray-500">Envíos Totales</p>
-            <p class="text-xl font-bold text-gray-800">${totalEnvios}</p>
+    // Colores suaves para las tarjetas
+    const colors = [
+        'bg-blue-50 border-blue-200 text-blue-800',      // Envíos Totales
+        'bg-green-50 border-green-200 text-green-800',    // % Completas General
+        'bg-purple-50 border-purple-200 text-purple-800',  // Cualitativas Completas
+        'bg-indigo-50 border-indigo-200 text-indigo-800',  // Cuantitativas Completas
+        'bg-amber-50 border-amber-200 text-amber-800',     // Muestra más común
+        'bg-pink-50 border-pink-200 text-pink-800'        // Análisis más común
+    ];
+
+    cardContainer.innerHTML = `
+        <!-- Fila 1 -->
+        <div class="bg-gradient-to-br ${colors[0]} rounded-xl shadow-sm p-4 border text-center flex flex-col justify-center">
+            <p class="text-xs font-medium">Envíos Totales</p>
+            <p class="text-xl font-bold mt-1">${totalEnvios}</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-200 text-center">
-            <p class="text-xs text-gray-500">% Completas</p>
-            <p class="text-xl font-bold text-blue-600">${pctCompletasGeneral}%</p>
+        <div class="bg-gradient-to-br ${colors[1]} rounded-xl shadow-sm p-4 border text-center flex flex-col justify-center">
+            <p class="text-xs font-medium">% Completas (General)</p>
+            <p class="text-xl font-bold mt-1">${pctCompletasGeneral}%</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-200 text-center">
-            <p class="text-xs text-gray-500">Cuant. Completas</p>
-            <p class="text-xl font-bold text-blue-600">${pctCuantCompletas}%</p>
+
+        <!-- Fila 2 -->
+        <div class="bg-gradient-to-br ${colors[2]} rounded-xl shadow-sm p-4 border text-center flex flex-col justify-center">
+            <p class="text-xs font-medium">Cualitativas Completas</p>
+            <p class="text-xl font-bold mt-1">${pctCualiCompletas}%</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-200 text-center">
-            <p class="text-xs text-gray-500">Muestra más común</p>
-            <p class="text-sm font-bold text-gray-800">${m1?.nomMuestra || '-'}</p>
-            <p class="text-xs text-gray-500 mt-1">${m2?.nomMuestra ? `2°: ${m2.nomMuestra}` : ''}</p>
-            <p class="text-xs text-gray-500">${m3?.nomMuestra ? `3°: ${m3.nomMuestra}` : ''}</p>
+        <div class="bg-gradient-to-br ${colors[3]} rounded-xl shadow-sm p-4 border text-center flex flex-col justify-center">
+            <p class="text-xs font-medium">Cuantitativas Completas</p>
+            <p class="text-xl font-bold mt-1">${pctCuantCompletas}%</p>
         </div>
-        <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-200 text-center">
-            <p class="text-xs text-gray-500">Análisis más común</p>
-            <p class="text-sm font-bold text-gray-800">${a1?.nomAnalisis || '-'}</p>
-            <p class="text-xs text-gray-500 mt-1">${a2?.nomAnalisis ? `2°: ${a2.nomAnalisis}` : ''}</p>
-            <p class="text-xs text-gray-500">${a3?.nomAnalisis ? `3°: ${a3.nomAnalisis}` : ''}</p>
+
+        <!-- Fila 3 -->
+        <div class="bg-gradient-to-br ${colors[4]} rounded-xl shadow-sm p-4 border text-center flex flex-col justify-center">
+            <p class="text-xs font-medium">Top 3 Muestras</p>
+            <p class="text-sm font-semibold mt-1">${m1?.nomMuestra || '-'}</p>
+            <p class="text-xs mt-1">${m2?.nomMuestra ? `2°: ${m2.nomMuestra}` : ''}</p>
+            <p class="text-xs">${m3?.nomMuestra ? `3°: ${m3.nomMuestra}` : ''}</p>
+        </div>
+        <div class="bg-gradient-to-br ${colors[5]} rounded-xl shadow-sm p-4 border text-center flex flex-col justify-center">
+            <p class="text-xs font-medium">Top 3 Análisis</p>
+            <p class="text-sm font-semibold mt-1">${a1?.nomAnalisis || '-'}</p>
+            <p class="text-xs mt-1">${a2?.nomAnalisis ? `2°: ${a2.nomAnalisis}` : ''}</p>
+            <p class="text-xs">${a3?.nomAnalisis ? `3°: ${a3.nomAnalisis}` : ''}</p>
         </div>
     `;
-            } function renderMetricsCards({
-                totalEnvios,
-                pctCompletasGeneral,
-                pctCuantCompletas,
-                pctCualiCompletas,
-                topMuestras,
-                topAnalisis
-            }) {
-                const cardContainer = document.getElementById('metrics-cards');
-                if (!cardContainer) return;
+}
 
-                const [m1, m2, m3] = topMuestras || [{ nomMuestra: '-', total: 0 }];
-                const [a1, a2, a3] = topAnalisis || [{ nomAnalisis: '-', total: 0 }];
-
-                cardContainer.innerHTML = `
-        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-sm p-4 border border-blue-100 text-center">
-            <p class="text-xs text-blue-700">Envíos Totales</p>
-            <p class="text-xl font-bold text-blue-900">${totalEnvios}</p>
-        </div>
-        <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-sm p-4 border border-green-100 text-center">
-            <p class="text-xs text-green-700">% Completas</p>
-            <p class="text-xl font-bold text-green-900">${pctCompletasGeneral}%</p>
-        </div>
-        <div class="bg-gradient-to-br from-cyan-50 to-sky-50 rounded-xl shadow-sm p-4 border border-cyan-100 text-center">
-            <p class="text-xs text-cyan-700">Cuant. Completas</p>
-            <p class="text-xl font-bold text-cyan-900">${pctCuantCompletas}%</p>
-        </div>
-        <div class="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl shadow-sm p-4 border border-amber-100 text-center">
-            <p class="text-xs text-amber-700">Muestra más común</p>
-            <p class="text-sm font-bold text-amber-900">${m1?.nomMuestra || '-'}</p>
-            <p class="text-xs text-amber-600 mt-1">${m2?.nomMuestra ? `2°: ${m2.nomMuestra}` : ''}</p>
-            <p class="text-xs text-amber-600">${m3?.nomMuestra ? `3°: ${m3.nomMuestra}` : ''}</p>
-        </div>
-        <div class="bg-gradient-to-br from-rose-50 to-pink-50 rounded-xl shadow-sm p-4 border border-rose-100 text-center">
-            <p class="text-xs text-rose-700">Análisis más común</p>
-            <p class="text-sm font-bold text-rose-900">${a1?.nomAnalisis || '-'}</p>
-            <p class="text-xs text-rose-600 mt-1">${a2?.nomAnalisis ? `2°: ${a2.nomAnalisis}` : ''}</p>
-            <p class="text-xs text-rose-600">${a3?.nomAnalisis ? `3°: ${a3.nomAnalisis}` : ''}</p>
-        </div>
-    `;
-            }
             async function loadData(year) {
                 const qs = `?year=${year}`;
                 const base = 'api_dashboard';
@@ -394,11 +373,23 @@
 
                 // Mostrar leyenda debajo del gráfico
                 document.getElementById('cuant-summary').innerHTML = `
-        <div class="flex flex-col items-center gap-1 text-sm">
-            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-blue-500"></span> <strong>Completadas:</strong> ${data.completadas} — ${pctComp}%</div>
-            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-500"></span> <strong>Pendientes:</strong> ${data.pendientes} — ${pctPend}%</div>
+    <div class="flex flex-col md:flex-row flex-wrap justify-center gap-3 md:gap-6 text-sm">
+        <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0"></span>
+            <div class="text-left">
+                <strong class="block">Completadas:</strong>
+                <span>${data.completadas} — ${pctComp}%</span>
+            </div>
         </div>
-    `;
+        <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-full bg-amber-500 flex-shrink-0"></span>
+            <div class="text-left">
+                <strong class="block">Pendientes:</strong>
+                <span>${data.pendientes} — ${pctPend}%</span>
+            </div>
+        </div>
+    </div>
+`;
 
                 chartCuantitativas = new Chart(ctx, {
                     type: 'doughnut',
@@ -429,11 +420,23 @@
 
                 // Mostrar leyenda debajo del gráfico
                 document.getElementById('cuali-summary').innerHTML = `
-        <div class="flex flex-col items-center gap-1 text-sm">
-            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> <strong>Completadas:</strong> ${data.completadas} — ${pctComp}%</div>
-            <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-500"></span> <strong>Pendientes:</strong> ${data.pendientes} — ${pctPend}%</div>
+    <div class="flex flex-col md:flex-row flex-wrap justify-center gap-3 md:gap-6 text-sm">
+        <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0"></span>
+            <div class="text-left">
+                <strong class="block">Completadas:</strong>
+                <span>${data.completadas} — ${pctComp}%</span>
+            </div>
         </div>
-    `;
+        <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-full bg-red-500 flex-shrink-0"></span>
+            <div class="text-left">
+                <strong class="block">Pendientes:</strong>
+                <span>${data.pendientes} — ${pctPend}%</span>
+            </div>
+        </div>
+    </div>
+`;
 
                 chartCualitativas = new Chart(ctx, {
                     type: 'doughnut',

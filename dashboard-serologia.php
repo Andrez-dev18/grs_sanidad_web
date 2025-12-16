@@ -14,7 +14,7 @@ if (!$conexion) {
 $queryPendientes = "
     SELECT 
         d.codEnvio,
-        d.posSolicitud,
+        MIN(d.posSolicitud) as posSolicitud,  -- Toma el primero
         d.fecToma,
         d.codRef,
         d.numMuestras AS numeroMuestras,
@@ -22,31 +22,28 @@ $queryPendientes = "
         c.nomLab,
         d.estado_cuanti AS estado_cuanti,
         
-        GROUP_CONCAT(d.nomAnalisis ORDER BY d.nomAnalisis SEPARATOR ', ') AS analisis,
-        
-        GROUP_CONCAT(d.codAnalisis ORDER BY d.codAnalisis SEPARATOR ',') AS analisisCodigos,
-        
+        GROUP_CONCAT(DISTINCT d.nomAnalisis ORDER BY d.nomAnalisis SEPARATOR ', ') AS analisis,
+        GROUP_CONCAT(DISTINCT d.codAnalisis ORDER BY d.codAnalisis SEPARATOR ',') AS analisisCodigos,
         GROUP_CONCAT(d.obs ORDER BY d.posSolicitud SEPARATOR ' | ') AS observaciones
 
     FROM san_fact_solicitud_det d
-    INNER JOIN san_fact_solicitud_cab c
-           ON d.codEnvio = c.codEnvio
+    INNER JOIN san_fact_solicitud_cab c ON d.codEnvio = c.codEnvio
             
-    WHERE d.estado_cuanti = 'pendiente'
+    WHERE d.estado_cuanti IN ('pendiente', 'completado')
 
     GROUP BY 
-        d.codEnvio,
-        d.posSolicitud,
+        d.codEnvio,      -- Solo agrupar por código
         d.fecToma,
         d.codRef,
         d.numMuestras,
         d.nomMuestra,
-        c.nomLab
+        c.nomLab,
+        d.estado_cuanti
 
     ORDER BY d.fecToma DESC,
-             d.codEnvio DESC,
-             d.posSolicitud ASC
+             d.codEnvio DESC
 ";
+
 
 $resPendientes = $conexion->query($queryPendientes);
 
@@ -129,7 +126,7 @@ $resPendientes = $conexion->query($queryPendientes);
             <input type="text" id="filtroSidebar" onkeyup="filtrarLista()" placeholder="Buscar código..."
                 class="mt-3 w-full p-2 text-xs border rounded bg-white">
 
-               <!-- Filtros por estado
+               <!-- Filtros por estado -->
             <div class="mt-3 flex gap-2">
                 <button onclick="filtrarPorEstado('todos')" 
                     class="filtro-estado-btn flex-1 px-3 py-1.5 text-xs font-semibold rounded-full transition-all bg-blue-600 text-white"
@@ -147,7 +144,7 @@ $resPendientes = $conexion->query($queryPendientes);
                     Completados
                 </button>
             </div>
-        </div> -->
+        </div>
 
         
 
@@ -169,7 +166,7 @@ $resPendientes = $conexion->query($queryPendientes);
                             <?php $estado_item = $row['estado_cuanti'] ?? 'pendiente'; ?>
                             <div class="sidebar-item cursor-pointer p-3 rounded bg-white border border-gray-200 hover:border-gray-400 transition-all"
                                 data-estado="<?= $estado_item ?>"
-                                onclick="cargarSolicitud('<?= $row['codEnvio'] ?>', '<?= $row['fecToma'] ?>', '<?= $row['codRef'] ?>', '<?= $estado_item ?>')">
+                                onclick="cargarSolicitud('<?= $row['codEnvio'] ?>', '<?= $row['fecToma'] ?>', '<?= $row['codRef'] ?>', '<?= $estado_item ?>', '<?= addslashes($row['nomMuestra']) ?>')">
 
                                 <!-- Código -->
                                 <div class="font-bold text-sm text-gray-800 mb-1">

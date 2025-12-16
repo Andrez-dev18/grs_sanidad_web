@@ -43,6 +43,13 @@ $sheet->setCellValue('A1', 'MUESTRA');
 $sheet->setCellValue('H1', 'ANALISIS');
 $sheet->setCellValue('N1', 'RESULTADOS CUALITATIVOS');
 
+$colorPalette = [
+    'E0F2FE', // azul claro
+    'ECFDF5', // verde claro
+];
+
+$paletteIndex = 0;
+
 function headerStyle($color) {
     return [
         'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
@@ -77,10 +84,55 @@ $sheet->getStyle('A2:R2')->applyFromArray([
 
 /* ================= DATOS ================= */
 $row = 3;
+$lastCodEnvio = null;
+$colorsByEnvio = [];
+
 while ($data = $result->fetch_assoc()) {
+
+    $currentCodEnvio = $data['codEnvio'];
+
+    // Asignar color SIN repetir hasta agotar la paleta
+    if (!isset($colorsByEnvio[$currentCodEnvio])) {
+
+        // Reiniciar paleta si ya se usaron todos
+        if ($paletteIndex >= count($colorPalette)) {
+            $paletteIndex = 0;
+        }
+
+        $colorsByEnvio[$currentCodEnvio] = $colorPalette[$paletteIndex];
+        $paletteIndex++;
+    }
+
+    // Línea separadora entre bloques
+    if ($lastCodEnvio !== null && $currentCodEnvio !== $lastCodEnvio) {
+        $sheet->getStyle("A" . ($row - 1) . ":R" . ($row - 1))
+            ->getBorders()
+            ->getBottom()
+            ->setBorderStyle(
+                \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_MEDIUM
+            );
+    }
+
+    // Escribir fila
     $sheet->fromArray(array_values($data), null, "A$row");
+
+    // Aplicar color del bloque
+    $sheet->getStyle("A$row:R$row")->applyFromArray([
+        'fill' => [
+            'fillType' => Fill::FILL_SOLID,
+            'startColor' => [
+                'rgb' => $colorsByEnvio[$currentCodEnvio]
+            ]
+        ],
+        'alignment' => [
+            'vertical' => Alignment::VERTICAL_CENTER
+        ]
+    ]);
+
+    $lastCodEnvio = $currentCodEnvio;
     $row++;
 }
+
 
 /* ================= AJUSTES ================= */
 foreach (range('A', 'R') as $col) {
