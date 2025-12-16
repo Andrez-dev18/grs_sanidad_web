@@ -91,10 +91,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                   </tr>";
         }
 
-        exit; // ⛔ ESTO ES CLAVE
+        exit; // aqui termina
     }
 
-    // Agregar esto DESPUÉS del bloque de cargar_detalle y ANTES del cierre de if ($_SERVER['REQUEST_METHOD'])
+    // 
 
     if ($_POST['accion'] === 'cargar_resultados') {
 
@@ -149,6 +149,155 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
         exit;
     }
+
+    if ($_POST['accion'] === 'cargar_cuantitativos') {
+
+        $codEnvio = $_POST['codEnvio'];
+
+        $sql = "
+        SELECT 
+            id_analisis,
+            codigo_envio,
+            enfermedad,
+            codigo_enfermedad,
+            tipo_ave,
+            fecha_toma_muestra,
+            edad_aves,
+            planta_incubacion,
+            lote,
+            codigo_granja,
+            codigo_campana,
+            numero_galpon,
+            edad_reproductora,
+            condicion,
+            gmean,
+            desviacion_estandar,
+            cv,
+            count_muestras,
+            t01, t02, t03, t04, t05, t06, t07, t08, t09, t10,
+            t11, t12, t13, t14, t15, t16, t17, t18, t19, t20,
+            t21, t22, t23, t24, t25,
+            titulo_promedio,
+            lcs,
+            lcc,
+            lci,
+            coef_variacion,
+            std_1,
+            std_2,
+            s01, s02, s03, s04, s05, s06,
+            numero_informe,
+            fecha_informe,
+            estado,
+            usuario_registro,
+            fecha_solicitud
+        FROM san_analisis_pollo_bb_adulto
+        WHERE codigo_envio = ?
+        ORDER BY id_analisis ASC
+    ";
+
+        $stmt = $conexion->prepare($sql);
+        if (!$stmt) {
+            echo "<tr><td colspan='65' class='text-center py-4 text-red-500'>Error en la consulta: " . $conexion->error . "</td></tr>";
+            exit;
+        }
+
+        $stmt->bind_param("s", $codEnvio);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+
+                // Determinar color del estado
+                $estadoClass = '';
+                $estadoTexto = strtoupper($row['estado'] ?? 'PENDIENTE');
+
+                if ($estadoTexto === 'COMPLETADO') {
+                    $estadoClass = 'bg-green-100 text-green-700';
+                } elseif ($estadoTexto === 'PENDIENTE') {
+                    $estadoClass = 'bg-yellow-100 text-yellow-700';
+                } else {
+                    $estadoClass = 'bg-gray-100 text-gray-700';
+                }
+
+                echo "<tr class='hover:bg-gray-50'>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['id_analisis']) . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['codigo_envio']) . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['enfermedad'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['codigo_enfermedad'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2'><span class='inline-block px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700'>" . htmlspecialchars($row['tipo_ave'] ?? 'N/A') . "</span></td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['fecha_toma_muestra'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['edad_aves'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['planta_incubacion'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['lote'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['codigo_granja'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['codigo_campana'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['numero_galpon'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['edad_reproductora'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['condicion'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center font-semibold'>" . htmlspecialchars($row['gmean'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['desviacion_estandar'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['cv'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['count_muestras'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t01'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t02'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t03'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t04'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t05'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t06'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t07'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t08'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t09'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t10'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t11'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t12'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t13'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t14'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t15'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t16'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t17'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t18'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t19'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t20'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t21'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t22'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t23'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t24'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['t25'] ?? '0') . "</td>
+                <td class='px-4 py-2 text-center font-semibold'>" . htmlspecialchars($row['titulo_promedio'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['lcs'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['lcc'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['lci'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['coef_variacion'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['std_1'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['std_2'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['s01'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['s02'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['s03'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['s04'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['s05'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['s06'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['numero_informe'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['fecha_informe'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>
+                    <span class='inline-block px-3 py-1 rounded-full text-xs font-semibold {$estadoClass}'>
+                        {$estadoTexto}
+                    </span>
+                </td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['usuario_registro'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['fecha_solicitud'] ?? 'N/A') . "</td>
+            </tr>";
+            }
+        } else {
+            echo "<tr>
+                <td colspan='65' class='text-center py-4 text-gray-500'>
+                    No hay resultados cuantitativos registrados para este envío
+                </td>
+              </tr>";
+        }
+
+        exit;
+    }
 }
 
 
@@ -167,6 +316,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
+
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
 
 
     <style>
@@ -245,55 +397,264 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             background-color: #2563eb !important;
             color: white !important;
         }
+
+        /* Select2 estilo Tailwind */
+        .select2-container .select2-selection--single {
+            height: 38px;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            /* gray-300 */
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .select2-selection__rendered {
+            font-size: 0.875rem;
+            color: #374151;
+            /* gray-700 */
+        }
+
+        .select2-selection__arrow {
+            height: 100%;
+        }
+
+        .select2-container--default .select2-selection--single:focus {
+            outline: none;
+        }
     </style>
 </head>
 
 <body class="bg-gray-50">
     <div class="container mx-auto px-6 py-12">
 
-        <!-- VISTA EMPRESAS DE TRANSPORTE -->
-        <div id="viewEmpresasTransporte" class="content-view">
-            <div class="form-container w-full mb-4">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="text-4xl">🗒️</span>
-                    <h1 class="text-3xl font-bold text-gray-800">Seguimiento</h1>
-                </div>
-
-            </div>
+        <!--  -->
+        <div id="" class="content-view">
 
             <div class="form-container w-full">
-                <!-- Botones de acción -->
-                <div class="mb-6 flex justify-between items-center flex-wrap gap-3">
+                <!-- CARD FILTROS PLEGABLE -->
+                <div class="mb-6 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+
+                    <!-- HEADER -->
                     <button type="button"
-                        class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
-                        onclick="exportarReporteExcel()"
-                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);"
-                        onmouseover="this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'"
-                        onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
-                        📊 Exportar a Excel
+                        onclick="toggleFiltros()"
+                        class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">
+
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">🔎</span>
+                            <h3 class="text-base font-semibold text-gray-800">
+                                Filtros de búsqueda
+                            </h3>
+                        </div>
+
+                        <!-- ICONO -->
+                        <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
+                            fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
                     </button>
 
+                    <!-- CONTENIDO PLEGABLE -->
+                    <div id="contenidoFiltros" class="px-6 pb-6 pt-4">
+
+                        <!-- GRID DE FILTROS -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+                            <!-- Fecha inicio -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
+                                <input type="date" id="filtroFechaInicio"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            </div>
+
+                            <!-- Fecha fin -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
+                                <input type="date" id="filtroFechaFin"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            </div>
+
+                            <!-- Estado -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                                <select id="filtroEstado"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    <option value="">Seleccionar</option>
+                                    <option value="Completado">Completado</option>
+                                    <option value="Pendiente">Pendiente</option>
+                                </select>
+                            </div>
+
+                            <!-- Laboratorio -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Laboratorio</label>
+                                <select id="filtroLaboratorio"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    <option value="">Seleccionar</option>
+                                    <?php
+                                    $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
+                                    $res = $conexion->query($sql);
+
+                                    if ($res && $res->num_rows > 0) {
+                                        while ($row = $res->fetch_assoc()) {
+                                            echo '<option value="' . htmlspecialchars($row['nombre']) . '">'
+                                                . htmlspecialchars($row['nombre']) .
+                                                '</option>';
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+
+                            <!-- Tipo análisis (autocomplete) -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Tipo de análisis
+                                </label>
+
+                                <select id="filtroTipoAnalisis"
+                                    class="w-full text-sm rounded-lg border border-gray-300">
+                                </select>
+                            </div>
+
+
+                            <!-- Tipo muestra -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de muestra</label>
+                                <select id="filtroTipoMuestra"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    <option value="">Seleccionar</option>
+                                    <?php
+                                    $sql = "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY nombre ASC";
+                                    $res = $conexion->query($sql);
+
+                                    if ($res && $res->num_rows > 0) {
+                                        while ($row = $res->fetch_assoc()) {
+                                            echo '<option value="' . htmlspecialchars($row['nombre']) . '">'
+                                                . htmlspecialchars($row['nombre']) .
+                                                '</option>';
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+
+                            <!-- Granja -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Granja</label>
+                                <select id="filtroGranja"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    <option value="">Seleccionar</option>
+                                    <?php
+                                    $sql = "
+                                        SELECT codigo, nombre
+                                        FROM ccos
+                                        WHERE LENGTH(codigo)=3
+                                        AND swac='A'
+                                        AND LEFT(codigo,1)='6'
+                                        AND codigo NOT IN ('650','668','669','600')
+                                        ORDER BY nombre
+                                    ";
+
+                                    $res = mysqli_query($conexion, $sql);
+
+                                    if ($res && mysqli_num_rows($res) > 0) {
+                                        while ($row = mysqli_fetch_assoc($res)) {
+                                            echo '<option value="' . htmlspecialchars($row['codigo']) . '">'
+                                                . htmlspecialchars($row['nombre']) .
+                                                '</option>';
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+
+                            <!-- Galpón -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Galpón</label>
+                                <select id="filtroGalpon"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    <option value="">Seleccionar</option>
+                                    <?php
+                                    $sql = "
+                                        SELECT codigo, nombre
+                                        FROM ccos
+                                        WHERE LENGTH(codigo)=3
+                                        AND swac='A'
+                                        AND LEFT(codigo,1)='6'
+                                        AND codigo NOT IN ('650','668','669','600')
+                                        ORDER BY nombre
+                                        LIMIT 13
+                                    ";
+
+                                    $res = mysqli_query($conexion, $sql);
+
+                                    if ($res && mysqli_num_rows($res) > 0) {
+                                        while ($row = mysqli_fetch_assoc($res)) {
+                                            echo '<option value="' . htmlspecialchars($row['codigo']) . '">'
+                                                . htmlspecialchars($row['nombre']) .
+                                                '</option>';
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+
+                            <!-- Edad -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Edad</label>
+                                <input type="number" id="filtroEdad"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            </div>
+                        </div>
+
+                        <!-- ACCIONES -->
+                        <div class="mt-8 mb-4 flex flex-wrap justify-end gap-4">
+
+                            <button type="button" id="btnFiltrar"
+                                class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                                Filtrar
+                            </button>
+
+                            <button type="button" id="btnLimpiar"
+                                class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200">
+                                Limpiar
+                            </button>
+
+                            <button type="button"
+                                class="px-6 py-2.5 text-white font-medium rounded-lg transition inline-flex items-center gap-2"
+                                onclick="exportarReporteExcel()"
+                                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
+                                📊 Exportar a Excel
+                            </button>
+                        </div>
+
+                    </div>
                 </div>
+
+
 
                 <!-- Tabla  -->
                 <div class="table-container border border-gray-300 rounded-2xl bg-white overflow-hidden">
 
                     <!-- padding interno para DataTables -->
                     <div class="p-6">
-                        <div class="overflow-x-auto">
-                            <table id="tablaResultados" class="data-table w-full">
+                        <div class="overflow-hidden">
+                            <table id="tablaResultados" class="data-table w-full table-fixed">
                                 <thead class="bg-gray-50 border-b border-gray-200">
                                     <tr>
                                         <th class="px-6 py-4 text-sm font-semibold text-gray-800">Cod. Envío</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Pos. Solicitud</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Cod. Ref</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Fecha Toma</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">N° Muestras</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Tipo Muestra</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800 text-center">Pos. Solicitud</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Fecha Envio</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Nom. Lab</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Nom. EmpTrans</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Usuario Registrador</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Usuario Responsable</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Autorizado Por</th>
                                         <th class="px-6 py-4 text-sm font-semibold text-gray-800">Muestra</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Tipo Análisis</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Análisis</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Observaciones</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Analisis</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Estado</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Obs</th>
                                         <!-- NUEVAS COLUMNAS -->
                                         <th class="px-6 py-4 text-sm font-semibold text-gray-800 text-center">Detalle</th>
                                         <th class="px-6 py-4 text-sm font-semibold text-gray-800 text-center">Historial</th>
@@ -302,67 +663,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
 
                                 <tbody class="divide-y divide-gray-200">
-                                    <?php
-                                    $query = "
-                                            SELECT 
-                                                d.codEnvio, d.codRef, d.fecToma, d.numMuestras,
-                                                d.codMuestra, d.nomMuestra, d.codAnalisis, d.nomAnalisis,
-                                                d.obs, d.id, d.posSolicitud,
-                                                tm.nombre AS tipo_muestra_real,
-                                                a.nombre AS analisis_real
-                                            FROM san_fact_solicitud_det d
-                                            LEFT JOIN san_dim_tipo_muestra tm ON d.codMuestra = tm.codigo
-                                            LEFT JOIN san_dim_analisis a ON d.codAnalisis = a.codigo
-                                            ORDER BY d.codEnvio DESC
-                                            ";
 
-                                    $result = mysqli_query($conexion, $query);
-
-                                    if ($result && mysqli_num_rows($result) > 0) {
-                                        while ($row = mysqli_fetch_assoc($result)) {
-
-                                            echo '<tr class="hover:bg-gray-50 transition">';
-
-                                            echo '<td class="px-6 py-3 text-gray-700">' . htmlspecialchars($row['codEnvio']) . '</td>';
-                                            echo '<td class="px-6 py-3 text-gray-700">' . htmlspecialchars($row['posSolicitud']) . '</td>';
-                                            echo '<td class="px-6 py-3 text-gray-700">' . htmlspecialchars($row['codRef']) . '</td>';
-                                            echo '<td class="px-6 py-3 text-gray-700">' . htmlspecialchars($row['fecToma']) . '</td>';
-                                            echo '<td class="px-6 py-3 text-gray-700 text-center">' . htmlspecialchars($row['numMuestras']) . '</td>';
-                                            echo '<td class="px-6 py-3 text-gray-700">' . htmlspecialchars($row['tipo_muestra_real']) . '</td>';
-                                            echo '<td class="px-6 py-3 text-gray-700">' . htmlspecialchars($row['nomMuestra']) . '</td>';
-                                            echo '<td class="px-6 py-3 text-gray-700">' . htmlspecialchars($row['analisis_real']) . '</td>';
-                                            echo '<td class="px-6 py-3 text-gray-700">' . htmlspecialchars($row['nomAnalisis']) . '</td>';
-                                            echo '<td class="px-6 py-3 text-gray-700">' . htmlspecialchars($row['obs']) . '</td>';
-
-                                            // ================= BOTÓN DETALLE =================
-                                            echo '<td class="px-6 py-3 text-center">';
-                                            echo '<button 
-                                                    class="text-blue-600 hover:text-blue-800 transition"
-                                                    title="Ver detalle"
-                                                    onclick="verDetalle(\'' . $row['codEnvio'] . '\')">
-                                                    <i class="fa-solid fa-eye text-lg"></i>
-                                                </button>';
-
-                                            // ================= BOTÓN HISTORIAL =================
-                                            echo '<td class="px-6 py-3 text-center">';
-                                            echo '<button 
-                                                    class="text-amber-600 hover:text-amber-800 transition"
-                                                    title="Ver historial"
-                                                    onclick="verHistorial(\'' . $row['codEnvio'] . '\')">
-                                                    <i class="fa-solid fa-clock-rotate-left text-lg"></i>
-                                                </button>';
-                                            echo '</td>';
-
-                                            echo '</tr>';
-                                        }
-                                    } else {
-                                        echo '<tr>';
-                                        echo '<td colspan="10" class="px-6 py-8 text-center text-gray-500">
-                                                    No hay resultados cualitativos registrados
-                                                </td>';
-                                        echo '</tr>';
-                                    }
-                                    ?>
                                 </tbody>
 
                             </table>
@@ -454,47 +755,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         </div>
                     </div>
 
-                    <!-- Tab 3 - Información General -->
+                    <!-- Tab 3 - cuantitativos -->
                     <div id="tab-3" class="tab-content hidden h-full flex flex-col">
                         <div class="overflow-y-auto flex-1">
                             <table class="w-full border-collapse text-sm">
                                 <thead class="sticky top-0 bg-gray-100 border-b border-gray-300">
                                     <tr>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Campo</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Valor</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Tipo</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">ID</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Código Envío</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Enfermedad</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Cód Enfermedad</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Tipo Ave</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Toma</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Edad Aves</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Planta Incubación</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Lote</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Código Granja</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Código Campaña</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Número Galpón</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Edad Reproductora</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Condición</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Gmean</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">SD</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">CV</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Count Muestras</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T01</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T02</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T03</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T04</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T05</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T06</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T07</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T08</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T09</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T10</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T11</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T12</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T13</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T14</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T15</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T16</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T17</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T18</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T19</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T20</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T21</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T22</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T23</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T24</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T25</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Título Promedio</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">LCS</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">LCC</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">LCI</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">%Coef Var</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">STD I</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">STD S</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S01</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S02</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S03</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S04</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S05</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S06</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Número Informe</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Informe</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Estado</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Usuario Registro</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Solicitud</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-gray-200">
+                                <tbody id="cuantitativosBody" class="divide-y divide-gray-200">
                                     <tr>
-                                        <td class="px-4 py-3 font-semibold">Empresa</td>
-                                        <td class="px-4 py-3">ABC Laboratorios</td>
-                                        <td class="px-4 py-3"><span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">Texto</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="px-4 py-3 font-semibold">Teléfono</td>
-                                        <td class="px-4 py-3">+51 999 999 999</td>
-                                        <td class="px-4 py-3"><span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">Texto</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="px-4 py-3 font-semibold">Email</td>
-                                        <td class="px-4 py-3">contacto@abclabs.com</td>
-                                        <td class="px-4 py-3"><span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">Texto</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="px-4 py-3 font-semibold">Dirección</td>
-                                        <td class="px-4 py-3">Calle Principal 123, Lima</td>
-                                        <td class="px-4 py-3"><span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">Texto</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="px-4 py-3 font-semibold">Fecha Registro</td>
-                                        <td class="px-4 py-3">2024-12-15</td>
-                                        <td class="px-4 py-3"><span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">Fecha</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="px-4 py-3 font-semibold">Muestras Totales</td>
-                                        <td class="px-4 py-3">45</td>
-                                        <td class="px-4 py-3"><span class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Número</span></td>
+                                        <td colspan="65" class="text-center py-4 text-gray-500">Cargando...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -508,9 +840,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     <button onclick="cerrarModalDetalle()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded transition">
                         Cerrar
                     </button>
-                    <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded transition">
-                        Guardar
-                    </button>
+
                 </div>
             </div>
         </div>
@@ -574,49 +904,167 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-
-
-    <script src="empresas_transporte.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
-        $(document).ready(function() {
-            $('#tablaResultados').DataTable({
-                pageLength: 10,
-                lengthChange: true,
-                lengthMenu: [10, 20, 50, 100],
-                ordering: false,
-                searching: true,
-                info: true,
-                autoWidth: false,
+        var table; // Variable global
 
-                language: {
-                    lengthMenu: "Mostrar _MENU_ filas",
-                    search: "Buscar:",
-                    zeroRecords: "No se encontraron resultados",
-                    info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                    infoEmpty: "No hay registros disponibles",
-                    paginate: {
-                        previous: "Anterior",
-                        next: "Siguiente"
+        // Función única para cargar/filtrar la tabla
+        function cargarTabla() {
+
+            // Si la tabla ya existe, destruirla
+            if (table) {
+                table.destroy();
+            }
+
+            // Obtener valores de los filtros
+            var fechaInicio = $('#filtroFechaInicio').val();
+            var fechaFin = $('#filtroFechaFin').val();
+            var estado = $('#filtroEstado').val();
+            var laboratorio = $('#filtroLaboratorio').val();
+            var muestra = $('#filtroTipoMuestra').val();
+            var analisis = $('#filtroTipoAnalisis').val();
+
+            // Inicializar/Reinicializar DataTable
+            table = $('#tablaResultados').DataTable({
+                processing: true,
+                serverSide: true,
+                scrollX: true,
+                autoWidth: false,
+                dom: `
+                    <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6"
+                        <"flex items-center gap-6"
+                            <"text-sm text-gray-600" l>
+                            <"text-sm text-gray-600" i>
+                        >
+                        <"flex items-center gap-2" f>
+                    >
+                    rt
+                    <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-6"
+                        <"text-sm text-gray-600" p>
+                    >
+                    `,
+
+                ajax: {
+                    url: 'listar_cab_filtros.php',
+                    type: 'POST',
+                    data: {
+                        fechaInicio: fechaInicio,
+                        fechaFin: fechaFin,
+                        estado: estado,
+                        laboratorio: laboratorio,
+                        muestra: muestra,
+                        analisis: analisis,
                     }
                 },
+                columns: [{
+                        data: 'codEnvio'
+                    },
+                    {
+                        data: 'posSolicitud',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'fecEnvio'
+                    },
+                    {
+                        data: 'nomLab'
+                    },
+                    {
+                        data: 'nomEmpTrans'
+                    },
+                    {
+                        data: 'usuarioRegistrador'
+                    },
+                    {
+                        data: 'usuarioResponsable'
+                    },
+                    {
+                        data: 'autorizadoPor'
+                    },
+                    {
+                        data: 'nomMuestra'
+                    },
+                    {
+                        data: 'nomAnalisis'
+                    },
+                    {
+                        data: 'estado'
+                    },
+                    {
+                        data: 'obs'
+                    },
+                    {
+                        data: null,
+                        className: 'text-center',
+                        orderable: false,
+                        render: function(data, type, row) {
+                            return `<button 
+                            class="text-blue-600 hover:text-blue-800 transition"
+                            title="Ver detalle"
+                            onclick="verDetalle('${row.codEnvio}')">
+                            <i class="fa-solid fa-eye text-lg"></i>
+                        </button>`;
+                        }
+                    },
+                    {
+                        data: null,
+                        className: 'text-center',
+                        orderable: false,
+                        render: function(data, type, row) {
+                            return `<button 
+                            class="text-amber-600 hover:text-amber-800 transition"
+                            title="Ver historial"
+                            onclick="verHistorial('${row.codEnvio}')">
+                            <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+                        </button>`;
+                        }
+                    }
+                ],
+                columnDefs: [{
+                    targets: '_all',
+                    className: 'px-6 py-4 text-sm text-gray-700'
+                }],
+                rowCallback: function(row, data) {
+                    $(row).addClass('hover:bg-gray-50 transition');
+                },
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+                },
+                pageLength: 5,
+                lengthMenu: [
+                    [5, 10, 15, 25],
+                    [5, 10, 15, 25]
+                ],
+            });
 
-                dom: `
-            <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4"
-                <"flex items-center gap-4"
-                    <"text-sm text-gray-600" l>
-                    <"text-sm text-gray-600" i>
-                >
-                <"flex items-center gap-2" f>
-            >
-            rt
-            <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-6"
-                <"text-sm text-gray-600" p>
-            >
-        `
+        }
+
+        // Cargar tabla al iniciar la página
+        $(document).ready(function() {
+            cargarTabla();
+
+            // ASIGNAR EVENTOS A LOS BOTONES
+            $('#btnFiltrar').click(function() {
+                cargarTabla();
+            });
+
+            $('#btnLimpiar').click(function() {
+                $('#filtroFechaInicio').val('');
+                $('#filtroFechaFin').val('');
+                $('#filtroEstado').val('');
+                $('#filtroLaboratorio').val('');
+                $('#filtroTipoMuestra').val('');
+                //limpiar select2
+                $('#filtroTipoAnalisis').val(null).trigger('change');
+                cargarTabla();
             });
         });
+    </script>
 
+
+
+    <script>
         let codEnvioActual = null;
 
         function cargarResultados() {
@@ -690,6 +1138,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             if (tab === 2) {
                 cargarResultados();
             }
+            if (tab === 3) {
+                cargarCuantitativos();
+            }
         }
 
         // Cerrar modal al hacer clic fuera
@@ -698,9 +1149,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 cerrarModalDetalle();
             }
         });
+
+        function toggleFiltros() {
+            const contenido = document.getElementById('contenidoFiltros');
+            const icono = document.getElementById('iconoFiltros');
+
+            contenido.classList.toggle('hidden');
+            icono.classList.toggle('rotate-180');
+        }
+
+        $('#filtroTipoAnalisis').select2({
+            placeholder: 'Seleccionar análisis',
+            allowClear: true,
+            width: '100%',
+            minimumInputLength: 0, // 🔑 CLAVE
+            ajax: {
+                url: 'buscar_analisis.php',
+                type: 'POST',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term || ''
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                }
+            }
+        });
     </script>
 
     <script>
+        function cargarCuantitativos() {
+            if (!codEnvioActual) return;
+
+            document.getElementById('cuantitativosBody').innerHTML =
+                '<tr><td colspan="65" class="text-center py-4 text-gray-500">Cargando...</td></tr>';
+
+            fetch('dashboard-seguimiento.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'accion=cargar_cuantitativos&codEnvio=' + encodeURIComponent(codEnvioActual)
+                })
+                .then(r => r.text())
+                .then(html => {
+                    document.getElementById('cuantitativosBody').innerHTML = html;
+                })
+                .catch(error => {
+                    document.getElementById('cuantitativosBody').innerHTML =
+                        '<tr><td colspan="65" class="text-center py-4 text-red-500">Error al cargar los datos</td></tr>';
+                    console.error('Error:', error);
+                });
+        }
+
         function verHistorial(codEnvio) {
             document.getElementById('timelineContainer').innerHTML = '<div class="text-center py-8"><p class="text-gray-500">Cargando historial...</p></div>';
             document.getElementById('modalTracking').classList.remove('hidden');
@@ -828,6 +1334,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 cerrarModalTracking();
             }
         });
+
+
+        function aplicarFiltros() {
+            const fechaInicio = document.getElementById('filtroFechaInicio').value;
+            const fechaFin = document.getElementById('filtroFechaFin').value;
+            const estado = document.getElementById('filtroEstado').value.toLowerCase();
+
+            const filas = document.querySelectorAll('#tablaResultados tbody tr');
+
+            filas.forEach(fila => {
+                const fechaFila = fila.children[3].innerText.trim(); // fecToma
+                const estadoFila = fila.children[10].innerText.trim().toLowerCase();
+
+                let mostrar = true;
+
+                if (fechaInicio && fechaFila < fechaInicio) {
+                    mostrar = false;
+                }
+
+                if (fechaFin && fechaFila > fechaFin) {
+                    mostrar = false;
+                }
+
+                if (estado && estadoFila !== estado) {
+                    mostrar = false;
+                }
+
+                fila.style.display = mostrar ? '' : 'none';
+            });
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('filtroFechaInicio').value = '';
+            document.getElementById('filtroFechaFin').value = '';
+            document.getElementById('filtroEstado').value = '';
+
+            document.querySelectorAll('#tablaResultados tbody tr')
+                .forEach(fila => fila.style.display = '');
+        }
     </script>
 
     <script>

@@ -331,7 +331,7 @@ if (!$conexion) {
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados.php','Resultados', 'Resultados')"
                         class="menu-link block text-gray-400 hover:text-white">Resultados cualitativos</a> 
                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-seguimiento.php','seguimiento', 'Reporte de seguimiento')"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-seguimiento.php','seguimiento', 'Seguimiento de muestras')"
                         class="menu-link block text-gray-400 hover:text-white">Seguimiento</a>   
                 </div>
 
