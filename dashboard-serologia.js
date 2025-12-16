@@ -3,9 +3,9 @@
 // ============================================
 window.enfermedadesActuales = [];
 window.codigoEnvioActual = '';
-// Guardar estados temporales por enfermedad (clave: nombre de enfermedad)
 window.enfermedadStates = {};
 window.currentEnfermedadSelected = null;
+window.estadoActualSolicitud = 'pendiente';
 
 const CONFIG = { 
     BB: { 
@@ -28,7 +28,6 @@ const CONFIG = {
 // 1. DECODIFICAR CÓDIGO REF
 // ============================================
 function decodificarCodRef(codRef) {
-    // Formato esperado: 10 dígitos. Se separa como 3-3-2-2
     const refStr = String(codRef).padStart(10, '0');
     return {
         granja: refStr.substring(0, 3),
@@ -42,21 +41,23 @@ function decodificarCodRef(codRef) {
 // ============================================
 // 2. CARGAR SOLICITUD DESDE SIDEBAR
 // ============================================
-function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente') {
+function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMuestra = '') {
     window.codigoEnvioActual = codigo;
+    window.enfermedadStates = {};
     
+    // ✅ NUEVO: Guardar estado global
+    window.estadoActualSolicitud = estado.toLowerCase();
+
     document.getElementById('emptyState').classList.add('hidden');
     document.getElementById('formPanel').classList.remove('hidden');
     document.getElementById('lblCodigo').textContent = codigo;
 
-    // Mostrar estado en el header (debajo del código)
     const lblEstado = document.getElementById('lblEstado');
     if (lblEstado) {
         const e = String(estado || 'pendiente').toLowerCase();
         if (e === 'pendiente') {
             lblEstado.innerHTML = `<span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pendiente</span>`;
         } else {
-            // capitalizar primera letra
             const cap = (e.charAt(0).toUpperCase() + e.slice(1));
             lblEstado.innerHTML = `<span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">${cap}</span>`;
         }
@@ -70,14 +71,24 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente') {
     document.getElementById('edadAves').value = datosRef.codRefCompleto;
     document.getElementById('codRef_granja').value = datosRef.granja;
     document.getElementById('codRef_campana').value = datosRef.campana;
-    // galpon y edad son distintos: galpon = posiciones 7-8, edad = posiciones 9-10
     document.getElementById('codRef_galpon').value = datosRef.galpon;
-    // mantener edad en el campo que corresponde si existe
+    
     const edadField = document.getElementById('edadAves_display');
     if (edadField) edadField.value = datosRef.edad;
 
-    // Cargar enfermedades desde BD
-    fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${codigo}`)
+    // ✅ NUEVO: Cambiar texto del botón según estado
+    const btnGuardar = document.querySelector('button[type="submit"]');
+    if (btnGuardar) {
+        if (estado.toLowerCase() === 'completado') {
+            btnGuardar.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Actualizar Resultados';
+            btnGuardar.className = 'bg-orange-600 hover:bg-orange-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-orange-500/30 transition-all transform hover:scale-105';
+        } else {
+            btnGuardar.innerHTML = '<i class="fas fa-save mr-2"></i> Guardar Resultados';
+            btnGuardar.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105';
+        }
+    }
+
+    fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${codigo}&estado=${estado}`)
         .then(r => {
             if (!r.ok) throw new Error('HTTP error! status: ' + r.status);
             return r.text();
@@ -87,7 +98,14 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente') {
             const data = JSON.parse(text);
             if(data.success) {
                 window.enfermedadesActuales = data.enfermedades;
-                detectarTipo(parseInt(datosRef.edad));
+                
+                detectarTipo(parseInt(datosRef.edad), nomMuestra);
+                
+                if (estado.toLowerCase() === 'completado') {
+                    setTimeout(() => {
+                        cargarDatosCompletados(codigo);
+                    }, 300);
+                }
             } else {
                 alert('❌ Error: ' + (data.message || 'No se pudieron cargar enfermedades'));
             }
@@ -98,21 +116,106 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente') {
         });
 }
 
+
+// ============================================
+// CARGAR DATOS GUARDADOS (COMPLETADOS)
+// ============================================
+async function cargarDatosCompletados(codigoEnvio) {
+    console.log('🔍 Cargando datos guardados para:', codigoEnvio);
+    
+    const enfermedades = window.enfermedadesActuales || [];
+    
+    if (enfermedades.length === 0) {
+        console.warn('No hay enfermedades para cargar datos');
+        return;
+    }
+    
+    const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
+    console.log('📊 Tipo detectado:', tipo);
+    
+    // Cargar TODAS las enfermedades en paralelo
+    const promesas = enfermedades.map(async (enf) => {
+        const url = `crud-serologia.php?action=get_resultados_guardados&codEnvio=${codigoEnvio}&enfermedad=${encodeURIComponent(enf.nombre)}`;
+        console.log('🌐 Consultando:', url);
+        
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.success && data.datos) {
+                console.log(`✅ Datos cargados para ${enf.nombre}:`, data.datos);
+                
+                const state = {};
+                const d = data.datos;
+                
+                // Campos principales
+                state[`${enf.nombre}_gmean`] = d.gmean || '';
+                state[`${enf.nombre}_cv`] = d.cv || '';
+                state[`${enf.nombre}_sd`] = d.desviacion_estandar || '';
+                state[`${enf.nombre}_count`] = d.count_muestras || 20;
+                
+                // Niveles según tipo
+                if (tipo.toUpperCase() === 'ADULTO') {
+                    for (let i = 1; i <= 6; i++) {
+                        const colBD = `s${String(i).padStart(2, '0')}`;
+                        const nombreInput = `${enf.nombre}_s${i}`;
+                        state[nombreInput] = d[colBD] || '';
+                        console.log(`  ${nombreInput} = ${d[colBD]}`);
+                    }
+                } else {
+                    for (let i = 0; i <= 25; i++) {
+                        const colBD = `nivel_${i}`;
+                        const nombreInput = `${enf.nombre}_n${i}`;
+                        state[nombreInput] = d[colBD] || 0;
+                    }
+                }
+                
+                window.enfermedadStates[enf.nombre] = state;
+                console.log(`💾 Estado guardado para ${enf.nombre}:`, state);
+                
+                return true;
+            } else {
+                console.log(`ℹ️ Sin datos guardados para ${enf.nombre}`);
+                return false;
+            }
+        } catch (e) {
+            console.error(`❌ Error cargando ${enf.nombre}:`, e);
+            return false;
+        }
+    });
+    
+    // Esperar a que TODAS las peticiones terminen
+    await Promise.all(promesas);
+    
+    // AHORA SÍ rellenar el panel
+    const selectEnf = document.getElementById('selectEnfermedad');
+    if (selectEnf && selectEnf.value) {
+        console.log(`🖊️ Rellenando panel de: ${selectEnf.value}`);
+        populatePanelValues(selectEnf.value);
+    }
+}
+
 // ============================================
 // 3. DETECTAR TIPO (BB vs ADULTO)
 // ============================================
-function detectarTipo(edad) {
-    // Sólo consideramos POLLO BB cuando la edad es exactamente 1
+function detectarTipo(edad, nomMuestra = '') {
     let tipo = 'ADULTO';
-    const edadInt = parseInt(edad, 10) || 0;
-    if (edadInt === 1) {
+    const nombreMuestraUpper = (nomMuestra || '').toUpperCase();
+
+    if (nombreMuestraUpper.includes('POLLO ADULTO')) {
+        tipo = 'ADULTO';
+    } else if (nombreMuestraUpper.includes('POLLO BB')) {
         tipo = 'BB';
+    } else {
+        const edadInt = parseInt(edad, 10) || 0;
+        if (edadInt === 1) {
+            tipo = 'BB';
+        }
     }
 
     document.getElementById('tipo_ave_hidden').value = tipo;
 
     const badge = document.getElementById('badgeTipo');
-    // Mostrar tipo sin indicar unidades entre paréntesis
     badge.textContent = (tipo === 'BB') ? 'POLLO BB' : 'POLLO ADULTO';
     badge.className = (tipo === 'BB') 
         ? 'px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200'
@@ -161,9 +264,7 @@ function renderizarCampos(tipo) {
         const granja = document.getElementById('codRef_granja')?.value || '';
         const campana = document.getElementById('codRef_campana')?.value || '';
         const galpon = document.getElementById('codRef_galpon')?.value || '';
-        // Para BB usamos explícitamente el campo edadAves_display si está presente
-        // (contiene los últimos 2 dígitos decodificados). Si no existe, hacemos fallback
-        // a tomar los últimos 2 dígitos de `edadAves`.
+        
         let edadRef = '';
         const edadDisplayVal = document.getElementById('edadAves_display')?.value;
         if (edadDisplayVal && String(edadDisplayVal).length > 0) {
@@ -297,16 +398,22 @@ function renderizarEnfermedades(tipo) {
 
     const select = document.getElementById('selectEnfermedad');
     const inicial = select.value;
-    // establecer el seleccionado actual
     window.currentEnfermedadSelected = inicial;
     renderEnfermedadPanel(inicial, conf, tipo);
 
     select.addEventListener('change', (e) => {
         const nuevo = e.target.value;
-        // guardar estado de la enfermedad anterior antes de renderizar la nueva
-        if (window.currentEnfermedadSelected) saveCurrentEnfermedadState(window.currentEnfermedadSelected);
+        
+        if (window.currentEnfermedadSelected) {
+            saveCurrentEnfermedadState(window.currentEnfermedadSelected);
+            console.log('💾 Guardado:', window.currentEnfermedadSelected);
+        }
+        
         window.currentEnfermedadSelected = nuevo;
         renderEnfermedadPanel(nuevo, conf, tipo);
+        populatePanelValues(nuevo);
+        
+        console.log('📂 Cargando:', nuevo);
     });
 }
 
@@ -315,10 +422,9 @@ function renderizarEnfermedades(tipo) {
 // ============================================
 function renderEnfermedadPanel(enf, conf, tipo) {
     const panel = document.getElementById('enfermedadPanel');
-    // Construir HTML dinámico para niveles según tipo (BB: n0..n25, ADULTO: s1..s6)
+    
     let nivelesHtml = '';
     if ((tipo || '').toUpperCase() === 'ADULTO') {
-        // ADULTO: mostrar 6 niveles s1..s6
         nivelesHtml = `<div class="mt-2 grid grid-cols-6 gap-2 bg-gray-50 p-2 rounded border border-gray-100">` +
             Array.from({length: 6}, (_, i) => {
                 const idx = i + 1;
@@ -326,7 +432,6 @@ function renderEnfermedadPanel(enf, conf, tipo) {
             }).join('') +
         `</div>`;
     } else {
-        // BB: mejorar diseño de niveles (6 columnas responsive, inputs más grandes)
         nivelesHtml = `<div class="mt-2 bg-gray-50 p-3 rounded border border-gray-100">
             <div class="text-sm font-semibold text-gray-600 mb-2">Niveles (N0 - N25)</div>
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">` +
@@ -375,12 +480,13 @@ function renderEnfermedadPanel(enf, conf, tipo) {
                 </details>
             </div>
         </div>`;
-
-    // Después de renderizar, intentar rellenar valores guardados (si existen)
+    
     populatePanelValues(enf);
 }
 
-// Guarda los valores actuales del panel de enfermedad identificado por `enfName`
+// ============================================
+// GUARDAR Y CARGAR ESTADOS
+// ============================================
 function saveCurrentEnfermedadState(enfName) {
     try {
         if (!enfName) return;
@@ -390,34 +496,45 @@ function saveCurrentEnfermedadState(enfName) {
         const inputs = panel.querySelectorAll('input[name]');
         const state = {};
         inputs.forEach(inp => {
-            // omitimos inputs tipo file
             if (inp.type === 'file') return;
             state[inp.name] = inp.value;
         });
 
         window.enfermedadStates[enfName] = state;
-        // console.log('Guardado estado de', enfName, state);
     } catch (e) {
         console.error('Error guardando estado enfermedad:', e);
     }
 }
 
-// Rellena el panel con los valores guardados para `enfName` si existen
 function populatePanelValues(enfName) {
     try {
         if (!enfName) return;
+        
         const state = window.enfermedadStates[enfName];
-        if (!state) return;
+        if (!state) {
+            console.log(`ℹ️ Sin estado guardado para: ${enfName}`);
+            return;
+        }
+        
         const panel = document.getElementById('enfermedadPanel');
-        if (!panel) return;
+        if (!panel) {
+            console.error('❌ Panel no encontrado');
+            return;
+        }
 
+        console.log('🔧 Rellenando campos con:', state);
+        
         Object.keys(state).forEach(key => {
             const el = panel.querySelector(`[name="${key}"]`);
             if (el) {
                 el.value = state[key];
+                console.log(`  ✅ ${key} = ${state[key]}`);
+            } else {
+                console.warn(`  ⚠️ Campo no encontrado: ${key}`);
             }
         });
-        // console.log('Restaurado estado de', enfName, state);
+        
+        console.log('✅ Restaurado estado de', enfName);
     } catch (e) {
         console.error('Error restaurando estado enfermedad:', e);
     }
@@ -429,15 +546,17 @@ function populatePanelValues(enfName) {
 function guardar(e) {
     e.preventDefault();
     
-    
-    
-    // Guardar estado del panel actualmente visible antes de empaquetar datos
     saveCurrentEnfermedadState(window.currentEnfermedadSelected);
 
-    // Crear FormData a partir del formulario base y añadir inputs ocultos temporales
     const form = document.getElementById('formAnalisis');
-    // Eliminar posibles inputs temporales previos que creamos
     document.querySelectorAll('.tmp-enf-input').forEach(n => n.remove());
+
+    // ✅ Determinar si es UPDATE o CREATE según el estado
+    const esActualizacion = window.estadoActualSolicitud === 'completado';
+    const actionValue = esActualizacion ? 'update' : 'create';
+    
+    // Cambiar el valor del action hidden
+    document.getElementById('action').value = actionValue;
 
     Object.keys(window.enfermedadStates || {}).forEach(enfName => {
         const st = window.enfermedadStates[enfName] || {};
@@ -459,59 +578,52 @@ function guardar(e) {
         });
     });
 
-    // Reconstruir FormData para que incluya los inputs temporales recién añadidos
     const fd2 = new FormData(form);
 
-    // Obtener archivos seleccionados del input
     const archivos = document.getElementById('archivoPdf') ? document.getElementById('archivoPdf').files : [];
 
-    // Adjuntar archivos (si hay). Usamos la clave 'archivoPdf[]' para que PHP reciba arrays.
     if (archivos && archivos.length > 0) {
         for (let i = 0; i < archivos.length; i++) {
             fd2.append('archivoPdf[]', archivos[i]);
         }
     }
 
-    // Contar archivos dentro de fd2 (más fiable que solo el input.files)
     let archivosCount = 0;
     for (let pair of fd2.entries()) {
         if (pair[1] instanceof File) archivosCount++;
     }
 
-    // Contar cuántas enfermedades tienen datos (no solo asignadas)
     const enfermedadStates = window.enfermedadStates || {};
     let enfermedadesConDatos = Object.keys(enfermedadStates).filter(enf => {
         const st = enfermedadStates[enf] || {};
         return Object.keys(st).some(k => st[k] !== null && st[k] !== '');
     }).length;
 
-    // Fallback: si no detectamos nada en memoria, intentar contar inputs visibles
     if (enfermedadesConDatos === 0) {
         const visibles = document.querySelectorAll('input[name="enfermedades[]"]');
         enfermedadesConDatos = visibles.length || 0;
     }
 
     if (enfermedadesConDatos === 0) {
-        // limpiar inputs temporales
         document.querySelectorAll('.tmp-enf-input').forEach(n => n.remove());
         alert('⚠️ No hay enfermedades con datos para guardar');
         return;
     }
 
-    // Mostrar confirm con cantidad real de enfermedades y archivos
-    if (!confirm(`¿Guardar análisis con ${enfermedadesConDatos} enfermedad(es) y ${archivosCount} archivo(s)?`)) {
-        // limpiar inputs temporales si cancela
+    // ✅ Mensaje diferente según acción
+    const accionTexto = esActualizacion ? 'Actualizar' : 'Guardar';
+    if (!confirm(`¿${accionTexto} análisis con ${enfermedadesConDatos} enfermedad(es) y ${archivosCount} archivo(s)?`)) {
         document.querySelectorAll('.tmp-enf-input').forEach(n => n.remove());
         return;
     }
 
-    // ahora sí mostrar spinner y bloquear botón antes de enviar
     const btn = document.querySelector('button[type="submit"]');
     const original = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    const textoBoton = esActualizacion ? 'Actualizando...' : 'Guardando...';
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${textoBoton}`;
     btn.disabled = true;
     
-    console.log('📤 Datos a enviar:');
+    console.log(`📤 ${accionTexto} datos:`, actionValue);
     for (let pair of fd2.entries()) {
         if (pair[1] instanceof File) {
             console.log(`  ${pair[0]}: [Archivo] ${pair[1].name}`);
@@ -562,14 +674,14 @@ function guardar(e) {
     });
 }
 
+
 // ============================================
-// Manejo de archivos (lista, validación) - similar a rptaLaboratorio.js
+// MANEJO DE ARCHIVOS
 // ============================================
 const inputPDF = document.getElementById('archivoPdf');
 const fileList = document.getElementById('fileList');
 
-// Validaciones
-const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_SIZE = 10 * 1024 * 1024;
 const allowedTypes = [
     'application/pdf',
     'application/msword',
@@ -620,13 +732,11 @@ if (inputPDF) {
         const dt = new DataTransfer();
 
         for (let file of inputPDF.files) {
-            // validar tipo
             if (!allowedTypes.includes(file.type)) {
                 alert(`❌ Archivo no permitido: ${file.name}`);
                 continue;
             }
 
-            // validar tamaño
             if (file.size > MAX_SIZE) {
                 alert(`❌ ${file.name} pesa ${(file.size / 1024 / 1024).toFixed(2)}MB (máx. 10MB)`);
                 continue;
@@ -639,7 +749,6 @@ if (inputPDF) {
         renderFiles();
     });
 
-    // Inicializar vista si ya hay archivos (por ejemplo al recargar)
     renderFiles();
 }
 
@@ -649,7 +758,6 @@ if (inputPDF) {
 function filtrarLista() {
     const term = document.getElementById('filtroSidebar').value.toLowerCase();
     
-    // Obtener estado activo actual
     let estadoActivo = 'todos';
     document.querySelectorAll('.filtro-estado-btn').forEach(btn => {
         if (btn.classList.contains('bg-blue-600')) {
@@ -658,10 +766,9 @@ function filtrarLista() {
     });
     
     document.querySelectorAll('.sidebar-item').forEach(el => {
-        const itemEstado = el.getAttribute('data-estado');
+        const itemEstado = (el.getAttribute('data-estado') || 'pendiente').toLowerCase();
         const textoItem = el.innerText.toLowerCase();
         
-        // Mostrar si cumple AMBAS condiciones (estado Y búsqueda)
         const cumpleEstado = (estadoActivo === 'todos') || (itemEstado === estadoActivo);
         const cumpleBusqueda = (term === '') || textoItem.includes(term);
         
@@ -669,37 +776,38 @@ function filtrarLista() {
     });
 }
 
-// ============================================
-// FILTRO POR ESTADO
-// ============================================
 function filtrarPorEstado(estado) {
-    // Actualizar estilos de botones
+    console.log('🔍 Filtrando por estado:', estado);
+    
     document.querySelectorAll('.filtro-estado-btn').forEach(btn => {
         const btnEstado = btn.getAttribute('data-estado');
         if (btnEstado === estado) {
-            // Botón activo - azul
             btn.className = 'filtro-estado-btn flex-1 px-3 py-1.5 text-xs font-semibold rounded-full transition-all bg-blue-600 text-white';
         } else {
-            // Botón inactivo - gris
             btn.className = 'filtro-estado-btn flex-1 px-3 py-1.5 text-xs font-semibold rounded-full transition-all bg-gray-200 text-gray-600 hover:bg-gray-300';
         }
     });
 
-    // Filtrar items
     const textoFiltro = document.getElementById('filtroSidebar').value.toLowerCase();
+    let itemsVisibles = 0;
     
     document.querySelectorAll('.sidebar-item').forEach(item => {
-        const itemEstado = item.getAttribute('data-estado');
+        const itemEstado = (item.getAttribute('data-estado') || 'pendiente').toLowerCase();
         const textoItem = item.innerText.toLowerCase();
         
-        // Mostrar si cumple AMBAS condiciones: estado Y búsqueda
         const cumpleEstado = (estado === 'todos') || (itemEstado === estado);
         const cumpleBusqueda = (textoFiltro === '') || textoItem.includes(textoFiltro);
         
-        item.style.display = (cumpleEstado && cumpleBusqueda) ? 'block' : 'none';
+        if (cumpleEstado && cumpleBusqueda) {
+            item.style.display = 'block';
+            itemsVisibles++;
+        } else {
+            item.style.display = 'none';
+        }
     });
+    
+    console.log('✅ Items visibles:', itemsVisibles);
 }
-
 
 // ============================================
 // 9. MODAL AGREGAR ENFERMEDAD
@@ -796,45 +904,36 @@ function agregarEnfermedadASolicitud(codigo, nombre) {
     fetch('crud-serologia.php', { method: 'POST', body: fd })
         .then(r => r.text())
         .then(text => {
-                // Intentar parsear JSON; si falla, mostrar respuesta cruda para debugging
-                try {
-                    const data = JSON.parse(text);
-                    if (data.success) {
-                        alert('✅ Enfermedad agregada');
-                        cerrarModalAgregarEnfermedad();
-                        // Refrescar lista de enfermedades para la solicitud actual sin recargar la página
-                        try {
-                            fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}`)
-                                .then(r => r.text())
-                                .then(t => {
-                                    try {
-                                        const dd = JSON.parse(t);
-                                        if (dd.success) {
-                                            window.enfermedadesActuales = dd.enfermedades;
-                                            const tipo = document.getElementById('tipo_ave_hidden') ? document.getElementById('tipo_ave_hidden').value : 'BB';
-                                            renderizarEnfermedades(tipo);
-                                        } else {
-                                            console.warn('No se pudo actualizar enfermedades:', dd.message);
-                                        }
-                                    } catch (e) {
-                                        console.error('Error parseando respuesta de get_enfermedades:', e, t);
-                                    }
-                                })
-                                .catch(e => console.error('Error fetching enfermedades:', e));
-                        } catch (e) {
-                            console.warn('No se pudo refrescar lista localmente, recarga manualmente si es necesario', e);
-                        }
-                    } else {
-                        alert('❌ Error: ' + data.message);
-                    }
-                } catch (err) {
-                    console.error('Respuesta no JSON al agregar enfermedad:', text);
-                    // Mostrar al usuario un mensaje más informativo y sugerir revisar la consola
-                    alert('❌ Respuesta inesperada del servidor. Revisa la consola (F12) para ver detalles.');
+            try {
+                const data = JSON.parse(text);
+                if (data.success) {
+                    alert('✅ Enfermedad agregada');
+                    cerrarModalAgregarEnfermedad();
+                    
+                    fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}`)
+                        .then(r => r.text())
+                        .then(t => {
+                            try {
+                                const dd = JSON.parse(t);
+                                if (dd.success) {
+                                    window.enfermedadesActuales = dd.enfermedades;
+                                    const tipo = document.getElementById('tipo_ave_hidden') ? document.getElementById('tipo_ave_hidden').value : 'BB';
+                                    renderizarEnfermedades(tipo);
+                                }
+                            } catch (e) {
+                                console.error('Error parseando respuesta:', e);
+                            }
+                        });
+                } else {
+                    alert('❌ Error: ' + data.message);
                 }
+            } catch (err) {
+                console.error('Respuesta no JSON:', text);
+                alert('Respuesta inesperada del servidor. Revisa la consola (F12).');
+            }
         })
         .catch(e => {
-            console.error('Error fetch agregar_enfermedad_solicitud:', e);
+            console.error('Error fetch:', e);
             alert('❌ Error de conexión: ' + e.message);
         });
 }

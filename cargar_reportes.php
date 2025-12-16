@@ -80,28 +80,17 @@ $result = mysqli_stmt_get_result($stmt);
             'Autorizado por' => $row['autorizadoPor'] ?? '–',
         ];
         ?>
-        <div
-            class="report-card bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow mb-6">
+        <div class="report-card bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow mb-6 relative"
+            data-codigo="<?= htmlspecialchars($row['codEnvio']) ?>">
 
             <!-- Campos en pares -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 mb-6 text-sm">
                 <?php
-                $campos = [
-                    'Código de Envío' => $row['codEnvio'],
-                    'Fecha de Envío' => $row['fecEnvio'],
-                    'Hora de Envío' => substr($row['horaEnvio'], 0, 5),
-                    'Laboratorio' => $row['nomLab'],
-                    'Empresa de Transporte' => $row['nomEmpTrans'] ?? '–',
-                    'Usuario Registrador' => $row['usuarioRegistrador'] ?? '–',
-                    'Usuario Responsable' => $row['usuarioResponsable'] ?? '–',
-                    'Autorizado por' => $row['autorizadoPor'] ?? '–',
-                ];
-
                 $campoArray = array_chunk(array_map(
                     function ($label, $valor) {
-                        return  [
-                        'label' => htmlspecialchars($label),
-                        'value' => htmlspecialchars($valor ?? '–')
+                        return [
+                            'label' => htmlspecialchars($label),
+                            'value' => htmlspecialchars($valor ?? '–')
                         ];
                     },
                     array_keys($campos),
@@ -119,24 +108,31 @@ $result = mysqli_stmt_get_result($stmt);
                             <span class="text-gray-900"><?= $par[1]['value'] ?></span>
                         </div>
                     <?php else: ?>
-                        <div></div> <!-- Espacio vacío para mantener el grid balanceado -->
+                        <div></div>
                     <?php endif; ?>
                 <?php endforeach; ?>
             </div>
 
-            <!-- Botones alineados en fila, ocupando todo el ancho -->
-            <div class="flex flex-col sm:flex-row gap-3 w-full">
-                <button onclick="window.open('generar_pdf.php?codigo=<?php echo urlencode($row['codEnvio']); ?>', '_blank')"
-                    class="flex-1 px-6 py-2.5 min-w-[140px] bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-medium rounded-lg transition duration-200 inline-flex items-center justify-center gap-2">
-                    📄 PDF Tabla
+            <div class="absolute top-4 right-4 flex flex-col gap-2 w-36">
+                <button onclick="window.open('generar_pdf.php?codigo=<?= urlencode($row['codEnvio']) ?>', '_blank')"
+                    class="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md shadow transition"
+                    title="PDF Tabla">
+                    <span class="text-base min-w-[1.2em] text-center">📄</span>
+                    <span>PDF Tabla</span>
                 </button>
-                <button
-                    onclick="window.open('generar_pdf_resumen.php?codigo=<?php echo urlencode($row['codEnvio']); ?>', '_blank')"
-                    class="flex-1 px-6 py-2.5 min-w-[140px] bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-medium rounded-lg transition duration-200 inline-flex items-center justify-center gap-2">
-                    📋 PDF Resumen
+                <button onclick="window.open('generar_pdf_resumen.php?codigo=<?= urlencode($row['codEnvio']) ?>', '_blank')"
+                    class="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md shadow transition"
+                    title="PDF Resumen">
+                    <span class="text-base min-w-[1.2em] text-center">📋</span>
+                    <span>PDF Resumen</span>
+                </button>
+                <button onclick="abrirModalCorreo('<?= htmlspecialchars($row['codEnvio']) ?>')"
+                    class="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md shadow transition"
+                    title="Enviar por correo">
+                    <span class="text-base min-w-[1.2em] text-center">✉️</span>
+                    <span>Correo</span>
                 </button>
             </div>
-
         </div>
     <?php endwhile; ?>
 <?php else: ?>

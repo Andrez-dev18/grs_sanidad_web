@@ -141,7 +141,8 @@ $mpdf = new Mpdf([
     'margin_bottom' => 20,
     'margin_left' => 15,
     'margin_right' => 15,
-    'default_font_size' => 10
+    'default_font_size' => 10,
+     'tempDir' => __DIR__ . '/pdf_tmp',
 ]);
 
 $logo = '';
