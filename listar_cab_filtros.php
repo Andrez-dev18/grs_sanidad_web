@@ -15,6 +15,11 @@ $estado = $_POST['estado'] ?? '';
 $laboratorio = $_POST['laboratorio'] ?? '';
 $muestra = $_POST['muestra'] ?? '';
 $analisis = $_POST['analisis'] ?? '';
+$granja = $_POST['granja'] ?? '';
+$galpon = $_POST['galpon'] ?? '';
+$edadDesde = $_POST['edadDesde'] ?? '';
+$edadHasta = $_POST['edadHasta'] ?? '';
+
 
 $where = " WHERE 1=1 ";
 
@@ -44,6 +49,39 @@ if ($analisis) {
     $analisis = mysqli_real_escape_string($conexion, $analisis);
     $where .= " AND d.nomAnalisis = '$analisis' ";
 }
+
+if ($granja) {
+    $granja = mysqli_real_escape_string($conexion, $granja);
+    $where .= " AND LEFT(d.codRef, 3) = '$granja' ";
+}
+
+if ($galpon) {
+    $galpon = mysqli_real_escape_string($conexion, $galpon);
+    $where .= " AND SUBSTRING(d.codRef, 7, 2) = '$galpon' ";
+}
+
+if ($edadDesde !== '' && $edadHasta !== '') {
+    $edadDesde = (int)$edadDesde;
+    $edadHasta = (int)$edadHasta;
+
+    $where .= " AND CAST(RIGHT(d.codRef, 2) AS UNSIGNED) 
+                BETWEEN $edadDesde AND $edadHasta ";
+}
+
+
+if ($edadDesde !== '' && $edadHasta === '') {
+    $edadDesde = (int)$edadDesde;
+
+    $where .= " AND CAST(RIGHT(d.codRef, 2) AS UNSIGNED) >= $edadDesde ";
+}
+
+
+if ($edadDesde === '' && $edadHasta !== '') {
+    $edadHasta = (int)$edadHasta;
+
+    $where .= " AND CAST(RIGHT(d.codRef, 2) AS UNSIGNED) <= $edadHasta ";
+}
+
 
 /* SEARCH GLOBAL */
 if (!empty($search)) {
