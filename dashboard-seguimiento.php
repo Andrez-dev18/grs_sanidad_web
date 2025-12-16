@@ -995,8 +995,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         data: 'nomAnalisis'
                     },
                     {
-                        data: 'estado'
+                        data: 'estado',
+                        className: 'text-center',
+                        render: function(data) {
+
+                            if (data === 'pendiente') {
+                                return `
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full 
+                                                text-xs font-semibold
+                                                bg-yellow-100 text-yellow-800">
+                                        Pendiente
+                                    </span>
+                                `;
+                            }
+
+                            if (data === 'completado') {
+                                return `
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full 
+                                                text-xs font-semibold
+                                                bg-green-100 text-green-800">
+                                        Completado
+                                    </span>
+                                `;
+                            }
+
+                            return data; // fallback por si aparece otro estado
+                        }
                     },
+
                     {
                         data: 'obs'
                     },
