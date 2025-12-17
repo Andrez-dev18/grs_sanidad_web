@@ -297,18 +297,18 @@ if (!$conexion) {
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                     onclick="activateAndLoad(this, 'dashboard-dashboard.php', 'criador-emprendedor', 'Dashboard')">
                     <span class="flex items-center gap-3">
-                        <i class="fas fa-chart-line"></i>
+                        <i class="fa-solid fa-car"></i>
                         <span class="font-medium">1.- Dashboard</span>
                     </span>
                 </button>
 
             </div>
-
+        
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                     onclick="activateAndLoad(this, 'dashboard-registro-muestras.php', 'criador-emprendedor', 'Registro de muestras')">
                     <span class="flex items-center gap-3">
-                        <i class="fas fa-vial"></i>
+                        <i class="fa-solid fa-car"></i>
                         <span class="font-medium">2.- Registro de muestras</span>
                     </span>
                 </button>
@@ -339,80 +339,68 @@ if (!$conexion) {
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados.php','Resultados', 'Resultados')"
                         class="menu-link block text-gray-400 hover:text-white">Resultados cualitativos</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-seguimiento.php','seguimiento', 'Reporte de seguimiento')"
+                </div>
+
+            </div>
+
+
+            <div class="menu-group">
+                <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                    onclick="toggleSubmenu('submenu-repuestasLab')">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-atom"></i>
+                        <span class="font-medium">4.- Respuesta Laboratorio</span>
+                    </span>
+                    <i class="fas fa-chevron-down text-sm"></i>
+                </button>
+
+                <div id="submenu-repuestasLab" class="submenu hidden pl-10 mt-2 space-y-2">
 
                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados-pollo-bb.php','Resultados', 'Resultados')"
-                        class="menu-link block text-gray-400 hover:text-white">Resultados cuantitativos pollo
-                        bebe</a>
-                    <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados-pollo-adulto.php','Resultados', 'Resultados')"
-                        class="menu-link block text-gray-400 hover:text-white">Resultados cuantitativos pollo
-                        adulto</a>
-                    <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-seguimiento.php','seguimiento', 'Seguimiento de muestras')"
-                        class="menu-link block text-gray-400 hover:text-white">Seguimiento</a>
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-rpta-laboratorio.php', 'respuestalab', 'Respuesta de laboratorio')"
+                        class="menu-link block text-gray-400 hover:text-white">Resultados Cualitativos</a>
+                    <a href="#" onclick="selectMenuItem(this); loadDashboardAndData()"
+                        class="menu-link block text-gray-400 hover:text-white">Resultados Cuantitativos</a>
 
                 </div>
 
+            </div>
 
-                <div class="menu-group">
-                    <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                        onclick="toggleSubmenu('submenu-repuestasLab')">
-                        <span class="flex items-center gap-3">
-                            <i class="fa-solid fa-atom"></i>
-                            <span class="font-medium">4.- Respuesta Laboratorio</span>
-                        </span>
-                        <i class="fas fa-chevron-down text-sm"></i>
-                    </button>
+            <!-- MANTENIMIENTOS -->
+            <div class="menu-group">
+                <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                    onclick="toggleSubmenu('submenu-maestros-sistema')">
+                    <span class="flex items-center gap-3">
+                        <i class="fas fa-cogs w-5"></i>
+                        <span class="font-medium">5.- Configuracion</span>
+                    </span>
+                    <i class="fas fa-chevron-down text-sm"></i>
+                </button>
 
-                    <div id="submenu-repuestasLab" class="submenu hidden pl-10 mt-2 space-y-2">
+                <div id="submenu-maestros-sistema" class="submenu hidden pl-10 mt-2 space-y-2">
 
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-rpta-laboratorio.php', 'respuestalab', 'Respuesta de laboratorio')"
-                            class="menu-link block text-gray-400 hover:text-white">Resultados Cualitativos</a>
-                        <a href="#" onclick="selectMenuItem(this); loadDashboardAndData('dashboard-serologia.php', 'respuestalab', 'Respuesta de laboratorio')" class="menu-link block text-gray-400 hover:text-white">Resultados Cuantitativos</a>
-
-
-                    </div>
-
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empresas-transporte.php','Empresas de transporte', 'Gestion de empresas de Transporte')"
+                        class="menu-link block text-gray-400 hover:text-white">Empresas de transporte</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-laboratorio.php','laboratorio', 'Laboratorio')"
+                        class="menu-link block text-gray-400 hover:text-white">Laboratorios</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-tipo-muestra.php','Tipo muestra', 'tipo muestra')"
+                        class="menu-link block text-gray-400 hover:text-white">Tipos de Muestra</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-paquete-analisis.php','Paquete analisis', 'Paquete analisis')"
+                        class="menu-link block text-gray-400 hover:text-white">Paquetes de Analisis</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-analisis.php','Analisis', 'Analisis')"
+                        class="menu-link block text-gray-400 hover:text-white">Analisis</a>
+                     <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-correo-contactos.php','Correo contactos', 'Correo contactos')"
+                        class="menu-link block text-gray-400 hover:text-white">Correo contactos</a>
                 </div>
-
-                <!-- MANTENIMIENTOS -->
-                <div class="menu-group">
-                    <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                        onclick="toggleSubmenu('submenu-maestros-sistema')">
-                        <span class="flex items-center gap-3">
-                            <i class="fas fa-cogs w-5"></i>
-                            <span class="font-medium">5.- Configuracion</span>
-                        </span>
-                        <i class="fas fa-chevron-down text-sm"></i>
-                    </button>
-
-                    <div id="submenu-maestros-sistema" class="submenu hidden pl-10 mt-2 space-y-2">
-
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empresas-transporte.php','Empresas de transporte', 'Gestion de empresas de Transporte')"
-                            class="menu-link block text-gray-400 hover:text-white">Empresas de transporte</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-laboratorio.php','laboratorio', 'Laboratorio')"
-                            class="menu-link block text-gray-400 hover:text-white">Laboratorios</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-tipo-muestra.php','Tipo muestra', 'tipo muestra')"
-                            class="menu-link block text-gray-400 hover:text-white">Tipos de Muestra</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-paquete-analisis.php','Paquete analisis', 'Paquete analisis')"
-                            class="menu-link block text-gray-400 hover:text-white">Paquetes de Analisis</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-analisis.php','Analisis', 'Analisis')"
-                            class="menu-link block text-gray-400 hover:text-white">Analisis</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-tipos-resultados.php','tipos resultado', 'Gestion tipos de resultados')"
-                            class="menu-link block text-gray-400 hover:text-white">Tipos de Resultados</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-correo-contactos.php','Correo contactos', 'Correo contactos')"
-                            class="menu-link block text-gray-400 hover:text-white">Correo contactos</a>
-                    </div>
-                </div>
+            </div>
 
 
 
@@ -555,9 +543,7 @@ if (!$conexion) {
 
                 'dashboard-rpta-laboratorio.php': title,
                 'dashboard-reportes.php': title,
-                'dashboard-registro-resultados.php': "Registro de resultados de solicitudes",
-                'dashboard-seguimiento.php': title,
-                'dashboard-tipos-resultados.php': title,
+                'dashboard-registro-resultados.php': "Registro de resultados de solicitudes"
                 //seguir agregando mas si hay mas ventanas
 
             };
