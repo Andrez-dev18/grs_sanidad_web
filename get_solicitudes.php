@@ -16,8 +16,28 @@ $qSearch     = trim($_GET['q'] ?? '');
 $conditions = [];
 
 if ($estado !== "todos") {
-    $conditions[] = "d.estado_cuali = '" . $conn->real_escape_string($estado) . "'";
+
+    if ($estado === "pendiente") {
+        $conditions[] = "
+            (
+                d.estado_cuali = 'pendiente'
+                OR
+                d.estado_cuanti = 'pendiente'
+            )
+        ";
+    }
+
+    if ($estado === "completado") {
+        $conditions[] = "
+            (
+                d.estado_cuali = 'completado'
+                AND
+                d.estado_cuanti = 'completado'
+            )
+        ";
+    }
 }
+
 
 if (!empty($fechaInicio)) {
     $conditions[] = "d.fecToma >= '" . $conn->real_escape_string($fechaInicio) . "'";
@@ -69,14 +89,32 @@ $query = "
         d.codEnvio,
         d.posSolicitud,
 
+        -- ESTADO CUALI
         CASE 
             WHEN SUM(d.estado_cuali = 'pendiente') > 0 THEN 'pendiente'
             ELSE 'completado'
         END AS estado_cuali,
 
+        -- ESTADO CUANTI
+        CASE 
+            WHEN SUM(d.estado_cuanti = 'pendiente') > 0 THEN 'pendiente'
+            ELSE 'completado'
+        END AS estado_cuanti,
+
+        -- ESTADO GENERAL (DERIVADO)
+        CASE 
+            WHEN 
+                SUM(d.estado_cuali = 'pendiente') = 0
+                AND
+                SUM(d.estado_cuanti = 'pendiente') = 0
+            THEN 'completado'
+            ELSE 'pendiente'
+        END AS estado_general,
+
         MIN(d.fecToma) AS fecToma,
         MIN(d.codRef) AS codRef,
         MIN(d.numMuestras) AS numeroMuestras,
+        MIN(d.nomMuestra) AS nomMuestra,
         MIN(c.nomLab) AS nomLab
 
     FROM san_fact_solicitud_det d
