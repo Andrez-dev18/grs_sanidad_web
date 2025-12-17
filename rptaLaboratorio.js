@@ -1,4 +1,5 @@
 let currentPosition = null;
+
 async function openDetail(code, fechaToma, posicion) {
 
     resaltarItemSidebar(code, posicion);
@@ -10,6 +11,11 @@ async function openDetail(code, fechaToma, posicion) {
     currentPosition = posicion;
 
     document.getElementById('detailFecha').textContent = fechaToma;
+
+    // 👉 cambiar botón
+    const btn = document.getElementById("btnGuardarResultados");
+    btn.textContent = "💾 Guardar Respuesta";
+    btn.dataset.modo = "registrar";
 
     const cont = document.getElementById("analisisContainer");
     cont.innerHTML = "<div class='text-gray-500 text-sm'>Cargando análisis...</div>";
@@ -39,6 +45,8 @@ function closeDetail() {
         btn.classList.remove("selected-order");
     });
 
+    limpiarArchivosAdjuntos();
+
     // Quitar foco activo (si venía del botón)
     try {
         if (document.activeElement && typeof document.activeElement.blur === "function") {
@@ -63,8 +71,54 @@ function resaltarItemSidebar(code, pos) {
     }
 }
 
+async function openDetailCompletado(code, fechaToma, posicion) {
+
+    resaltarItemSidebar(code, posicion);
+
+    document.getElementById('emptyStatePanel').classList.add('hidden');
+    document.getElementById('responseDetailPanel').classList.remove('hidden');
+
+    document.getElementById('detailCodigo').textContent = code;
+    document.getElementById('detailFecha').textContent = fechaToma;
+    await cargarArchivosCompletados(code, posicion);
+
+    // 👉 cambiar botón
+    const btn = document.getElementById("btnGuardarResultados");
+    btn.textContent = "Actualizar resultados";
+    btn.dataset.modo = "update";
+
+    const cont = document.getElementById("analisisContainer");
+    cont.innerHTML = "<div class='text-gray-500 text-sm'>Cargando resultados...</div>";
+
+    const res = await fetch(
+        `getAnalisisCompletado.php?codigoEnvio=${code}&posicion=${posicion}`
+    );
+    const data = await res.json();
+
+    cont.innerHTML = "";
+
+    if (!Array.isArray(data) || data.length === 0) {
+        cont.innerHTML = "<div class='text-gray-500 text-sm'>No hay resultados registrados.</div>";
+        return;
+    }
+
+    data.forEach(item => {
+        document.getElementById('fechaRegistroLab').value = item.fechaLabRegistro;
+        crearBloqueAnalisis(
+            item.analisis_codigo,
+            item.analisis_nombre,
+            item.opciones,
+            false,
+            item.resultado,
+            item.obs,
+            item.id
+        );
+    });
+}
+
+
 function cargarCabecera(codEnvio, fecToma, pos) {
-    openDetail(codEnvio, fecToma, pos);
+    
     fetch(`get_solicitud_cabecera.php?codEnvio=${codEnvio}&posSolicitud=${pos}`)
         .then(r => r.json())
         .then(data => {
@@ -80,13 +134,16 @@ function cargarCabecera(codEnvio, fecToma, pos) {
             document.getElementById("cabRegistrador").textContent = data.usuarioRegistrador;
             document.getElementById("cabResponsable").textContent = data.usuarioResponsable;
             document.getElementById("cabAutorizado").textContent = data.autorizadoPor;
+            document.getElementById("cabCodRefe").textContent = data.codRef;
 
             // Cambia badge
             const badge = document.getElementById("badgeStatus");
             if (data.estado_cuali_general=== "completado") {
+                openDetailCompletado(codEnvio, fecToma, pos);
                 badge.textContent = "Completado";
                 badge.className = "inline-block mt-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium";
             } else {
+                openDetail(codEnvio, fecToma, pos);
                 badge.textContent = "Pendiente";
                 badge.className = "inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium";
             }
@@ -114,8 +171,8 @@ async function guardarResultados() {
 
     let fechaRegistroLab = document.getElementById('fechaRegistroLab').value.trim();
 
-    if(!fechaRegistroLab){
-        alert("⚠️Tiene que seleccionar una fecha para guardar primero.");
+    if (!fechaRegistroLab) {
+        alert("⚠️ Tiene que seleccionar una fecha para guardar primero.");
         return;
     }
 
@@ -126,28 +183,21 @@ async function guardarResultados() {
 
     cont.querySelectorAll("select").forEach(sel => {
 
-        let codigoAnalisis = sel.dataset.codigo;
-        let nombre = sel.dataset.nombre;
-        let resultado = sel.value;
-
-        //  OBTENER EL COMMENT DEL MISMO BLOQUE DEL SELECT
         let block = sel.closest(".bloque-analisis");
-        let observaciones = block.querySelector("textarea").value;
 
         datos.push({
-            analisisCodigo: codigoAnalisis,
-            analisisNombre: nombre,
-            resultado: resultado,
-            observaciones: observaciones,
+            id: block.dataset.idResultado || null,
+            analisisCodigo: sel.dataset.codigo,
+            analisisNombre: sel.dataset.nombre,
+            resultado: sel.value,
+            observaciones: block.querySelector("textarea").value,
             fechaLabRegistro: fechaRegistroLab
         });
     });
 
-    let res = await fetch("guardarResultAnalisis.php", {
+    const res = await fetch("guardarResultAnalisis.php", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             codigoEnvio: code,
             posicion: currentPosition,
@@ -155,34 +205,66 @@ async function guardarResultados() {
         })
     });
 
-    let r = await res.json();
+    const r = await res.json();
 
-    if (r.success) {
-        //  1. Cerrar panel detalle
-        closeDetail();
+    if (!r.success) {
+        alert("❌ Error al guardar: " + r.error);
+        return;
+    }
 
-        //  2. Remover la tarjeta del sidebar
+    // -------------------------
+    // MENSAJE DINÁMICO
+    // -------------------------
+    let mensajes = [];
+
+    if (r.insertados > 0) mensajes.push(`🆕 ${r.insertados} análisis registrados`);
+    if (r.actualizados > 0) mensajes.push(`✏️ ${r.actualizados} análisis actualizados`);
+    if (r.estadosActualizados > 0) mensajes.push(`📌 Estados cualitativos actualizados`);
+    if (r.cabeceraCompletada) mensajes.push(`✅ Solicitud completada`);
+
+    if (mensajes.length === 0) {
+        mensajes.push("ℹ️ No se realizaron cambios en los análisis");
+    }
+
+    alert(mensajes.join("\n"));
+
+    // -------------------------
+    // 🔑 SUBIR ARCHIVOS SIEMPRE QUE EXISTAN
+    // -------------------------
+    if (inputPDF.files.length > 0) {
+        await guardarPDF(); // 🔥 aquí estaba el problema conceptual
+    }
+
+    // -------------------------
+    // CERRAR PANEL
+    // -------------------------
+    closeDetail();
+
+    // -------------------------
+    // SOLO REMOVER DEL SIDEBAR SI HUBO INSERT
+    // -------------------------
+    if (r.insertados > 0) {
         const item = document.getElementById(`item-${code}-${currentPosition}`);
         if (item) item.remove();
+    }
 
-        // 3. Limpiar contenedor
-        document.getElementById("analisisContainer").innerHTML = "";
+    // -------------------------
+    // LIMPIAR CONTENEDOR
+    // -------------------------
+    document.getElementById("analisisContainer").innerHTML = "";
 
-        // 4. Si ya no quedan pendientes, mostrar mensaje
-        const list = document.getElementById("pendingOrdersList");
-        if (list.children.length === 0) {
-            list.innerHTML = `<div class="text-gray-500 text-sm">No hay solicitudes pendientes.</div>`;
-        }
-        alert("✔️Resultados guardados correctamente");
-
-        // SOLO SUBE PDF SI HAY ARCHIVOS
-        if (inputPDF.files.length > 0) {
-            await guardarPDF();
-        }
-    } else {
-        alert("Error al guardar: " + r.error);
+    // -------------------------
+    // MENSAJE SI NO QUEDAN PENDIENTES
+    // -------------------------
+    const list = document.getElementById("pendingOrdersList");
+    if (list && list.children.length === 0) {
+        list.innerHTML = `
+            <div class="text-gray-500 text-sm">
+                No hay solicitudes pendientes.
+            </div>`;
     }
 }
+
 
 
 document.getElementById("addAnalisis").addEventListener("click", abrirModalAnalisis);
@@ -287,26 +369,30 @@ async function confirmarAnalisisMultiples() {
 }
 
 
-function crearBloqueAnalisis(codigo, nombre, resultados, esManual = false) {
+function crearBloqueAnalisis(
+    codigo,
+    nombre,
+    resultados,
+    esManual = false,
+    resultadoSeleccionado = null,
+    observacion = null,
+    idResultado = null
+) {
 
     const cont = document.getElementById("analisisContainer");
 
     let block = document.createElement("div");
-    block.className = "bloque-analisis relative bg-white shadow-sm border rounded-xl p-3";
+    block.className =
+        "bloque-analisis relative bg-white shadow-sm border rounded-xl p-3";
+    block.dataset.idResultado = idResultado;    
 
-    // --- Botón para eliminar (solo manuales) ---
+    // --- Botón eliminar (manuales) ---
     if (esManual) {
         let removeBtn = document.createElement("button");
-        removeBtn.innerHTML = "x";
+        removeBtn.textContent = "x";
         removeBtn.className =
             "absolute top-2 right-2 text-gray-500 hover:text-red-600 px-2 py-1";
-        removeBtn.title = "Eliminar análisis";
-
-        // eliminar bloque
-        removeBtn.onclick = () => {
-            block.remove();
-        };
-
+        removeBtn.onclick = () => block.remove();
         block.appendChild(removeBtn);
     }
 
@@ -318,39 +404,49 @@ function crearBloqueAnalisis(codigo, nombre, resultados, esManual = false) {
     // --- Select ---
     let select = document.createElement("select");
     select.className =
-        "w-full px-2 py-2 border border-gray-300 text-sm rounded-md focus:ring-2 focus:ring-blue-300";
+        "w-full px-2 py-2 border border-gray-300 text-sm rounded-md";
     select.name = "resultado_" + codigo;
-    select.dataset.nombre = nombre;
+
+    // 🔥 CLAVE: datos que el backend necesita
     select.dataset.codigo = codigo;
+    select.dataset.nombre = nombre;
 
-    // Default option
-    select.innerHTML = `<option value="" selected disabled>Seleccionar resultado</option>`;
-
-    // 👉 Si NO hay resultados, agregar "Sin resultados"
+    // 👉 SIN RESULTADOS
     if (!resultados || resultados.length === 0) {
+
         let opt = document.createElement("option");
-        opt.value = "";
-        opt.textContent = "Sin resultados";
-        opt.disabled = true;
+        opt.value = "NO_TIENE_RESULTADO";
+        opt.textContent = "No tiene resultados";
+        opt.selected = true;
+
         select.appendChild(opt);
 
-        // Opcional: deshabilitar el select para que no puedan elegir nada
-        // select.disabled = true;
     } else {
+
+        let optDefault = document.createElement("option");
+        optDefault.value = "";
+        optDefault.textContent = "Seleccionar resultado";
+        select.appendChild(optDefault);
+
         resultados.forEach(r => {
             let opt = document.createElement("option");
             opt.value = r;
             opt.textContent = r;
+
+            if (resultadoSeleccionado && r === resultadoSeleccionado) {
+                opt.selected = true;
+            }
+
             select.appendChild(opt);
         });
     }
 
     // --- Textarea ---
     let textarea = document.createElement("textarea");
-    textarea.placeholder = "Observaciones...";
     textarea.className =
-        "w-full mt-2 p-2 border rounded-md text-sm h-20 resize-none focus:ring-2 focus:ring-blue-300";
-    textarea.name = "comentario_" + codigo;
+        "w-full mt-2 p-2 border rounded-md text-sm h-20 resize-none";
+    textarea.placeholder = "Observaciones...";
+    textarea.value = observacion ?? "";
 
     block.appendChild(title);
     block.appendChild(select);
@@ -358,6 +454,9 @@ function crearBloqueAnalisis(codigo, nombre, resultados, esManual = false) {
 
     cont.appendChild(block);
 }
+
+
+
 
 
 async function guardarPDF() {
@@ -472,3 +571,146 @@ inputPDF.addEventListener("change", () => {
     inputPDF.files = dt.files;
     renderFiles();
 });
+
+
+async function cargarArchivosCompletados(codigoEnvio, pos) {
+
+    const res = await fetch(
+        `getResultadoArchivos.php?codigoEnvio=${codigoEnvio}&posSolicitud=${pos}`
+    );
+    const data = await res.json();
+
+    const fileListPrecargados = document.getElementById("fileListPrecargados");
+    fileListPrecargados.innerHTML = "";
+
+    if (!Array.isArray(data) || data.length === 0) {
+        fileListPrecargados.innerHTML = `
+            <p class="text-sm text-gray-500">No hay archivos adjuntos</p>
+        `;
+        return;
+    }
+
+    data.forEach(f => {
+
+        const div = document.createElement("div");
+        div.className =
+            "flex justify-between items-center gap-3 p-2 border rounded-md bg-gray-50";
+
+        div.innerHTML = `
+            <div class="flex-1">
+                <p class="text-sm font-medium">${f.nombre}</p>
+                <p class="text-xs text-gray-500">
+                    ${f.tipo} • ${new Date(f.fecha).toLocaleDateString("es-PE")}
+                </p>
+            </div>
+
+            <!-- Descargar con validación -->
+            <button
+                title="Descargar archivo"
+                class="text-blue-600 hover:text-blue-800 text-lg"
+                onclick="descargarArchivo('${f.ruta}', '${f.nombre}')">
+                ⬇️
+            </button>
+            <button
+                title="Reemplazar archivo"
+                class="text-orange-600 hover:text-orange-800 text-lg"
+                onclick="reemplazarArchivo(${f.id})">
+                ♻️
+            </button>
+        `;
+
+        fileListPrecargados.appendChild(div);
+    });
+}
+
+async function descargarArchivo(ruta, nombre) {
+    try {
+        // Validar existencia (HEAD es liviano)
+        const res = await fetch(ruta, { method: "HEAD" });
+
+        if (!res.ok) {
+            alert("❌ El archivo no existe o fue movido del servidor.");
+            return;
+        }
+
+        // Forzar descarga solo si existe
+        const a = document.createElement("a");
+        a.href = ruta;
+        a.download = nombre;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+    } catch (err) {
+        alert("❌ No se pudo verificar el archivo.");
+        console.error(err);
+    }
+}
+
+function limpiarArchivosAdjuntos() {
+
+    const inputPDF = document.getElementById("archivoPdf");
+    const fileList = document.getElementById("fileList");
+    const fileListPrecargados = document.getElementById("fileListPrecargados");
+
+    if (inputPDF) {
+        const dt = new DataTransfer();
+        inputPDF.files = dt.files; // elimina todos los archivos
+    }
+
+    if (fileList) {
+        fileList.innerHTML = "";
+    }
+    if (fileListPrecargados) {
+        fileListPrecargados.innerHTML = "";
+    }
+}
+
+function reemplazarArchivo(idArchivo) {
+
+    const input = document.createElement("input");
+    input.type = "file";
+
+    input.onchange = async () => {
+
+        if (!input.files.length) return;
+
+        const file = input.files[0];
+
+        // Validaciones (reuse de las tuyas)
+        if (!allowedTypes.includes(file.type)) {
+            alert("❌ Tipo de archivo no permitido");
+            return;
+        }
+
+        if (file.size > MAX_SIZE) {
+            alert("❌ Archivo supera el tamaño permitido");
+            return;
+        }
+
+        const codigoEnvio = document.getElementById("detailCodigo").textContent;
+
+        let formData = new FormData();
+        formData.append("archivo", file);
+        formData.append("idArchivo", idArchivo);
+        formData.append("codigoEnvio", codigoEnvio);
+        formData.append("posSolicitud", currentPosition);
+
+        const res = await fetch("actualizarResultadoArchivo.php", {
+            method: "POST",
+            body: formData
+        });
+
+        const r = await res.json();
+
+        if (r.success) {
+            alert("♻️ Archivo reemplazado correctamente");
+            cargarArchivosCompletados(codigoEnvio, currentPosition);
+        } else {
+            alert("❌ Error: " + r.error);
+        }
+    };
+
+    input.click();
+}
+

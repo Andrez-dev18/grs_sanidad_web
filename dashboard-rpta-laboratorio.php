@@ -201,9 +201,30 @@ $result = $conexion->query($query);
                             <label class="text-xs font-medium text-gray-600 mb-1 block">Estado</label>
                             <select id="filtroEstado"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
-                                <option value="todos">Todos</option>
+                                <option value="todos">Seleccionar</option>
                                 <option value="pendiente">Pendientes</option>
                                 <option value="completado">Completados</option>
+                            </select>
+                        </div>
+
+                        <!-- Laboratorio -->
+                        <div>
+                            <label class="text-xs font-medium text-gray-600 mb-1 block">Laboratorio</label>
+                            <select id="filtroLab"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
+                                <option value="">Seleccionar</option>
+                                <?php
+                                $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
+                                $res = $conexion->query($sql);
+
+                                if ($res && $res->num_rows > 0) {
+                                    while ($row = $res->fetch_assoc()) {
+                                        echo '<option value="' . htmlspecialchars($row['nombre']) . '">'
+                                            . htmlspecialchars($row['nombre']) .
+                                            '</option>';
+                                    }
+                                }
+                                ?>
                             </select>
                         </div>
 
@@ -268,7 +289,7 @@ $result = $conexion->query($query);
                                     <h2 id="detailCodigo" class="text-3xl font-bold text-[#1f2937]">SAN-000000</h2>
                                     <span id="badgeStatus" class="inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium">Pendiente de Respuesta</span>
                                     <!-- INFO ADICIONAL CABECERA -->
-                                    <div id="extraInfoCabecera" class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-gray-600">
+                                    <div id="extraInfoCabecera" class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-2 text-sm text-gray-600">
 
                                         <div><span class="font-semibold text-gray-800">🔬 Laboratorio:</span> <span id="cabLaboratorio">--</span></div>
                                         <div><span class="font-semibold text-gray-800">🚚 Transporte:</span> <span id="cabTransporte">--</span></div>
@@ -277,6 +298,7 @@ $result = $conexion->query($query);
                                         <div><span class="font-semibold text-gray-800">🧪 Responsable:</span> <span id="cabResponsable">--</span></div>
 
                                         <div><span class="font-semibold text-gray-800">✔️ Autorizado por:</span> <span id="cabAutorizado">--</span></div>
+                                        <div><span class="font-semibold text-gray-800">🔑 Cod Ref:</span> <span id="cabCodRefe">--</span></div>
 
                                     </div>
                                 </div>
@@ -327,6 +349,9 @@ $result = $conexion->query($query);
 
                                     <div id="fileList" class="mt-3 space-y-2"></div>
 
+                                    <!-- ARCHIVOS PRECARGADOS -->
+                                    <div id="fileListPrecargados" class="mt-3 space-y-2"></div>
+
                                     <p class="text-xs text-gray-500 mt-1">(Máx. 10 MB por archivo)</p>
                                 </div>
 
@@ -335,7 +360,7 @@ $result = $conexion->query($query);
                                 <!-- Botones -->
                                 <div class="mt-6 flex justify-end gap-3">
                                     <button onclick="closeDetail()" class="px-5 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100">Cancelar</button>
-                                    <button onclick="guardarResultados()" class="px-5 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700">💾 Guardar Respuesta</button>
+                                    <button id="btnGuardarResultados" onclick="guardarResultados()" class="px-5 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700">💾 Guardar Respuesta</button>
                                 </div>
                             </div>
                         </div>
@@ -399,9 +424,10 @@ $result = $conexion->query($query);
             const fechaInicio = encodeURIComponent(document.getElementById("filtroFechaInicio").value || "");
             const fechaFin = encodeURIComponent(document.getElementById("filtroFechaFin").value || "");
             const estado = encodeURIComponent(document.getElementById("filtroEstado").value || "pendiente");
+            const filtroLab= encodeURIComponent(document.getElementById("filtroLab").value || "");
             const q = encodeURIComponent(document.getElementById("searchInput").value.trim() || "");
 
-            const url = `get_solicitudes.php?page=${page}&limit=${limit}&fechaInicio=${fechaInicio}&fechaFin=${fechaFin}&estado=${estado}&q=${q}`;
+            const url = `get_solicitudes.php?page=${page}&limit=${limit}&fechaInicio=${fechaInicio}&fechaFin=${fechaFin}&estado=${estado}&lab=${filtroLab}&q=${q}`;
 
             fetch(url)
                 .then(r => r.json())
@@ -413,7 +439,7 @@ $result = $conexion->query($query);
                         const btn = document.createElement("button");
                         // id único por codEnvio + pos
                         btn.id = `item-${row.codEnvio}-${row.posSolicitud}`;
-                        btn.className = "w-full text-left p-3 rounded-md hover:bg-gray-50 transition border border-transparent hover:border-gray-100";
+                        btn.className = "w-full text-left p-3 rounded-md hover:bg-gray-50 transition border border-gray-200 hover:border-gray-100";
 
                         btn.onclick = () => {
                             // resaltar visualmente
@@ -422,11 +448,23 @@ $result = $conexion->query($query);
                         };
 
                         btn.innerHTML = `
-                    <div class="font-medium text-sm text-[#1f2937]">${escapeHtml(row.codEnvio)}</div>
-                    <div class="text-xs text-gray-500 mt-1">
-                        Fecha: ${formatDate(row.fecToma)} • Ref: ${escapeHtml(row.codRef)} • Solicitud: ${escapeHtml(row.posSolicitud)}
-                    </div>
-                `;
+                                <div class="flex justify-between items-center">
+                                    <div class="font-semibold text-sm text-gray-800">
+                                        ${escapeHtml(row.codEnvio)}
+                                    </div>
+                                    ${getEstadoBadge(row.estado_cuali)}
+                                </div>
+
+                                <div class="text-xs text-gray-500 mt-1">
+                                    ${formatDate(row.fecToma)}
+                                </div>
+
+                                <div class="text-xs text-gray-600 mt-0.5">
+                                    Ref: <span class="font-medium">${escapeHtml(row.codRef)}</span>
+                                    • Solicitud: <span class="font-medium">${escapeHtml(row.posSolicitud)}</span>
+                                </div>
+                            `;
+
 
                         list.appendChild(btn);
                     });
@@ -438,6 +476,21 @@ $result = $conexion->query($query);
                     console.error("Error cargando solicitudes:", err);
                 });
         }
+
+        function getEstadoBadge(estado) {
+            if (estado === "completado") {
+                return `
+            <span class="px-2 py-0.5 text-[11px] rounded-full bg-green-100 text-green-700 font-medium">
+                Completado
+            </span>`;
+            }
+
+            return `
+        <span class="px-2 py-0.5 text-[11px] rounded-full bg-yellow-100 text-yellow-700 font-medium">
+            Pendiente
+        </span>`;
+        }
+
 
         /** render simple paginación */
         function renderPagination(page, total, limit) {
@@ -461,6 +514,7 @@ $result = $conexion->query($query);
 
         /** aplica filtros (llama loadSidebar a página 1) */
         function aplicarFiltros() {
+            closeDetail();
             loadSidebar(1);
         }
 

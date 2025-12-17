@@ -182,63 +182,72 @@ if (!$conexion) {
         .pdf-footer td:last-child {
             width: 70%;
         }
+
+        #samples-table-container .table-responsive {
+            overflow-x: auto;
+            min-width: 100%;
+        }
+
+        #samplesTable {
+            min-width: 1200px;
+            /* o más si es necesario */
+        }
     </style>
 </head>
 
 <body class="bg-gray-50">
-    <div class="container mx-auto px-6 py-12">
+    <div class="container-fluid px-4 py-6">
         <!-- VISTA REGISTRO -->
         <div id="viewRegistro" class="content-view active">
             <div class="form-container max-w-7xl mx-auto">
                 <form id="sampleForm" onsubmit="return handleSampleSubmit(event)">
                     <!-- INFORMACIÓN DE REGISTRO Y ENVÍO -->
-                    <div class="form-section mb-8">
-                        <div class="dual-group-container grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="form-section mb-6">
+                        <div class="dual-group-container grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
                             <!-- GRUPO 1: Datos de Envío -->
-                            <div class="field-group border border-gray-300 rounded-2xl p-8 bg-white">
+                            <div class="field-group border border-gray-300 rounded-2xl p-5 bg-white">
                                 <div
-                                    class="group-header text-sm font-bold text-blue-600 uppercase tracking-wide pb-4 mb-6">
+                                    class="group-header text-xs font-bold text-blue-600 uppercase tracking-wide pb-2 mb-4">
                                     Datos de Envío
                                 </div>
-                                <div class="space-y-6">
-                                    <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-4">
+                                    <div class="grid grid-cols-2 gap-3">
                                         <div class="form-field">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">
                                                 Fecha de Envío <span class="text-red-500">*</span>
                                             </label>
                                             <input type="date" id="fechaEnvio" name="fechaEnvio" required
-                                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                         </div>
                                         <div class="form-field">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">
                                                 Hora <span class="text-red-500">*</span>
                                             </label>
                                             <input type="time" id="horaEnvio" name="horaEnvio" required
-                                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                         </div>
                                     </div>
-                                    <div class="grid grid-cols-2 gap-4">
+                                    <div class="grid grid-cols-2 gap-3">
                                         <div class="form-field">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">
                                                 Código de Envío <span class="text-red-500">*</span>
                                             </label>
                                             <input type="text" id="codigoEnvio" name="codigoEnvio" readonly
-                                                class="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg font-bold text-blue-600 focus:outline-none">
+                                                class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg font-bold text-blue-600 focus:outline-none text-sm">
                                         </div>
                                         <div class="form-field">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">
                                                 Laboratorio <span class="text-red-500">*</span>
                                             </label>
-                                            <select id="laboratorio" name="laboratorio" required
-                                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer">
+                                            <select id="laboratorio" name="laboratorio"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm">
                                                 <option value="">Seleccionar...</option>
                                                 <?php
                                                 $query = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre";
                                                 $result = mysqli_query($conexion, $query);
                                                 if ($result && mysqli_num_rows($result) > 0) {
                                                     while ($row = mysqli_fetch_assoc($result)) {
-                                                        echo '<option value="' . htmlspecialchars($row['codigo']) . '">' .
-                                                            htmlspecialchars($row['nombre']) . '</option>';
+                                                        echo '<option value="' . htmlspecialchars($row['codigo']) . '">' . htmlspecialchars($row['nombre']) . '</option>';
                                                     }
                                                 } else {
                                                     echo '<option value="">No hay laboratorios disponibles</option>';
@@ -251,116 +260,108 @@ if (!$conexion) {
                             </div>
 
                             <!-- GRUPO 2: Datos de Transporte y Responsables -->
-                            <div class="field-group border border-gray-300 rounded-2xl p-8 bg-white">
+                            <div class="field-group border border-gray-300 rounded-2xl p-5 bg-white">
                                 <div
-                                    class="group-header text-sm font-bold text-blue-600 uppercase tracking-wide pb-4 mb-6">
+                                    class="group-header text-xs font-bold text-blue-600 uppercase tracking-wide pb-2 mb-4">
                                     TRANSPORTE Y RESPONSABLES
                                 </div>
-                                <div class="space-y-6">
-                                    <div class="grid grid-cols-2 gap-4">
+                                <div class="space-y-4">
+                                    <div class="grid grid-cols-2 gap-3">
                                         <div class="form-field">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">
                                                 Empresa de Transporte <span class="text-red-500">*</span>
                                             </label>
-                                            <select name="empresa_transporte" id="empresa_transporte" required
-                                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer">
+                                            <select name="empresa_transporte" id="empresa_transporte"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm">
                                                 <option value="">Seleccionar...</option>
                                                 <?php
                                                 $query = "SELECT codigo, nombre FROM san_dim_emptrans ORDER BY nombre";
                                                 $result = mysqli_query($conexion, $query);
                                                 if ($result && mysqli_num_rows($result) > 0) {
                                                     while ($row = mysqli_fetch_assoc($result)) {
-                                                        echo '<option value="' . htmlspecialchars($row['codigo']) . '">' .
-                                                            htmlspecialchars($row['nombre']) . '</option>';
+                                                        echo '<option value="' . htmlspecialchars($row['codigo']) . '">' . htmlspecialchars($row['nombre']) . '</option>';
                                                     }
                                                 } else {
-                                                    echo '<option value="">No hay empresas de transporte disponibles</option>';
+                                                    echo '<option value="">No hay empresas disponibles</option>';
                                                 }
                                                 ?>
                                             </select>
                                         </div>
                                         <div class="form-field">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">
                                                 Autorizado por <span class="text-red-500">*</span>
                                             </label>
                                             <input name="autorizado_por" id="autorizado_por" type="text"
-                                                placeholder="Nombre" required
-                                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                                                placeholder="Nombre"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                         </div>
                                     </div>
-                                    <div class="grid grid-cols-2 gap-4">
+                                    <div class="grid grid-cols-2 gap-3">
                                         <div class="form-field">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">Usuario
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">Usuario
                                                 Registrador</label>
                                             <input name="usuario_registrador"
                                                 value="<?php echo htmlspecialchars($_SESSION['usuario'] ?? 'user'); ?>"
                                                 type="text" readonly
-                                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 focus:outline-none">
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 focus:outline-none text-sm">
                                         </div>
                                         <div class="form-field">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            <label class="block text-xs font-medium text-gray-700 mb-1">
                                                 Usuario Responsable <span class="text-red-500">*</span>
                                             </label>
                                             <input name="usuario_responsable" id="usuario_responsable" type="text"
-                                                placeholder="Nombre del responsable" required
-                                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                                                placeholder="Nombre del responsable"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
                         </div>
-                        <!-- Número de Muestras integrado -->
-                        <div class="form-field">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
+
+                        <!-- Número de Solicitudes -->
+                        <div class="form-field max-w-xs">
+                            <label class="block text-xs font-medium text-gray-700 mb-1">
                                 Número de Solicitudes <span class="text-red-500">*</span>
                             </label>
-                            <!-- Asegurar ancho con clase personalizada o estilo -->
                             <input type="number" id="numeroSolicitudes" name="numeroSolicitudes" min="1" max="20"
-                                placeholder="Ingrese cantidad de solicitudes" required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                                placeholder="Ingrese cantidad"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm">
                         </div>
                     </div>
-                    <!-- CONTENEDOR DE MUESTRAS DINÁMICAS -->
-                    <div id="samples-table-container" class="mt-8">
-                        <!--div class="d-flex justify-content-between align-items-center mb-3">
-                            <h3 class="text-lg font-bold">Solicitudes</h3>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" id="configButton">
-                                <i class="fas fa-cog"></i> Configurar Tabla
-                            </button>
-                        </div>-->
-                        <div class="table-responsive" style="overflow-x: auto; min-width: 100%;">
-                            <table id="samplesTable" class="table table-bordered table-striped"
-                                style="min-width: 800px;">
+
+                    <!-- CONTENEDOR DE MUESTRAS DINÁMICAS (oculto al inicio) -->
+                    <div id="samples-table-container" class="mt-6 hidden">
+                        <div class="overflow-x-auto w-full">
+                            <table id="samplesTable" class="min-w-full table-auto border-collapse">
                                 <thead>
-                                    <tr>
-                                        <th scope="col" style="text-align: center; min-width: 200px;">Tipo de Muestra
-                                        </th>
-                                        <th scope="col" style="text-align: center;">Código de Referencia</th>
-                                        <th scope="col" style="text-align: center;">Fecha de Toma</th>
-                                        <th scope="col" style="text-align: center;">Número de Muestras</th>
-                                        <th scope="col" style="text-align: center;">Análisis</th>
-                                        <th scope="col" style="text-align: center;">Observaciones</th>
+                                    <tr class="bg-gray-100">
+                                        <th class="px-4 py-2 text-center border text-xs font-bold text-gray-700">Tipo de
+                                            Muestra</th>
+                                        <th class="px-4 py-2 text-center border text-xs font-bold text-gray-700">Código
+                                            de Referencia</th>
+                                        <th class="px-4 py-2 text-center border text-xs font-bold text-gray-700">Fecha
+                                            de Toma</th>
+                                        <th class="px-4 py-2 text-center border text-xs font-bold text-gray-700">Número
+                                            de Muestras</th>
+                                        <th class="px-4 py-2 text-center border text-xs font-bold text-gray-700">
+                                            Análisis</th>
+                                        <th class="px-4 py-2 text-center border text-xs font-bold text-gray-700">
+                                            Observaciones</th>
                                     </tr>
                                 </thead>
-                                <tbody id="samplesTableBody">
+                                <tbody id="samplesTableBody" class="divide-y">
                                     <!-- Filas dinámicas -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                    <!-- BUTTONS -->
-                    <div class="btn-group flex flex-col-reverse sm:flex-row gap-4 justify-end mt-8">
-                        <div class="btn-group flex flex-col-reverse sm:flex-row gap-4 justify-end mt-8">
-                            <!--button type="button"
-      class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200">
-      Cancelar
-  </button-->
-                            <button type="submit"
-                                class="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2">
-                                Guardar Registro
-                            </button>
-                        </div>
+
+                    <!-- BOTÓN GUARDAR A LA DERECHA -->
+                    <div class="mt-6 flex justify-end">
+                        <button type="submit"
+                            class="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2 text-sm">
+                            Guardar Registro
+                        </button>
                     </div>
                 </form>
             </div>
@@ -417,34 +418,45 @@ if (!$conexion) {
                 </div>
             </div>
         </div>
-
-        <div id="confirmModal"
-            class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-lg w-full max-w-6xl max-h-[90vh] flex flex-col">
-                <!-- Header -->
-                <div class="flex justify-between items-center px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-xl font-bold text-gray-800">📋 Confirmar Envío de Muestras</h2>
-                    <button class="text-gray-500 text-2xl hover:text-gray-700 transition" onclick="closeConfirmModal()">
-                        &times;
-                    </button>
-                </div>
-
-                <!-- Body con scroll interno (vertical y horizontal) -->
-                <div class="flex-1 overflow-y-auto overflow-x-auto p-6">
-                    <div id="summaryContent" class="min-w-max">
-                        <!-- Aquí se inyectará la tabla -->
+        <!-- Modal para copiar análisis -->
+        <div class="modal fade" id="copyAnalisisModal" tabindex="-1" aria-labelledby="copyAnalisisModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="copyAnalisisModalLabel">Copiar análisis</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="copyTargetSelect" class="form-label">Copiar a solicitud:</label>
+                            <select class="form-select" id="copyTargetSelect">
+                                <option value="">Seleccionar...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="confirmCopyAnalisis">Copiar</button>
                     </div>
                 </div>
-
-                <!-- Footer -->
-                <div class="px-6 py-4 border-t border-gray-200 bg-white rounded-b-2xl">
-                    <div class="flex flex-col sm:flex-row justify-end gap-3">
-                        <button type="button" onclick="closeConfirmModal()"
-                            class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200">
-                            Cancelar
-                        </button>
-                        <button type="button" onclick="confirmSubmit()"
-                            class="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2">
+            </div>
+        </div>
+        <!-- Modal de Confirmación (Bootstrap 5) -->
+        <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable" style="max-width: 85%;">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="confirmModalLabel">📋 Confirmar Envío de Muestras</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Aquí va el contenido generado -->
+                        <div id="summaryContent"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="btnConfirmSubmit">
                             ✅ Confirmar y Guardar
                         </button>
                     </div>
@@ -506,6 +518,66 @@ if (!$conexion) {
         const container = document.getElementById("samples-table-container");
         const tableBody = document.getElementById("samplesTableBody");
 
+        let optionsMuestraHTML = '<option value="">Seleccionar...</option>'; // Valor por defecto
+        let analisisModalInstance = null;
+        document.addEventListener('DOMContentLoaded', () => {
+            initApp();
+            analisisModalInstance = new bootstrap.Modal(document.getElementById('analisisModal'));
+            document.getElementById('samplesTableBody').addEventListener('change', function (e) {
+                if (e.target && e.target.matches('select[id^="tipoMuestra_"]')) {
+                    const select = e.target;
+                    const idx = parseInt(select.dataset.sampleIndex);
+
+                    // Guardar en caché
+                    sampleDataCache[idx] = sampleDataCache[idx] || {};
+                    sampleDataCache[idx].tipoMuestra = select.value;
+                    sampleDataCache[idx].analisisSeleccionados = [];
+
+                    // Actualizar UI
+                    document.getElementById(`analisisResumen_${idx}`).innerHTML = '';//'Ninguno';
+                    updateCodigoReferencia(idx);
+                }
+            });
+            document.getElementById('samplesTableBody').addEventListener('click', function (e) {
+                const index = e.target.closest('[data-index]')?.dataset.index;
+                if (index === undefined) return;
+                const i = parseInt(index, 10);
+
+                if (e.target.classList.contains('btn-seleccionar')) {
+                    openAnalisisModal(i);
+                } else if (e.target.classList.contains('btn-copiar')) {
+                    copyAnalisisTo(i);
+                }
+            });
+            document.getElementById('btnConfirmSubmit').addEventListener('click', function () {
+                // Cierra el modal antes de enviar (mejor UX)
+                bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+                // Ejecuta el envío real
+                confirmSubmit();
+            });
+        });
+
+        async function initApp() {
+            loadCodigoEnvio(); // Tu función existente
+
+            // Precargar tipos de muestra INMEDIATAMENTE
+            try {
+                const res = await fetch("get_tipos_muestra.php");
+                const tipos = await res.json();
+
+                if (!tipos.error) {
+                    allTiposMuestra = tipos;
+                    // Construimos el string HTML una sola vez aquí
+                    optionsMuestraHTML = '<option value="">Seleccionar...</option>';
+                    allTiposMuestra.forEach(tipo => {
+                        optionsMuestraHTML += `<option value="${tipo.codigo}">${tipo.nombre}</option>`;
+                    });
+                }
+            } catch (error) {
+                console.error("Error precargando tipos:", error);
+            }
+        }
+
         // === Función para cargar el código de envío ===
         async function loadCodigoEnvio() {
             try {
@@ -521,145 +593,167 @@ if (!$conexion) {
             }
         }
 
-        // === Función para cargar tipos de muestra ===
-        /*async function cargarTiposMuestra(selectId, sampleIndex) {
-            try {
-                const res = await fetch("get_tipos_muestra.php");
-                const tipos = await res.json();
-                if (tipos.error) throw new Error(tipos.error);
-                allTiposMuestra = tipos;
-                const select = document.getElementById(selectId);
-                select.innerHTML = '<option value="">Seleccionar...</option>';
-                tipos.forEach((tipo) => {
-                    const option = document.createElement('option');
-                    option.value = tipo.codigo;
-                    option.textContent = tipo.nombre;
-                    select.appendChild(option);
-                });
-
-                // Agregar evento change para actualizar el código de referencia
-                select.addEventListener('change', function () {
-                    updateCodigoReferencia(sampleIndex);
-                });
-
-            } catch (error) {
-                allTiposMuestra = [];
-                console.error("Error al cargar tipos de muestra:", error);
-                alert("⚠️ No se pudieron cargar los tipos de muestra.");
-            }
-        }*/
-        async function cargarTiposMuestra(selectId, sampleIndex) {
-            try {
-                const res = await fetch("get_tipos_muestra.php");
-                const tipos = await res.json();
-                if (tipos.error) throw new Error(tipos.error);
-                allTiposMuestra = tipos;
-                const select = document.getElementById(selectId);
-                select.innerHTML = '<option value="">Seleccionar...</option>';
-                tipos.forEach((tipo) => {
-                    const option = document.createElement('option');
-                    option.value = tipo.codigo;
-                    option.textContent = tipo.nombre;
-                    select.appendChild(option);
-                });
-
-                // ✅ FIX: Remover listeners previos antes de agregar uno nuevo
-                select.removeEventListener('change', handleTipoMuestraChange);
-
-                // ✅ Usar una función nombrada para poder removerla después
-                select.addEventListener('change', handleTipoMuestraChange);
-
-                // Guardar el índice en el elemento para usarlo en el handler
-                select.dataset.sampleIndex = sampleIndex;
-
-            } catch (error) {
-                allTiposMuestra = [];
-                console.error("Error al cargar tipos de muestra:", error);
-                alert("⚠️ No se pudieron cargar los tipos de muestra.");
-            }
-        }
-        function handleTipoMuestraChange(event) {
-            const select = event.target;
-            const sampleIndex = parseInt(select.dataset.sampleIndex);
-            updateCodigoReferencia(sampleIndex);
-        }
-
-        // === Función para actualizar el código de referencia ===
         function updateCodigoReferencia(sampleIndex) {
-            const tipoId = document.getElementById(`tipoMuestra_${sampleIndex}`).value;
-            const container = document.getElementById(`codigoReferenciaContainer_${sampleIndex}`);
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.id = `codigoReferenciaValue_${sampleIndex}`;
-            hiddenInput.name = `codigoReferenciaValue_${sampleIndex}`;
+            return new Promise((resolve, reject) => {
+                const tipoId = document.getElementById(`tipoMuestra_${sampleIndex}`)?.value;
+                const container = document.getElementById(`codigoReferenciaContainer_${sampleIndex}`);
 
-            if (!tipoId) {
+                if (!container) {
+                    reject(new Error("Contenedor no encontrado"));
+                    return;
+                }
+
+                // Crear input oculto
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.id = `codigoReferenciaValue_${sampleIndex}`;
+                hiddenInput.name = `codigoReferenciaValue_${sampleIndex}`;
                 container.innerHTML = '';
                 container.appendChild(hiddenInput);
-                return;
-            }
 
-            // Obtener la longitud del código de referencia
-            fetch(`get_config_muestra.php?tipo=${tipoId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) throw new Error(data.error);
+                if (!tipoId) {
+                    resolve(); // sin tipo, nada más que hacer
+                    return;
+                }
 
-                    const longitud = data.tipo_muestra.longitud_codigo;
-                    container.innerHTML = '';
+                fetch(`get_config_muestra.php?tipo=${encodeURIComponent(tipoId)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) throw new Error(data.error);
 
-                    // Crear los cuadraditos
-                    const boxesContainer = document.createElement('div');
-                    boxesContainer.id = `codigoReferenciaBoxes_${sampleIndex}`;
-                    boxesContainer.className = 'codigo-referencia-container';
+                        const longitud = data.tipo_muestra.longitud_codigo;
+                        container.innerHTML = '';
 
-                    for (let i = 0; i < longitud; i++) {
-                        const box = document.createElement('input');
-                        box.type = 'text';
-                        box.maxLength = 1;
-                        box.className = 'codigo-referencia-box';
-                        box.addEventListener('input', function () {
-                            this.value = this.value.replace(/[^0-9]/g, "");
-                            if (this.value && this.nextElementSibling)
-                                this.nextElementSibling.focus();
-                            updateHiddenValue();
-                        });
-                        box.addEventListener('keydown', function (e) {
-                            if (
-                                e.key === "Backspace" &&
-                                !this.value &&
-                                this.previousElementSibling
-                            ) {
-                                this.previousElementSibling.focus();
-                            }
-                        });
-                        boxesContainer.appendChild(box);
-                    }
+                        const boxesContainer = document.createElement('div');
+                        boxesContainer.id = `codigoReferenciaBoxes_${sampleIndex}`;
+                        boxesContainer.className = 'codigo-referencia-container';
 
-                    // Función para actualizar el valor oculto
-                    function updateHiddenValue() {
-                        const value = Array.from(boxesContainer.querySelectorAll("input"))
-                            .map((i) => i.value || "")
-                            .join("");
-                        hiddenInput.value = value;
-                    }
+                        for (let i = 0; i < longitud; i++) {
+                            const box = document.createElement('input');
+                            box.type = 'text';
+                            box.maxLength = 1;
+                            box.className = 'codigo-referencia-box';
+                            box.addEventListener('input', function () {
+                                this.value = this.value.replace(/[^0-9]/g, "");
+                                if (this.value && this.nextElementSibling) this.nextElementSibling.focus();
+                                updateHiddenValue();
+                            });
+                            box.addEventListener('keydown', function (e) {
+                                if (e.key === "Backspace" && !this.value && this.previousElementSibling) {
+                                    this.previousElementSibling.focus();
+                                }
+                            });
+                            boxesContainer.appendChild(box);
+                        }
 
-                    container.appendChild(boxesContainer);
-                    container.appendChild(hiddenInput);
+                        function updateHiddenValue() {
+                            const value = Array.from(boxesContainer.querySelectorAll("input"))
+                                .map(i => i.value || "")
+                                .join("");
+                            hiddenInput.value = value;
+                        }
 
-                })
-                .catch(error => {
-                    console.error("Error al obtener la configuración de la muestra:", error);
-                    alert("⚠️ No se pudo cargar la configuración de la muestra.");
-                });
+                        container.appendChild(boxesContainer);
+                        container.appendChild(hiddenInput);
+                        resolve(); // ✅ DOM listo
+                    })
+                    .catch(error => {
+                        console.error("Error al cargar config:", error);
+                        alert("⚠️ No se pudo cargar la configuración del tipo de muestra.");
+                        reject(error);
+                    });
+            });
         }
 
+        function adjustTableRows(newCount) {
+            const currentCount = totalSamples;
+
+            if (newCount === currentCount) return;
+
+            const tableBody = document.getElementById("samplesTableBody");
+
+            if (newCount > currentCount) {
+                // ✅ Agregar filas nuevas
+                for (let i = currentCount; i < newCount; i++) {
+                    const row = createSampleRow(i);
+                    tableBody.appendChild(row);
+                    // Inicializar caché vacía
+                    sampleDataCache[i] = {
+                        tipoMuestra: '',
+                        codigoReferencia: '',
+                        fechaToma: dateStr,
+                        numeroMuestras: '1',
+                        analisisSeleccionados: [],
+                        observaciones: '',
+                        analisisResumenHtml: ''
+                    };
+                }
+            } else {
+                // ❌ Eliminar filas sobrantes (de abajo hacia arriba)
+                for (let i = currentCount - 1; i >= newCount; i--) {
+                    const row = document.getElementById(`sampleRow_${i}`);
+                    if (row) row.remove();
+                    // Eliminar de caché
+                    delete sampleDataCache[i];
+                }
+            }
+
+            totalSamples = newCount;
+        }
+        function createSampleRow(i) {
+            const row = document.createElement('tr');
+            row.id = `sampleRow_${i}`;
+
+            // 1. Tipo de Muestra
+            const tmCell = document.createElement('td');
+            const tmSelect = document.getElementById('templateSelect').cloneNode(true);
+            tmSelect.id = `tipoMuestra_${i}`;
+            tmSelect.name = `tipoMuestra_${i}`;
+            tmSelect.dataset.sampleIndex = i;
+            tmSelect.classList.remove('d-none');
+            tmSelect.innerHTML = optionsMuestraHTML;
+            tmCell.appendChild(tmSelect);
+            row.appendChild(tmCell);
+
+            // 2. Código de Referencia
+            const crCell = document.createElement('td');
+            crCell.innerHTML = `<div id="codigoReferenciaContainer_${i}"></div>`;
+            row.appendChild(crCell);
+
+            // 3. Fecha de Toma
+            const ftCell = document.createElement('td');
+            ftCell.innerHTML = `<input type="date" class="form-control" id="fechaToma_${i}" value="${dateStr}">`;
+            row.appendChild(ftCell);
+
+            // 4. Número de Muestras
+            const nmCell = document.createElement('td');
+            nmCell.innerHTML = `<input type="number" class="form-control" id="numeroMuestras_${i}" min="1" max="20" value="1">`;
+            row.appendChild(nmCell);
+
+            // 5. Análisis
+            const anCell = document.createElement('td');
+            anCell.innerHTML = `
+        <div class="d-flex flex-column">
+            <div class="d-flex gap-1 mb-1">
+                <button type="button" class="btn btn-sm btn-outline-primary btn-seleccionar" data-index="${i}">Seleccionar</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-copiar" data-index="${i}">Copiar</button>
+            </div>
+            <div id="analisisResumen_${i}" style="font-size: 0.85em;"></div>
+        </div>`;
+            row.appendChild(anCell);
+
+            // 6. Observaciones
+            const obsCell = document.createElement('td');
+            obsCell.innerHTML = `<textarea class="form-control" id="observaciones_${i}" rows="2"></textarea>`;
+            row.appendChild(obsCell);
+
+            return row;
+        }
         function generateTableRows(count) {
-            // 1. Guardar estado actual de todas las filas existentes en sampleDataCache
+            // A. Guardar datos actuales en caché
             for (let i = 0; i < totalSamples; i++) {
                 const row = document.getElementById(`sampleRow_${i}`);
                 if (row) {
-                    // Extraer datos actuales y guardar en caché
                     sampleDataCache[i] = {
                         tipoMuestra: document.getElementById(`tipoMuestra_${i}`)?.value || '',
                         codigoReferencia: document.getElementById(`codigoReferenciaValue_${i}`)?.value || '',
@@ -671,180 +765,307 @@ if (!$conexion) {
                 }
             }
 
-            // 2. Limpiar y generar nuevas filas
+            // B. Limpiar tabla
             tableBody.innerHTML = '';
+            totalSamples = count;
+
+            // C. Generar filas
             for (let i = 0; i < count; i++) {
                 const row = document.createElement('tr');
                 row.id = `sampleRow_${i}`;
 
-                // --- Tipo de Muestra (select) ---
+                // 1. Tipo de Muestra - CLON DEL TEMPLATE
                 const tmCell = document.createElement('td');
-                const tmSelect = document.createElement('select');
+                const tmSelect = document.getElementById('templateSelect').cloneNode(true);
                 tmSelect.id = `tipoMuestra_${i}`;
-                tmSelect.className = 'form-select';
-                tmSelect.innerHTML = '<option value="">Seleccionar...</option>';
-                tmSelect.addEventListener('change', function () {
-                    updateCodigoReferencia(i);
-                    // Guardar en caché al cambiar
-                    sampleDataCache[i] = sampleDataCache[i] || {};
-                    sampleDataCache[i].tipoMuestra = this.value;
-                });
+                tmSelect.name = `tipoMuestra_${i}`;
+                tmSelect.dataset.sampleIndex = i;
+                tmSelect.classList.remove('d-none');        // ← IMPORTANTE
+                tmSelect.innerHTML = optionsMuestraHTML;    // ← Opciones precargadas
                 tmCell.appendChild(tmSelect);
                 row.appendChild(tmCell);
 
-                // --- Código de Referencia ---
+                // 2. Celda Código Referencia
                 const crCell = document.createElement('td');
-                const crContainer = document.createElement('div');
-                crContainer.id = `codigoReferenciaContainer_${i}`;
-                crCell.appendChild(crContainer);
+                crCell.innerHTML = `<div id="codigoReferenciaContainer_${i}"></div>`;
                 row.appendChild(crCell);
 
-                // --- Fecha de Toma ---
+                // 3. Celda Fecha
                 const ftCell = document.createElement('td');
-                const ftInput = document.createElement('input');
-                ftInput.type = 'date';
-                ftInput.className = 'form-control';
-                ftInput.id = `fechaToma_${i}`;
-                ftInput.value = dateStr;
-                ftCell.appendChild(ftInput);
+                ftCell.innerHTML = `<input type="date" class="form-control" id="fechaToma_${i}" value="${dateStr}">`;
                 row.appendChild(ftCell);
 
-                // --- Número de Muestras ---
+                // 4. Celda Número Muestras
                 const nmCell = document.createElement('td');
-                const nmInput = document.createElement('input');
-                nmInput.type = 'number';
-                nmInput.className = 'form-control';
-                nmInput.id = `numeroMuestras_${i}`;
-                nmInput.min = '1';
-                nmInput.max = '20';
-                nmInput.value = '1';
-                nmCell.appendChild(nmInput);
+                nmCell.innerHTML = `<input type="number" class="form-control" id="numeroMuestras_${i}" min="1" max="20" value="1">`;
                 row.appendChild(nmCell);
 
-                // --- Análisis: botones + resumen ---
+                // 5. Celda Análisis
                 const anCell = document.createElement('td');
-                const anDiv = document.createElement('div');
-                anDiv.className = 'd-flex flex-column';
-
-                const buttonsDiv = document.createElement('div');
-                buttonsDiv.className = 'd-flex gap-1 mb-1';
-
-                const selectBtn = document.createElement('button');
-                selectBtn.type = 'button';
-                selectBtn.className = 'btn btn-sm btn-outline-primary';
-                selectBtn.textContent = 'Seleccionar';
-                selectBtn.onclick = () => openAnalisisModal(i);
-
-                const copyBtn = document.createElement('button');
-                copyBtn.type = 'button';
-                copyBtn.className = 'btn btn-sm btn-outline-secondary';
-                copyBtn.title = 'Copiar análisis y tipo de muestra a otra fila';
-                copyBtn.textContent = 'Copiar';
-                copyBtn.onclick = () => copyAnalisisTo(i);
-
-                buttonsDiv.appendChild(selectBtn);
-                buttonsDiv.appendChild(copyBtn);
-
-                const resumen = document.createElement('div');
-                resumen.id = `analisisResumen_${i}`;
-                resumen.style.fontSize = '0.85em';
-                resumen.style.minHeight = '1.2em';
-                resumen.innerHTML = 'Ninguno';
-
-                anDiv.appendChild(buttonsDiv);
-                anDiv.appendChild(resumen);
-                anCell.appendChild(anDiv);
+                anCell.innerHTML = `
+    <div class="d-flex flex-column">
+        <div class="d-flex gap-1 mb-1">
+            <button type="button" class="btn btn-sm btn-outline-primary btn-seleccionar" data-index="${i}">Seleccionar</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary btn-copiar" data-index="${i}">Copiar</button>
+        </div>
+        <div id="analisisResumen_${i}" style="font-size: 0.85em;">Ninguno</div>
+    </div>
+`;
                 row.appendChild(anCell);
 
-                // --- Observaciones (textarea) ---
+                // 6. Celda Observaciones
                 const obsCell = document.createElement('td');
-                const obsTA = document.createElement('textarea');
-                obsTA.className = 'form-control';
-                obsTA.id = `observaciones_${i}`;
-                obsTA.rows = 2;
-                obsTA.placeholder = 'Observaciones...';
-                obsCell.appendChild(obsTA);
+                obsCell.innerHTML = `<textarea class="form-control" id="observaciones_${i}" rows="2"></textarea>`;
+                // Dentro del bucle for (let i = 0; i < count; i++)
                 row.appendChild(obsCell);
-
                 tableBody.appendChild(row);
 
-                // --- Cargar tipos de muestra y restaurar datos ---
-                cargarTiposMuestra(`tipoMuestra_${i}`, i).then(() => {
+                // --- RESTAURAR DATOS ---
+                const cache = sampleDataCache[i];
+                if (cache) {
+                    // 1. Tipo de muestra
+                    if (cache.tipoMuestra) {
+                        document.getElementById(`tipoMuestra_${i}`).value = cache.tipoMuestra;
+                    }
+
+                    // 2. Código de referencia (se restaurará async)
+                    if (cache.tipoMuestra) {
+                        updateCodigoReferencia(i).then(() => {
+                            if (cache.codigoReferencia) {
+                                const boxes = document.querySelectorAll(`#codigoReferenciaBoxes_${i} input`);
+                                const digits = cache.codigoReferencia.split('');
+                                boxes.forEach((box, idx) => {
+                                    if (digits[idx]) box.value = digits[idx];
+                                });
+                                const hidden = document.getElementById(`codigoReferenciaValue_${i}`);
+                                if (hidden) hidden.value = cache.codigoReferencia;
+                            }
+                        });
+                    }
+
+                    // 3. Otros campos simples
+                    if (cache.fechaToma) document.getElementById(`fechaToma_${i}`).value = cache.fechaToma;
+                    if (cache.numeroMuestras) document.getElementById(`numeroMuestras_${i}`).value = cache.numeroMuestras;
+                    if (cache.observaciones) document.getElementById(`observaciones_${i}`).value = cache.observaciones;
+
+                    if (cache.analisisSeleccionados && cache.analisisSeleccionados.length > 0) {
+                        // ✅ Si NO hay HTML bonito, es porque la fila nunca pasó por el modal.
+                        //    En ese caso, NO mostramos nada bonito, pero tampoco destruimos el formato.
+                        //    Simplemente dejamos que updateAnalisisResumen maneje el fallback.
+                        updateAnalisisResumen(i);
+                    }
+                }
+            }
+        }
+        // ✅ SOLUCIÓN: Cargar tipos de muestra de forma síncrona y usar delegación de eventos
+        async function cargarTodosTiposMuestra(count) {
+            try {
+                // Cargar tipos de muestra una sola vez si no están cargados
+                if (allTiposMuestra.length === 0) {
+                    const res = await fetch("get_tipos_muestra.php");
+                    const tipos = await res.json();
+                    if (tipos.error) throw new Error(tipos.error);
+                    allTiposMuestra = tipos;
+                }
+
+                // Llenar todos los selects
+                for (let i = 0; i < count; i++) {
+                    const tmSelect = document.getElementById(`tipoMuestra_${i}`);
+                    if (!tmSelect) continue;
+
+                    // Llenar opciones
+                    tmSelect.innerHTML = '<option value="">Seleccionar...</option>';
+                    allTiposMuestra.forEach((tipo) => {
+                        const option = document.createElement('option');
+                        option.value = tipo.codigo;
+                        option.textContent = tipo.nombre;
+                        tmSelect.appendChild(option);
+                    });
+
+                    // Restaurar datos si existen
                     const cache = sampleDataCache[i];
-                    if (cache) {
-                        // Restaurar tipo de muestra
-                        if (cache.tipoMuestra) {
-                            tmSelect.value = cache.tipoMuestra;
-                            // Disparar cambio para cargar código de referencia
-                            setTimeout(() => {
-                                tmSelect.dispatchEvent(new Event('change'));
-                                // Restaurar otros campos después de que se cargue el código
-                                setTimeout(() => {
-                                    if (cache.codigoReferencia) {
-                                        const boxes = document.querySelectorAll(`#codigoReferenciaBoxes_${i} input`);
-                                        const digits = cache.codigoReferencia.split('');
-                                        boxes.forEach((box, idx) => box.value = digits[idx] || '');
-                                        const hidden = document.getElementById(`codigoReferenciaValue_${i}`);
-                                        if (hidden) hidden.value = cache.codigoReferencia;
-                                    }
-                                    if (cache.fechaToma) document.getElementById(`fechaToma_${i}`).value = cache.fechaToma;
-                                    if (cache.numeroMuestras) document.getElementById(`numeroMuestras_${i}`).value = cache.numeroMuestras;
-                                    if (cache.observaciones) document.getElementById(`observaciones_${i}`).value = cache.observaciones;
-                                    if (cache.analisisSeleccionados) {
-                                        sampleDataCache[i].analisisSeleccionados = cache.analisisSeleccionados;
-                                        updateAnalisisResumen(i); // actualiza el resumen visual
-                                    }
-                                }, 300);
-                            }, 50);
+                    if (cache && cache.tipoMuestra) {
+                        tmSelect.value = cache.tipoMuestra;
+
+                        // Restaurar código de referencia y demás campos
+                        await updateCodigoReferencia(i);
+
+                        if (cache.codigoReferencia) {
+                            const boxes = document.querySelectorAll(`#codigoReferenciaBoxes_${i} input`);
+                            const digits = cache.codigoReferencia.split('');
+                            boxes.forEach((box, idx) => {
+                                if (digits[idx]) box.value = digits[idx];
+                            });
+                            const hidden = document.getElementById(`codigoReferenciaValue_${i}`);
+                            if (hidden) hidden.value = cache.codigoReferencia;
+                        }
+                        if (cache.fechaToma) document.getElementById(`fechaToma_${i}`).value = cache.fechaToma;
+                        if (cache.numeroMuestras) document.getElementById(`numeroMuestras_${i}`).value = cache.numeroMuestras;
+                        if (cache.observaciones) document.getElementById(`observaciones_${i}`).value = cache.observaciones;
+                        if (cache.analisisSeleccionados && cache.analisisSeleccionados.length > 0) {
+                            sampleDataCache[i].analisisSeleccionados = cache.analisisSeleccionados;
+                            updateAnalisisResumen(i);
                         }
                     }
-                });
+                }
+            } catch (error) {
+                console.error("Error al cargar tipos de muestra:", error);
+                alert("⚠️ No se pudieron cargar los tipos de muestra.");
             }
-
-            totalSamples = count;
         }
+
         function restoreRowData(index, data) {
-            if (!data) return;
+            if (!data || !data.tipoMuestra) return;
+
             const tmSelect = document.getElementById(`tipoMuestra_${index}`);
-            if (tmSelect && data.tipoMuestra) {
-                tmSelect.value = data.tipoMuestra;
-                // Disparar cambio para cargar código de referencia y análisis
-                const event = new Event('change');
-                tmSelect.dispatchEvent(event);
-                // Restaurar otros campos con delay
-                setTimeout(() => {
-                    if (data.codigoReferencia) {
-                        const boxes = document.querySelectorAll(`#codigoReferenciaBoxes_${index} input`);
-                        const digits = data.codigoReferencia.split('');
-                        boxes.forEach((box, i) => box.value = digits[i] || '');
-                        document.getElementById(`codigoReferenciaValue_${index}`).value = data.codigoReferencia;
-                    }
-                    if (data.fechaToma) document.getElementById(`fechaToma_${index}`).value = data.fechaToma;
-                    if (data.numeroMuestras) document.getElementById(`numeroMuestras_${index}`).value = data.numeroMuestras;
-                    if (data.observaciones) document.getElementById(`observaciones_${index}`).value = data.observaciones;
-                    if (data.analisisSeleccionados) {
-                        sampleDataCache[index] = sampleDataCache[index] || {};
-                        sampleDataCache[index].analisisSeleccionados = data.analisisSeleccionados;
-                        // Forzar actualización del resumen
-                        updateAnalisisResumen(index);
-                    }
-                }, 300);
-            }
+            if (!tmSelect) return;
+
+            // 1. Establecer valor
+            tmSelect.value = data.tipoMuestra;
+
+            // 2. Forzar actualización del código de referencia SIN depender de eventos
+            updateCodigoReferencia(index).then(() => {
+                // 3. Restaurar campos una vez que el código de referencia ya está renderizado
+                if (data.codigoReferencia) {
+                    const boxes = document.querySelectorAll(`#codigoReferenciaBoxes_${index} input`);
+                    const digits = data.codigoReferencia.split('');
+                    boxes.forEach((box, i) => {
+                        if (digits[i]) box.value = digits[i];
+                    });
+                    const hidden = document.getElementById(`codigoReferenciaValue_${index}`);
+                    if (hidden) hidden.value = data.codigoReferencia;
+                }
+
+                if (data.fechaToma) document.getElementById(`fechaToma_${index}`).value = data.fechaToma;
+                if (data.numeroMuestras) document.getElementById(`numeroMuestras_${index}`).value = data.numeroMuestras;
+                if (data.observaciones) document.getElementById(`observaciones_${index}`).value = data.observaciones;
+                if (data.analisisSeleccionados) {
+                    sampleDataCache[index] = sampleDataCache[index] || {};
+                    sampleDataCache[index].analisisSeleccionados = data.analisisSeleccionados;
+                    updateAnalisisResumen(index);
+                }
+            }).catch(err => {
+                console.warn("Error al restaurar código de referencia:", err);
+                // Aún así restaurar otros campos
+                if (data.fechaToma) document.getElementById(`fechaToma_${index}`).value = data.fechaToma;
+                // ... resto igual
+            });
         }
         // Actualiza el resumen de análisis visualmente
         function updateAnalisisResumen(sampleIndex) {
+            const resumenEl = document.getElementById(`analisisResumen_${sampleIndex}`);
+            if (!resumenEl) return;
+
             const cache = sampleDataCache[sampleIndex] || {};
-            const codigos = cache.analisisSeleccionados || [];
-            if (codigos.length === 0) {
-                document.getElementById(`analisisResumen_${sampleIndex}`).innerHTML = 'Ninguno';
+            const analisis = cache.analisisSeleccionados || [];
+
+            if (analisis.length === 0) {
+                resumenEl.innerHTML = 'Ninguno';
                 return;
             }
-            // En entorno real, cargar nombres desde API. Aquí usamos placeholder.
+
+            // ✅ Si ya tenemos el HTML bonito, lo usamos
+            if (cache.analisisResumenHtml) {
+                resumenEl.innerHTML = cache.analisisResumenHtml;
+                return;
+            }
+
+            // ✅ Si NO tenemos HTML bonito, pero SÍ tenemos objetos con nombre, generamos uno decente
+            if (typeof analisis[0] === 'object' && analisis[0].nombre) {
+                const nombres = analisis.map(a => a.nombre).join(', ');
+                resumenEl.innerHTML = `<small>${nombres}</small>`;
+                return;
+            }
+
+            // ✅ Si solo tenemos códigos (strings), mostramos placeholder
+            const codigos = analisis.map(a => typeof a === 'string' ? a : a.codigo);
             const nombres = codigos.map(c => `Análisis ${c}`).join(', ');
-            document.getElementById(`analisisResumen_${sampleIndex}`).innerHTML = `<small>${nombres}</small>`;
+            resumenEl.innerHTML = `<small>${nombres}</small>`;
         }
-        // Función de copia mejorada (no permite copiar a sí misma)
-        // Función de copia mejorada (no permite copiar a sí misma)
+
+        /*function copyAnalisisTo(sourceIndex) {
+            const analisisResumenCell = document.querySelector(`#analisisResumen_${sourceIndex}`).closest('td');
+            const existingContainer = analisisResumenCell.querySelector('.copy-controls-container');
+
+            // ✅ Si ya existe el contenedor de copia, no crear otro
+            if (existingContainer) {
+                existingContainer.style.display = 'block';
+                return;
+            }
+
+            const sourceCache = sampleDataCache[sourceIndex];
+            if (!sourceCache || !sourceCache.analisisSeleccionados?.length) {
+                alert('No hay análisis seleccionados en la fila origen.');
+                return;
+            }
+
+            // ✅ Crear contenedor único para selección de destino
+            const container = document.createElement('div');
+            container.className = 'copy-controls-container mt-2 p-2 bg-gray-100 rounded';
+            container.innerHTML = `
+        <label class="text-sm">Copiar a fila:</label>
+        <select class="form-select copy-target-select mt-1">
+            <option value="">Seleccionar...</option>
+        </select>
+        <div class="mt-2">
+            <button type="button" class="btn btn-sm btn-primary copy-confirm">Copiar</button>
+            <button type="button" class="btn btn-sm btn-secondary copy-cancel ms-2">Cancelar</button>
+        </div>
+    `;
+            analisisResumenCell.appendChild(container);
+
+            // Llenar opciones (excluye la fila origen)
+            const selectEl = container.querySelector('.copy-target-select');
+            for (let i = 0; i < totalSamples; i++) {
+                if (i !== sourceIndex) {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = `Fila ${i + 1}`;
+                    selectEl.appendChild(opt);
+                }
+            }
+
+            // ✅ Confirmar copia
+            container.querySelector('.copy-confirm').onclick = () => {
+                const targetIndex = parseInt(selectEl.value);
+                if (isNaN(targetIndex) || targetIndex < 0 || targetIndex >= totalSamples) {
+                    alert('Seleccione una fila válida.');
+                    return;
+                }
+
+                // 1. Copiar tipo de muestra si es diferente
+                const srcSelect = document.getElementById(`tipoMuestra_${sourceIndex}`);
+                const tgtSelect = document.getElementById(`tipoMuestra_${targetIndex}`);
+                const srcTipo = srcSelect?.value || '';
+
+                if (srcTipo && srcTipo !== tgtSelect.value) {
+                    tgtSelect.value = srcTipo;
+                    tgtSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                // 2. ✅ Copiar datos COMPLETOS desde la caché (incluyendo HTML del resumen)
+                sampleDataCache[targetIndex] = sampleDataCache[targetIndex] || {};
+                sampleDataCache[targetIndex].analisisSeleccionados = [...sourceCache.analisisSeleccionados];
+                sampleDataCache[targetIndex].tipoMuestra = srcTipo;
+
+                // ✅ Copiar el HTML exacto del resumen (lo que ya se generó en el modal)
+                if (sourceCache.analisisResumenHtml) {
+                    sampleDataCache[targetIndex].analisisResumenHtml = sourceCache.analisisResumenHtml;
+                }
+
+                // 3. ✅ Actualizar el resumen visual usando el HTML guardado
+                updateAnalisisResumen(targetIndex);
+
+                // 4. Notificación y limpieza
+                alert(`✅ Análisis copiados a la Fila ${targetIndex + 1}.`);
+                container.remove();
+            };
+
+            // ✅ Cancelar copia
+            container.querySelector('.copy-cancel').onclick = () => {
+                container.remove();
+            };
+        }*/
         function copyAnalisisTo(sourceIndex) {
             const sourceCache = sampleDataCache[sourceIndex];
             if (!sourceCache || !sourceCache.analisisSeleccionados?.length) {
@@ -852,46 +1073,63 @@ if (!$conexion) {
                 return;
             }
 
-            const targetStr = prompt('Copiar a fila (1, 2, 3...):');
-            if (!targetStr) return;
-            const targetIndex = parseInt(targetStr) - 1;
+            // Llenar el select del modal
+            const selectEl = document.getElementById('copyTargetSelect');
+            selectEl.innerHTML = '<option value="">Seleccionar...</option>';
+            for (let i = 0; i < totalSamples; i++) {
+                if (i !== sourceIndex) {
+                    const opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = `Solicitud ${i + 1}`;
+                    selectEl.appendChild(opt);
+                }
+            }
 
-            if (targetIndex < 0 || targetIndex >= totalSamples) {
-                alert('Fila no válida.');
+            // Guardar el índice de origen en un atributo del botón de confirmación
+            const confirmBtn = document.getElementById('confirmCopyAnalisis');
+            confirmBtn.dataset.sourceIndex = sourceIndex;
+
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('copyAnalisisModal'));
+            modal.show();
+        }
+        // Listener para el botón de copiar en el modal
+        document.getElementById('confirmCopyAnalisis').addEventListener('click', function () {
+            const sourceIndex = parseInt(this.dataset.sourceIndex);
+            const targetIndex = parseInt(document.getElementById('copyTargetSelect').value);
+
+            if (isNaN(targetIndex) || targetIndex < 0 || targetIndex >= totalSamples) {
+                alert('Seleccione una solicitud válida.');
                 return;
             }
-            if (targetIndex === sourceIndex) {
-                alert('No se puede copiar a la misma fila.');
-                return;
-            }
 
+            // 1. Copiar tipo de muestra
             const srcSelect = document.getElementById(`tipoMuestra_${sourceIndex}`);
             const tgtSelect = document.getElementById(`tipoMuestra_${targetIndex}`);
             const srcTipo = srcSelect?.value || '';
-            const tgtTipo = tgtSelect?.value || '';
-
-            // === Solo cambiar el tipo de muestra si es diferente ===
-            if (srcTipo && srcTipo !== tgtTipo) {
+            if (srcTipo && srcTipo !== tgtSelect.value) {
                 tgtSelect.value = srcTipo;
-                // Disparar 'change' solo si el tipo cambió
                 tgtSelect.dispatchEvent(new Event('change', { bubbles: true }));
             }
 
-            // === Actualizar el caché de análisis en la fila destino ===
+            // 2. Copiar análisis y resumen
+            const sourceCache = sampleDataCache[sourceIndex];
             sampleDataCache[targetIndex] = sampleDataCache[targetIndex] || {};
             sampleDataCache[targetIndex].analisisSeleccionados = [...sourceCache.analisisSeleccionados];
-            // Opcional: guardar tipo de muestra en caché para consistencia
             sampleDataCache[targetIndex].tipoMuestra = srcTipo;
 
-            // === Copiar el resumen visual de análisis (siempre) ===
-            const srcResumen = document.getElementById(`analisisResumen_${sourceIndex}`);
-            const tgtResumen = document.getElementById(`analisisResumen_${targetIndex}`);
-            if (srcResumen && tgtResumen) {
-                tgtResumen.innerHTML = srcResumen.innerHTML;
+            // Copiar el HTML del resumen si existe
+            if (sourceCache.analisisResumenHtml) {
+                sampleDataCache[targetIndex].analisisResumenHtml = sourceCache.analisisResumenHtml;
             }
 
-            alert(`✅ Análisis copiados a la fila ${targetIndex + 1}.`);
-        }
+            // 3. Actualizar UI
+            updateAnalisisResumen(targetIndex);
+
+            // 4. Cerrar modal y notificar
+            bootstrap.Modal.getInstance(document.getElementById('copyAnalisisModal')).hide();
+            alert(`✅ Análisis copiados a la Solicitud ${targetIndex + 1}.`);
+        });
         // === Función para abrir el modal de observaciones ===
         function openObservacionesModal(sampleIndex) {
             const observacionesInput = document.getElementById('observacionesInput');
@@ -916,8 +1154,35 @@ if (!$conexion) {
                 alert("Primero seleccione un tipo de muestra.");
                 return;
             }
-            const tipoId = tipoMuestraSelect.value;
 
+            // ✅ Regenerar resumen bonito si existe análisis pero no HTML
+            const cache = sampleDataCache[sampleIndex] || {};
+            if (cache.analisisSeleccionados?.length > 0 && !cache.analisisResumenHtml) {
+                const tipoId = tipoMuestraSelect.value;
+                try {
+                    const res = await fetch(`get_config_muestra.php?tipo=${tipoId}`);
+                    const data = await res.json();
+                    if (!data.error) {
+                        const resumenHtml = generateAnalisisResumen(
+                            cache.analisisSeleccionados,
+                            data.paquetes,
+                            data.analisis.reduce((acc, a) => {
+                                if (a.paquete) {
+                                    if (!acc[a.paquete]) acc[a.paquete] = [];
+                                    acc[a.paquete].push(a);
+                                }
+                                return acc;
+                            }, {})
+                        );
+                        sampleDataCache[sampleIndex].analisisResumenHtml = resumenHtml;
+                        document.getElementById(`analisisResumen_${sampleIndex}`).innerHTML = resumenHtml;
+                    }
+                } catch (err) {
+                    console.warn("No se pudo regenerar el resumen bonito:", err);
+                }
+            }
+
+            const tipoId = tipoMuestraSelect.value;
             document.getElementById("analisisModalSampleTitle").textContent = `Solicitud #${sampleIndex + 1}`;
 
             try {
@@ -936,16 +1201,11 @@ if (!$conexion) {
                     }
                 });
 
-                const cache = sampleDataCache[sampleIndex] || {};
                 const selectedAnalisisCodigos = new Set(
-                    (cache.analisisSeleccionados || []).map(String)
+                    (cache.analisisSeleccionados || []).map(a => String(a.codigo))
                 );
-                console.log(selectedAnalisisCodigos);
 
-                let html = '';
-
-                // Estilo común para todos los paquetes
-                html += '<style>.analisis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 8px; margin-left: 24px; }</style>';
+                let html = '<style>.analisis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 8px; margin-left: 24px; }</style>';
 
                 data.paquetes.forEach(p => {
                     const analisisDelPaquete = analisisPorPaquete[p.codigo] || [];
@@ -953,58 +1213,57 @@ if (!$conexion) {
                         analisisDelPaquete.every(a => selectedAnalisisCodigos.has(String(a.codigo)));
 
                     html += `
-    <div class="mb-4">
-      <div class="form-check">
-        <input class="form-check-input paquete-checkbox" 
-               type="checkbox" 
-               data-paquete-id="${p.codigo}"
-               ${todosAnalisisSeleccionados ? 'checked' : ''}>
-        <label class="form-check-label fw-bold">${p.nombre}</label>
-      </div>
-      ${analisisDelPaquete.length ? `
-        <div class="analisis-grid">
-          ${analisisDelPaquete.map(a => `
-            <div class="form-check">
-              <input class="form-check-input analisis-individual" 
-                     type="checkbox" 
-                     id="analisis_${a.codigo}_${sampleIndex}"
-                     value="${a.codigo}" 
-                     data-nombre="${a.nombre}"
-                     ${selectedAnalisisCodigos.has(String(a.codigo)) ? 'checked' : ''}>
-              <label class="form-check-label" for="analisis_${a.codigo}_${sampleIndex}">${a.nombre}</label>
-            </div>
-          `).join('')}
-        </div>
-      ` : ''}
-    </div>
-  `;
+                <div class="mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input paquete-checkbox" 
+                               type="checkbox" 
+                               data-paquete-id="${p.codigo}"
+                               ${todosAnalisisSeleccionados ? 'checked' : ''}>
+                        <label class="form-check-label fw-bold">${p.nombre}</label>
+                    </div>
+                    ${analisisDelPaquete.length ? `
+                        <div class="analisis-grid">
+                            ${analisisDelPaquete.map(a => `
+                                <div class="form-check">
+                                    <input class="form-check-input analisis-individual" 
+                                           type="checkbox" 
+                                           id="analisis_${a.codigo}_${sampleIndex}"
+                                           value="${a.codigo}" 
+                                           data-nombre="${a.nombre}"
+                                           ${selectedAnalisisCodigos.has(String(a.codigo)) ? 'checked' : ''}>
+                                    <label class="form-check-label" for="analisis_${a.codigo}_${sampleIndex}">${a.nombre}</label>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
                 });
 
-                // Análisis sin paquete (también en 3 columnas)
                 if (analisisSinPaquete.length > 0) {
                     html += `
-    <div class="mt-4 pt-3 border-top">
-      <h6 class="fw-bold">Otros análisis</h6>
-      <div class="analisis-grid">
-        ${analisisSinPaquete.map(a => `
-          <div class="form-check">
-            <input class="form-check-input analisis-individual" 
-                   type="checkbox" 
-                   id="analisis_sueltos_${a.codigo}_${sampleIndex}"
-                   value="${a.codigo}" 
-                   data-nombre="${a.nombre}"
-                   ${selectedAnalisisCodigos.has(String(a.codigo)) ? 'checked' : ''}>
-            <label class="form-check-label" for="analisis_sueltos_${a.codigo}_${sampleIndex}">${a.nombre}</label>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  `;
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="fw-bold">Otros análisis</h6>
+                    <div class="analisis-grid">
+                        ${analisisSinPaquete.map(a => `
+                            <div class="form-check">
+                                <input class="form-check-input analisis-individual" 
+                                       type="checkbox" 
+                                       id="analisis_sueltos_${a.codigo}_${sampleIndex}"
+                                       value="${a.codigo}" 
+                                       data-nombre="${a.nombre}"
+                                       ${selectedAnalisisCodigos.has(String(a.codigo)) ? 'checked' : ''}>
+                                <label class="form-check-label" for="analisis_sueltos_${a.codigo}_${sampleIndex}">${a.nombre}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
                 }
 
                 document.getElementById("analisisModalBody").innerHTML = html;
 
-                // ✅ Listener para paquetes (marcar/desmarcar análisis)
+                // ✅ Listener para checkboxes de paquetes
                 document.querySelectorAll("#analisisModal .paquete-checkbox").forEach(cb => {
                     cb.addEventListener("change", function () {
                         const paqueteId = this.dataset.paqueteId;
@@ -1017,7 +1276,10 @@ if (!$conexion) {
                     });
                 });
 
-                // ✅ Guardar solo análisis
+                // ✅ Guardar selección
+                const saveBtn = document.getElementById("analisisModalSaveBtn");
+                // Evita múltiples listeners acumulados
+                saveBtn.replaceWith(saveBtn.cloneNode(true));
                 document.getElementById("analisisModalSaveBtn").onclick = () => {
                     const selectedAnalisis = Array.from(
                         document.querySelectorAll("#analisisModal .analisis-individual:checked")
@@ -1026,19 +1288,24 @@ if (!$conexion) {
                         nombre: cb.dataset.nombre
                     }));
 
-
                     const resumenHtml = generateAnalisisResumen(selectedAnalisis, data.paquetes, analisisPorPaquete);
+                    sampleDataCache[sampleIndex] = sampleDataCache[sampleIndex] || {};
+                    sampleDataCache[sampleIndex].analisisSeleccionados = selectedAnalisis;
+                    sampleDataCache[sampleIndex].analisisResumenHtml = resumenHtml;
                     document.getElementById(`analisisResumen_${sampleIndex}`).innerHTML = resumenHtml;
 
-                    // ✅ Guardar solo análisis en caché
-                    sampleDataCache[sampleIndex] = sampleDataCache[sampleIndex] || {};
-                    sampleDataCache[sampleIndex].analisisSeleccionados = selectedAnalisis.map(a => a.codigo);
-                    console.log(sampleDataCache[sampleIndex].analisisSeleccionados);
-                    bootstrap.Modal.getInstance(document.getElementById('analisisModal')).hide();
+                    // ✅ Cerrar usando la instancia reutilizable
+                    if (analisisModalInstance) {
+                        analisisModalInstance.hide();
+                    }
                 };
 
-                const modal = new bootstrap.Modal(document.getElementById('analisisModal'));
-                modal.show();
+                // ✅ Mostrar modal usando la instancia global
+                if (analisisModalInstance) {
+                    analisisModalInstance.show();
+                } else {
+                    console.error("❌ La instancia del modal de análisis no fue inicializada.");
+                }
 
             } catch (err) {
                 console.error(err);
@@ -1073,7 +1340,7 @@ if (!$conexion) {
         // === Función para generar el resumen de análisis ===
         function generateAnalisisResumen(selectedAnalisis, paquetes, analisisPorPaquete) {
             if (selectedAnalisis.length === 0) {
-                return 'Ninguno';
+                return '';//Ninguno
             }
 
             const analisisPorNombrePaquete = {};
@@ -1234,10 +1501,7 @@ if (!$conexion) {
                         const analisisPorPaquete = {};
                         const sinPaquete = [];
 
-                        // Necesitamos cargar los datos de los paquetes y análisis
-                        // Esto es una simplificación, en un caso real se haría una llamada al servidor
-                        // Por ahora, asumimos que tenemos los datos disponibles
-                        // En un escenario real, esto se haría con una llamada AJAX a get_config_muestra.php
+
 
                         // Simulación de agrupación
                         const paquetesMap = {}; // Aquí debería estar el mapa de paquetes
@@ -1293,92 +1557,36 @@ if (!$conexion) {
             window.open(`generar_pdf.php?codigo=${encodeURIComponent(codigoEnvio)}`, '_blank');
         });
 
-        // === Event listener para el botón de configuración ===
-        /*document.getElementById('configButton').addEventListener('click', function () {
-            const modal = new bootstrap.Modal(document.getElementById('configModal'));
-            modal.show();
-        });*/
+        function handleNumeroSolicitudesChange() {
+            let value = this.value.trim();
 
-        // === Event listener para aplicar la configuración ===
-        /*document.getElementById('applyConfig').addEventListener('click', function () {
-            const viewMode = document.getElementById('viewMode').value;
-            const typeMuestraDisplay = document.getElementById('typeMuestraDisplay').value;
 
-            // Aplicar la configuración
-            if (viewMode === 'vertical') {
-                // Cambiar la tabla a vista vertical (esto requeriría una reestructuración más compleja)
-                alert('La vista vertical no está implementada en este ejemplo.');
-            } else {
-                // Mantener la vista horizontal
-            }
-
-            if (typeMuestraDisplay === 'allTypes') {
-                // Mostrar todos los tipos de muestra en la primera celda
-                // Esto requeriría una reestructuración de la tabla
-                alert('Mostrar todos los tipos de muestra no está implementado en este ejemplo.');
-            }
-
-            bootstrap.Modal.getInstance(document.getElementById('configModal')).hide();
-        });*/
-
-        // === Event listener para el número de solicitudes ===
-        /*function handleNumeroSolicitudesChange() {
-            let count = parseInt(this.value, 10) || 0;
-            const max = 20;
-            const min = 1;
-
-            // Normalizar el valor
-            if (count < min) {
-                count = min;
-                this.value = ""; // o this.value = ""; si permites vacío
-                document.getElementById('samples-table-container').classList.add('hidden');
-                tableBody.innerHTML = '';
-                totalSamples = 0;
+            if (value === "") {
                 return;
             }
+            let count = parseInt(value, 10) || 0;
 
-            if (count > max) {
-                count = max;
-                this.value = count; // corregir visualmente
-            } else {
-                this.value = count; // asegurar que sea número, no "2a"
-            }
 
-            // Mostrar tabla
-            document.getElementById('samples-table-container').classList.remove('hidden');
-
-            // Guardar estado actual antes de regenerar
-            for (let i = 0; i < totalSamples; i++) {
-                persistentSampleCache[i] = extractRowData(i);
-            }
-
-            // Actualizar total y regenerar
-            totalSamples = count;
-            generateTableRows(count);
-        }*/
-        function handleNumeroSolicitudesChange() {
-            let count = parseInt(this.value, 10) || 0;
-            const max = 20;
+            const max = 50;
             const min = 1;
 
             if (count < min) {
                 this.value = "";
                 document.getElementById('samples-table-container').classList.add('hidden');
-                tableBody.innerHTML = '';
                 totalSamples = 0;
+                // Opcional: limpiar todas las filas
+                document.getElementById("samplesTableBody").innerHTML = '';
                 return;
             }
 
-            if (count > max) {
-                count = max;
-                this.value = count;
-            } else {
-                this.value = count;
-            }
+            if (count > max) count = max;
+            this.value = count;
 
-            totalSamples = count;
+            // Mostrar tabla
             document.getElementById('samples-table-container').classList.remove('hidden');
-            generateTableRows(count); // ya restaura desde sampleDataCache
+
+            // ✅ Ajustar filas de forma INCREMENTAL
+            adjustTableRows(count);
         }
 
         function extractRowData(index) {
@@ -1401,27 +1609,7 @@ if (!$conexion) {
         if (numeroInput.value) {
             numeroInput.dispatchEvent(new Event("input"));
         }
-        /* numeroInput.addEventListener("change", function () {
-             // Limpiar valor: eliminar no-dígitos y normalizar
-             let val = this.value.trim();
-             if (val === "") {
-                 this.value = "";
-                 handleNumeroSolicitudesChange.call(this);
-                 return;
-             }
-             // Extraer solo dígitos
-             val = val.replace(/\D/g, "");
-             if (val === "") {
-                 this.value = "";
-                 handleNumeroSolicitudesChange.call(this);
-                 return;
-             }
-             let num = parseInt(val, 10);
-             const max = 20;
-             if (num > max) num = max;
-             this.value = num;
-             handleNumeroSolicitudesChange.call(this);
-         });*/
+
         numeroInput.addEventListener("keydown", function (e) {
             if (e.key === "Enter") {
                 this.blur(); // dispara 'change'
@@ -1430,14 +1618,51 @@ if (!$conexion) {
         // Escuchar tanto 'input' como 'change'
         numeroInput.addEventListener("input", handleNumeroSolicitudesChange);
         numeroInput.addEventListener("change", handleNumeroSolicitudesChange);
-        // === Función para manejar el envío del formulario ===
+
         window.handleSampleSubmit = function (event) {
             event.preventDefault();
-            const formData = new FormData(document.getElementById("sampleForm"));
-            generateSummary(formData);
-            document.getElementById("confirmModal").style.display = "flex";
-        };
+            const errores = [];
 
+            // Campos fijos
+            const fixedFields = [
+                { id: 'fechaEnvio', name: 'Fecha de envío' },
+                { id: 'horaEnvio', name: 'Hora de envío' },
+                { id: 'laboratorio', name: 'Laboratorio' },
+                { id: 'empresa_transporte', name: 'Empresa de transporte' },
+                { id: 'autorizado_por', name: 'Autorizado por' },
+                { id: 'usuario_responsable', name: 'Usuario responsable' },
+                { id: 'numeroSolicitudes', name: 'Número de solicitudes' }
+            ];
+
+            for (const { id, name } of fixedFields) {
+                const el = document.getElementById(id);
+                if (!el?.value?.trim()) {
+                    errores.push(`- ${name} es obligatorio.`);
+                }
+            }
+
+            // Validar filas
+            for (let i = 0; i < totalSamples; i++) {
+                const rowPrefix = `Fila ${i + 1}:`;
+                const tipo = document.getElementById(`tipoMuestra_${i}`)?.value;
+                const fecha = document.getElementById(`fechaToma_${i}`)?.value;
+                const codRef = document.getElementById(`codigoReferenciaValue_${i}`)?.value;
+                const analisis = (sampleDataCache[i]?.analisisSeleccionados || []);
+
+                if (!tipo) errores.push(`${rowPrefix} Tipo de muestra es obligatorio.`);
+                if (!fecha) errores.push(`${rowPrefix} Fecha de toma es obligatoria.`);
+                if (!codRef?.trim()) errores.push(`${rowPrefix} Código de referencia incompleto.`);
+                if (analisis.length === 0) errores.push(`${rowPrefix} Debe seleccionar al menos un análisis.`);
+            }
+
+            if (errores.length > 0) {
+                alert("❌ Corrija los siguientes errores:\n" + errores.join('\n'));
+                return;
+            }
+
+            generateSummary(new FormData(document.getElementById("sampleForm")));
+            document.getElementById("confirmModal").classList.remove('hidden');
+        };
         // === Función para generar el resumen ===
         function generateSummary(formData) {
             const numeroSolicitudes = parseInt(formData.get("numeroSolicitudes")) || 0;
@@ -1513,7 +1738,7 @@ if (!$conexion) {
                     <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">Cód. Ref.</th>
                     <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">Toma de muestra</th>
                     <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white; height:80px; vertical-align:middle;">
-                        <div style="transform: rotate(-90deg); transform-origin: center;">N° muestras</div>
+                        <div>N° muestras</div>
                     </th>
     `;
 
@@ -1521,7 +1746,7 @@ if (!$conexion) {
             allTiposMuestra.forEach(tm => {
                 summaryHTML += `
                     <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white; height:80px; vertical-align:middle;">
-                        <div style="transform: rotate(-90deg); transform-origin: center;">${tm.nombre}</div>
+                        <div>${tm.nombre}</div>
                     </th>
         `;
             });
@@ -1588,116 +1813,10 @@ if (!$conexion) {
     `;
 
             document.getElementById("summaryContent").innerHTML = summaryHTML;
+            // Al final de generateSummary()
+            const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            confirmModal.show();
         }
-        /*function generateSummary(formData) {
-            const numeroSolicitudes = parseInt(formData.get("numeroSolicitudes")) || 0;
-            const fechaEnvio = formData.get("fechaEnvio") || "-";
-            const horaEnvio = formData.get("horaEnvio") || "-";
-            const codigoEnvio = document.getElementById("codigoEnvio")?.value || "Pendiente";
-            const laboratorioSelect = document.getElementById("laboratorio");
-            const laboratorioNombre = laboratorioSelect?.selectedOptions[0]?.text || "No seleccionado";
-            const autorizadoPor = formData.get("autorizado_por") || "No especificado";
-
-
-            const empresaSelect = document.getElementById("empresa_transporte");
-            const empresaNombre = empresaSelect?.selectedOptions[0]?.text || "No seleccionado";
-            let summaryHTML = `
-  <div style="padding: 10px;">
-    <div style="font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; background: white; padding: 15px; border: 1px solid #ccc; border-radius: 6px;">
-      <!-- Cabecera -->
-      <table width="100%" style="border-collapse: collapse; border: 1px solid #000; margin-bottom: 15px;">
-        <tr>
-          <td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 12px;">
-           <img src="logo.png" style="height: 20px; vertical-align: top;"> GRANJA RINCONADA DEL SUR S.A.
-          </td>
-          <td style="width: 60%; text-align: center; padding: 5; background-color: #6c5b7b; color: white; font-weight: bold; font-size: 14px;">
-            REGISTRO DE ENVÍO DE MUESTRAS
-          </td>
-          <td style="width: 20%; background-color: #fff;"></td>
-        </tr>
-      </table>
-
-      <!-- Datos generales -->
-      <div style="font-size: 12px; font-weight: bold; margin-bottom: 15px; line-height: 1.5;">
-        Fecha de envío: ${fechaEnvio} - Hora: ${horaEnvio.substring(0, 5)}<br>
-        Código de envío: <strong>${codigoEnvio}</strong><br>
-        Laboratorio: ${laboratorioNombre}
-      </div>
-
-      <!-- Tabla de solicitudes -->
-      <table style="border-collapse: collapse; width: 100%; font-size: 12px; margin-bottom: 20px;">
-        <thead>
-          <tr>
-            <th style="border:1px solid #000; padding:6px; text-align:center; background-color:#6c5b7b; color:white;">Cód. Ref.</th>
-            <th style="border:1px solid #000; padding:6px; text-align:center; background-color:#6c5b7b; color:white;">Toma de muestra</th>
-            <th style="border:1px solid #000; padding:6px; text-align:center; background-color:#6c5b7b; color:white; writing-mode: vertical-rl; text-orientation: mixed; width: 50px;">N° muestras</th>
-  `;
-
-            // === Columnas: un th por cada tipo de muestra ===
-            allTiposMuestra.forEach(tm => {
-                summaryHTML += `
-      <th style="border:1px solid #000; padding:6px; text-align:center; background-color:#6c5b7b; color:white; writing-mode: vertical-rl; text-orientation: mixed; width: 40px;">${tm.nombre}</th>
-    `;
-            });
-
-            summaryHTML += `
-            <th style="border:1px solid #000; padding:6px; text-align:center; background-color:#6c5b7b; color:white;">TIPO DE ANÁLISIS</th>
-            <th style="border:1px solid #000; padding:6px; text-align:center; background-color:#6c5b7b; color:white;">Observaciones</th>
-          </tr>
-        </thead>
-        <tbody>
-  </div>`;
-
-            // === Filas: una por solicitud ===
-            for (let i = 0; i < numeroSolicitudes; i++) {
-                const tipoMuestraSelect = document.getElementById(`tipoMuestra_${i}`);
-                const tipoMuestraCodigo = tipoMuestraSelect?.value || "";
-                const fechaToma = document.getElementById(`fechaToma_${i}`)?.value || "-";
-                const numeroMuestras = document.getElementById(`numeroMuestras_${i}`)?.value || "1";
-                const codigoRef = document.getElementById(`codigoReferenciaValue_${i}`)?.value || "";
-                const observaciones = document.getElementById(`observaciones_${i}`)?.value || "Ninguna";
-                const analisisResumenEl = document.getElementById(`analisisResumen_${i}`);
-                const analisisResumen = analisisResumenEl?.innerHTML || "Ninguno";
-
-                summaryHTML += `<tr>`;
-                summaryHTML += `<td style="border:1px solid #000; padding:6px; text-align:center; background-color:#fff;">${codigoRef}</td>`;
-                summaryHTML += `<td style="border:1px solid #000; padding:6px; text-align:center; background-color:#fff;">${fechaToma}</td>`;
-                summaryHTML += `<td style="border:1px solid #000; padding:6px; text-align:center; background-color:#fff;">${numeroMuestras}</td>`;
-
-                // === Marcar "x" en el tipo de muestra correspondiente ===
-                allTiposMuestra.forEach(tm => {
-                    const mark = (tm.codigo === tipoMuestraCodigo) ? 'x' : '';
-                    summaryHTML += `<td style="border:1px solid #000; padding:6px; text-align:center; background-color:#fff;">${mark}</td>`;
-                });
-
-                summaryHTML += `<td style="border:1px solid #000; padding:6px; vertical-align:top; background-color:#fff;">${analisisResumen}</td>`;
-                summaryHTML += `<td style="border:1px solid #000; padding:6px; vertical-align:top; white-space: pre-wrap; word-break: break-word; background-color:#fff;">${observaciones}</td>`;
-                summaryHTML += `</tr>`;
-            }
-
-            summaryHTML += `
-        </tbody>
-      </table>
-
-      <!-- Pie -->
-      <div style="margin-top:20px; font-size:12px; text-align:center;">
-        <table width="60%" style="border-collapse:collapse; margin:0 auto;">
-          <tr>
-            <td style="width:30%; padding:5px; text-align:right;">Empresa:</td>
-            <td style="width:70%; border-bottom:1px solid #000; padding:5px; text-align:left;">${empresaNombre}</td>
-          </tr>
-          <tr>
-            <td style="width:30%; padding:5px; text-align:right;">Autorizado por:</td>
-            <td style="width:70%; border-bottom:1px solid #000; padding:5px; text-align:left;">${autorizadoPor}</td>
-          </tr>
-        </table>
-      </div>
-    </div>
-  `;
-
-            document.getElementById("summaryContent").innerHTML = summaryHTML;
-        }*/
-
         // === Función para confirmar el envío ===
         window.confirmSubmit = async function (descargarPdf = false) {
             //0const formData = new FormData(document.getElementById("sampleForm"));
@@ -1739,8 +1858,9 @@ if (!$conexion) {
 
                 // Análisis (como array)
                 const analisis = sampleDataCache[i]?.analisisSeleccionados || [];
-                analisis.forEach(codigo => {
-                    formData.append(`analisis_${i}[]`, codigo);
+                analisis.forEach(item => {
+                    // item es un objeto { codigo: "...", nombre: "..." }
+                    formData.append(`analisis_${i}[]`, item.codigo);
                 });
             }
             for (const [key, value] of formData.entries()) {
@@ -1780,11 +1900,7 @@ if (!$conexion) {
                     // Mensaje de éxito
                     alert("✅ Registro guardado exitosamente. Código: " + result.codigoEnvio);
 
-                    // Si el usuario eligió descargar PDF (descomenta cuando lo pruebes)
-                    if (descargarPdf && result.codigoEnvio) {
-                        const pdfUrl = `generar_pdf.php?codigo=${encodeURIComponent(result.codigoEnvio)}`;
-                        window.open(pdfUrl, '_blank');
-                    }
+
                 } else {
                     throw new Error(result.message || result.error || "Error desconocido al guardar.");
                 }
@@ -1795,9 +1911,9 @@ if (!$conexion) {
         };
 
         // === Función para cerrar el modal de confirmación ===
-        window.closeConfirmModal = function () {
+        /*window.closeConfirmModal = function () {
             document.getElementById("confirmModal").style.display = "none";
-        };
+        };*/
 
         function resetAllState() {
             // 1. Resetear el formulario (incluye inputs, selects, textareas)
@@ -1847,9 +1963,13 @@ if (!$conexion) {
                 return false;
             }
         });
+
         // === Cargar el código de envío al cargar la página ===
         loadCodigoEnvio();
     </script>
+    <select class="form-select d-none" id="templateSelect">
+        <option value="">Seleccionar...</option>
+    </select>
 </body>
 
 </html>
