@@ -300,7 +300,8 @@ function resaltarItemSidebar(code, pos) {
 
 async function openDetailCompletado(code, fechaToma, posicion) {
 
-    resaltarItemSidebar(code, posicion);
+    //resaltarItemSidebar(code, posicion);
+    currentPosition = posicion;
 
     document.getElementById('emptyStatePanel').classList.add('hidden');
     document.getElementById('responseDetailPanel').classList.remove('hidden');
@@ -445,8 +446,8 @@ async function guardarResultados() {
     // -------------------------
     let mensajes = [];
 
-    if (r.insertados > 0) mensajes.push(`🆕 ${r.insertados} análisis registrados`);
-    if (r.actualizados > 0) mensajes.push(`✏️ ${r.actualizados} análisis actualizados`);
+    if (r.insertados > 0) mensajes.push(`🆕 ${r.insertados} análisis registrados, Cod de envio: ${code}, solicitud: ${currentPosition}`);
+    if (r.actualizados > 0) mensajes.push(`✏️ ${r.actualizados} análisis actualizados, Cod de envio: ${code}, solicitud: ${currentPosition}`);
     if (r.estadosActualizados > 0) mensajes.push(`📌 Estados cualitativos actualizados`);
     if (r.cabeceraCompletada) mensajes.push(`✅ Solicitud completada`);
 
@@ -466,20 +467,28 @@ async function guardarResultados() {
     // -------------------------
     // CERRAR PANEL
     // -------------------------
-    closeDetail();
+    //closeDetail();
 
     // -------------------------
-    // SOLO REMOVER DEL SIDEBAR SI HUBO INSERT
+    // SOLO ACTUALIZAR DEL SIDEBAR SI HUBO INSERT
     // -------------------------
     if (r.insertados > 0) {
-        const item = document.getElementById(`item-${code}-${currentPosition}`);
-        if (item) item.remove();
+        loadSidebar(1);
     }
 
     // -------------------------
-    // LIMPIAR CONTENEDOR
+    // actualizar estado y abrir resultado cuali completado
     // -------------------------
-    document.getElementById("analisisContainer").innerHTML = "";
+    openDetailCompletado(code, fechaRegistroLab, currentPosition);
+
+    resaltarItemSidebar(code, currentPosition);
+    // === CAMBIAR EL BADGE A "COMPLETADO" DESPUÉS DE GUARDAR ===
+    const badge = document.getElementById('badgeStatus');
+    if (badge && (r.insertados > 0 || r.actualizados > 0)) {
+        badge.textContent = 'Completado';
+        badge.classList.remove('bg-yellow-100', 'text-yellow-700');
+        badge.classList.add('bg-green-100', 'text-green-700');
+    }
 
     // -------------------------
     // MENSAJE SI NO QUEDAN PENDIENTES
@@ -1031,7 +1040,7 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
             return r.text();
         })
         .then(text => {
-            console.log('Respuesta del servidor:', text);
+
             const data = JSON.parse(text);
             if (data.success) {
                 window.enfermedadesActuales = data.enfermedades;
@@ -1109,7 +1118,7 @@ async function cargarDatosCompletados(codigoEnvio) {
                         const colBD = `s${String(i).padStart(2, '0')}`;
                         const nombreInput = `${enf.nombre}_s${i}`;
                         state[nombreInput] = d[colBD] || '';
-                        console.log(`  ${nombreInput} = ${d[colBD]}`);
+
                     }
                 } else {
                     for (let i = 0; i <= 25; i++) {
@@ -1124,7 +1133,7 @@ async function cargarDatosCompletados(codigoEnvio) {
 
                 return true;
             } else {
-                console.log(`ℹ️ Sin datos guardados para ${enf.nombre}`);
+
                 return false;
             }
         } catch (e) {
@@ -1591,7 +1600,7 @@ function populatePanelValues(enfName) {
 
         const state = window.enfermedadStates[enfName];
         if (!state) {
-            console.log(`ℹ️ Sin estado guardado para: ${enfName}`);
+
             return;
         }
 
@@ -1601,19 +1610,19 @@ function populatePanelValues(enfName) {
             return;
         }
 
-        console.log('🔧 Rellenando campos con:', state);
+
 
         Object.keys(state).forEach(key => {
             const el = panel.querySelector(`[name="${key}"]`);
             if (el) {
                 el.value = state[key];
-                console.log(`  ✅ ${key} = ${state[key]}`);
+
             } else {
                 console.warn(`  ⚠️ Campo no encontrado: ${key}`);
             }
         });
 
-        console.log('✅ Restaurado estado de', enfName);
+
     } catch (e) {
         console.error('Error restaurando estado enfermedad:', e);
     }

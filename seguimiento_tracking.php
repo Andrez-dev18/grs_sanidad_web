@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             WHERE codEnvio = ?
             LIMIT 1
         ";
-        
+
         $stmtCab = $conexion->prepare($sqlCab);
         if (!$stmtCab) {
             echo json_encode(['success' => false, 'error' => 'Error prepare cabecera']);
@@ -46,23 +46,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             exit;
         }
 
-        // 2. DETALLE: conteos y fecha máxima del último resultado
+        // 2. DETALLE: conteos
         $sqlDet = "
             SELECT 
                 COUNT(*) as totalAnalisis,
-                SUM(CASE WHEN sd.estado_cuali = 'completado' THEN 1 ELSE 0 END) as cualiCompletados,
-                SUM(CASE WHEN sd.estado_cuanti = 'completado' THEN 1 ELSE 0 END) as cuantiCompletados,
-                MAX(ra.fechaHoraRegistro) as fechaUltimaResultado
-            FROM san_fact_solicitud_det sd
-            LEFT JOIN san_fact_resultado_analisis ra 
-                ON sd.codEnvio = ra.codEnvio 
-                AND sd.codAnalisis = ra.analisis_codigo
-            WHERE sd.codEnvio = ?
+                SUM(CASE WHEN estado_cuali = 'completado' THEN 1 ELSE 0 END) as cualiCompletados,
+                SUM(CASE WHEN estado_cuanti = 'completado' THEN 1 ELSE 0 END) as cuantiCompletados
+            FROM san_fact_solicitud_det
+            WHERE codEnvio = ?
         ";
-        
+
         $stmtDet = $conexion->prepare($sqlDet);
         if (!$stmtDet) {
-            echo json_encode(['success' => false, 'error' => 'Error prepare detalle: ' . $conexion->error]);
+            echo json_encode(['success' => false, 'error' => 'Error prepare conteo']);
             exit;
         }
         $stmtDet->bind_param("s", $codEnvio);
@@ -70,30 +66,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         $resultDet = $stmtDet->get_result();
         $dataDet = $resultDet->fetch_assoc();
 
-        // Valores por defecto
         $totalAnalisis = $dataDet['totalAnalisis'] ?? 0;
         $cualiCompletados = $dataDet['cualiCompletados'] ?? 0;
         $cuantiCompletados = $dataDet['cuantiCompletados'] ?? 0;
-        $fechaUltimaResultado = $dataDet['fechaUltimaResultado'] ?? $dataCab['fechaRegistroCab'];
 
-        // 3. USUARIO DEL ÚLTIMO RESULTADO (consulta separada)
-        $sqlUsuario = "
-            SELECT usuarioRegistrador
+        // 3. Fecha y usuario último resultado CUALITATIVO
+        $sqlCuali = "
+            SELECT fechaHoraRegistro, usuarioRegistrador
             FROM san_fact_resultado_analisis
             WHERE codEnvio = ?
             ORDER BY fechaHoraRegistro DESC
             LIMIT 1
         ";
-        
-        $stmtUsuario = $conexion->prepare($sqlUsuario);
-        if ($stmtUsuario) {
-            $stmtUsuario->bind_param("s", $codEnvio);
-            $stmtUsuario->execute();
-            $resultUsuario = $stmtUsuario->get_result();
-            $rowUsuario = $resultUsuario->fetch_assoc();
-            $ultimoUsuarioResultado = $rowUsuario['usuarioRegistrador'] ?? $dataCab['usuarioRegistrador'];
-        } else {
-            $ultimoUsuarioResultado = $dataCab['usuarioRegistrador'];
+        $stmtCuali = $conexion->prepare($sqlCuali);
+        $fechaCuali = $dataCab['fechaRegistroCab'];
+        $usuarioCuali = $dataCab['usuarioRegistrador'];
+        if ($stmtCuali) {
+            $stmtCuali->bind_param("s", $codEnvio);
+            $stmtCuali->execute();
+            $resCuali = $stmtCuali->get_result();
+            if ($row = $resCuali->fetch_assoc()) {
+                $fechaCuali = $row['fechaHoraRegistro'];
+                $usuarioCuali = $row['usuarioRegistrador'] ?? $usuarioCuali;
+            }
+        }
+
+        // 4. Fecha y usuario último resultado CUANTITATIVO (de san_analisis_pollo_bb_adulto)
+        $sqlCuanti = "
+            SELECT fechaHoraRegistro, usuario_registro as usuarioRegistrador
+            FROM san_analisis_pollo_bb_adulto
+            WHERE codigo_envio = ?
+            ORDER BY fechaHoraRegistro DESC
+            LIMIT 1
+        ";
+        $stmtCuanti = $conexion->prepare($sqlCuanti);
+        $fechaCuanti = $dataCab['fechaRegistroCab'];
+        $usuarioCuanti = $dataCab['usuarioRegistrador'];
+        if ($stmtCuanti) {
+            $stmtCuanti->bind_param("s", $codEnvio);
+            $stmtCuanti->execute();
+            $resCuanti = $stmtCuanti->get_result();
+            if ($row = $resCuanti->fetch_assoc()) {
+                $fechaCuanti = $row['fechaHoraRegistro'];
+                $usuarioCuanti = $row['usuarioRegistrador'] ?? $usuarioCuanti;
+            }
         }
 
         // Timeline
@@ -126,14 +142,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             'detalles' => ['Total de Análisis' => $totalAnalisis]
         ];
 
-        // Paso 3
+        // Paso 3: Resultados Cualitativos
         $estadoCuali = ($cualiCompletados == $totalAnalisis && $totalAnalisis > 0) ? 'completado' : 'pendiente';
         $timeline[] = [
             'paso' => 3,
             'titulo' => 'Resultados Cualitativos',
             'descripcion' => 'Ingreso de resultados de análisis cualitativos',
-            'fecha' => $fechaUltimaResultado,
-            'usuario' => $ultimoUsuarioResultado,
+            'fecha' => $fechaCuali,
+            'usuario' => $usuarioCuali,
             'estado' => $estadoCuali,
             'detalles' => [
                 'Total Análisis' => $totalAnalisis,
@@ -142,14 +158,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             ]
         ];
 
-        // Paso 4
+        // Paso 4: Resultados Cuantitativos
         $estadoCuanti = ($cuantiCompletados == $totalAnalisis && $totalAnalisis > 0) ? 'completado' : 'pendiente';
         $timeline[] = [
             'paso' => 4,
             'titulo' => 'Resultados Cuantitativos',
             'descripcion' => 'Ingreso de resultados de análisis cuantitativos',
-            'fecha' => $fechaUltimaResultado,
-            'usuario' => $ultimoUsuarioResultado,
+            'fecha' => $fechaCuanti,
+            'usuario' => $usuarioCuanti,
             'estado' => $estadoCuanti,
             'detalles' => [
                 'Total Análisis' => $totalAnalisis,
@@ -158,24 +174,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             ]
         ];
 
-        // Paso 5
+        // Paso 5: Dinámico según si está realmente completado o no
         $todoCompleto = ($cualiCompletados == $totalAnalisis && $cuantiCompletados == $totalAnalisis && $totalAnalisis > 0);
+
+        // Fecha y usuario del último avance real (el más reciente entre cuali y cuanti)
+        $fechaFinal = max(strtotime($fechaCuali), strtotime($fechaCuanti));
+        $fechaFinal = date('Y-m-d H:i:s', $fechaFinal);
+        $usuarioFinal = (strtotime($fechaCuanti) > strtotime($fechaCuali)) ? $usuarioCuanti : $usuarioCuali;
+
+        // Título y descripción que cambian según el estado real
+        $tituloPaso5 = $todoCompleto ? 'Envío Completado' : 'Pendiente de Completar';
+        $descripcionPaso5 = $todoCompleto
+            ? '¡Todos los análisis han sido completados exitosamente!'
+            : 'Pendiente ingresar los resultados faltantes para completar el envío';
+
         $timeline[] = [
             'paso' => 5,
-            'titulo' => 'Envío Completado',
-            'descripcion' => 'Todos los análisis han sido completados',
-            'fecha' => $fechaUltimaResultado,
-            'usuario' => $ultimoUsuarioResultado,
+            'titulo' => $tituloPaso5,
+            'descripcion' => $descripcionPaso5,
+            'fecha' => $fechaFinal,
+            'usuario' => $usuarioFinal,
             'estado' => $todoCompleto ? 'completado' : 'pendiente',
             'detalles' => [
                 'Código Envío' => $codEnvio,
-                'Estado General' => $todoCompleto ? 'COMPLETADO' : 'EN PROCESO'
+                'Estado General' => $todoCompleto ? 'COMPLETADO' : 'EN PROCESO',
+                'Última acción por' => $usuarioFinal
             ]
         ];
 
         // Porcentaje
-        $porcentaje = ($totalAnalisis > 0) 
-            ? round((($cualiCompletados + $cuantiCompletados) / ($totalAnalisis * 2)) * 100) 
+        $porcentaje = ($totalAnalisis > 0)
+            ? round((($cualiCompletados + $cuantiCompletados) / ($totalAnalisis * 2)) * 100)
             : 0;
 
         echo json_encode([
@@ -193,4 +222,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         exit;
     }
 }
-?>

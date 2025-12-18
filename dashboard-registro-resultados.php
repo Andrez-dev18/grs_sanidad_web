@@ -22,11 +22,12 @@ if (!$conexion) {
     <title>Dashboard - Resultado de lab</title>
 
     <!-- Tailwind CSS -->
-    <link rel="stylesheet" href="css/output.css">
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
 
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <style>
         body {
@@ -79,10 +80,7 @@ if (!$conexion) {
             border-spacing: 0;
         }
 
-        /* Mantener separación visual entre filas */
-        .dataTables_wrapper tbody tr {
-            border-bottom: 1px solid #e5e7eb;
-        }
+
 
         /* Inputs y selects integrados con Tailwind */
         .dataTables_wrapper input[type="search"],
@@ -104,6 +102,31 @@ if (!$conexion) {
             background-color: #2563eb !important;
             color: white !important;
         }
+
+        /* Select2 estilo Tailwind */
+        .select2-container .select2-selection--single {
+            height: 38px;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            /* gray-300 */
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .select2-selection__rendered {
+            font-size: 0.875rem;
+            color: #374151;
+            /* gray-700 */
+        }
+
+        .select2-selection__arrow {
+            height: 100%;
+        }
+
+        .select2-container--default .select2-selection--single:focus {
+            outline: none;
+        }
     </style>
 </head>
 
@@ -115,25 +138,208 @@ if (!$conexion) {
             <div class="content-header max-w-7xl mx-auto mb-8">
                 <div class="flex items-center gap-3 mb-2">
                     <span class="text-4xl">🗒️</span>
-                    <h1 class="text-3xl font-bold text-gray-800">Resultados de laboratorio</h1>
+                    <h1 class="text-3xl font-bold text-gray-800">Resultados cualitativos</h1>
                 </div>
-                <p class="text-gray-600 text-sm">Administre las empresas de transporte registradas en el sistema</p>
             </div>
 
             <div class="form-container max-w-7xl mx-auto">
-                <!-- Botones de acción -->
-                <div class="mb-6 flex justify-between items-center flex-wrap gap-3">
+
+                <!-- CARD FILTROS PLEGABLE -->
+                <div class="mb-6 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+
+                    <!-- HEADER -->
                     <button type="button"
-                        class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
-                        onclick="exportarReporteExcel()"
-                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);"
-                        onmouseover="this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'"
-                        onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
-                        📊 Exportar a Excel
+                        onclick="toggleFiltros()"
+                        class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">
+
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">🔎</span>
+                            <h3 class="text-base font-semibold text-gray-800">
+                                Filtros de búsqueda
+                            </h3>
+                        </div>
+
+                        <!-- ICONO -->
+                        <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
+                            fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
                     </button>
 
-                </div>
+                    <!-- CONTENIDO PLEGABLE -->
+                    <div id="contenidoFiltros" class="px-6 pb-6 pt-4">
 
+                        <!-- GRID DE FILTROS -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+                            <!-- Fecha inicio -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
+                                <input type="date" id="filtroFechaInicio"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            </div>
+
+                            <!-- Fecha fin -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
+                                <input type="date" id="filtroFechaFin"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            </div>
+
+                            <!-- Estado -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                                <select id="filtroEstado"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    <option value="">Seleccionar</option>
+                                    <option value="Completado">Completado</option>
+                                    <option value="Pendiente">Pendiente</option>
+                                </select>
+                            </div>
+
+                            <!-- Laboratorio -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Laboratorio</label>
+                                <select id="filtroLaboratorio"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    <option value="">Seleccionar</option>
+                                    <?php
+                                    $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
+                                    $res = $conexion->query($sql);
+
+                                    if ($res && $res->num_rows > 0) {
+                                        while ($row = $res->fetch_assoc()) {
+                                            echo '<option value="' . htmlspecialchars($row['nombre']) . '">'
+                                                . htmlspecialchars($row['nombre']) .
+                                                '</option>';
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+
+                            <!-- Tipo análisis (autocomplete) -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    Tipo de análisis
+                                </label>
+
+                                <select id="filtroTipoAnalisis"
+                                    class="w-full text-sm rounded-lg border border-gray-300">
+                                </select>
+                            </div>
+
+
+                            <!-- Tipo muestra -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de muestra</label>
+                                <select id="filtroTipoMuestra"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    <option value="">Seleccionar</option>
+                                    <?php
+                                    $sql = "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY nombre ASC";
+                                    $res = $conexion->query($sql);
+
+                                    if ($res && $res->num_rows > 0) {
+                                        while ($row = $res->fetch_assoc()) {
+                                            echo '<option value="' . htmlspecialchars($row['nombre']) . '">'
+                                                . htmlspecialchars($row['nombre']) .
+                                                '</option>';
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+
+                            <!-- Granja -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Granja</label>
+                                <select id="filtroGranja"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    <option value="">Seleccionar</option>
+                                    <?php
+                                    $sql = "
+                                        SELECT codigo, nombre
+                                        FROM ccos
+                                        WHERE LENGTH(codigo)=3
+                                        AND swac='A'
+                                        AND LEFT(codigo,1)='6'
+                                        AND codigo NOT IN ('650','668','669','600')
+                                        ORDER BY nombre
+                                    ";
+
+                                    $res = mysqli_query($conexion, $sql);
+
+                                    if ($res && mysqli_num_rows($res) > 0) {
+                                        while ($row = mysqli_fetch_assoc($res)) {
+                                            echo '<option value="' . htmlspecialchars($row['codigo']) . '">'
+                                                . htmlspecialchars($row['nombre']) .
+                                                '</option>';
+                                        }
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+
+                            <!-- Galpón -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Galpón</label>
+                                <select id="filtroGalpon"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    <option value="">Seleccionar</option>
+                                    <?php
+                                    for ($i = 1; $i <= 13; $i++) {
+                                        $valor = str_pad($i, 2, '0', STR_PAD_LEFT); // 01, 02, ...
+                                        echo "<option value=\"$valor\">$valor</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+
+                            <!-- Edad -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Edad</label>
+
+                                <div class="flex gap-2">
+                                    <input type="number"
+                                        id="filtroEdadDesde"
+                                        placeholder="Desde"
+                                        min="0"
+                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+
+                                    <input type="number"
+                                        id="filtroEdadHasta"
+                                        placeholder="Hasta"
+                                        min="0"
+                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- ACCIONES -->
+                        <div class="mt-8 mb-4 flex flex-wrap justify-end gap-4">
+
+                            <button type="button" id="btnFiltrar"
+                                class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                                Filtrar
+                            </button>
+
+                            <button type="button" id="btnLimpiar"
+                                class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200">
+                                Limpiar
+                            </button>
+
+                            <button type="button"
+                                class="px-6 py-2.5 text-white font-medium rounded-lg transition inline-flex items-center gap-2"
+                                onclick="exportarReporteExcel()"
+                                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
+                                📊 Exportar a Excel
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
                 <!-- Tabla  -->
                 <div class="table-container border border-gray-300 rounded-2xl bg-white overflow-hidden">
 
@@ -165,6 +371,7 @@ if (!$conexion) {
                                         <th class="px-6 py-4 text-sm font-semibold text-gray-800">Fecha Lab</th>
                                         <th class="px-6 py-4 text-sm font-semibold text-gray-800">Análisis (Resultado)</th>
                                         <th class="px-6 py-4 text-sm font-semibold text-gray-800">Resultado</th>
+                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Estado</th>
                                         <th class="px-6 py-4 text-sm font-semibold text-gray-800">Observaciones</th>
                                         <th class="px-6 py-4 text-sm font-semibold text-gray-800">Usuario</th>
                                     </tr>
@@ -172,78 +379,7 @@ if (!$conexion) {
 
 
                                 <tbody id="" class="divide-y divide-gray-200">
-                                    <?php
-                                    $query = "
-                                        SELECT 
-                                            a.codEnvio,
-                                            a.fecEnvio,
-                                            a.horaEnvio,
-                                            a.nomLab,
-                                            a.nomEmpTrans,
-                                            a.usuarioResponsable,
-                                            a.autorizadoPor,
 
-                                            b.posSolicitud,
-                                            b.codRef,
-                                            b.fecToma,
-                                            b.numMuestras,
-                                            b.nomMuestra,
-                                            b.nomAnalisis,
-
-                                            c.fechaHoraRegistro,
-                                            c.fechaLabRegistro,
-                                            c.analisis_nombre,
-                                            c.resultado,
-                                            c.obs,
-                                            c.usuarioRegistrador
-                                        FROM san_fact_solicitud_cab a
-                                        INNER JOIN san_fact_solicitud_det b 
-                                            ON a.codEnvio = b.codEnvio
-                                        LEFT JOIN san_fact_resultado_analisis c 
-                                            ON b.codEnvio = c.codEnvio
-                                            AND b.codRef = c.codRef
-                                            AND b.posSolicitud = c.posSolicitud
-                                            AND b.codAnalisis = c.analisis_codigo
-                                        ORDER BY a.codEnvio DESC, b.posSolicitud;                            
-                                ";
-                                    $result = mysqli_query($conexion, $query);
-                                    if ($result && mysqli_num_rows($result) > 0) {
-                                        while ($row = mysqli_fetch_assoc($result)) {
-                                            echo '<tr class="hover:bg-gray-50 transition">';
-
-                                            /* CABECERA */
-                                            echo '<td>' . htmlspecialchars($row['codEnvio']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['fecEnvio']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['horaEnvio']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['nomLab']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['nomEmpTrans']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['usuarioResponsable']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['autorizadoPor']) . '</td>';
-
-                                            /* DETALLE */
-                                            echo '<td class="font-medium">' . htmlspecialchars($row['posSolicitud']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['codRef']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['fecToma']) . '</td>';
-                                            echo '<td class="text-center">' . htmlspecialchars($row['numMuestras']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['nomMuestra']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['nomAnalisis']) . '</td>';
-
-                                            /* RESULTADO */
-                                            echo '<td>' . htmlspecialchars($row['fechaHoraRegistro']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['fechaLabRegistro']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['analisis_nombre']) . '</td>';
-                                            echo '<td class="font-semibold text-blue-700">' . htmlspecialchars($row['resultado']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['obs']) . '</td>';
-                                            echo '<td>' . htmlspecialchars($row['usuarioRegistrador']) . '</td>';
-
-                                            echo '</tr>';
-                                        }
-                                    } else {
-                                        echo '<tr>';
-                                        echo '<td colspan="3" class="px-6 py-8 text-center text-gray-500">No hay resultados cualitativos registradas</td>';
-                                        echo '</tr>';
-                                    }
-                                    ?>
                                 </tbody>
                             </table>
                         </div>
@@ -253,51 +389,6 @@ if (!$conexion) {
             </div>
         </div>
 
-        <!-- Modal para Crear/Editar Empresa de Transporte -->
-        <div id="empTransModal" style="display: none;"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-lg w-full max-w-md">
-                <!-- Modal Header -->
-                <div class="flex items-center justify-between p-6 border-b border-gray-200">
-                    <h2 id="modalTitle" class="text-xl font-bold text-gray-800">➕ Editar Analisis</h2>
-                    <button onclick="closeEmpTransModal()"
-                        class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition">
-                        ×
-                    </button>
-                </div>
-
-                <!-- Modal Body -->
-                <div class="p-6">
-                    <form id="empTransForm" onsubmit="return saveEmpTrans(event)">
-                        <input type="hidden" id="modalAction" value="create">
-                        <input type="hidden" id="editCodigo" value="">
-
-                        <!-- Campo Nombre -->
-                        <div class="form-field mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Nombre <span class="text-red-500">*</span>
-                            </label>
-                            <input type="text" id="modalNombre" name="nombre" maxlength="255"
-                                placeholder="Ingrese el nombre de la empresa de transporte" required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
-
-                        </div>
-
-                        <!-- Botones -->
-                        <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
-                            <button type="button" onclick="closeEmpTransModal()"
-                                class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200">
-                                Cancelar
-                            </button>
-                            <button type="submit"
-                                class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2">
-                                💾 Guardar
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
 
         <!-- Footer -->
         <div class="text-center mt-12">
@@ -310,47 +401,259 @@ if (!$conexion) {
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 
     <script src="empresas_transporte.js"></script>
 
     <script>
-        $(document).ready(function() {
-            $('#tablaResultados').DataTable({
-                pageLength: 10,
-                lengthChange: true,
-                lengthMenu: [10, 20, 50, 100],
-                ordering: false,
-                searching: true,
-                info: true,
-                autoWidth: false,
+        let table;
 
-                language: {
-                    lengthMenu: "Mostrar _MENU_ filas",
-                    search: "Buscar:",
-                    zeroRecords: "No se encontraron resultados",
-                    info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                    infoEmpty: "No hay registros disponibles",
-                    paginate: {
-                        previous: "Anterior",
-                        next: "Siguiente"
+        function cargarTabla() {
+            if (table) {
+                table.destroy();
+            }
+
+            // Obtener valores de los filtros
+            const fechaInicio = $('#filtroFechaInicio').val();
+            const fechaFin = $('#filtroFechaFin').val();
+            const estado = $('#filtroEstado').val();
+            const laboratorio = $('#filtroLaboratorio').val();
+            const tipoMuestra = $('#filtroTipoMuestra').val();
+            const tipoAnalisis = $('#filtroTipoAnalisis').val();
+            const granja = $('#filtroGranja').val();
+            const galpon = $('#filtroGalpon').val();
+            const edadDesde = $('#filtroEdadDesde').val();
+            const edadHasta = $('#filtroEdadHasta').val();
+
+            table = $('#tablaResultados').DataTable({
+                processing: true,
+                serverSide: true,
+                dom: `
+                    <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6"
+                        <"flex items-center gap-6"
+                            <"text-sm text-gray-600" l>
+                            <"text-sm text-gray-600" i>
+                        >
+                        <"flex items-center gap-2" f>
+                    >
+                    rt
+                    <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-6"
+                        <"text-sm text-gray-600" p>
+                    >
+                    `,
+                ajax: {
+                    url: 'listar_resultradosCualis_filtro.php',
+                    type: 'POST',
+                    data: function(d) {
+                        // Parámetros estándar de DataTables
+                        d.fechaInicio = fechaInicio;
+                        d.fechaFin = fechaFin;
+                        d.estado = estado;
+                        d.laboratorio = laboratorio;
+                        d.tipoMuestra = tipoMuestra;
+                        d.tipoAnalisis = tipoAnalisis;
+                        d.granja = granja;
+                        d.galpon = galpon;
+                        d.edadDesde = edadDesde;
+                        d.edadHasta = edadHasta;
                     }
                 },
+                columns: [{
+                        data: 'codEnvio'
+                    },
+                    {
+                        data: 'fecEnvio'
+                    },
+                    {
+                        data: 'horaEnvio'
+                    },
+                    {
+                        data: 'nomLab'
+                    },
+                    {
+                        data: 'nomEmpTrans'
+                    },
+                    {
+                        data: 'usuarioResponsable'
+                    },
+                    {
+                        data: 'autorizadoPor'
+                    },
+                    {
+                        data: 'posSolicitud',
+                        className: 'text-center font-medium'
+                    },
+                    {
+                        data: 'codRef'
+                    },
+                    {
+                        data: 'fecToma'
+                    },
+                    {
+                        data: 'numMuestras',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'nomMuestra'
+                    },
+                    {
+                        data: 'nomAnalisis'
+                    },
+                    {
+                        data: 'fechaHoraRegistro'
+                    },
+                    {
+                        data: 'fechaLabRegistro'
+                    },
+                    {
+                        data: 'analisis_nombre'
+                    },
+                    {
+                        data: 'resultado',
+                        className: 'font-semibold text-blue-700'
+                    },
+                    {
+                        data: 'estado_cuali',
+                        className: 'text-center',
+                        render: function(data) {
 
-                dom: `
-            <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4"
-                <"flex items-center gap-4"
-                    <"text-sm text-gray-600" l>
-                    <"text-sm text-gray-600" i>
-                >
-                <"flex items-center gap-2" f>
-            >
-            rt
-            <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-6"
-                <"text-sm text-gray-600" p>
-            >
-        `
+                            if (data === 'pendiente') {
+                                return `
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full 
+                                                text-xs font-semibold
+                                                bg-yellow-100 text-yellow-800">
+                                        Pendiente
+                                    </span>
+                                `;
+                            }
+
+                            if (data === 'completado') {
+                                return `
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full 
+                                                text-xs font-semibold
+                                                bg-green-100 text-green-800">
+                                        Completado
+                                    </span>
+                                `;
+                            }
+
+                            return data; // fallback por si aparece otro estado
+                        }
+                    },
+                    {
+                        data: 'obs'
+                    },
+                    {
+                        data: 'usuarioRegistrador'
+                    }
+                ],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
+                    processing: "Procesando..."
+                },
+                pageLength: 5,
+                lengthMenu: [
+                    [5, 10, 15, 20],
+                    [5, 10, 15, 20]
+                ],
+                order: [
+                    [0, 'desc']
+                ],
+                scrollX: true,
+                dom: 'lfrtip'
             });
+        }
+
+        $(document).ready(function() {
+            // Inicializar Select2 para Tipo de Análisis
+            $('#filtroTipoAnalisis').select2({
+                placeholder: 'Seleccionar análisis',
+                allowClear: true,
+                width: '100%',
+                minimumInputLength: 0,
+                ajax: {
+                    url: 'buscar_analisis.php',
+                    type: 'POST',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return {
+                            q: params.term || ''
+                        };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data
+                        };
+                    }
+                }
+            });
+
+            // Cargar tabla al iniciar
+            cargarTabla();
+
+            // BOTÓN FILTRAR
+            $('#btnFiltrar').on('click', function() {
+                cargarTabla();
+            });
+
+            // BOTÓN LIMPIAR
+            $('#btnLimpiar').on('click', function() {
+                // Limpiar todos los inputs
+                $('#filtroFechaInicio').val('');
+                $('#filtroFechaFin').val('');
+                $('#filtroEstado').val('');
+                $('#filtroLaboratorio').val('');
+                $('#filtroTipoMuestra').val('');
+                $('#filtroGranja').val('');
+                $('#filtroGalpon').val('');
+                $('#filtroEdadDesde').val('');
+                $('#filtroEdadHasta').val('');
+
+                // Limpiar Select2
+                $('#filtroTipoAnalisis').val(null).trigger('change');
+
+                // Recargar tabla sin filtros
+                cargarTabla();
+            });
+        });
+
+        // Toggle filtros
+        function toggleFiltros() {
+            const content = document.getElementById('contenidoFiltros');
+            const icon = document.getElementById('iconoFiltros');
+
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.classList.add('rotate-180');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.remove('rotate-180');
+            }
+        }
+
+        $('#filtroTipoAnalisis').select2({
+            placeholder: 'Seleccionar análisis',
+            allowClear: true,
+            width: '100%',
+            minimumInputLength: 0, // 🔑 CLAVE
+            ajax: {
+                url: 'buscar_analisis.php',
+                type: 'POST',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term || ''
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                }
+            }
         });
     </script>
 

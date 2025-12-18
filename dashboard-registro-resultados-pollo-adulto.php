@@ -89,6 +89,8 @@ $enfermedadColumnIndex = array_search('enfermedad', $columnNames);
     <link rel="stylesheet" href="css/output.css">
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
 
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
@@ -206,6 +208,31 @@ $enfermedadColumnIndex = array_search('enfermedad', $columnNames);
         .dataTables_wrapper {
             overflow-x: visible !important;
         }
+
+        /* Select2 estilo Tailwind */
+        .select2-container .select2-selection--single {
+            height: 38px;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            /* gray-300 */
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .select2-selection__rendered {
+            font-size: 0.875rem;
+            color: #374151;
+            /* gray-700 */
+        }
+
+        .select2-selection__arrow {
+            height: 100%;
+        }
+
+        .select2-container--default .select2-selection--single:focus {
+            outline: none;
+        }
     </style>
 </head>
 
@@ -241,11 +268,11 @@ $enfermedadColumnIndex = array_search('enfermedad', $columnNames);
             </div>
 
             <!-- CONTENIDO PLEGABLE -->
-            <div id="filtrosContent" class="hidden overflow-hidden transition-all duration-300 ease-in-out">
+            <div id="filtrosContent" class="hidden overflow-hidden transition-all duration-300 ease-in-out mt-4">
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end mt-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-end">
 
-                    <!-- FECHA INICIO -->
+                    <!-- Fecha Inicio -->
                     <div>
                         <label for="filtroFechaInicio" class="text-xs font-medium text-gray-700 mb-1 block">
                             Fecha Inicio
@@ -254,7 +281,7 @@ $enfermedadColumnIndex = array_search('enfermedad', $columnNames);
                             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
                     </div>
 
-                    <!-- FECHA FIN -->
+                    <!-- Fecha Fin -->
                     <div>
                         <label for="filtroFechaFin" class="text-xs font-medium text-gray-700 mb-1 block">
                             Fecha Fin
@@ -263,7 +290,7 @@ $enfermedadColumnIndex = array_search('enfermedad', $columnNames);
                             class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
                     </div>
 
-                    <!-- ENFERMEDADES -->
+                    <!-- Enfermedad -->
                     <div>
                         <label for="filtroEnfermedad" class="text-xs font-medium text-gray-700 mb-1 block">
                             Enfermedad
@@ -275,20 +302,129 @@ $enfermedadColumnIndex = array_search('enfermedad', $columnNames);
                             if ($enfermedadesResult && mysqli_num_rows($enfermedadesResult) > 0):
                                 while ($row = mysqli_fetch_assoc($enfermedadesResult)):
                                     $enfermedad = htmlspecialchars($row['enfermedad']);
-                                    ?>
+                            ?>
                                     <option value="<?= $enfermedad ?>"><?= $enfermedad ?></option>
-                                <?php
+                            <?php
                                 endwhile;
                             endif;
                             ?>
                         </select>
                     </div>
 
-                    <!-- BOTÓN FILTRAR -->
+                    <!-- Laboratorio -->
                     <div>
+                        <label for="filtroLaboratorio" class="text-xs font-medium text-gray-700 mb-1 block">
+                            Laboratorio
+                        </label>
+                        <select id="filtroLaboratorio"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white cursor-pointer">
+                            <option value="">Todos</option>
+                            <?php
+                            $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
+                            $res = $conexion->query($sql);
+                            if ($res && $res->num_rows > 0) {
+                                while ($row = $res->fetch_assoc()) {
+                                    echo '<option value="' . htmlspecialchars($row['nombre']) . '">' . htmlspecialchars($row['nombre']) . '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <!-- Tipo de muestra -->
+                    <div>
+                        <label for="filtroTipoMuestra" class="text-xs font-medium text-gray-700 mb-1 block">
+                            Tipo de muestra
+                        </label>
+                        <select id="filtroTipoMuestra"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white cursor-pointer">
+                            <option value="">Todos</option>
+                            <?php
+                            $sql = "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY nombre ASC";
+                            $res = $conexion->query($sql);
+                            if ($res && $res->num_rows > 0) {
+                                while ($row = $res->fetch_assoc()) {
+                                    echo '<option value="' . htmlspecialchars($row['nombre']) . '">' . htmlspecialchars($row['nombre']) . '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <!-- Granja -->
+                    <div>
+                        <label for="filtroGranja" class="text-xs font-medium text-gray-700 mb-1 block">
+                            Granja
+                        </label>
+                        <select id="filtroGranja"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white cursor-pointer">
+                            <option value="">Todas</option>
+                            <?php
+                            $sql = "
+                                    SELECT codigo, nombre
+                                    FROM ccos
+                                    WHERE LENGTH(codigo)=3
+                                    AND swac='A'
+                                    AND LEFT(codigo,1)='6'
+                                    AND codigo NOT IN ('650','668','669','600')
+                                    ORDER BY nombre
+                                ";
+                            $res = mysqli_query($conexion, $sql);
+                            if ($res && mysqli_num_rows($res) > 0) {
+                                while ($row = mysqli_fetch_assoc($res)) {
+                                    echo '<option value="' . htmlspecialchars($row['codigo']) . '">' . htmlspecialchars($row['nombre']) . '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <!-- Galpón -->
+                    <div>
+                        <label for="filtroGalpon" class="text-xs font-medium text-gray-700 mb-1 block">
+                            Galpón
+                        </label>
+                        <select id="filtroGalpon"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white cursor-pointer">
+                            <option value="">Todos</option>
+                            <?php for ($i = 1; $i <= 13; $i++):
+                                $valor = str_pad($i, 2, '0', STR_PAD_LEFT);
+                            ?>
+                                <option value="<?= $valor ?>"><?= $valor ?></option>
+                            <?php endfor; ?>
+                        </select>
+                    </div>
+
+                    <!-- Edad (Desde - Hasta) -->
+                    <div class="lg:col-span-2">
+                        <label class="text-xs font-medium text-gray-700 mb-1 block">Edad de las aves</label>
+                        <div class="flex gap-3">
+                            <input type="number" id="filtroEdadDesde" placeholder="Desde"
+                                min="0"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                            <input type="number" id="filtroEdadHasta" placeholder="Hasta"
+                                min="0"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Tipo análisis (autocomplete o select dinámico) -->
+                    <div>
+                        <label for="filtroTipoAnalisis" class="text-xs font-medium text-gray-700 mb-1 block">
+                            Tipo de análisis
+                        </label>
+                        <select id="filtroTipoAnalisis"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white cursor-pointer">
+                            <option value="">Todos</option>
+                            <!-- Puedes llenarlo con PHP o cargarlo dinámicamente con JS -->
+                        </select>
+                    </div>
+
+                    <!-- BOTÓN FILTRAR (ocupa el espacio final) -->
+                    <div class="lg:col-span-1 xl:col-span-1">
                         <button onclick="aplicarFiltros()"
-                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 active:bg-blue-800 shadow-sm transition-all">
-                            Filtrar
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 active:bg-blue-800 shadow-sm transition-all h-full">
+                            🔍 Filtrar
                         </button>
                     </div>
 
@@ -384,73 +520,134 @@ $enfermedadColumnIndex = array_search('enfermedad', $columnNames);
 
     <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
         // Variable global para la tabla
         let table;
 
-        // Índices de columnas desde PHP
-        const FECHA_COLUMN = <?= $fechaColumnIndex ?>;
-        const ENFERMEDAD_COLUMN = <?= $enfermedadColumnIndex ?>;
+        // Índices de columnas (ajústalos si es necesario según tu $columnNames)
+        // Puedes inspeccionar la tabla en el navegador y ver el orden de <th> para confirmar
+        const COL_FECHA_MUESTRA = 1; // fecha_toma_muestra
+        const COL_ENFERMEDAD = <?= array_search('enfermedad', $columnNames) !== false ? array_search('enfermedad', $columnNames) : '12' ?>;
+        const COL_LABORATORIO = <?= array_search('planta_incubacion', $columnNames) !== false ? array_search('planta_incubacion', $columnNames) : '-1' ?>; // Ajusta si tienes columna lab
+        const COL_TIPO_MUESTRA = -1; // No existe directamente, si lo necesitas agregar columna
+        const COL_GRANJA = <?= array_search('codigo_granja', $columnNames) !== false ? array_search('codigo_granja', $columnNames) : '-1' ?>;
+        const COL_GALPON = <?= array_search('numero_galpon', $columnNames) !== false ? array_search('numero_galpon', $columnNames) : '-1' ?>;
+        const COL_EDAD = <?= array_search('edad_aves', $columnNames) !== false ? array_search('edad_aves', $columnNames) : '-1' ?>;
+        const COL_TIPO_ANALISIS = COL_ENFERMEDAD; // Usamos enfermedad como proxy por ahora
 
-        // Función de filtro personalizado para rango de fechas
+        // Filtro personalizado extendido
         $.fn.dataTable.ext.search.push(
-            function (settings, data, dataIndex) {
+            function(settings, data, dataIndex) {
+                // Valores de filtros
                 const fechaInicio = $('#filtroFechaInicio').val();
                 const fechaFin = $('#filtroFechaFin').val();
-                const enfermedad = $('#filtroEnfermedad').val();
+                const enfermedad = $('#filtroEnfermedad').val().toUpperCase();
+                const laboratorio = $('#filtroLaboratorio').val();
+                const tipoMuestra = $('#filtroTipoMuestra').val();
+                const granja = $('#filtroGranja').val();
+                const galpon = $('#filtroGalpon').val();
+                const edadDesde = $('#filtroEdadDesde').val();
+                const edadHasta = $('#filtroEdadHasta').val();
+                const tipoAnalisis = $('#filtroTipoAnalisis').val().toUpperCase();
 
-                // Obtener fecha de la columna (formato: YYYY-MM-DD)
-                const fechaColumna = data[FECHA_COLUMN] || '';
+                // Valores de la fila
+                const fechaMuestra = data[COL_FECHA_MUESTRA] || '';
+                const enfermedadFila = (data[COL_ENFERMEDAD] || '').toUpperCase();
+                const laboratorioFila = data[COL_LABORATORIO] || '';
+                const granjaFila = data[COL_GRANJA] || '';
+                const galponFila = data[COL_GALPON] || '';
+                const edadFila = parseInt(data[COL_EDAD]) || 0;
 
-                // Obtener enfermedad de la columna
-                const enfermedadColumna = data[ENFERMEDAD_COLUMN] || '';
-
-                // Filtro de fecha
-                let pasaFiltroFecha = true;
+                // FILTRO FECHA
+                let pasaFecha = true;
                 if (fechaInicio && fechaFin) {
-                    pasaFiltroFecha = fechaColumna >= fechaInicio && fechaColumna <= fechaFin;
+                    pasaFecha = fechaMuestra >= fechaInicio && fechaMuestra <= fechaFin;
                 } else if (fechaInicio) {
-                    pasaFiltroFecha = fechaColumna >= fechaInicio;
+                    pasaFecha = fechaMuestra >= fechaInicio;
                 } else if (fechaFin) {
-                    pasaFiltroFecha = fechaColumna <= fechaFin;
+                    pasaFecha = fechaMuestra <= fechaFin;
                 }
 
-                // Filtro de enfermedad (buscar en el texto completo)
-                let pasaFiltroEnfermedad = true;
+                // FILTRO ENFERMEDAD
+                let pasaEnfermedad = true;
                 if (enfermedad) {
-                    pasaFiltroEnfermedad = enfermedadColumna.toUpperCase().includes(enfermedad.toUpperCase());
+                    pasaEnfermedad = enfermedadFila.includes(enfermedad);
                 }
 
-                return pasaFiltroFecha && pasaFiltroEnfermedad;
+                // FILTRO LABORATORIO (planta_incubacion como proxy si no tienes columna lab)
+                let pasaLaboratorio = true;
+                if (laboratorio) {
+                    pasaLaboratorio = laboratorioFila === laboratorio;
+                }
+
+                // FILTRO GRANJA
+                let pasaGranja = true;
+                if (granja) {
+                    pasaGranja = granjaFila === granja;
+                }
+
+                // FILTRO GALPÓN
+                let pasaGalpon = true;
+                if (galpon) {
+                    pasaGalpon = galponFila === galpon;
+                }
+
+                // FILTRO EDAD
+                let pasaEdad = true;
+                if (edadDesde || edadHasta) {
+                    if (edadDesde && edadHasta) {
+                        pasaEdad = edadFila >= parseInt(edadDesde) && edadFila <= parseInt(edadHasta);
+                    } else if (edadDesde) {
+                        pasaEdad = edadFila >= parseInt(edadDesde);
+                    } else if (edadHasta) {
+                        pasaEdad = edadFila <= parseInt(edadHasta);
+                    }
+                }
+
+                // FILTRO TIPO ANÁLISIS (usando enfermedad como proxy)
+                let pasaTipoAnalisis = true;
+                if (tipoAnalisis) {
+                    pasaTipoAnalisis = enfermedadFila.includes(tipoAnalisis);
+                }
+
+                // RETORNAR SI PASA TODOS LOS FILTROS
+                return pasaFecha && pasaEnfermedad && pasaLaboratorio && pasaGranja && pasaGalpon && pasaEdad && pasaTipoAnalisis;
             }
         );
 
-        $(document).ready(function () {
+        $(document).ready(function() {
             table = $('#tablaDatos').DataTable({
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
                 },
                 pageLength: 10,
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "Todos"]],
+                lengthMenu: [
+                    [10, 25, 50, 100, -1],
+                    [10, 25, 50, 100, "Todos"]
+                ],
                 responsive: false,
-                order: [[FECHA_COLUMN, 'desc']],
+                order: [
+                    [COL_FECHA_MUESTRA, 'desc']
+                ],
                 scrollX: true,
                 scrollCollapse: true,
                 dom: 'lfrtip',
-                initComplete: function () {
+                initComplete: function() {
                     console.log('DataTable Pollo Adulto cargado correctamente');
                 }
             });
         });
 
-        // Función para aplicar filtros
+        // Aplicar filtros
         function aplicarFiltros() {
             table.draw();
             console.log('Filtros aplicados');
         }
 
-        // Función para toggle de filtros
+
+        // Toggle filtros
         function toggleFiltros() {
             const content = document.getElementById('filtrosContent');
             const button = document.getElementById('btnToggleFiltros');
@@ -458,18 +655,34 @@ $enfermedadColumnIndex = array_search('enfermedad', $columnNames);
             if (content.classList.contains('hidden')) {
                 content.classList.remove('hidden');
                 button.textContent = '➖';
-                button.setAttribute('aria-expanded', 'true');
             } else {
                 content.classList.add('hidden');
                 button.textContent = '➕';
-                button.setAttribute('aria-expanded', 'false');
             }
         }
 
-        // Limpiar filtros al cambiar valores
-        $('#filtroFechaInicio, #filtroFechaFin, #filtroEnfermedad').on('change', function () {
-            // Auto-aplicar filtros al cambiar (opcional)
-            // aplicarFiltros();
+
+        $('#filtroTipoAnalisis').select2({
+            placeholder: 'Seleccionar análisis',
+            allowClear: true,
+            width: '100%',
+            minimumInputLength: 0, // CLAVE
+            ajax: {
+                url: 'buscar_analisis.php',
+                type: 'POST',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term || ''
+                    };
+                },
+                processResults: function(data) {
+                    return {
+                        results: data
+                    };
+                }
+            }
         });
     </script>
 </body>

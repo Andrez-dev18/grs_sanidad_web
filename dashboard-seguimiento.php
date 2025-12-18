@@ -312,7 +312,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     <title>Dashboard - Resultado de lab</title>
 
     <!-- Tailwind CSS -->
-    <link rel="stylesheet" href="css/output.css">
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
@@ -372,10 +372,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             border-spacing: 0;
         }
 
-        /* Mantener separación visual entre filas */
-        .dataTables_wrapper tbody tr {
-            border-bottom: 1px solid #e5e7eb;
-        }
+
 
         /* Inputs y selects integrados con Tailwind */
         .dataTables_wrapper input[type="search"],
@@ -700,21 +697,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 <div class="flex-1 overflow-hidden">
 
                     <!-- Tab 1 - Detalle del Envío -->
-                    <div id="tab-1" class="tab-content h-full flex flex-col">
-                        <div class="overflow-y-auto flex-1">
+                    <div id="tab-1" class="tab-content h-full">
+                        <div class="h-full overflow-auto">
                             <table class="w-full border-collapse text-sm">
-                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300">
+                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300 z-10">
                                     <tr>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Código</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Pos</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Referencia</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Toma</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">N° Muestras</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Muestra</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Análisis</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Estado Cuali</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Estado Cuanti</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Observaciones</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Pos</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Referencia</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha Toma</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">N° Muestras</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Muestra</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Análisis</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Estado Cuali</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Estado Cuanti</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Observaciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="detalleBody" class="divide-y divide-gray-200">
@@ -727,20 +724,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     </div>
 
                     <!-- Tab 2 - Resultados de Análisis -->
-                    <div id="tab-2" class="tab-content hidden h-full flex flex-col">
-                        <div class="overflow-y-auto flex-1">
+                    <div id="tab-2" class="tab-content hidden h-full">
+                        <div class="h-full overflow-auto">
                             <table class="w-full border-collapse text-sm">
-                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300">
+                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300 z-10">
                                     <tr>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Código Envío</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Pos Solicitud</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Cod Ref</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Toma</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Análisis</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Resultado</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Usuario Registrador</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Lab Registro</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Observaciones</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código Envío</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Pos Solicitud</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Cod Ref</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha Toma</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Análisis</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Resultado</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Usuario Registrador</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha Lab Registro</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Observaciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="resultadosBody" class="divide-y divide-gray-200">
@@ -753,72 +750,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     </div>
 
                     <!-- Tab 3 - cuantitativos -->
-                    <div id="tab-3" class="tab-content hidden h-full flex flex-col">
-                        <div class="overflow-y-auto flex-1">
+                    <div id="tab-3" class="tab-content hidden h-full">
+                        <div class="h-full overflow-auto">
                             <table class="w-full border-collapse text-sm">
-                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300">
+                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300 z-10">
                                     <tr>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">ID</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Código Envío</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Enfermedad</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Cód Enfermedad</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Tipo Ave</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Toma</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Edad Aves</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Planta Incubación</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Lote</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Código Granja</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Código Campaña</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Número Galpón</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Edad Reproductora</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Condición</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Gmean</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">SD</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">CV</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Count Muestras</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T01</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T02</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T03</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T04</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T05</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T06</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T07</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T08</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T09</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T10</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T11</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T12</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T13</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T14</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T15</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T16</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T17</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T18</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T19</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T20</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T21</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T22</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T23</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T24</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T25</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Título Promedio</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">LCS</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">LCC</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">LCI</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">%Coef Var</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">STD I</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">STD S</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S01</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S02</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S03</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S04</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S05</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S06</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Número Informe</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Informe</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Estado</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Usuario Registro</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Solicitud</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">ID</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código Envío</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Enfermedad</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Cód Enfermedad</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Tipo Ave</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha Toma</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Edad Aves</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Planta Incubación</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Lote</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código Granja</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código Campaña</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Número Galpón</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Edad Reproductora</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Condición</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Gmean</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">SD</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">CV</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Count Muestras</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T01</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T02</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T03</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T04</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T05</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T06</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T07</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T08</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T09</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T10</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T11</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T12</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T13</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T14</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T15</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T16</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T17</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T18</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T19</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T20</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T21</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T22</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T23</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T24</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T25</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Título Promedio</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">LCS</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">LCC</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">LCI</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">%Coef Var</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">STD I</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">STD S</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">S01</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">S02</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">S03</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">S04</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">S05</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">S06</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Número Informe</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha Informe</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Estado</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Usuario Registro</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha Solicitud</th>
                                     </tr>
                                 </thead>
                                 <tbody id="cuantitativosBody" class="divide-y divide-gray-200">
@@ -837,7 +834,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     <button onclick="cerrarModalDetalle()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded transition">
                         Cerrar
                     </button>
-
                 </div>
             </div>
         </div>

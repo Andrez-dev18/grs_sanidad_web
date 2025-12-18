@@ -324,14 +324,14 @@ $result = $conexion->query($query);
                                 <button
                                     id="tabAnalisis"
                                     onclick="switchTab('analisis')"
-                                    class="tab-btn pb-3 text-sm font-medium border-b-2 transition-all duration-200">
+                                    class="tab-btn pb-3 text-sm font-medium border-b-2 transition-all duration-200 border-blue-600 text-blue-600">
                                     Resultados Cualitativos
                                 </button>
 
                                 <button
                                     id="tabSegundo"
                                     onclick="switchTab('segundo')"
-                                    class="tab-btn pb-3 text-sm font-medium border-b-2 transition-all duration-200">
+                                    class="tab-btn pb-3 text-sm font-medium border-b-2 transition-all duration-200 border-transparent text-gray-500 hover:text-gray-700">
                                     Resultados Cuantitativos
                                 </button>
                             </nav>
@@ -491,7 +491,7 @@ $result = $conexion->query($query);
                                         </div>
 
                                         <div class="mt-8 flex justify-end">
-                                            
+
                                             <button type="submit"
                                                 class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105">
                                                 <i class="fas fa-save mr-2"></i> Guardar Resultados
@@ -550,7 +550,7 @@ $result = $conexion->query($query);
 
 
     <script>
-        
+
     </script>
 
 
