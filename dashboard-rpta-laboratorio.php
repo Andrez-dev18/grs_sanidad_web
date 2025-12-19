@@ -318,56 +318,172 @@ $result = $conexion->query($query);
 
                     <!-- DETAIL PANEL (oculto por defecto) -->
                     <div id="responseDetailPanel" class="hidden mx-auto max-w-6xl">
-                        <!-- TABS -->
-                        <div class="border-b border-gray-200 mb-6">
-                            <nav class="flex gap-6" aria-label="Tabs">
-                                <button
-                                    id="tabAnalisis"
-                                    onclick="switchTab('analisis')"
-                                    class="tab-btn pb-3 text-sm font-medium border-b-2 transition-all duration-200 border-blue-600 text-blue-600">
-                                    Resultados Cualitativos
-                                </button>
 
-                                <button
-                                    id="tabSegundo"
-                                    onclick="switchTab('segundo')"
-                                    class="tab-btn pb-3 text-sm font-medium border-b-2 transition-all duration-200 border-transparent text-gray-500 hover:text-gray-700">
-                                    Resultados Cuantitativos
-                                </button>
-                            </nav>
-                        </div>
 
-                        <div class="bg-white rounded-lg shadow-sm p-8">
+                        <div class="bg-white rounded-lg shadow-sm p-4">
+                            <!-- Cabecera detalle -->
+                            <div class="pb-6 border-b border-gray-200 ">
 
-                            <!-- TAB CONTENIDO -->
-                            <div id="tabContentAnalisis">
+                                <!-- Fila superior -->
+                                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
 
-                                <div>
-                                    <!-- Cabecera detalle -->
-                                    <div class="pb-4 border-b border-[#e5e7eb] mb-6 flex flex-col md:flex-row justify-between items-start gap-4">
+                                    <!-- Código + estado -->
+                                    <div class="flex items-center gap-5">
                                         <div>
-                                            <h2 id="detailCodigo" class="text-3xl font-bold text-[#1f2937]">SAN-000000</h2>
-                                            <span id="badgeStatus" class="inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium">Pendiente de Respuesta</span>
-                                            <!-- INFO ADICIONAL CABECERA -->
-                                            <div id="extraInfoCabecera" class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-2 text-sm text-gray-600">
+                                            <h2 id="detailCodigo"
+                                                class="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
+                                                SAN-000000
+                                            </h2>
 
-                                                <div><span class="font-semibold text-gray-800">🔬 Laboratorio:</span> <span id="cabLaboratorio">--</span></div>
-                                                <div><span class="font-semibold text-gray-800">🚚 Transporte:</span> <span id="cabTransporte">--</span></div>
-
-                                                <div><span class="font-semibold text-gray-800">👤 Registrado por:</span> <span id="cabRegistrador">--</span></div>
-                                                <div><span class="font-semibold text-gray-800">🧪 Responsable:</span> <span id="cabResponsable">--</span></div>
-
-                                                <div><span class="font-semibold text-gray-800">✔️ Autorizado por:</span> <span id="cabAutorizado">--</span></div>
-                                                <div><span class="font-semibold text-gray-800">🔑 Cod Ref:</span> <span id="cabCodRefe">--</span></div>
-
-                                            </div>
-                                        </div>
-
-                                        <div class="text-sm text-gray-600 mt-3 md:mt-0 flex flex-col gap-1">
-                                            <span id="detailFecha">📅 01/01/2024</span>
+                                            <span id="cabPosSolicitud"
+                                                class="inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide
+                                                bg-blue-100 text-blue-800 ring-2 ring-blue-300">
+                                                N
+                                            </span>
                                         </div>
                                     </div>
 
+                                    <!-- Fecha (lado derecho, elegante) -->
+                                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400"
+                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 7V3m8 4V3m-9 8h10m-11 9h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z" />
+                                        </svg>
+                                        <span id="detailFecha">01/01/2024</span>
+                                    </div>
+
+                                </div>
+
+                                <!-- Información adicional -->
+                                <div id="extraInfoCabecera"
+                                    class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
+
+                                    <!-- Laboratorio -->
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                            <span class="text-blue-600 text-lg">🔬</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-500 text-xs font-medium">Laboratorio</p>
+                                            <p id="cabLaboratorio" class="font-semibold text-gray-900">--</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Transporte -->
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                                            <span class="text-orange-600 text-lg">🚚</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-500 text-xs font-medium">Transporte</p>
+                                            <p id="cabTransporte" class="font-semibold text-gray-900">--</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Registrado por -->
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                                            <span class="text-purple-600 text-lg">👤</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-500 text-xs font-medium">Registrado por</p>
+                                            <p id="cabRegistrador" class="font-semibold text-gray-900">--</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Responsable -->
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                                            <span class="text-green-600 text-lg">🧪</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-500 text-xs font-medium">Responsable</p>
+                                            <p id="cabResponsable" class="font-semibold text-gray-900">--</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Autorizado -->
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center">
+                                            <span class="text-teal-600 text-lg">✔️</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-500 text-xs font-medium">Autorizado por</p>
+                                            <p id="cabAutorizado" class="font-semibold text-gray-900">--</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Código referencia -->
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                                            <span class="text-indigo-600 text-lg">🔑</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-500 text-xs font-medium">Cod. Referencia</p>
+                                            <p id="cabCodRefe" class="font-semibold text-gray-900">--</p>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <!-- PANEL  DATOS DE COD REF DECODIFICADOS -->
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 col-span-3 mb-6">
+                                <h4 class="text-[10px] font-bold text-blue-700 uppercase mb-3 flex items-center gap-1">
+                                    <i class="fas fa-lock"></i> Datos Decodificados del Código Ref
+                                </h4>
+                                <div class="grid grid-cols-4 gap-3">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Granja</label>
+                                        <input type="text" id="codRef_granja_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${granja}" readonly>
+                                        <input type="hidden" id="codRef_granja" name="codigo_granja" value="${granja}">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Campaña</label>
+                                        <input type="text" id="codRef_campana_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${campana}" readonly>
+                                        <input type="hidden" id="codRef_campana" name="codigo_campana" value="${campana}">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Galpón</label>
+                                        <input type="text" id="codRef_galpon_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${galpon}" readonly>
+                                        <input type="hidden" id="codRef_galpon" name="numero_galpon" value="${galpon}">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Edad (Ref)</label>
+                                        <input type="text" id="edadAves_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${edadRef}" readonly>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TABS -->
+                            <div class="border-b border-gray-200 mb-6">
+                                <nav class="flex gap-6" aria-label="Tabs">
+                                    <button
+                                        id="tabAnalisis"
+                                        onclick="switchTab('analisis')"
+                                        class="tab-btn pb-3 text-sm font-medium border-b-2 transition-all duration-200 border-blue-600 text-blue-600">
+                                        Resultados Cualitativos
+                                    </button>
+
+                                    <button
+                                        id="tabSegundo"
+                                        onclick="switchTab('segundo')"
+                                        class="tab-btn pb-3 text-sm font-medium border-b-2 transition-all duration-200 border-transparent text-gray-500 hover:text-gray-700">
+                                        Resultados Cuantitativos
+                                    </button>
+                                </nav>
+                            </div>
+
+                            <!-- TAB CONTENIDO cualitativos -->
+                            <div id="tabContentAnalisis">
+
+                                <div>
+                                    <span id="badgeStatusCuali"
+                                        class="inline-block mt-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide
+                                                bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300">
+                                        Pendiente
+                                    </span>
                                     <!-- analisis section -->
                                     <div>
                                         <div class="flex items-center justify-between mb-3">
@@ -426,51 +542,31 @@ $result = $conexion->query($query);
                                 </div>
                             </div>
 
+                            <!-- TAB CONTENIDO CUANTITATIVO -->
                             <div id="tabContentSegundo" class="hidden">
-                                <div id="formPanel"
-                                    class="">
+                                <div id="formPanel" class="">
+                                    <span id="badgeStatusCuanti"
+                                        class="inline-block mt-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide
+                                                bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300">
+                                        Pendiente
+                                    </span>
+                                    <form id="formAnalisis" onsubmit="guardar(event)" class=">
 
-                                    <div class="px-6 py-4 border-b rounded-xl shadow-lg border border-gray-200 bg-gray-50 flex justify-between items-center">
-                                        <div>
-                                            <h2 class="font-bold text-gray-700"><span id="lblCodigo" class="text-blue-600"></span></h2>
-                                            <div id="lblEstado" class="mt-1"></div>
-                                        </div>
-                                        <span id="badgeTipo"
-                                            class="px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-600">...</span>
-                                    </div>
-
-                                    <form id="formAnalisis" onsubmit="guardar(event)" class="flex-1 overflow-y-auto p-6">
-                                        <input type="hidden" id="action" name="action" value="create">
+                                        <input type=" hidden" id="action" name="action" value="create">
                                         <input type="hidden" id="tipo_ave_hidden" name="tipo_ave">
                                         <input type="hidden" id="codRef_granja" name="codigo_granja">
                                         <input type="hidden" id="codRef_campana" name="codigo_campana">
                                         <input type="hidden" id="codRef_galpon" name="numero_galpon">
 
-                                        <div class="grid grid-cols-4 gap-4 mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
-                                            <div>
-                                                <label class="text-[10px] uppercase font-bold text-gray-500">Código</label>
-                                                <input type="text" name="codigo_solicitud" id="codigoSolicitud" class="input-lab bg-white"
-                                                    readonly>
-                                            </div>
-                                            <div>
-                                                <label class="text-[10px] uppercase font-bold text-gray-500">Fecha Toma</label>
-                                                <input type="date" name="fecha_toma" id="fechaToma" class="input-lab bg-white" readonly>
-                                            </div>
-                                            <div>
-                                                <label class="text-[10px] uppercase font-bold text-blue-700">REF</label>
-                                                <input type="number" name="edad_aves" id="edadAves"
-                                                    class="input-lab font-bold text-blue-800 text-center" readonly>
-                                            </div>
-                                            <div>
-                                                <label class="text-[10px] uppercase font-bold text-gray-500">Nº Informe</label>
-                                                <input type="text" name="numero_informe" id="numeroInforme" class="input-lab">
-                                            </div>
-                                        </div>
 
-                                        <div id="camposEspecificos" class="grid grid-cols-3 gap-4 mb-6 border-b pb-6"></div>
+                                        <div id="camposEspecificos" class=""></div>
 
                                         <h3 class="text-sm font-bold text-gray-700 mb-3 uppercase">Resultados Analíticos</h3>
-                                        <div id="contenedorEnfermedades" class="space-y-4"></div>
+
+                                        <span id="badgeTipo" class="px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-600">
+                                            ...
+                                        </span>
+                                        <div id="contenedorEnfermedades" class="mt-4 space-y-4"></div>
 
                                         <div class="mt-6">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">

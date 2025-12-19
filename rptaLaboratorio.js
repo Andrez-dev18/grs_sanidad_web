@@ -6,6 +6,13 @@ let currentPage = 1;
 let limit = 10;
 let debounceTimer = null;
 
+// VARIABLES GLOBALES PARA CARGAR DATOS CUANTITATIVOS
+let codEnvioCuantiAux = null;
+let fecTomaCuantiAux = null;
+let codRefCuantiAux = null;
+let estadoCuantiAux = null;
+let nomMuestrasAux = null;
+
 /** carga la lista (pagina). page opcional */
 function loadSidebar(page = 1) {
     currentPage = page;
@@ -35,7 +42,7 @@ function loadSidebar(page = 1) {
                     // resaltar visualmente
 
 
-                    cargarSolicitud(row.codEnvio, row.fecToma, row.codRef, row.estado_cuanti, row.nomMuestras);
+                    //cargarSolicitud(row.codEnvio, row.fecToma, row.codRef, row.estado_cuanti, row.nomMuestras);
                     resaltarItemSidebar(row.codEnvio, row.posSolicitud);
                     cargarCabecera(row.codEnvio, row.fecToma, row.posSolicitud, row.codRef, row.estado_cuanti, row.nomMuestras);
                 };
@@ -203,7 +210,14 @@ function switchTab(tab) {
         {
             btn: "tabSegundo",
             content: "tabContentSegundo",
-            key: "segundo"
+            key: "segundo",
+            onActivate: () => cargarSolicitud(
+                codEnvioCuantiAux,
+                fecTomaCuantiAux,
+                codRefCuantiAux,
+                estadoCuantiAux,
+                nomMuestrasAux
+            )
         }
     ];
 
@@ -225,6 +239,11 @@ function switchTab(tab) {
     const activeBtn = document.getElementById(active.btn);
     activeBtn.classList.remove("border-transparent", "text-gray-500", "hover:text-gray-700");
     activeBtn.classList.add("border-blue-600", "text-blue-600");
+
+    // 🔥 EJECUTAR ACCIÓN EXTRA SI EXISTE
+    if (typeof active.onActivate === "function") {
+        active.onActivate();
+    }
 }
 
 
@@ -355,20 +374,25 @@ function cargarCabecera(codEnvio, fecToma, pos, codRef, estado_cuanti, nomMuestr
 
             document.getElementById("detailCodigo").textContent = data.codEnvio;
 
-
             document.getElementById("cabLaboratorio").textContent = `${data.nomLab}`;
             document.getElementById("cabTransporte").textContent = `${data.nomEmpTrans}`;
-
             document.getElementById("cabRegistrador").textContent = data.usuarioRegistrador;
             document.getElementById("cabResponsable").textContent = data.usuarioResponsable;
             document.getElementById("cabAutorizado").textContent = data.autorizadoPor;
             document.getElementById("cabCodRefe").textContent = data.codRef;
+            document.getElementById("cabPosSolicitud").textContent = "Solicitud N°: " + data.posSolicitud;
+
+            //variables globales para cuantitativos
+            codEnvioCuantiAux = codEnvio;
+            fecTomaCuantiAux = fecToma;
+            codRefCuantiAux = codRef;
+            estadoCuantiAux = estado_cuanti;
+            nomMuestrasAux = nomMuestras;
 
             // Cambia badge
-            const badge = document.getElementById("badgeStatus");
+            const badge = document.getElementById("badgeStatusCuali");
             if (data.estado_cuali_general === "completado") {
                 openDetailCompletado(codEnvio, fecToma, pos);
-                cargarSolicitud(codEnvio, fecToma, codRef, estado_cuanti, nomMuestras);
                 badge.textContent = "Completado";
                 badge.className = "inline-block mt-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium";
             } else {
@@ -483,7 +507,7 @@ async function guardarResultados() {
 
     resaltarItemSidebar(code, currentPosition);
     // === CAMBIAR EL BADGE A "COMPLETADO" DESPUÉS DE GUARDAR ===
-    const badge = document.getElementById('badgeStatus');
+    const badge = document.getElementById('badgeStatusCuali');
     if (badge && (r.insertados > 0 || r.actualizados > 0)) {
         badge.textContent = 'Completado';
         badge.classList.remove('bg-yellow-100', 'text-yellow-700');
@@ -620,7 +644,7 @@ function crearBloqueAnalisis(
 
     let block = document.createElement("div");
     block.className =
-        "bloque-analisis relative bg-white shadow-sm border rounded-xl p-3";
+        "bloque-analisis relative bg-blue-50 border border-blue-200 shadow-sm rounded-xl p-3";
     block.dataset.idResultado = idResultado;
 
     // --- Botón eliminar (manuales) ---
@@ -641,7 +665,7 @@ function crearBloqueAnalisis(
     // --- Select ---
     let select = document.createElement("select");
     select.className =
-        "w-full px-2 py-2 border border-gray-300 text-sm rounded-md";
+        "w-full px-2 py-2 border border-gray-300 text-sm rounded-md bg-white focus:ring-2 focus:ring-blue-300 focus:outline-none";
     select.name = "resultado_" + codigo;
 
     // 🔥 CLAVE: datos que el backend necesita
@@ -681,7 +705,7 @@ function crearBloqueAnalisis(
     // --- Textarea ---
     let textarea = document.createElement("textarea");
     textarea.className =
-        "w-full mt-2 p-2 border rounded-md text-sm h-20 resize-none";
+        "w-full mt-2 p-2 border border-gray-300 rounded-md text-sm h-20 bg-white focus:ring-2 focus:ring-blue-300 focus:outline-none";
     textarea.placeholder = "Observaciones...";
     textarea.value = observacion ?? "";
 
@@ -990,31 +1014,27 @@ const CONFIG = {
 function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMuestra = '') {
     window.codigoEnvioActual = codigo;
     window.enfermedadStates = {};
+    const badgeCuanti = document.getElementById("badgeStatusCuanti");
+    if (estado === "completado") {
+
+        badgeCuanti.textContent = "Completado";
+        badgeCuanti.className = "mb-4 inline-block mt-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium";
+    } else {
+        badgeCuanti.textContent = "Pendiente";
+        badgeCuanti.className = "mb-4 inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium";
+    }
 
     // ✅ NUEVO: Guardar estado global
     window.estadoActualSolicitud = estado.toLowerCase();
 
     //document.getElementById('emptyState').classList.add('hidden');
     document.getElementById('formPanel').classList.remove('hidden');
-    document.getElementById('lblCodigo').textContent = codigo;
-
-    const lblEstado = document.getElementById('lblEstado');
-    if (lblEstado) {
-        const e = String(estado || 'pendiente').toLowerCase();
-        if (e === 'pendiente') {
-            lblEstado.innerHTML = `<span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pendiente</span>`;
-        } else {
-            const cap = (e.charAt(0).toUpperCase() + e.slice(1));
-            lblEstado.innerHTML = `<span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">${cap}</span>`;
-        }
-    }
+    //document.getElementById('lblCodigo').textContent = codigo;
 
     document.getElementById('formAnalisis').reset();
-    document.getElementById('codigoSolicitud').value = codigo;
-    document.getElementById('fechaToma').value = fecha;
 
     const datosRef = decodificarCodRef(referencia);
-    document.getElementById('edadAves').value = datosRef.codRefCompleto;
+    //document.getElementById('edadAves').value = datosRef.codRefCompleto;
     document.getElementById('codRef_granja').value = datosRef.granja;
     document.getElementById('codRef_campana').value = datosRef.campana;
     document.getElementById('codRef_galpon').value = datosRef.galpon;
@@ -1235,32 +1255,7 @@ function renderizarCampos(tipo) {
         }
 
         container.innerHTML = `
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 col-span-3 mb-4">
-                <h4 class="text-[10px] font-bold text-blue-700 uppercase mb-3 flex items-center gap-1">
-                    <i class="fas fa-lock"></i> Datos Decodificados del Código Ref
-                </h4>
-                <div class="grid grid-cols-4 gap-3">
-                    <div>
-                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Granja</label>
-                        <input type="text" id="codRef_granja_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${granja}" readonly>
-                        <input type="hidden" id="codRef_granja" name="codigo_granja" value="${granja}">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Campaña</label>
-                        <input type="text" id="codRef_campana_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${campana}" readonly>
-                        <input type="hidden" id="codRef_campana" name="codigo_campana" value="${campana}">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Galpón</label>
-                        <input type="text" id="codRef_galpon_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${galpon}" readonly>
-                        <input type="hidden" id="codRef_galpon" name="numero_galpon" value="${galpon}">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Edad (Ref)</label>
-                        <input type="text" id="edadAves_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${edadRef}" readonly>
-                    </div>
-                </div>
-            </div>
+            
 
             <div>
                 <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Planta Incubación</label>
@@ -1286,32 +1281,7 @@ function renderizarCampos(tipo) {
         const edad = document.getElementById('edadAves_display')?.value || '';
 
         container.innerHTML = `
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 col-span-3">
-                <h4 class="text-[10px] font-bold text-blue-700 uppercase mb-3 flex items-center gap-1">
-                    <i class="fas fa-lock"></i> Datos Decodificados del Código Ref
-                </h4>
-                <div class="grid grid-cols-4 gap-3">
-                    <div>
-                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Granja</label>
-                        <input type="text" id="codRef_granja_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${granja}" readonly>
-                        <input type="hidden" id="codRef_granja" name="codigo_granja" value="${granja}">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Campaña</label>
-                        <input type="text" id="codRef_campana_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${campana}" readonly>
-                        <input type="hidden" id="codRef_campana" name="codigo_campana" value="${campana}">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Galpón</label>
-                        <input type="text" id="codRef_galpon_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${galpon}" readonly>
-                        <input type="hidden" id="codRef_galpon" name="numero_galpon" value="${galpon}">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Edad (Ref)</label>
-                        <input type="text" id="edadAves_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${edad}" readonly>
-                    </div>
-                </div>
-            </div>
+            
         `;
     }
 }
