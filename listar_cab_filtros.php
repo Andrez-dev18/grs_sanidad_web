@@ -118,20 +118,22 @@ $totalFiltrados = mysqli_fetch_assoc($totalFiltradosQuery)['total'];
 $dataQuery = mysqli_query($conexion, "
     SELECT 
         c.codEnvio,
-        d.posSolicitud,
         c.fecEnvio,
+        c.horaEnvio,
         c.nomLab,
         c.nomEmpTrans,
         c.usuarioRegistrador,
         c.usuarioResponsable,
         c.autorizadoPor,
-        d.nomMuestra,
-        d.nomAnalisis,
         c.estado,
-        d.obs
+        
+        GROUP_CONCAT(DISTINCT d.nomMuestra ORDER BY d.posSolicitud SEPARATOR ', ') as muestras,
+        GROUP_CONCAT(DISTINCT d.nomAnalisis ORDER BY d.posSolicitud SEPARATOR ', ') as analisis
+        
     FROM san_fact_solicitud_cab c
     LEFT JOIN san_fact_solicitud_det d ON c.codEnvio = d.codEnvio
     $where
+    GROUP BY c.codEnvio
     ORDER BY c.codEnvio DESC
     LIMIT $start, $length
 ");

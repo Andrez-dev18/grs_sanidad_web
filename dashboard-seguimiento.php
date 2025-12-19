@@ -366,34 +366,111 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             object-fit: contain;
         }
 
-        /* Evitar estilos default de DataTables */
-        .dataTables_wrapper table {
-            border-collapse: separate !important;
-            border-spacing: 0;
+        .table-wrapper {
+            overflow-x: auto;
+            overflow-y: visible;
+            width: 100%;
+            border-radius: 1rem;
         }
 
+        .table-wrapper::-webkit-scrollbar {
+            height: 10px;
+        }
 
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
 
-        /* Inputs y selects integrados con Tailwind */
-        .dataTables_wrapper input[type="search"],
-        .dataTables_wrapper select {
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        .data-table {
+            width: 100% !important;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: center;
+            font-size: 0.875rem;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .data-table th {
+            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
+            font-weight: 600;
+            color: #ffffff !important;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #eff6ff !important;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            padding: 1rem;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            padding: 0.5rem;
             border: 1px solid #d1d5db;
             border-radius: 0.5rem;
-            padding: 0.4rem 0.75rem;
-            font-size: 0.875rem;
+            margin: 0 0.5rem;
         }
 
-        /* Paginación más limpia */
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            padding: 0.35rem 0.75rem;
+        .dataTables_wrapper .dataTables_filter input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
             border-radius: 0.5rem;
-            border: 1px solid transparent;
+            margin-left: 0.5rem;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.5rem 1rem !important;
+            margin: 0 0.25rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db !important;
         }
 
         .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-            background-color: #2563eb !important;
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
+            color: white !important;
+            border: 1px solid #1e40af !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+        }
+
+        table.dataTable thead .sorting:before,
+        table.dataTable thead .sorting_asc:before,
+        table.dataTable thead .sorting_desc:before,
+        table.dataTable thead .sorting:after,
+        table.dataTable thead .sorting_asc:after,
+        table.dataTable thead .sorting_desc:after {
             color: white !important;
         }
+
+        .dataTables_wrapper {
+            overflow-x: visible !important;
+        }
+
 
         /* Select2 estilo Tailwind */
         .select2-container .select2-selection--single {
@@ -452,7 +529,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     </button>
 
                     <!-- CONTENIDO PLEGABLE -->
-                    <div id="contenidoFiltros" class="px-6 pb-6 pt-4">
+                    <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
 
                         <!-- GRID DE FILTROS -->
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -626,40 +703,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     </div>
                 </div>
 
-
-
                 <!-- Tabla  -->
-                <div class="table-container border border-gray-300 rounded-2xl bg-white overflow-hidden">
-
-                    <!-- padding interno para DataTables -->
-                    <div class="p-6">
-                        <div class="overflow-hidden">
-                            <table id="tablaResultados" class="data-table w-full table-fixed">
-                                <thead class="bg-gray-50 border-b border-gray-200">
+                <div class="max-w-full mx-auto mt-6">
+                    <div class="border border-gray-300 rounded-2xl bg-white overflow-hidden">
+                        <div class="table-wrapper">
+                            <table id="tablaResultados" class="data-table display" style="width:100%">
+                                <thead>
                                     <tr>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Cod. Envío</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800 text-center">Pos. Solicitud</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Fecha Envio</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Nom. Lab</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Nom. EmpTrans</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Usuario Registrador</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Usuario Responsable</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Autorizado Por</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Muestra</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Analisis</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Estado</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Obs</th>
+                                        <th class="">Cod. Envío</th>
+
+                                        <th class="">Fecha Envio</th>
+                                        <th class="">Nom. Lab</th>
+                                        <th class="">Nom. EmpTrans</th>
+                                        <th class="">Usuario Registrador</th>
+                                        <th class="">Usuario Responsable</th>
+                                        <th class="">Autorizado Por</th>
+                                        <th class="">Muestra</th>
+                                        <th class="">Analisis</th>
+                                        <th class="">Estado</th>
+                                        <th class="">Obs</th>
                                         <!-- NUEVAS COLUMNAS -->
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800 text-center">Detalle</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800 text-center">Historial</th>
+                                        <th class="">Detalle</th>
+                                        <th class="">Historial</th>
                                     </tr>
                                 </thead>
-
-
-                                <tbody class="divide-y divide-gray-200">
+                                <tbody>
 
                                 </tbody>
-
                             </table>
                         </div>
                     </div>
@@ -963,10 +1033,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         data: 'codEnvio'
                     },
                     {
-                        data: 'posSolicitud',
-                        className: 'text-center'
-                    },
-                    {
                         data: 'fecEnvio'
                     },
                     {
@@ -985,10 +1051,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         data: 'autorizadoPor'
                     },
                     {
-                        data: 'nomMuestra'
+                        data: 'muestras',
+                        className: 'max-w-xs',
+                        render: function(data, type, row) {
+                            if (!data || data.trim() === '' || data === '—') {
+                                return '<span class="text-gray-400 italic">—</span>';
+                            }
+
+                            const items = data.split(', ').map(item => item.trim()).filter(item => item);
+                            if (items.length === 0) return '<span class="text-gray-400 italic">—</span>';
+
+                            const visibles = items.slice(0, 3);
+                            const ocultos = items.slice(3);
+                            const tieneMas = ocultos.length > 0;
+
+                            let texto = '(' + visibles.join(', ') + ')';
+                            if (tieneMas) {
+                                texto += ` <span class="ml-2 text-lime-600 font-semibold cursor-help" title="${ocultos.join(', ')}">+${ocultos.length} más</span>`;
+                            }
+
+                            return `
+                                <div class="inline-block px-4 py-3 rounded-xl bg-lime-100 border border-lime-200 text-lime-800 text-sm font-medium leading-snug">
+                                    <span class="">
+                                        ${texto}
+                                    </span>
+                                </div>
+                            `;
+                        }
                     },
                     {
-                        data: 'nomAnalisis'
+                        data: 'analisis',
+                        className: 'max-w-sm', // Controla el ancho para que envuelva bien
+                        render: function(data, type, row) {
+                            if (!data || data.trim() === '' || data === '—') {
+                                return '<span class="text-gray-400 italic">—</span>';
+                            }
+
+                            // Dividir en análisis individuales
+                            const items = data.split(', ').map(item => item.trim()).filter(item => item);
+
+                            if (items.length === 0) {
+                                return '<span class="text-gray-400 italic">—</span>';
+                            }
+
+                            // Mostrar máximo 5 análisis visibles
+                            const visibles = items.slice(0, 3);
+                            const ocultos = items.slice(3);
+                            const tieneMas = ocultos.length > 0;
+
+                            // Construir el texto visible: (A, B, C, D, E)
+                            let textoVisible = '(' + visibles.join(', ') + ')';
+
+                            // Si hay más, agregar el indicador
+                            if (tieneMas) {
+                                textoVisible += ` <span class="ml-2 text-blue-600 font-semibold cursor-help" title="${ocultos.join(', ')}">+${ocultos.length} más</span>`;
+                            }
+
+                            return `
+                            <div class="inline-block px-4 py-3 rounded-xl bg-blue-100 border border-blue-200 text-blue-800 text-sm font-medium leading-snug">
+                                <span class="">
+                                    ${textoVisible}
+                                </span>
+                            </div>
+                        `;
+                        }
                     },
                     {
                         data: 'estado',
@@ -998,7 +1124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             if (data === 'pendiente') {
                                 return `
                                     <span class="inline-flex items-center px-3 py-1 rounded-full 
-                                                text-xs font-semibold
+                                                font-semibold
                                                 bg-yellow-100 text-yellow-800">
                                         Pendiente
                                     </span>
@@ -1008,7 +1134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             if (data === 'completado') {
                                 return `
                                     <span class="inline-flex items-center px-3 py-1 rounded-full 
-                                                text-xs font-semibold
+                                                font-semibold
                                                 bg-green-100 text-green-800">
                                         Completado
                                     </span>
@@ -1018,9 +1144,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             return data; // fallback por si aparece otro estado
                         }
                     },
-
                     {
-                        data: 'obs'
+                        data: 'obs',
+                        className: 'text-sm text-gray-700',
+                        render: function(data, type, row) {
+                            return (data === null || data === undefined || data.trim() === '') ?
+                                '<span class="text-gray-400 italic">N/A</span>' :
+                                data;
+                        }
                     },
                     {
                         data: null,
@@ -1061,8 +1192,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 },
                 pageLength: 5,
                 lengthMenu: [
-                    [5, 10, 15, 25],
-                    [5, 10, 15, 25]
+                    [5, 10, 15, 20, 25],
+                    [5, 10, 15, 20, 25]
                 ],
             });
 

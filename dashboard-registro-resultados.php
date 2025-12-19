@@ -74,33 +74,109 @@ if (!$conexion) {
             object-fit: contain;
         }
 
-        /* Evitar estilos default de DataTables */
-        .dataTables_wrapper table {
-            border-collapse: separate !important;
-            border-spacing: 0;
+        .table-wrapper {
+            overflow-x: auto;
+            overflow-y: visible;
+            width: 100%;
+            border-radius: 1rem;
         }
 
+        .table-wrapper::-webkit-scrollbar {
+            height: 10px;
+        }
 
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
 
-        /* Inputs y selects integrados con Tailwind */
-        .dataTables_wrapper input[type="search"],
-        .dataTables_wrapper select {
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        .data-table {
+            width: 100% !important;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.875rem;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .data-table th {
+            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
+            font-weight: 600;
+            color: #ffffff !important;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #eff6ff !important;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            padding: 1rem;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            padding: 0.5rem;
             border: 1px solid #d1d5db;
             border-radius: 0.5rem;
-            padding: 0.4rem 0.75rem;
-            font-size: 0.875rem;
+            margin: 0 0.5rem;
         }
 
-        /* Paginación más limpia */
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            padding: 0.35rem 0.75rem;
+        .dataTables_wrapper .dataTables_filter input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
             border-radius: 0.5rem;
-            border: 1px solid transparent;
+            margin-left: 0.5rem;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.5rem 1rem !important;
+            margin: 0 0.25rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db !important;
         }
 
         .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-            background-color: #2563eb !important;
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
             color: white !important;
+            border: 1px solid #1e40af !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+        }
+
+        table.dataTable thead .sorting:before,
+        table.dataTable thead .sorting_asc:before,
+        table.dataTable thead .sorting_desc:before,
+        table.dataTable thead .sorting:after,
+        table.dataTable thead .sorting_asc:after,
+        table.dataTable thead .sorting_desc:after {
+            color: white !important;
+        }
+
+        .dataTables_wrapper {
+            overflow-x: visible !important;
         }
 
         /* Select2 estilo Tailwind */
@@ -133,132 +209,121 @@ if (!$conexion) {
 <body class="bg-gray-50">
     <div class="container mx-auto px-6 py-12">
 
-        <!-- VISTA EMPRESAS DE TRANSPORTE -->
-        <div id="viewEmpresasTransporte" class="content-view">
-            <div class="content-header max-w-7xl mx-auto mb-8">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="text-4xl">🗒️</span>
-                    <h1 class="text-3xl font-bold text-gray-800">Resultados cualitativos</h1>
+        <!-- CARD FILTROS PLEGABLE -->
+        <div class="mb-6 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+
+            <!-- HEADER -->
+            <button type="button"
+                onclick="toggleFiltros()"
+                class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">
+
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">🔎</span>
+                    <h3 class="text-base font-semibold text-gray-800">
+                        Filtros de búsqueda
+                    </h3>
                 </div>
-            </div>
 
-            <div class="form-container max-w-7xl mx-auto">
+                <!-- ICONO -->
+                <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
+                    fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
 
-                <!-- CARD FILTROS PLEGABLE -->
-                <div class="mb-6 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <!-- CONTENIDO PLEGABLE -->
+            <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
 
-                    <!-- HEADER -->
-                    <button type="button"
-                        onclick="toggleFiltros()"
-                        class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">
+                <!-- GRID DE FILTROS -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
 
-                        <div class="flex items-center gap-2">
-                            <span class="text-lg">🔎</span>
-                            <h3 class="text-base font-semibold text-gray-800">
-                                Filtros de búsqueda
-                            </h3>
-                        </div>
+                    <!-- Fecha inicio -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
+                        <input type="date" id="filtroFechaInicio"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                    </div>
 
-                        <!-- ICONO -->
-                        <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
-                            fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
+                    <!-- Fecha fin -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
+                        <input type="date" id="filtroFechaFin"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                    </div>
 
-                    <!-- CONTENIDO PLEGABLE -->
-                    <div id="contenidoFiltros" class="px-6 pb-6 pt-4">
+                    <!-- Estado -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                        <select id="filtroEstado"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            <option value="">Seleccionar</option>
+                            <option value="Completado">Completado</option>
+                            <option value="Pendiente">Pendiente</option>
+                        </select>
+                    </div>
 
-                        <!-- GRID DE FILTROS -->
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <!-- Laboratorio -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Laboratorio</label>
+                        <select id="filtroLaboratorio"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            <option value="">Seleccionar</option>
+                            <?php
+                            $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
+                            $res = $conexion->query($sql);
 
-                            <!-- Fecha inicio -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
-                                <input type="date" id="filtroFechaInicio"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                            </div>
+                            if ($res && $res->num_rows > 0) {
+                                while ($row = $res->fetch_assoc()) {
+                                    echo '<option value="' . htmlspecialchars($row['nombre']) . '">'
+                                        . htmlspecialchars($row['nombre']) .
+                                        '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
+                    </div>
 
-                            <!-- Fecha fin -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
-                                <input type="date" id="filtroFechaFin"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                            </div>
+                    <!-- Tipo análisis (autocomplete) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Tipo de análisis
+                        </label>
 
-                            <!-- Estado -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                                <select id="filtroEstado"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                                    <option value="">Seleccionar</option>
-                                    <option value="Completado">Completado</option>
-                                    <option value="Pendiente">Pendiente</option>
-                                </select>
-                            </div>
-
-                            <!-- Laboratorio -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Laboratorio</label>
-                                <select id="filtroLaboratorio"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                                    <option value="">Seleccionar</option>
-                                    <?php
-                                    $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
-                                    $res = $conexion->query($sql);
-
-                                    if ($res && $res->num_rows > 0) {
-                                        while ($row = $res->fetch_assoc()) {
-                                            echo '<option value="' . htmlspecialchars($row['nombre']) . '">'
-                                                . htmlspecialchars($row['nombre']) .
-                                                '</option>';
-                                        }
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-
-                            <!-- Tipo análisis (autocomplete) -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Tipo de análisis
-                                </label>
-
-                                <select id="filtroTipoAnalisis"
-                                    class="w-full text-sm rounded-lg border border-gray-300">
-                                </select>
-                            </div>
+                        <select id="filtroTipoAnalisis"
+                            class="w-full text-sm rounded-lg border border-gray-300">
+                        </select>
+                    </div>
 
 
-                            <!-- Tipo muestra -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de muestra</label>
-                                <select id="filtroTipoMuestra"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                                    <option value="">Seleccionar</option>
-                                    <?php
-                                    $sql = "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY nombre ASC";
-                                    $res = $conexion->query($sql);
+                    <!-- Tipo muestra -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de muestra</label>
+                        <select id="filtroTipoMuestra"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            <option value="">Seleccionar</option>
+                            <?php
+                            $sql = "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY nombre ASC";
+                            $res = $conexion->query($sql);
 
-                                    if ($res && $res->num_rows > 0) {
-                                        while ($row = $res->fetch_assoc()) {
-                                            echo '<option value="' . htmlspecialchars($row['nombre']) . '">'
-                                                . htmlspecialchars($row['nombre']) .
-                                                '</option>';
-                                        }
-                                    }
-                                    ?>
-                                </select>
-                            </div>
+                            if ($res && $res->num_rows > 0) {
+                                while ($row = $res->fetch_assoc()) {
+                                    echo '<option value="' . htmlspecialchars($row['nombre']) . '">'
+                                        . htmlspecialchars($row['nombre']) .
+                                        '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
+                    </div>
 
-                            <!-- Granja -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Granja</label>
-                                <select id="filtroGranja"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                                    <option value="">Seleccionar</option>
-                                    <?php
-                                    $sql = "
+                    <!-- Granja -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Granja</label>
+                        <select id="filtroGranja"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            <option value="">Seleccionar</option>
+                            <?php
+                            $sql = "
                                         SELECT codigo, nombre
                                         FROM ccos
                                         WHERE LENGTH(codigo)=3
@@ -268,126 +333,123 @@ if (!$conexion) {
                                         ORDER BY nombre
                                     ";
 
-                                    $res = mysqli_query($conexion, $sql);
+                            $res = mysqli_query($conexion, $sql);
 
-                                    if ($res && mysqli_num_rows($res) > 0) {
-                                        while ($row = mysqli_fetch_assoc($res)) {
-                                            echo '<option value="' . htmlspecialchars($row['codigo']) . '">'
-                                                . htmlspecialchars($row['nombre']) .
-                                                '</option>';
-                                        }
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-
-                            <!-- Galpón -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Galpón</label>
-                                <select id="filtroGalpon"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                                    <option value="">Seleccionar</option>
-                                    <?php
-                                    for ($i = 1; $i <= 13; $i++) {
-                                        $valor = str_pad($i, 2, '0', STR_PAD_LEFT); // 01, 02, ...
-                                        echo "<option value=\"$valor\">$valor</option>";
-                                    }
-                                    ?>
-                                </select>
-                            </div>
-
-                            <!-- Edad -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Edad</label>
-
-                                <div class="flex gap-2">
-                                    <input type="number"
-                                        id="filtroEdadDesde"
-                                        placeholder="Desde"
-                                        min="0"
-                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-
-                                    <input type="number"
-                                        id="filtroEdadHasta"
-                                        placeholder="Hasta"
-                                        min="0"
-                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <!-- ACCIONES -->
-                        <div class="mt-8 mb-4 flex flex-wrap justify-end gap-4">
-
-                            <button type="button" id="btnFiltrar"
-                                class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
-                                Filtrar
-                            </button>
-
-                            <button type="button" id="btnLimpiar"
-                                class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200">
-                                Limpiar
-                            </button>
-
-                            <button type="button"
-                                class="px-6 py-2.5 text-white font-medium rounded-lg transition inline-flex items-center gap-2"
-                                onclick="exportarReporteExcel()"
-                                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
-                                📊 Exportar a Excel
-                            </button>
-                        </div>
-
+                            if ($res && mysqli_num_rows($res) > 0) {
+                                while ($row = mysqli_fetch_assoc($res)) {
+                                    echo '<option value="' . htmlspecialchars($row['codigo']) . '">'
+                                        . htmlspecialchars($row['nombre']) .
+                                        '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
                     </div>
+
+                    <!-- Galpón -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Galpón</label>
+                        <select id="filtroGalpon"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            <option value="">Seleccionar</option>
+                            <?php
+                            for ($i = 1; $i <= 13; $i++) {
+                                $valor = str_pad($i, 2, '0', STR_PAD_LEFT); // 01, 02, ...
+                                echo "<option value=\"$valor\">$valor</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <!-- Edad -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Edad</label>
+
+                        <div class="flex gap-2">
+                            <input type="number"
+                                id="filtroEdadDesde"
+                                placeholder="Desde"
+                                min="0"
+                                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+
+                            <input type="number"
+                                id="filtroEdadHasta"
+                                placeholder="Hasta"
+                                min="0"
+                                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                        </div>
+                    </div>
+
                 </div>
-                <!-- Tabla  -->
-                <div class="table-container border border-gray-300 rounded-2xl bg-white overflow-hidden">
 
-                    <!-- padding interno para DataTables -->
-                    <div class="p-6">
-                        <div class="overflow-x-auto">
-                            <table id="tablaResultados" class="data-table w-full">
-                                <thead class="bg-gray-50 border-b border-gray-200">
-                                    <tr>
-                                        <!-- CABECERA -->
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Cod. Envío</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Fecha Envío</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Hora</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Laboratorio</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Empresa</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Responsable</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Autorizado Por</th>
+                <!-- ACCIONES -->
+                <div class="mt-8 mb-4 flex flex-wrap justify-end gap-4">
 
-                                        <!-- DETALLE -->
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Pos.</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Cod. Ref</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Fecha Toma</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Muestras</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Muestra</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Análisis (Detalle)</th>
+                    <button type="button" id="btnFiltrar"
+                        class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                        Filtrar
+                    </button>
 
-                                        <!-- RESULTADO -->
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Fecha Reg.</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Fecha Lab</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Análisis (Resultado)</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Resultado</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Estado</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Observaciones</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Usuario</th>
-                                    </tr>
-                                </thead>
+                    <button type="button" id="btnLimpiar"
+                        class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200">
+                        Limpiar
+                    </button>
 
-
-                                <tbody id="" class="divide-y divide-gray-200">
-
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <button type="button"
+                        class="px-6 py-2.5 text-white font-medium rounded-lg transition inline-flex items-center gap-2"
+                        onclick="exportarReporteExcel()"
+                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
+                        📊 Exportar a Excel
+                    </button>
                 </div>
 
             </div>
         </div>
+
+        <!-- tabla -->
+        <div class="max-w-full mx-auto mt-6">
+            <div class="border border-gray-300 rounded-2xl bg-white overflow-hidden">
+                <div class="table-wrapper">
+                    <table id="tablaResultados" class="data-table display" style="width:100%">
+                        <thead>
+                            <tr>
+                                <!-- CABECERA -->
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Cod. Envío</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Fecha Envío</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Hora</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Laboratorio</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Empresa</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Responsable</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Autorizado Por</th>
+
+                                <!-- DETALLE -->
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Pos.</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Cod. Ref</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Fecha Toma</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Muestras</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Muestra</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Análisis (Detalle)</th>
+
+                                <!-- RESULTADO -->
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Fecha Reg.</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Fecha Lab</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Análisis (Resultado)</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Resultado</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Estado</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Observaciones</th>
+                                <th class="px-6 py-4 text-sm font-semibold text-gray-800 whitespace-nowrap">Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+
 
 
         <!-- Footer -->
@@ -429,6 +491,8 @@ if (!$conexion) {
             table = $('#tablaResultados').DataTable({
                 processing: true,
                 serverSide: true,
+                scrollX: true,
+                autoWidth: false,
                 dom: `
                     <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6"
                         <"flex items-center gap-6"
@@ -521,7 +585,7 @@ if (!$conexion) {
                             if (data === 'pendiente') {
                                 return `
                                     <span class="inline-flex items-center px-3 py-1 rounded-full 
-                                                text-xs font-semibold
+                                                font-semibold
                                                 bg-yellow-100 text-yellow-800">
                                         Pendiente
                                     </span>
@@ -531,7 +595,7 @@ if (!$conexion) {
                             if (data === 'completado') {
                                 return `
                                     <span class="inline-flex items-center px-3 py-1 rounded-full 
-                                                text-xs font-semibold
+                                                font-semibold
                                                 bg-green-100 text-green-800">
                                         Completado
                                     </span>
@@ -548,20 +612,25 @@ if (!$conexion) {
                         data: 'usuarioRegistrador'
                     }
                 ],
+                columnDefs: [{
+                    targets: '_all',
+                    className: 'px-6 py-4 text-sm text-gray-700'
+                }],
+                rowCallback: function(row, data) {
+                    $(row).addClass('hover:bg-gray-50 transition');
+                },
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json',
                     processing: "Procesando..."
                 },
-                pageLength: 5,
+                pageLength: 10,
                 lengthMenu: [
-                    [5, 10, 15, 20],
-                    [5, 10, 15, 20]
+                    [10, 15, 20, 25],
+                    [10, 15, 20, 25]
                 ],
                 order: [
                     [0, 'desc']
-                ],
-                scrollX: true,
-                dom: 'lfrtip'
+                ]
             });
         }
 
