@@ -190,10 +190,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             estado,
             usuario_registro,
             fecha_solicitud
-        FROM san_analisis_pollo_bb_adulto
-        WHERE codigo_envio = ?
-        ORDER BY id_analisis ASC
-    ";
+            FROM san_analisis_pollo_bb_adulto
+            WHERE codigo_envio = ?
+            ORDER BY id_analisis ASC
+        ";
 
         $stmt = $conexion->prepare($sql);
         if (!$stmt) {
@@ -294,6 +294,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     No hay resultados cuantitativos registrados para este envío
                 </td>
               </tr>";
+        }
+
+        exit;
+    }
+
+    if ($_POST['accion'] === 'cargar_docsDetalle') {
+
+        $codEnvio = $_POST['codEnvio'];
+
+        $sql = "
+        SELECT DISTINCT
+            a.id,
+            a.codEnvio,
+            a.posSolicitud,
+            d.codRef,
+            d.numMuestras,
+            d.nomMuestra,
+            a.archRuta,
+            a.tipo,
+            a.usuarioRegistrador,
+            a.fechaRegistro
+        FROM san_fact_resultado_archivo a 
+        LEFT JOIN san_fact_solicitud_det d 
+            ON a.codEnvio = d.codEnvio 
+            AND a.posSolicitud = d.posSolicitud
+        WHERE a.codEnvio = ?
+        ORDER BY a.posSolicitud, a.id
+    ";
+
+        $stmt = $conexion->prepare($sql);
+        $stmt->bind_param("s", $codEnvio);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                // Extraer extensión del archivo
+                $ruta = $row['archRuta'];
+                $extension = strtolower(pathinfo($ruta, PATHINFO_EXTENSION));
+
+                // Botón según tipo
+                if ($extension === 'pdf') {
+                    $boton = '<button onclick="previsualizarPDF(\'' . htmlspecialchars($ruta) . '\')" 
+                                 class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
+                            📄 Ver PDF
+                          </button>';
+                } else {
+                    $boton = '<a href="' . htmlspecialchars($ruta) . '" download 
+                               class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium inline-block">
+                            ⬇️ Descargar
+                          </a>
+                          <p class="text-xs text-gray-500 mt-1">Formato no previsualizable</p>';
+                }
+
+                echo "<tr class='hover:bg-gray-50 transition'>
+                <td class='px-4 py-3 text-sm'>" . htmlspecialchars($row['codEnvio']) . "</td>
+                <td class='px-4 py-3 text-sm text-center font-medium'>" . htmlspecialchars($row['posSolicitud']) . "</td>
+                <td class='px-4 py-3 text-sm'>" . htmlspecialchars($row['codRef'] ?? '—') . "</td>
+                <td class='px-4 py-3 text-sm text-center'>" . ($row['fechaRegistro'] ? date('d/m/Y H:i', strtotime($row['fechaRegistro'])) : '—') . "</td>
+                <td class='px-4 py-3 text-sm text-center'>
+                    <span class='inline-block px-3 py-1.5 rounded-full font-semibold bg-blue-100 text-blue-700'>
+                        " . htmlspecialchars($row['numMuestras'] ?? '—') . "
+                    </span>
+                </td>
+                <td class='px-4 py-3 text-sm'>" . htmlspecialchars($row['nomMuestra'] ?? '—') . "</td>
+                <td class='px-4 py-3 text-sm'>" . htmlspecialchars($row['tipo'] ?? '—') . "</td>
+                <td class='px-4 py-3 text-sm text-center'>" . htmlspecialchars($row['usuarioRegistrador'] ?? '—') . "</td>
+                <td class='px-4 py-3 text-center'>
+                    $boton
+                </td>
+            </tr>";
+            }
+        } else {
+            echo "<tr>
+            <td colspan='9' class='text-center py-8 text-gray-500 italic'>
+                No hay documentos registrados para esta solicitud
+            </td>
+        </tr>";
         }
 
         exit;
@@ -761,6 +839,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     <button onclick="cambiarTab(3)" class="tab-btn px-4 py-3 font-semibold text-gray-500 border-b-2 border-transparent hover:text-gray-700">
                         Resultado Cuantitativo
                     </button>
+                    <button onclick="cambiarTab(4)" class="tab-btn px-4 py-3 font-semibold text-gray-500 border-b-2 border-transparent hover:text-gray-700">
+                        Documentos Guardados
+                    </button>
                 </div>
 
                 <!-- Tab Contents -->
@@ -897,6 +978,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         </div>
                     </div>
 
+                    <!-- Tab 4 - documentos -->
+                    <div id="tab-4" class="tab-content h-full">
+                        <div class="h-full overflow-auto">
+                            <table class="w-full border-collapse text-sm">
+                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300 z-10">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Pos</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Cod Ref</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">N° Muestras</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Muestra</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Tipo</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">User Registro</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="docsBody" class="divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="10" class="text-center py-4 text-gray-500">Cargando...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Footer del Modal -->
@@ -952,6 +1059,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     <button onclick="cerrarModalTracking()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded transition">
                         Cerrar
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para PDF -->
+        <div id="modalPDF" class="fixed inset-0 bg-black bg-opacity-75 hidden flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-5/6 flex flex-col">
+                <div class="flex justify-between items-center px-6 py-4 border-b">
+                    <h3 class="text-lg font-semibold">Previsualización del documento</h3>
+                    <button onclick="cerrarModalPDF()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <iframe id="iframePDF" class="w-full h-full" frameborder="0"></iframe>
                 </div>
             </div>
         </div>
@@ -1304,6 +1424,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             if (tab === 3) {
                 cargarCuantitativos();
             }
+            if (tab = 4) {
+                cargarDocumentosDetalle();
+            }
         }
 
         // Cerrar modal al hacer clic fuera
@@ -1365,6 +1488,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 })
                 .catch(error => {
                     document.getElementById('cuantitativosBody').innerHTML =
+                        '<tr><td colspan="65" class="text-center py-4 text-red-500">Error al cargar los datos</td></tr>';
+                    console.error('Error:', error);
+                });
+        }
+
+        function cargarDocumentosDetalle() {
+            if (!codEnvioActual) return;
+
+            document.getElementById('docsBody').innerHTML =
+                '<tr><td colspan="65" class="text-center py-4 text-gray-500">Cargando...</td></tr>';
+
+            fetch('dashboard-seguimiento.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'accion=cargar_docsDetalle&codEnvio=' + encodeURIComponent(codEnvioActual)
+                })
+                .then(r => r.text())
+                .then(html => {
+                    document.getElementById('docsBody').innerHTML = html;
+                })
+                .catch(error => {
+                    document.getElementById('docsBody').innerHTML =
                         '<tr><td colspan="65" class="text-center py-4 text-red-500">Error al cargar los datos</td></tr>';
                     console.error('Error:', error);
                 });
@@ -1541,6 +1688,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     <script>
         function exportarReporteExcel() {
             window.location.href = "exportar_excel_resultados.php";
+        }
+
+        function previsualizarPDF(ruta) {
+            document.getElementById('iframePDF').src = ruta;
+            document.getElementById('modalPDF').classList.remove('hidden');
+        }
+
+        function cerrarModalPDF() {
+            document.getElementById('modalPDF').classList.add('hidden');
+            document.getElementById('iframePDF').src = '';
         }
     </script>
 
