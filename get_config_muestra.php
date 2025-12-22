@@ -130,9 +130,10 @@ try {
     // Consultar análisis
     $analisis = [];
     $analisis_res = mysqli_query($conexion, "
-            SELECT A.codigo, A.nombre, A.paquete 
-            FROM san_dim_analisis A
-            JOIN san_dim_paquete P ON A.paquete = P.codigo
+            SELECT A.codigo, A.nombre, P.codigo AS paquete 
+            FROM san_dim_analisis_paquete AP
+            JOIN san_dim_paquete P ON AP.paquete = P.codigo
+            JOIN san_dim_analisis A ON AP.analisis = A.codigo
             WHERE P.tipoMuestra = " . (int) $tipoMuestraId . " 
             ORDER BY nombre
     ");
@@ -154,7 +155,6 @@ try {
         'analisis' => $analisis
     ];
 
-    // ✅ Formato según el cliente
     if ($isMobile) {
         sendJson([
             'success' => true,
