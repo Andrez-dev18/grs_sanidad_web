@@ -661,7 +661,7 @@ async function guardarResultados(estadoCuali) {
     // -------------------------
     // SOLO ACTUALIZAR DEL SIDEBAR SI HUBO INSERT
     // -------------------------
-    if (r.insertados > 0) {
+    if (r.insertados > 0 || r.actualizados > 0) {
         loadSidebar(1);
     }
 

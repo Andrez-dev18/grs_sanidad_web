@@ -108,21 +108,23 @@ foreach ($analisis as $a) {
 
         if ($conn->query($sql)) {
             $insertados++;
-
-            // ✅ actualizar estado
-            $conn->query("
-                UPDATE san_fact_solicitud_det 
-                SET estado_cuali = '$estado'
-                WHERE codEnvio = '$codigoEnvio'
-                  AND posSolicitud = '$pos'
-                  AND codAnalisis = '$cod'
-            ");
-
-            if ($conn->affected_rows > 0) {
-                $estadosActualizados++;
-            }
         }
     }
+}
+
+// === AQUÍ LA CORRECCIÓN: Actualizar estado siempre al final ===
+$conn->query("
+    UPDATE san_fact_solicitud_det 
+    SET estado_cuali = '$estado'
+    WHERE codEnvio = '$codigoEnvio'
+      AND posSolicitud = '$pos'
+");
+
+if ($conn->affected_rows > 0) {
+    $estadosActualizados += $conn->affected_rows; // O simplemente $estadosActualizados = $conn->affected_rows;
+} else {
+    // Opcional: si quieres contar incluso si no cambió
+    $estadosActualizados += 1; // o mantener como está
 }
 
 // ------------------------------------------------------------
