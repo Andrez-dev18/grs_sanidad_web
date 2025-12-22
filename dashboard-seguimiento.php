@@ -190,10 +190,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             estado,
             usuario_registro,
             fecha_solicitud
-        FROM san_analisis_pollo_bb_adulto
-        WHERE codigo_envio = ?
-        ORDER BY id_analisis ASC
-    ";
+            FROM san_analisis_pollo_bb_adulto
+            WHERE codigo_envio = ?
+            ORDER BY id_analisis ASC
+        ";
 
         $stmt = $conexion->prepare($sql);
         if (!$stmt) {
@@ -298,6 +298,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
         exit;
     }
+
+    if ($_POST['accion'] === 'cargar_docsDetalle') {
+
+        $codEnvio = $_POST['codEnvio'];
+
+        $sql = "
+        SELECT DISTINCT
+            a.id,
+            a.codEnvio,
+            a.posSolicitud,
+            d.codRef,
+            d.numMuestras,
+            d.nomMuestra,
+            a.archRuta,
+            a.tipo,
+            a.usuarioRegistrador,
+            a.fechaRegistro
+        FROM san_fact_resultado_archivo a 
+        LEFT JOIN san_fact_solicitud_det d 
+            ON a.codEnvio = d.codEnvio 
+            AND a.posSolicitud = d.posSolicitud
+        WHERE a.codEnvio = ?
+        ORDER BY a.posSolicitud, a.id
+    ";
+
+        $stmt = $conexion->prepare($sql);
+        $stmt->bind_param("s", $codEnvio);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            while ($row = $result->fetch_assoc()) {
+                // Extraer extensión del archivo
+                $ruta = $row['archRuta'];
+                $extension = strtolower(pathinfo($ruta, PATHINFO_EXTENSION));
+
+                // Botón según tipo
+                if ($extension === 'pdf') {
+                    $boton = '<button onclick="previsualizarPDF(\'' . htmlspecialchars($ruta) . '\')" 
+                                 class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
+                            📄 Ver PDF
+                          </button>';
+                } else {
+                    $boton = '<a href="' . htmlspecialchars($ruta) . '" download 
+                               class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium inline-block">
+                            ⬇️ Descargar
+                          </a>
+                          <p class="text-xs text-gray-500 mt-1">Formato no previsualizable</p>';
+                }
+
+                echo "<tr class='hover:bg-gray-50 transition'>
+                <td class='px-4 py-3 text-sm'>" . htmlspecialchars($row['codEnvio']) . "</td>
+                <td class='px-4 py-3 text-sm text-center font-medium'>" . htmlspecialchars($row['posSolicitud']) . "</td>
+                <td class='px-4 py-3 text-sm'>" . htmlspecialchars($row['codRef'] ?? '—') . "</td>
+                <td class='px-4 py-3 text-sm text-center'>" . ($row['fechaRegistro'] ? date('d/m/Y H:i', strtotime($row['fechaRegistro'])) : '—') . "</td>
+                <td class='px-4 py-3 text-sm text-center'>
+                    <span class='inline-block px-3 py-1.5 rounded-full font-semibold bg-blue-100 text-blue-700'>
+                        " . htmlspecialchars($row['numMuestras'] ?? '—') . "
+                    </span>
+                </td>
+                <td class='px-4 py-3 text-sm'>" . htmlspecialchars($row['nomMuestra'] ?? '—') . "</td>
+                <td class='px-4 py-3 text-sm'>" . htmlspecialchars($row['tipo'] ?? '—') . "</td>
+                <td class='px-4 py-3 text-sm text-center'>" . htmlspecialchars($row['usuarioRegistrador'] ?? '—') . "</td>
+                <td class='px-4 py-3 text-center'>
+                    $boton
+                </td>
+            </tr>";
+            }
+        } else {
+            echo "<tr>
+            <td colspan='9' class='text-center py-8 text-gray-500 italic'>
+                No hay documentos registrados para esta solicitud
+            </td>
+        </tr>";
+        }
+
+        exit;
+    }
 }
 
 
@@ -312,7 +390,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     <title>Dashboard - Resultado de lab</title>
 
     <!-- Tailwind CSS -->
-    <link rel="stylesheet" href="css/output.css">
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
@@ -366,37 +444,111 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             object-fit: contain;
         }
 
-        /* Evitar estilos default de DataTables */
-        .dataTables_wrapper table {
-            border-collapse: separate !important;
-            border-spacing: 0;
+        .table-wrapper {
+            overflow-x: auto;
+            overflow-y: visible;
+            width: 100%;
+            border-radius: 1rem;
         }
 
-        /* Mantener separación visual entre filas */
-        .dataTables_wrapper tbody tr {
+        .table-wrapper::-webkit-scrollbar {
+            height: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        .data-table {
+            width: 100% !important;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: center;
+            font-size: 0.875rem;
             border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
         }
 
-        /* Inputs y selects integrados con Tailwind */
-        .dataTables_wrapper input[type="search"],
-        .dataTables_wrapper select {
+        .data-table th {
+            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
+            font-weight: 600;
+            color: #ffffff !important;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #eff6ff !important;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            padding: 1rem;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            padding: 0.5rem;
             border: 1px solid #d1d5db;
             border-radius: 0.5rem;
-            padding: 0.4rem 0.75rem;
-            font-size: 0.875rem;
+            margin: 0 0.5rem;
         }
 
-        /* Paginación más limpia */
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            padding: 0.35rem 0.75rem;
+        .dataTables_wrapper .dataTables_filter input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
             border-radius: 0.5rem;
-            border: 1px solid transparent;
+            margin-left: 0.5rem;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.5rem 1rem !important;
+            margin: 0 0.25rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db !important;
         }
 
         .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-            background-color: #2563eb !important;
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
+            color: white !important;
+            border: 1px solid #1e40af !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+        }
+
+        table.dataTable thead .sorting:before,
+        table.dataTable thead .sorting_asc:before,
+        table.dataTable thead .sorting_desc:before,
+        table.dataTable thead .sorting:after,
+        table.dataTable thead .sorting_asc:after,
+        table.dataTable thead .sorting_desc:after {
             color: white !important;
         }
+
+        .dataTables_wrapper {
+            overflow-x: visible !important;
+        }
+
 
         /* Select2 estilo Tailwind */
         .select2-container .select2-selection--single {
@@ -455,7 +607,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     </button>
 
                     <!-- CONTENIDO PLEGABLE -->
-                    <div id="contenidoFiltros" class="px-6 pb-6 pt-4">
+                    <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
 
                         <!-- GRID DE FILTROS -->
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -541,32 +693,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                             <!-- Granja -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Granja</label>
-                                <select id="filtroGranja"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                                    <option value="">Seleccionar</option>
-                                    <?php
-                                    $sql = "
-                                        SELECT codigo, nombre
-                                        FROM ccos
-                                        WHERE LENGTH(codigo)=3
-                                        AND swac='A'
-                                        AND LEFT(codigo,1)='6'
-                                        AND codigo NOT IN ('650','668','669','600')
-                                        ORDER BY nombre
-                                    ";
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Granja(s)</label>
 
-                                    $res = mysqli_query($conexion, $sql);
+                                <div class="relative">
+                                    <button type="button" id="dropdownGranjaBtn"
+                                        class="w-full px-3 py-2 text-sm text-left bg-white border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center">
+                                        <span id="dropdownGranjaText" class="text-gray-500">Seleccionar granjas...</span>
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
 
-                                    if ($res && mysqli_num_rows($res) > 0) {
-                                        while ($row = mysqli_fetch_assoc($res)) {
-                                            echo '<option value="' . htmlspecialchars($row['codigo']) . '">'
-                                                . htmlspecialchars($row['nombre']) .
-                                                '</option>';
-                                        }
-                                    }
-                                    ?>
-                                </select>
+                                    <!-- Dropdown con checkboxes -->
+                                    <div id="dropdownGranjaMenu" class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
+                                        <div class="p-2">
+                                            <?php
+                                            $sql = "
+                                                    SELECT codigo, nombre
+                                                    FROM ccos
+                                                    WHERE LENGTH(codigo)=3
+                                                    AND swac='A'
+                                                    AND LEFT(codigo,1)='6'
+                                                    AND codigo NOT IN ('650','668','669','600')
+                                                    ORDER BY nombre
+                                                ";
+
+                                            $res = mysqli_query($conexion, $sql);
+
+                                            if ($res && mysqli_num_rows($res) > 0) {
+                                                while ($row = mysqli_fetch_assoc($res)) {
+                                                    echo '
+                                                        <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                                                            <input type="checkbox" 
+                                                                name="filtroGranja[]" 
+                                                                value="' . htmlspecialchars($row['codigo']) . '" 
+                                                                class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                                            <span class="ml-3 text-sm text-gray-700">' . htmlspecialchars($row['nombre']) . '</span>
+                                                        </label>';
+                                                }
+                                            }
+                                            ?>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Galpón -->
@@ -624,45 +793,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                 style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
                                 📊 Exportar a Excel
                             </button>
+                            <button type="button"
+                                class="px-6 py-2.5 text-white font-medium rounded-lg transition inline-flex items-center gap-2"
+                                onclick="generarReportePDF()"
+                                style="background: linear-gradient(135deg, #b91b10e1 0%, #960f05ff 100%); box-shadow: 0 4px 6px rgba(185, 16, 38, 0.3);">
+                                Exportar a PDF
+                            </button>
                         </div>
 
                     </div>
                 </div>
 
-
-
                 <!-- Tabla  -->
-                <div class="table-container border border-gray-300 rounded-2xl bg-white overflow-hidden">
-
-                    <!-- padding interno para DataTables -->
-                    <div class="p-6">
-                        <div class="overflow-hidden">
-                            <table id="tablaResultados" class="data-table w-full table-fixed">
-                                <thead class="bg-gray-50 border-b border-gray-200">
+                <div class="max-w-full mx-auto mt-6">
+                    <div class="border border-gray-300 rounded-2xl bg-white overflow-hidden">
+                        <div class="table-wrapper">
+                            <table id="tablaResultados" class="data-table display" style="width:100%">
+                                <thead>
                                     <tr>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Cod. Envío</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800 text-center">Pos. Solicitud</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Fecha Envio</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Nom. Lab</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Nom. EmpTrans</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Usuario Registrador</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Usuario Responsable</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Autorizado Por</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Muestra</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Analisis</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Estado</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800">Obs</th>
+                                        <th class="">Cod. Envío</th>
+
+                                        <th class="">Fecha Envio</th>
+                                        <th class="">Nom. Lab</th>
+                                        <th class="">Nom. EmpTrans</th>
+                                        <th class="">Usuario Registrador</th>
+                                        <th class="">Usuario Responsable</th>
+                                        <th class="">Autorizado Por</th>
+                                        <th class="">Muestra</th>
+                                        <th class="">Analisis</th>
+                                        <th class="">Estado</th>
+                                        <th class="">Obs</th>
                                         <!-- NUEVAS COLUMNAS -->
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800 text-center">Detalle</th>
-                                        <th class="px-6 py-4 text-sm font-semibold text-gray-800 text-center">Historial</th>
+                                        <th class="">Detalle</th>
+                                        <th class="">Historial</th>
+                                        <th class="">PDF</th>
                                     </tr>
                                 </thead>
-
-
-                                <tbody class="divide-y divide-gray-200">
+                                <tbody>
 
                                 </tbody>
-
                             </table>
                         </div>
                     </div>
@@ -694,27 +863,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     <button onclick="cambiarTab(3)" class="tab-btn px-4 py-3 font-semibold text-gray-500 border-b-2 border-transparent hover:text-gray-700">
                         Resultado Cuantitativo
                     </button>
+                    <button onclick="cambiarTab(4)" class="tab-btn px-4 py-3 font-semibold text-gray-500 border-b-2 border-transparent hover:text-gray-700">
+                        Documentos Guardados
+                    </button>
                 </div>
 
                 <!-- Tab Contents -->
                 <div class="flex-1 overflow-hidden">
 
                     <!-- Tab 1 - Detalle del Envío -->
-                    <div id="tab-1" class="tab-content h-full flex flex-col">
-                        <div class="overflow-y-auto flex-1">
+                    <div id="tab-1" class="tab-content h-full">
+                        <div class="h-full overflow-auto">
                             <table class="w-full border-collapse text-sm">
-                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300">
+                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300 z-10">
                                     <tr>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Código</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Pos</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Referencia</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Toma</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">N° Muestras</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Muestra</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Análisis</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Estado Cuali</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Estado Cuanti</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Observaciones</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Pos</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Referencia</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha Toma</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">N° Muestras</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Muestra</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Análisis</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Estado Cuali</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Estado Cuanti</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Observaciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="detalleBody" class="divide-y divide-gray-200">
@@ -727,20 +899,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     </div>
 
                     <!-- Tab 2 - Resultados de Análisis -->
-                    <div id="tab-2" class="tab-content hidden h-full flex flex-col">
-                        <div class="overflow-y-auto flex-1">
+                    <div id="tab-2" class="tab-content hidden h-full">
+                        <div class="h-full overflow-auto">
                             <table class="w-full border-collapse text-sm">
-                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300">
+                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300 z-10">
                                     <tr>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Código Envío</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Pos Solicitud</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Cod Ref</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Toma</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Análisis</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Resultado</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Usuario Registrador</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Lab Registro</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Observaciones</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código Envío</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Pos Solicitud</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Cod Ref</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha Toma</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Análisis</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Resultado</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Usuario Registrador</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha Lab Registro</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Observaciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="resultadosBody" class="divide-y divide-gray-200">
@@ -753,77 +925,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     </div>
 
                     <!-- Tab 3 - cuantitativos -->
-                    <div id="tab-3" class="tab-content hidden h-full flex flex-col">
-                        <div class="overflow-y-auto flex-1">
+                    <div id="tab-3" class="tab-content hidden h-full">
+                        <div class="h-full overflow-auto">
                             <table class="w-full border-collapse text-sm">
-                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300">
+                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300 z-10">
                                     <tr>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">ID</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Código Envío</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Enfermedad</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Cód Enfermedad</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Tipo Ave</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Toma</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Edad Aves</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Planta Incubación</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Lote</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Código Granja</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Código Campaña</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Número Galpón</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Edad Reproductora</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Condición</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Gmean</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">SD</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">CV</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Count Muestras</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T01</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T02</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T03</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T04</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T05</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T06</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T07</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T08</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T09</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T10</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T11</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T12</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T13</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T14</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T15</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T16</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T17</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T18</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T19</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T20</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T21</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T22</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T23</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T24</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">T25</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Título Promedio</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">LCS</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">LCC</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">LCI</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">%Coef Var</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">STD I</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">STD S</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S01</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S02</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S03</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S04</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S05</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">S06</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Número Informe</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Informe</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700">Estado</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Usuario Registro</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700">Fecha Solicitud</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">ID</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código Envío</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Enfermedad</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Cód Enfermedad</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Tipo Ave</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha Toma</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Edad Aves</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Planta Incubación</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Lote</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código Granja</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código Campaña</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Número Galpón</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Edad Reproductora</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Condición</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Gmean</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">SD</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">CV</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Count Muestras</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T01</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T02</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T03</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T04</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T05</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T06</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T07</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T08</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T09</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T10</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T11</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T12</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T13</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T14</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T15</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T16</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T17</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T18</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T19</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T20</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T21</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T22</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T23</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T24</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">T25</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Título Promedio</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">LCS</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">LCC</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">LCI</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">%Coef Var</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">STD I</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">STD S</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">S01</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">S02</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">S03</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">S04</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">S05</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">S06</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Número Informe</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha Informe</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Estado</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Usuario Registro</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha Solicitud</th>
                                     </tr>
                                 </thead>
                                 <tbody id="cuantitativosBody" class="divide-y divide-gray-200">
                                     <tr>
                                         <td colspan="65" class="text-center py-4 text-gray-500">Cargando...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab 4 - documentos -->
+                    <div id="tab-4" class="tab-content h-full">
+                        <div class="h-full overflow-auto">
+                            <table class="w-full border-collapse text-sm">
+                                <thead class="sticky top-0 bg-gray-100 border-b border-gray-300 z-10">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Pos</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Cod Ref</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">N° Muestras</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Muestra</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Tipo</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">User Registro</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="docsBody" class="divide-y divide-gray-200">
+                                    <tr>
+                                        <td colspan="10" class="text-center py-4 text-gray-500">Cargando...</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -837,7 +1035,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     <button onclick="cerrarModalDetalle()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded transition">
                         Cerrar
                     </button>
-
                 </div>
             </div>
         </div>
@@ -858,21 +1055,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 </div>
 
                 <!-- Progreso General -->
-                <div id="resumenTracking" class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
-                    <div class="flex justify-between items-center mb-4">
+                <div id="resumenTracking"
+                    class="px-6 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+
+                    <div class="flex justify-between items-center mb-2">
                         <div>
-                            <p class="text-sm text-gray-600">Progreso General del Envío</p>
-                            <p class="text-2xl font-bold text-gray-800" id="codEnvioTracking"></p>
+                            <p class="text-xs text-gray-600">Progreso General del Envío</p>
+                            <p class="text-lg font-bold text-gray-800" id="codEnvioTracking"></p>
                         </div>
-                        <div class="text-right">
-                            <p class="text-4xl font-bold text-blue-600" id="porcentajeComplecion">0%</p>
-                            <p class="text-sm text-gray-600">Completado</p>
+
+                        <div class="text-right leading-tight">
+                            <p class="text-2xl font-bold text-blue-600" id="porcentajeComplecion">0%</p>
+                            <p class="text-xs text-gray-600">Completado</p>
                         </div>
                     </div>
-                    <div class="w-full bg-gray-300 rounded-full h-3">
-                        <div id="barraProgreso" class="bg-gradient-to-r from-green-400 to-blue-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+
+                    <div class="w-full bg-gray-300 rounded-full h-2">
+                        <div id="barraProgreso"
+                            class="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-500"
+                            style="width: 0%">
+                        </div>
                     </div>
                 </div>
+
 
                 <!-- Timeline -->
                 <div class="flex-1 overflow-y-auto px-6 py-8">
@@ -886,6 +1091,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     <button onclick="cerrarModalTracking()" class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded transition">
                         Cerrar
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para PDF -->
+        <div id="modalPDF" class="fixed inset-0 bg-black bg-opacity-75 hidden flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-5/6 flex flex-col">
+                <div class="flex justify-between items-center px-6 py-4 border-b">
+                    <h3 class="text-lg font-semibold">Previsualización del documento</h3>
+                    <button onclick="cerrarModalPDF()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <iframe id="iframePDF" class="w-full h-full" frameborder="0"></iframe>
                 </div>
             </div>
         </div>
@@ -921,7 +1139,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             var laboratorio = $('#filtroLaboratorio').val();
             var muestra = $('#filtroTipoMuestra').val();
             var analisis = $('#filtroTipoAnalisis').val();
-            var granja = $('#filtroGranja').val();
+
+            //array de granjas
+            var granjas = Array.from(document.querySelectorAll('input[name="filtroGranja[]"]:checked'))
+                .map(cb => cb.value);
+
             var galpon = $('#filtroGalpon').val();
             var edadDesde = $('#filtroEdadDesde').val();
             var edadHasta = $('#filtroEdadHasta').val();
@@ -957,7 +1179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         laboratorio: laboratorio,
                         muestra: muestra,
                         analisis: analisis,
-                        granja: granja,
+                        granjas: granjas,
                         galpon: galpon,
                         edadDesde: edadDesde,
                         edadHasta: edadHasta,
@@ -965,10 +1187,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 },
                 columns: [{
                         data: 'codEnvio'
-                    },
-                    {
-                        data: 'posSolicitud',
-                        className: 'text-center'
                     },
                     {
                         data: 'fecEnvio'
@@ -989,10 +1207,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         data: 'autorizadoPor'
                     },
                     {
-                        data: 'nomMuestra'
+                        data: 'muestras',
+                        className: 'max-w-xs',
+                        render: function(data, type, row) {
+                            if (!data || data.trim() === '' || data === '—') {
+                                return '<span class="text-gray-400 italic">—</span>';
+                            }
+
+                            const items = data.split(', ').map(item => item.trim()).filter(item => item);
+                            if (items.length === 0) return '<span class="text-gray-400 italic">—</span>';
+
+                            const visibles = items.slice(0, 3);
+                            const ocultos = items.slice(3);
+                            const tieneMas = ocultos.length > 0;
+
+                            let texto = '(' + visibles.join(', ') + ')';
+                            if (tieneMas) {
+                                texto += ` <span class="ml-2 text-lime-600 font-semibold cursor-help" title="${ocultos.join(', ')}">+${ocultos.length} más</span>`;
+                            }
+
+                            return `
+                                <div class="inline-block px-4 py-3 rounded-xl bg-lime-100 border border-lime-200 text-lime-800 text-sm font-medium leading-snug">
+                                    <span class="">
+                                        ${texto}
+                                    </span>
+                                </div>
+                            `;
+                        }
                     },
                     {
-                        data: 'nomAnalisis'
+                        data: 'analisis',
+                        className: 'max-w-sm', // Controla el ancho para que envuelva bien
+                        render: function(data, type, row) {
+                            if (!data || data.trim() === '' || data === '—') {
+                                return '<span class="text-gray-400 italic">—</span>';
+                            }
+
+                            // Dividir en análisis individuales
+                            const items = data.split(', ').map(item => item.trim()).filter(item => item);
+
+                            if (items.length === 0) {
+                                return '<span class="text-gray-400 italic">—</span>';
+                            }
+
+                            // Mostrar máximo 5 análisis visibles
+                            const visibles = items.slice(0, 3);
+                            const ocultos = items.slice(3);
+                            const tieneMas = ocultos.length > 0;
+
+                            // Construir el texto visible: (A, B, C, D, E)
+                            let textoVisible = '(' + visibles.join(', ') + ')';
+
+                            // Si hay más, agregar el indicador
+                            if (tieneMas) {
+                                textoVisible += ` <span class="ml-2 text-blue-600 font-semibold cursor-help" title="${ocultos.join(', ')}">+${ocultos.length} más</span>`;
+                            }
+
+                            return `
+                            <div class="inline-block px-4 py-3 rounded-xl bg-blue-100 border border-blue-200 text-blue-800 text-sm font-medium leading-snug">
+                                <span class="">
+                                    ${textoVisible}
+                                </span>
+                            </div>
+                        `;
+                        }
                     },
                     {
                         data: 'estado',
@@ -1002,7 +1280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             if (data === 'pendiente') {
                                 return `
                                     <span class="inline-flex items-center px-3 py-1 rounded-full 
-                                                text-xs font-semibold
+                                                font-semibold
                                                 bg-yellow-100 text-yellow-800">
                                         Pendiente
                                     </span>
@@ -1012,7 +1290,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             if (data === 'completado') {
                                 return `
                                     <span class="inline-flex items-center px-3 py-1 rounded-full 
-                                                text-xs font-semibold
+                                                font-semibold
                                                 bg-green-100 text-green-800">
                                         Completado
                                     </span>
@@ -1022,9 +1300,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             return data; // fallback por si aparece otro estado
                         }
                     },
-
                     {
-                        data: 'obs'
+                        data: 'obs',
+                        className: 'text-sm text-gray-700',
+                        render: function(data, type, row) {
+                            return (data === null || data === undefined || data.trim() === '') ?
+                                '<span class="text-gray-400 italic">N/A</span>' :
+                                data;
+                        }
                     },
                     {
                         data: null,
@@ -1051,6 +1334,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             <i class="fa-solid fa-clock-rotate-left text-lg"></i>
                         </button>`;
                         }
+                    },
+                    {
+                        data: null,
+                        className: 'text-center',
+                        orderable: false,
+                        render: function(data, type, row) {
+                            return `<button 
+                            class="text-red-600 hover:text-red-800 transition"
+                            title="Generar PDF"
+                            onclick="generarReportePDF('${row.codEnvio}')">
+                            <i class="fa-solid fa-file-pdf"></i>
+                        </button>`;
+                        }
                     }
                 ],
                 columnDefs: [{
@@ -1065,8 +1361,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 },
                 pageLength: 5,
                 lengthMenu: [
-                    [5, 10, 15, 25],
-                    [5, 10, 15, 25]
+                    [5, 10, 15, 20, 25],
+                    [5, 10, 15, 20, 25]
                 ],
             });
 
@@ -1087,18 +1383,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 $('#filtroEstado').val('');
                 $('#filtroLaboratorio').val('');
                 $('#filtroTipoMuestra').val('');
-                //limpiar select2
+
+                // Limpiar select2 (si usas Select2 para análisis)
                 $('#filtroTipoAnalisis').val(null).trigger('change');
+
                 $('#filtroGalpon').val('');
-                $('#filtroGranja').val('');
                 $('#filtroEdadDesde').val('');
                 $('#filtroEdadHasta').val('');
+
+                // === NUEVO: Limpiar dropdown de granjas múltiples ===
+                const checkboxesGranja = document.querySelectorAll('input[name="filtroGranja[]"]');
+                checkboxesGranja.forEach(cb => {
+                    cb.checked = false;
+                });
+
+                // Restaurar texto del botón dropdown
+                const dropdownText = document.getElementById('dropdownGranjaText');
+                if (dropdownText) {
+                    dropdownText.textContent = "Seleccionar granjas...";
+                    dropdownText.classList.add('text-gray-500');
+                }
+
+                // Cerrar el dropdown si está abierto
+                const dropdownMenu = document.getElementById('dropdownGranjaMenu');
+                if (dropdownMenu) {
+                    dropdownMenu.classList.add('hidden');
+                }
+
+                // Recargar la tabla con filtros limpios
                 cargarTabla();
             });
         });
     </script>
 
-
+    <script>
+        function generarReportePDF(codEnvio) {
+            if (!codEnvio) {
+                alert('Seleccione una solicitud primero');
+                return;
+            }
+            window.open(`reports/reporteSeguimientoMuestrasPdf.php?codEnvio=${codEnvio}`, '_blank');
+        }
+    </script>
 
     <script>
         let codEnvioActual = null;
@@ -1177,6 +1503,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             if (tab === 3) {
                 cargarCuantitativos();
             }
+            if (tab = 4) {
+                cargarDocumentosDetalle();
+            }
         }
 
         // Cerrar modal al hacer clic fuera
@@ -1243,6 +1572,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 });
         }
 
+        function cargarDocumentosDetalle() {
+            if (!codEnvioActual) return;
+
+            document.getElementById('docsBody').innerHTML =
+                '<tr><td colspan="65" class="text-center py-4 text-gray-500">Cargando...</td></tr>';
+
+            fetch('dashboard-seguimiento.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'accion=cargar_docsDetalle&codEnvio=' + encodeURIComponent(codEnvioActual)
+                })
+                .then(r => r.text())
+                .then(html => {
+                    document.getElementById('docsBody').innerHTML = html;
+                })
+                .catch(error => {
+                    document.getElementById('docsBody').innerHTML =
+                        '<tr><td colspan="65" class="text-center py-4 text-red-500">Error al cargar los datos</td></tr>';
+                    console.error('Error:', error);
+                });
+        }
+
         function verHistorial(codEnvio) {
             document.getElementById('timelineContainer').innerHTML = '<div class="text-center py-8"><p class="text-gray-500">Cargando historial...</p></div>';
             document.getElementById('modalTracking').classList.remove('hidden');
@@ -1283,70 +1636,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 const isCompleted = evento.estado === 'completado';
                 const iconClass = getIcono(evento.paso);
                 const colorClase = isCompleted ? 'bg-green-100 border-green-300' : 'bg-yellow-100 border-yellow-300';
-                const colorTexto = isCompleted ? 'text-green-700' : 'text-yellow-700';
                 const colorIcono = isCompleted ? 'bg-green-500' : 'bg-yellow-500';
 
                 let html = `
                     <div class="relative">
-                        <div class="flex gap-6">
+                        <div class="flex gap-4">
                             <!-- Línea vertical -->
                             <div class="flex flex-col items-center">
-                                <div class="${colorIcono} rounded-full w-12 h-12 flex items-center justify-center text-white shadow-lg">
-                                    <i class="fas ${iconClass} text-lg"></i>
+                                <div class="${colorIcono} rounded-full w-9 h-9 flex items-center justify-center text-white shadow">
+                                    <i class="fas ${iconClass} text-sm"></i>
                                 </div>
-                                ${index < timeline.length - 1 ? '<div class="w-1 h-20 bg-gray-300 my-2"></div>' : ''}
+                                ${
+                                    index < timeline.length - 1
+                                        ? '<div class="w-0.5 h-12 bg-gray-300 my-1"></div>'
+                                        : ''
+                                }
                             </div>
 
                             <!-- Contenido -->
-                            <div class="flex-1 pt-2 mb-4">
-                                <div class="p-4 ${colorClase} border border-opacity-30 rounded-lg">
-                                    <div class="flex justify-between items-start mb-4">
+                            <div class="flex-1 pt-1">
+                                <div class="p-3 ${colorClase} border border-opacity-30 rounded-lg">
+                                    <div class="flex justify-between items-start gap-3">
                                         <div>
-                                            <h3 class="font-bold text-gray-800 text-lg">${evento.titulo}</h3>
-                                            <p class="text-sm text-gray-600 mt-1">${evento.descripcion}</p>
+                                            <h3 class="font-bold text-gray-800 text-sm leading-tight">
+                                                ${evento.titulo}
+                                            </h3>
+                                            <p class="text-xs text-gray-600 mt-0.5 leading-snug">
+                                                ${evento.descripcion}
+                                            </p>
                                         </div>
-                                        <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold ${isCompleted ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'}">
+                                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold
+                                            ${isCompleted ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'}">
                                             ${isCompleted ? 'Completado' : 'Pendiente'}
                                         </span>
                                     </div>
 
                                     <!-- Detalles -->
-                                    <div class="grid grid-cols-2 gap-3 mt-3 text-sm border-t border-opacity-20 border-gray-400 pt-3">
-                `;
+                                    <div class="grid grid-cols-3 gap-2 mt-2 text-xs border-t border-opacity-20 border-gray-400 pt-2">
+                    `;
 
                 // Agregar detalles
                 for (const [clave, valor] of Object.entries(evento.detalles)) {
                     html += `
-                        <div>
-                            <p class="text-gray-600 font-semibold">${clave}</p>
-                            <p class="text-gray-800">${valor}</p>
-                        </div>
-                    `;
+                <div>
+                    <p class="text-gray-600 font-semibold leading-tight">${clave}</p>
+                    <p class="text-gray-800 leading-tight">${valor}</p>
+                </div>
+            `;
                 }
 
                 html += `
-                                    </div>
+                            </div>
 
-                                    <!-- Meta información -->
-                                    <div class="flex justify-between items-center mt-3 text-xs text-gray-600 border-t border-opacity-20 border-gray-400 pt-3">
-                                        <div>
-                                            <i class="fas fa-user-circle mr-1"></i>
-                                            <strong>${evento.usuario}</strong>
-                                        </div>
-                                        <div>
-                                            <i class="fas fa-calendar mr-1"></i>
-                                            ${evento.fecha ? new Date(evento.fecha).toLocaleString('es-PE') : 'Sin fecha'}
-                                        </div>
-                                    </div>
+                            <!-- Meta información -->
+                            <div class="flex justify-between items-center mt-2 text-[11px] text-gray-600 border-t border-opacity-20 border-gray-400 pt-2">
+                                <div>
+                                    <i class="fas fa-user-circle mr-1"></i>
+                                    <strong>${evento.usuario}</strong>
+                                </div>
+                                <div>
+                                    <i class="fas fa-calendar mr-1"></i>
+                                    ${evento.fecha ? new Date(evento.fecha).toLocaleString('es-PE') : 'Sin fecha'}
                                 </div>
                             </div>
                         </div>
                     </div>
-                `;
+                </div>
+            </div>
+        `;
 
                 container.innerHTML += html;
             });
         }
+
 
         function getIcono(paso) {
             const iconos = {
@@ -1415,6 +1777,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         function exportarReporteExcel() {
             window.location.href = "exportar_excel_resultados.php";
         }
+
+        function previsualizarPDF(ruta) {
+            document.getElementById('iframePDF').src = ruta;
+            document.getElementById('modalPDF').classList.remove('hidden');
+        }
+
+        function cerrarModalPDF() {
+            document.getElementById('modalPDF').classList.add('hidden');
+            document.getElementById('iframePDF').src = '';
+        }
+
+        // Dropdown Granja
+        const dropdownBtn = document.getElementById('dropdownGranjaBtn');
+        const dropdownMenu = document.getElementById('dropdownGranjaMenu');
+        const dropdownText = document.getElementById('dropdownGranjaText');
+        const checkboxes = dropdownMenu.querySelectorAll('input[type="checkbox"]');
+
+        dropdownBtn.addEventListener('click', () => {
+            dropdownMenu.classList.toggle('hidden');
+        });
+
+        // Actualizar texto del botón según selección
+        function updateGranjaText() {
+            const selected = Array.from(checkboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.parentElement.textContent.trim());
+
+            if (selected.length === 0) {
+                dropdownText.textContent = "Seleccionar granjas...";
+                dropdownText.classList.add('text-gray-500');
+            } else if (selected.length === 1) {
+                dropdownText.textContent = selected[0];
+                dropdownText.classList.remove('text-gray-500');
+            } else {
+                dropdownText.textContent = `${selected.length} granjas seleccionadas`;
+                dropdownText.classList.remove('text-gray-500');
+            }
+        }
+
+        // Escuchar cambios en checkboxes
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateGranjaText);
+        });
+
+        // Cerrar dropdown al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                dropdownMenu.classList.add('hidden');
+            }
+        });
     </script>
 
 

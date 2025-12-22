@@ -1,11 +1,11 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => null,
+        'reference' => '0eca274ca4d42fb298419158855a2d6e0ce8200b',
         'name' => 'sistemaslap5/grs_sanidad_web_2',
         'dev' => true,
     ),
@@ -155,12 +155,12 @@
             'dev_requirement' => false,
         ),
         'sistemaslap5/grs_sanidad_web_2' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => null,
+            'reference' => '0eca274ca4d42fb298419158855a2d6e0ce8200b',
             'dev_requirement' => false,
         ),
         'symfony/polyfill-mbstring' => array(

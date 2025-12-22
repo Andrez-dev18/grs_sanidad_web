@@ -16,189 +16,209 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     if ($_POST['accion'] === 'cargar_tracking') {
         $codEnvio = $_POST['codEnvio'];
 
-        // 1. DATOS DE LA SOLICITUD CABECERA
+        // 1. CABECERA
         $sqlCab = "
             SELECT 
                 codEnvio,
-                fecEnvio,
-                horaEnvio,
                 nomLab,
                 nomEmpTrans,
                 usuarioRegistrador,
                 usuarioResponsable,
                 autorizadoPor,
-                fechaHoraRegistro as fechaRegistroCab,
-                estado as estadoCab
+                fechaHoraRegistro as fechaRegistroCab
             FROM san_fact_solicitud_cab
             WHERE codEnvio = ?
             LIMIT 1
         ";
-        
+
         $stmtCab = $conexion->prepare($sqlCab);
         if (!$stmtCab) {
-            echo json_encode(array('success' => false, 'error' => 'Error en consulta cabecera: ' . $conexion->error));
+            echo json_encode(['success' => false, 'error' => 'Error prepare cabecera']);
             exit;
         }
-        
         $stmtCab->bind_param("s", $codEnvio);
         $stmtCab->execute();
         $resultCab = $stmtCab->get_result();
         $dataCab = $resultCab->fetch_assoc();
 
         if (!$dataCab) {
-            echo json_encode(array('success' => false, 'error' => 'No se encontró la solicitud'));
+            echo json_encode(['success' => false, 'error' => 'No se encontró la solicitud']);
             exit;
         }
 
-        // 2. DATOS DEL DETALLE (SOLICITUD DE ANÁLISIS)
-        // Contar cada análisis como registro individual
+        // 2. DETALLE: conteos
         $sqlDet = "
             SELECT 
                 COUNT(*) as totalAnalisis,
                 SUM(CASE WHEN estado_cuali = 'completado' THEN 1 ELSE 0 END) as cualiCompletados,
-                SUM(CASE WHEN estado_cuanti = 'completado' THEN 1 ELSE 0 END) as cuantiCompletados,
-                MAX(fecToma) as fechaUltimaActualizacion
+                SUM(CASE WHEN estado_cuanti = 'completado' THEN 1 ELSE 0 END) as cuantiCompletados
             FROM san_fact_solicitud_det
             WHERE codEnvio = ?
-            GROUP BY codEnvio
         ";
-        
+
         $stmtDet = $conexion->prepare($sqlDet);
         if (!$stmtDet) {
-            echo json_encode(array('success' => false, 'error' => 'Error en consulta detalle: ' . $conexion->error));
+            echo json_encode(['success' => false, 'error' => 'Error prepare conteo']);
             exit;
         }
-        
         $stmtDet->bind_param("s", $codEnvio);
         $stmtDet->execute();
         $resultDet = $stmtDet->get_result();
         $dataDet = $resultDet->fetch_assoc();
-        
-        // Si no hay resultados, crear array vacío
-        if (!$dataDet) {
-            $dataDet = array(
-                'totalAnalisis' => 0,
-                'cualiCompletados' => 0,
-                'cuantiCompletados' => 0,
-                'fechaUltimaActualizacion' => $dataCab['fechaRegistroCab']
-            );
+
+        $totalAnalisis = $dataDet['totalAnalisis'] ?? 0;
+        $cualiCompletados = $dataDet['cualiCompletados'] ?? 0;
+        $cuantiCompletados = $dataDet['cuantiCompletados'] ?? 0;
+
+        // 3. Fecha y usuario último resultado CUALITATIVO
+        $sqlCuali = "
+            SELECT fechaHoraRegistro, usuarioRegistrador
+            FROM san_fact_resultado_analisis
+            WHERE codEnvio = ?
+            ORDER BY fechaHoraRegistro DESC
+            LIMIT 1
+        ";
+        $stmtCuali = $conexion->prepare($sqlCuali);
+        $fechaCuali = $dataCab['fechaRegistroCab'];
+        $usuarioCuali = $dataCab['usuarioRegistrador'];
+        if ($stmtCuali) {
+            $stmtCuali->bind_param("s", $codEnvio);
+            $stmtCuali->execute();
+            $resCuali = $stmtCuali->get_result();
+            if ($row = $resCuali->fetch_assoc()) {
+                $fechaCuali = $row['fechaHoraRegistro'];
+                $usuarioCuali = $row['usuarioRegistrador'] ?? $usuarioCuali;
+            }
         }
 
-        // No consultamos a otras tablas por ahora
-        $dataCuali = array();
-        $dataCuanti = array();
+        // 4. Fecha y usuario último resultado CUANTITATIVO (de san_analisis_pollo_bb_adulto)
+        $sqlCuanti = "
+            SELECT fechaHoraRegistro, usuario_registro as usuarioRegistrador
+            FROM san_analisis_pollo_bb_adulto
+            WHERE codigo_envio = ?
+            ORDER BY fechaHoraRegistro DESC
+            LIMIT 1
+        ";
+        $stmtCuanti = $conexion->prepare($sqlCuanti);
+        $fechaCuanti = $dataCab['fechaRegistroCab'];
+        $usuarioCuanti = $dataCab['usuarioRegistrador'];
+        if ($stmtCuanti) {
+            $stmtCuanti->bind_param("s", $codEnvio);
+            $stmtCuanti->execute();
+            $resCuanti = $stmtCuanti->get_result();
+            if ($row = $resCuanti->fetch_assoc()) {
+                $fechaCuanti = $row['fechaHoraRegistro'];
+                $usuarioCuanti = $row['usuarioRegistrador'] ?? $usuarioCuanti;
+            }
+        }
 
-        // Construir respuesta JSON con el timeline
-        $timeline = array();
+        // Timeline
+        $timeline = [];
 
-        // Evento 1: Solicitud Registrada
-        $timeline[] = array(
+        // Paso 1
+        $timeline[] = [
             'paso' => 1,
             'titulo' => 'Solicitud Registrada',
             'descripcion' => 'Solicitud creada en el sistema',
             'fecha' => $dataCab['fechaRegistroCab'],
             'usuario' => $dataCab['usuarioRegistrador'],
             'estado' => 'completado',
-            'detalles' => array(
+            'detalles' => [
                 'Laboratorio' => $dataCab['nomLab'] ?? 'N/A',
                 'Empresa Transporte' => $dataCab['nomEmpTrans'] ?? 'N/A',
                 'Responsable' => $dataCab['usuarioResponsable'] ?? 'N/A',
                 'Autorizado Por' => $dataCab['autorizadoPor'] ?? 'N/A'
-            )
-        );
+            ]
+        ];
 
-        // Evento 2: Solicitudes de Análisis Ingresadas
-        $timeline[] = array(
+        // Paso 2
+        $timeline[] = [
             'paso' => 2,
             'titulo' => 'Análisis Solicitados',
-            'descripcion' => 'Se ingresaron ' . ($dataDet['totalAnalisis'] ?? 0) . ' solicitudes de análisis',
+            'descripcion' => "Se ingresaron $totalAnalisis solicitudes de análisis",
             'fecha' => $dataCab['fechaRegistroCab'],
             'usuario' => $dataCab['usuarioRegistrador'],
             'estado' => 'completado',
-            'detalles' => array(
-                'Total de Análisis' => $dataDet['totalAnalisis'] ?? 0,
-                'Pendientes' => ($dataDet['totalAnalisis'] ?? 0) - ($dataDet['cualiCompletados'] ?? 0)
-            )
-        );
+            'detalles' => ['Total de Análisis' => $totalAnalisis]
+        ];
 
-        // Evento 3: Resultados Cualitativos
-        $cualiCompletados = $dataDet['cualiCompletados'] ?? 0;
-        $totalAnalisis = $dataDet['totalAnalisis'] ?? 0;
+        // Paso 3: Resultados Cualitativos
         $estadoCuali = ($cualiCompletados == $totalAnalisis && $totalAnalisis > 0) ? 'completado' : 'pendiente';
-        
-        $timeline[] = array(
+        $timeline[] = [
             'paso' => 3,
             'titulo' => 'Resultados Cualitativos',
             'descripcion' => 'Ingreso de resultados de análisis cualitativos',
-            'fecha' => $dataDet['fechaUltimaActualizacion'] ?? $dataCab['fechaRegistroCab'],
-            'usuario' => $dataCab['usuarioRegistrador'],
+            'fecha' => $fechaCuali,
+            'usuario' => $usuarioCuali,
             'estado' => $estadoCuali,
-            'detalles' => array(
+            'detalles' => [
                 'Total Análisis' => $totalAnalisis,
                 'Completados' => $cualiCompletados,
                 'Pendientes' => $totalAnalisis - $cualiCompletados
-            )
-        );
+            ]
+        ];
 
-        // Evento 4: Resultados Cuantitativos
-        $cuantiCompletados = $dataDet['cuantiCompletados'] ?? 0;
+        // Paso 4: Resultados Cuantitativos
         $estadoCuanti = ($cuantiCompletados == $totalAnalisis && $totalAnalisis > 0) ? 'completado' : 'pendiente';
-        
-        $timeline[] = array(
+        $timeline[] = [
             'paso' => 4,
             'titulo' => 'Resultados Cuantitativos',
             'descripcion' => 'Ingreso de resultados de análisis cuantitativos',
-            'fecha' => $dataDet['fechaUltimaActualizacion'] ?? $dataCab['fechaRegistroCab'],
-            'usuario' => $dataCab['usuarioRegistrador'],
+            'fecha' => $fechaCuanti,
+            'usuario' => $usuarioCuanti,
             'estado' => $estadoCuanti,
-            'detalles' => array(
+            'detalles' => [
                 'Total Análisis' => $totalAnalisis,
                 'Completados' => $cuantiCompletados,
                 'Pendientes' => $totalAnalisis - $cuantiCompletados
-            )
-        );
+            ]
+        ];
 
-        // Evento 5: Proceso Completo
-        $todoCompleto = ($cualiCompletados > 0 && 
-                        $cuantiCompletados > 0 &&
-                        $cualiCompletados == $totalAnalisis && 
-                        $cuantiCompletados == $totalAnalisis &&
-                        $totalAnalisis > 0);
-        
-        $timeline[] = array(
+        // Paso 5: Dinámico según si está realmente completado o no
+        $todoCompleto = ($cualiCompletados == $totalAnalisis && $cuantiCompletados == $totalAnalisis && $totalAnalisis > 0);
+
+        // Fecha y usuario del último avance real (el más reciente entre cuali y cuanti)
+        $fechaFinal = max(strtotime($fechaCuali), strtotime($fechaCuanti));
+        $fechaFinal = date('Y-m-d H:i:s', $fechaFinal);
+        $usuarioFinal = (strtotime($fechaCuanti) > strtotime($fechaCuali)) ? $usuarioCuanti : $usuarioCuali;
+
+        // Título y descripción que cambian según el estado real
+        $tituloPaso5 = $todoCompleto ? 'Envío Completado' : 'Pendiente de Completar';
+        $descripcionPaso5 = $todoCompleto
+            ? '¡Todos los análisis han sido completados exitosamente!'
+            : 'Pendiente ingresar los resultados faltantes para completar el envío';
+
+        $timeline[] = [
             'paso' => 5,
-            'titulo' => 'Envío Completado',
-            'descripcion' => 'Todos los análisis han sido completados',
-            'fecha' => $dataDet['fechaUltimaActualizacion'] ?? null,
-            'usuario' => 'Sistema',
+            'titulo' => $tituloPaso5,
+            'descripcion' => $descripcionPaso5,
+            'fecha' => $fechaFinal,
+            'usuario' => $usuarioFinal,
             'estado' => $todoCompleto ? 'completado' : 'pendiente',
-            'detalles' => array(
+            'detalles' => [
                 'Código Envío' => $codEnvio,
-                'Estado General' => $todoCompleto ? 'COMPLETADO' : 'EN PROCESO'
-            )
-        );
+                'Estado General' => $todoCompleto ? 'COMPLETADO' : 'EN PROCESO',
+                'Última acción por' => $usuarioFinal
+            ]
+        ];
 
-        // Calcular porcentaje de completación
-        // Contamos: completados cuali + completados cuanti / (total análisis * 2)
-        if ($totalAnalisis > 0) {
-            $porcentaje = round((($cualiCompletados + $cuantiCompletados) / ($totalAnalisis * 2)) * 100);
-        } else {
-            $porcentaje = 0;
-        }
+        // Porcentaje
+        $porcentaje = ($totalAnalisis > 0)
+            ? round((($cualiCompletados + $cuantiCompletados) / ($totalAnalisis * 2)) * 100)
+            : 0;
 
-        echo json_encode(array(
+        echo json_encode([
             'success' => true,
             'timeline' => $timeline,
-            'resumen' => array(
+            'resumen' => [
                 'codEnvio' => $codEnvio,
                 'totalAnalisis' => $totalAnalisis,
                 'cualiCompletados' => $cualiCompletados,
                 'cuantiCompletados' => $cuantiCompletados,
                 'porcentajeComplecion' => $porcentaje
-            )
-        ));
+            ]
+        ]);
 
         exit;
     }
 }
-?>

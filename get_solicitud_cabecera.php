@@ -26,6 +26,7 @@ $q = "
         c.autorizadoPor,
         c.fechaHoraRegistro,
         c.estado,
+        d.posSolicitud,
 
         CASE 
             WHEN SUM(d.estado_cuali = 'pendiente') > 0 THEN 'pendiente'

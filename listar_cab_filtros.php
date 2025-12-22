@@ -15,7 +15,7 @@ $estado = $_POST['estado'] ?? '';
 $laboratorio = $_POST['laboratorio'] ?? '';
 $muestra = $_POST['muestra'] ?? '';
 $analisis = $_POST['analisis'] ?? '';
-$granja = $_POST['granja'] ?? '';
+$granjas = $_POST['granjas'] ?? [];
 $galpon = $_POST['galpon'] ?? '';
 $edadDesde = $_POST['edadDesde'] ?? '';
 $edadHasta = $_POST['edadHasta'] ?? '';
@@ -50,9 +50,13 @@ if ($analisis) {
     $where .= " AND d.nomAnalisis = '$analisis' ";
 }
 
-if ($granja) {
-    $granja = mysqli_real_escape_string($conexion, $granja);
-    $where .= " AND LEFT(d.codRef, 3) = '$granja' ";
+if (!empty($granjas) && is_array($granjas)) {
+    // Escapar cada valor
+    $granjasEscaped = array_map(function($g) use ($conexion) {
+        return "'" . mysqli_real_escape_string($conexion, $g) . "'";
+    }, $granjas);
+
+    $where .= " AND LEFT(d.codRef, 3) IN (" . implode(',', $granjasEscaped) . ") ";
 }
 
 if ($galpon) {
@@ -118,20 +122,22 @@ $totalFiltrados = mysqli_fetch_assoc($totalFiltradosQuery)['total'];
 $dataQuery = mysqli_query($conexion, "
     SELECT 
         c.codEnvio,
-        d.posSolicitud,
         c.fecEnvio,
+        c.horaEnvio,
         c.nomLab,
         c.nomEmpTrans,
         c.usuarioRegistrador,
         c.usuarioResponsable,
         c.autorizadoPor,
-        d.nomMuestra,
-        d.nomAnalisis,
         c.estado,
-        d.obs
+        
+        GROUP_CONCAT(DISTINCT d.nomMuestra ORDER BY d.posSolicitud SEPARATOR ', ') as muestras,
+        GROUP_CONCAT(DISTINCT d.nomAnalisis ORDER BY d.posSolicitud SEPARATOR ', ') as analisis
+        
     FROM san_fact_solicitud_cab c
     LEFT JOIN san_fact_solicitud_det d ON c.codEnvio = d.codEnvio
     $where
+    GROUP BY c.codEnvio
     ORDER BY c.codEnvio DESC
     LIMIT $start, $length
 ");
