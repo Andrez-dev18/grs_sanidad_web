@@ -17,43 +17,48 @@ if (!$codigoEnvio) {
     die("Código de envío no proporcionado.");
 }
 
-// === Cabecera ===
-$stmt = mysqli_prepare($conexion, "
+// --- Cabecera ---
+$queryCab = "
     SELECT
         c.fecEnvio AS fechaEnvio,
         c.horaEnvio,
         c.codEnvio AS codigoEnvio,
         c.nomLab AS laboratorio,
         c.nomEmpTrans AS empresa_transporte,
-        c.usuarioRegistrador,
+        c.usuarioRegistrador AS usuario_registrador,
+        c.usuarioResponsable AS usuario_responsable,
         c.autorizadoPor
     FROM san_fact_solicitud_cab c
     WHERE c.codEnvio = ?
-");
-mysqli_stmt_bind_param($stmt, "s", $codigoEnvio);
-mysqli_stmt_execute($stmt);
-$cab = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
-mysqli_stmt_close($stmt);
+";
+$stmtCab = mysqli_prepare($conexion, $queryCab);
+mysqli_stmt_bind_param($stmtCab, "s", $codigoEnvio);
+mysqli_stmt_execute($stmtCab);
+$cab = mysqli_fetch_assoc(mysqli_stmt_get_result($stmtCab));
+mysqli_stmt_close($stmtCab);
 
 if (!$cab) {
     die("Registro no encontrado.");
 }
 
-// === Detalles: traer todos los registros ===
-$stmt = mysqli_prepare($conexion, "
+// --- Tipos de muestra (para columnas) ---
+$tipos_muestra = [];
+$res_tm = mysqli_query($conexion, "SELECT nombre FROM san_dim_tipo_muestra ORDER BY codigo");
+while ($r = mysqli_fetch_assoc($res_tm)) {
+    $tipos_muestra[] = htmlspecialchars($r['nombre']);
+}
+
+// --- Detalles: traer todos los registros ---
+$detalles_raw = [];
+$res_det = mysqli_query($conexion, "
     SELECT posSolicitud, fecToma, codRef, numMuestras, obs, codAnalisis
     FROM san_fact_solicitud_det
-    WHERE codEnvio = ?
+    WHERE codEnvio = '" . mysqli_real_escape_string($conexion, $codigoEnvio) . "'
     ORDER BY posSolicitud
 ");
-mysqli_stmt_bind_param($stmt, "s", $codigoEnvio);
-mysqli_stmt_execute($stmt);
-$res_det = mysqli_stmt_get_result($stmt);
-$detalles_raw = [];
 while ($row = mysqli_fetch_assoc($res_det)) {
     $detalles_raw[] = $row;
 }
-mysqli_stmt_close($stmt);
 
 // === AGRUPAR POR posSolicitud ===
 $grupos = [];
@@ -75,12 +80,12 @@ foreach ($detalles_raw as $row) {
         $grupos[$posSolicitud]['analisis_codigos'][] = $row['codAnalisis'];
     }
     // Si aún no tiene observación y esta no está vacía, tomarla
-    if (empty($grupos[$posSolicitud]['obs']) && !empty($row['obs'])) {
+   /* if (empty($grupos[$posSolicitud]['obs']) && !empty($row['obs'])) {
         $grupos[$posSolicitud]['obs'] = $row['obs'];
-    }
+    }*/
 }
 
-// === Procesar cada grupo ===
+// === Procesar cada grupo: obtener análisis, paquetes y tipo de muestra ===
 $detalles_agrupados = [];
 foreach ($grupos as $grupo) {
     $analisisCodigos = array_unique($grupo['analisis_codigos']);
@@ -89,7 +94,7 @@ foreach ($grupos as $grupo) {
 
     if (!empty($analisisCodigos)) {
         $placeholders = str_repeat('?,', count($analisisCodigos) - 1) . '?';
-        $sql = "
+        /*$sql = "
             SELECT 
                 a.nombre AS analisis_nombre,
                 p.nombre AS paquete_nombre,
@@ -99,31 +104,56 @@ foreach ($grupos as $grupo) {
             JOIN san_dim_tipo_muestra tm ON p.tipoMuestra = tm.codigo
             WHERE a.codigo IN ($placeholders)
             ORDER BY p.nombre, a.nombre
-        ";
-        $stmt2 = mysqli_prepare($conexion, $sql);
-        mysqli_stmt_bind_param($stmt2, str_repeat('s', count($analisisCodigos)), ...$analisisCodigos);
-        mysqli_stmt_execute($stmt2);
-        $result = mysqli_stmt_get_result($stmt2);
+        ";*/
+        $sql = "
+        SELECT
+        nomAnalisis AS analisis_nombre,
+        nomPaquete AS paquete_nombre,
+        nomMuestra AS tipo_muestra_nombre
+    FROM
+        san_fact_solicitud_det sd
+    WHERE
+        sd.codEnvio = ? AND sd.posSolicitud = ? AND sd.codAnalisis IN ($placeholders)
+    ORDER BY
+        paquete_nombre, analisis_nombre
+";
+        $stmt = mysqli_prepare($conexion, $sql);
+
+        // Tipos: 's' para codEnvio, 's' para posSolicitud, y luego N 's' para análisis
+        $tipos = 'ss' . str_repeat('s', count($analisisCodigos));
+
+        // Parámetros: codEnvio, posSolicitud, y luego los códigos de análisis
+        mysqli_stmt_bind_param($stmt, $tipos, $codigoEnvio, $grupo['posSolicitud'], ...$analisisCodigos);
+
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
 
         $paquetes = [];
         while ($a = mysqli_fetch_assoc($result)) {
             $paquete = htmlspecialchars($a['paquete_nombre']);
             $analisisNombre = htmlspecialchars($a['analisis_nombre']);
             $paquetes[$paquete][] = $analisisNombre;
+            // Tomar el tipo de muestra (debería ser el mismo en todos)
             if ($tipo_muestra === '-') {
                 $tipo_muestra = htmlspecialchars($a['tipo_muestra_nombre']);
             }
         }
-        mysqli_stmt_close($stmt2);
+        mysqli_stmt_close($stmt);
 
+        // Formato: "<b>Paquete X:</b> anal1, anal2"
         foreach ($paquetes as $paq => $analisisLista) {
             $analisisConPaquete[] = '<b>' . $paq . ':</b> ' . implode(', ', $analisisLista);
         }
     }
 
-    $analisisTexto = implode('<br>', $analisisConPaquete);
+    // Formatear en líneas de hasta 2 paquetes por línea
+    $analisisFormateados = [];
+    for ($i = 0; $i < count($analisisConPaquete); $i += 2) {
+        $linea = implode(', ', array_slice($analisisConPaquete, $i, 2));
+        $analisisFormateados[] = $linea;
+    }
 
-    $grupo['analisis_nombres'] = $analisisTexto ?: 'Ninguno';
+    $grupo['analisis_nombres'] = implode("\n", $analisisFormateados);
     $grupo['tipo_muestra'] = $tipo_muestra;
     $detalles_agrupados[] = $grupo;
 }
@@ -225,7 +255,7 @@ $camposCabecera = [
     'Laboratorio' => $cab['laboratorio'],
     'Empresa de Transporte' => $cab['empresa_transporte'],
     'Autorizado por' => $cab['autorizadoPor'],
-    'Usuario Registrador' => $cab['usuarioRegistrador']
+    'Usuario Registrador' => $cab['usuario_registrador']
 ];
 
 $html .= generarTablaAlineada($camposCabecera);

@@ -37,7 +37,6 @@ if (!$conexion) {
             padding: 0;
             height: 100%;
             overflow: hidden;
-            /* ← CLAVE: elimina scroll del body */
         }
 
         .sidebar {
@@ -120,7 +119,6 @@ if (!$conexion) {
             border-left: 4px solid #60a5fa;
         }
 
-        /* Alineación del contenido del item */
         .menu-item>span {
             display: flex;
             align-items: center;
@@ -156,7 +154,6 @@ if (!$conexion) {
             justify-content: center;
         }
 
-        /* estado activo para enlaces y botones */
         .menu-link.active,
         .menu-item.active,
         .submenu-toggle.active {
@@ -165,14 +162,12 @@ if (!$conexion) {
             font-weight: 600;
         }
 
-        /* alternativa visual: sombra / fondo para botones activos */
         .menu-item.active,
         .submenu-toggle.active {
             background: rgba(255, 255, 255, 0.12);
             box-shadow: 4 6px 18px rgba(0, 0, 0, 0.25);
         }
 
-        /* Submenu */
         .submenu.hidden {
             display: none !important;
         }
@@ -195,21 +190,16 @@ if (!$conexion) {
             line-height: 1.3;
         }
 
-        /* Content area */
+        /* Content area - ¡CORRECCIÓN CLAVE! */
         .content-wrapper {
             margin-left: 300px;
             transition: margin-left 0.3s ease;
         }
 
-
         @media (min-width: 1024px) {
             .sidebar {
                 transform: translateX(0);
             }
-
-            /* .content-wrapper {
-                margin-left: 300px;
-            }*/
 
             .sidebar-overlay {
                 display: none;
@@ -222,6 +212,10 @@ if (!$conexion) {
 
         @media (max-width: 1023px) {
             .content-wrapper {
+                margin-left: 0;
+            }
+
+            .content-wrapper.sidebar-collapsed {
                 margin-left: 0;
             }
         }
@@ -259,6 +253,7 @@ if (!$conexion) {
             transform: translate(-50%, -50%);
         }
 
+        /* Clave: Asegurar que el content-wrapper tenga margen izquierdo cuando el sidebar está abierto */
         .content-wrapper.sidebar-collapsed {
             margin-left: 0;
         }
@@ -295,7 +290,7 @@ if (!$conexion) {
             </div>
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'dashboard-dashboard.php', 'criador-emprendedor', 'Dashboard')">
+                    onclick="activateAndLoad(this, 'dashboard-dashboard.php', '📊 Dashboard',  'Resumen visual de los datos registrados en el sistema')">
                     <span class="flex items-center gap-3">
                         <i class="fas fa-chart-line"></i>
                         <span class="font-medium">1.- Dashboard</span>
@@ -306,76 +301,72 @@ if (!$conexion) {
 
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'dashboard-registro-muestras.php', 'criador-emprendedor', 'Registro de muestras')">
+                    onclick="activateAndLoad(this, 'dashboard-registro-muestras.php', '📋 Registro de Muestras', 'Registro del pedido de muestra')">
                     <span class="flex items-center gap-3">
                         <i class="fas fa-vial"></i>
-                        <span class="font-medium">2.- Registro de muestras</span>
+                        <span class="font-medium">2.- Registro de Muestras</span>
                     </span>
                 </button>
 
             </div>
 
+            <div class="menu-group">
+                <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                    onclick="activateAndLoad(this, 'dashboard-rpta-laboratorio.php', '📋 Registro Laboratorio', 'Registro de la respuesta  del laboratorio')">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-atom"></i>
+                        <span class="font-medium">3.- Registro Laboratorio</span>
+                    </span>
+                </button>
 
+            </div>
+            <div class="menu-group">
+                <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                    onclick="activateAndLoad(this, 'dashboard-planificacion.php', '📅 Planificación', 'Registro de la planificación')">
+                    <span class="flex items-center gap-3">
+                        <i class="fas fa-calendar"></i>
+                        <span class="font-medium">4.- Planificación</span>
+                    </span>
+                </button>
+
+            </div>
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                     onclick="toggleSubmenu('submenu-reporte')">
                     <span class="flex items-center gap-3">
                         <i class="fa-solid fa-file"></i>
-                        <span class="font-medium">3.- Reportes</span>
+                        <span class="font-medium">5.- Reportes</span>
                     </span>
                     <i class="fas fa-chevron-down text-sm"></i>
                 </button>
 
                 <div id="submenu-reporte" class="submenu hidden pl-10 mt-2 space-y-2">
                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-reportes.php', 'reportes', 'Gestión de Reportes')"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-reportes.php', '📈 Formato de Muestras', 'Formato PDF y envío de correo de los pedidos de muestra')"
                         class="menu-link block text-gray-400 hover:text-white">Formato de Muestras</a>
-                    <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-muestras-cabecera.php','Muestra cabecera', 'Muestra cabecera')"
+                    <!--a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-muestras-cabecera.php', '🗃️ Listado de Muestras', 'Listado de los pedidos de muestra registrados en el sistema')"
                         class="menu-link block text-gray-400 hover:text-white">Listado de Muestras</a>
                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-detalle-muestras.php','Detalle', 'Detalle')"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-detalle-muestras.php', '📁 Listado de Solicitudes', 'Listado de las solicitudes registradas en el sistema')"
                         class="menu-link block text-gray-400 hover:text-white">Listado de Solicitudes</a>
                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados.php','Resultados', 'Resultados')"
-                        class="menu-link block text-gray-400 hover:text-white">Resultados cualitativos</a>
-                   
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados.php', '🗒️ Resultados Cualitativos', 'Listado de los resultados cualitativos registrados en el sistema')"
+                        class="menu-link block text-gray-400 hover:text-white">Resultados Cualitativos</a>
+
                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados-pollo-bb.php','Resultados', 'Resultados')"
-                        class="menu-link block text-gray-400 hover:text-white">Resultados cuantitativos pollo
-                        bebe</a>
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados-pollo-bb.php', '📊 Resultados Cuantitativos Pollo Bebe', 'Listado de los resultados cuantitativos de pollo bebe registrados en el sistema')"
+                        class="menu-link block text-gray-400 hover:text-white">Resultados Cuantitativos Pollo Bebe</a>
                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados-pollo-adulto.php','Resultados', 'Resultados')"
-                        class="menu-link block text-gray-400 hover:text-white">Resultados cuantitativos pollo
-                        adulto</a>
-                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-seguimiento.php','seguimiento', 'Seguimiento de muestras')"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados-pollo-adulto.php', '📊 Resultados Cuantitativos Pollo Adulto', 'Listado de los resultados cuantitativos de pollo adulto registrados en el sistema')"
+                        class="menu-link block text-gray-400 hover:text-white">Resultados cuantitativos pollo Adulto</a> -->
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-seguimiento.php', '📊 Seguimiento', 'Seguimiento de los resultados cualitativo y cuantitativo registrados en el sistema')"
                         class="menu-link block text-gray-400 hover:text-white">Seguimiento</a>
 
                 </div>
 
 
-                <div class="menu-group">
-                    <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                        onclick="toggleSubmenu('submenu-repuestasLab')">
-                        <span class="flex items-center gap-3">
-                            <i class="fa-solid fa-atom"></i>
-                            <span class="font-medium">4.- Respuesta Laboratorio</span>
-                        </span>
-                        <i class="fas fa-chevron-down text-sm"></i>
-                    </button>
-
-                    <div id="submenu-repuestasLab" class="submenu hidden pl-10 mt-2 space-y-2">
-
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-rpta-laboratorio.php', 'respuestalab', 'Respuesta de laboratorio')"
-                            class="menu-link block text-gray-400 hover:text-white">Resultados Cualitativos</a>
-                       <a href="#" onclick="selectMenuItem(this); loadDashboardAndData('dashboard-serologia.php', 'respuestalab', 'Respuesta de laboratorio')" class="menu-link block text-gray-400 hover:text-white">Resultados Cuantitativos</a>
-
-
-                    </div>
-
-                </div>
 
                 <!-- MANTENIMIENTOS -->
                 <div class="menu-group">
@@ -383,7 +374,7 @@ if (!$conexion) {
                         onclick="toggleSubmenu('submenu-maestros-sistema')">
                         <span class="flex items-center gap-3">
                             <i class="fas fa-cogs w-5"></i>
-                            <span class="font-medium">5.- Configuracion</span>
+                            <span class="font-medium">6.- Configuracion</span>
                         </span>
                         <i class="fas fa-chevron-down text-sm"></i>
                     </button>
@@ -391,22 +382,25 @@ if (!$conexion) {
                     <div id="submenu-maestros-sistema" class="submenu hidden pl-10 mt-2 space-y-2">
 
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empresas-transporte.php','Empresas de transporte', 'Gestion de empresas de Transporte')"
+                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empresas-transporte.php','🚚 Empresas de transporte', 'Administre las empresas de transporte registradas en el sistema')"
                             class="menu-link block text-gray-400 hover:text-white">Empresas de transporte</a>
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-laboratorio.php','laboratorio', 'Laboratorio')"
+                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-laboratorio.php','🔬 Laboratorio', 'Administre los laboratorios registrados en el sistema')"
                             class="menu-link block text-gray-400 hover:text-white">Laboratorios</a>
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-tipo-muestra.php','Tipo muestra', 'tipo muestra')"
+                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-tipo-muestra.php','🧪 Tipo muestra', 'Administre los tipos de muestra registrados en el sistema')"
                             class="menu-link block text-gray-400 hover:text-white">Tipos de Muestra</a>
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-paquete-analisis.php','Paquete analisis', 'Paquete analisis')"
-                            class="menu-link block text-gray-400 hover:text-white">Paquetes de Analisis</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-analisis.php','Analisis', 'Analisis')"
+                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-analisis.php','🔍 Analisis', 'Administre los analisis registrados en el sistema')"
                             class="menu-link block text-gray-400 hover:text-white">Analisis</a>
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-correo-contactos.php','Correo contactos', 'Correo contactos')"
+                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-paquete-analisis.php','📦 Paquete analisis', 'Administre los paquetes de analisis registrados en el sistema')"
+                            class="menu-link block text-gray-400 hover:text-white">Paquetes de Analisis</a>
+                        <a href="#"
+                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-respuesta.php','🛠️ Tipos de Respuesta', 'Administre los tipos de respuestas registrados de los analisis')"
+                            class="menu-link block text-gray-400 hover:text-white">Tipos de Respuesta</a>
+                        <a href="#"
+                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-correo-contactos.php','📧 Correo y Contactos', 'Administre  tu cuenta de correo y tus contactos para envío de ')"
                             class="menu-link block text-gray-400 hover:text-white">Correo contactos</a>
                     </div>
                 </div>
@@ -416,19 +410,6 @@ if (!$conexion) {
         </nav>
 
 
-        <script>
-            function toggleSubmenu(id, btn) {
-                const el = document.getElementById(id);
-                if (!el) return;
-
-                el.classList.toggle('hidden');
-
-                // si se pasó el botón, alternar su clase active (no limpiar los otros)
-                if (btn) {
-                    btn.classList.toggle('active');
-                }
-            }
-        </script>
 
     </aside>
 
@@ -440,17 +421,17 @@ if (!$conexion) {
         <!-- Top Bar -->
         <header class="bg-white shadow-sm sticky top-0 z-50">
             <div class="px-4 py-4 flex items-center justify-between">
-                <div class="flex items-center gap-4">
-
+                <div class="flex items-start gap-4">
                     <!-- Botón PARA DESKTOP (ocultar sidebar) -->
-                    <button class="" onclick="toggleSidebarCollapse()">
-                        <i class="fas fa-bars"></i>
+                    <button class="mt-1" onclick="toggleSidebarCollapse()">
+                        <i class="fas fa-bars text-gray-600 text-lg"></i>
                     </button>
                     <div>
-                        <h1 id="" class="text-2xl font-bold text-gray-800">Sistema de Sanidad GRS</h1>
-                        <p id="dashboardTitle" class="text-sm text-gray-500"></p>
-                    </div>
+                        <h1 id="dashboardTitle" class="text-2xl font-bold text-gray-800 leading-tight">
 
+                        </h1>
+                        <p id="dashboardsubTitle" class="text-xs text-gray-500 mt-1"></p>
+                    </div>
                 </div>
 
                 <!-- User Dropdown -->
@@ -490,107 +471,11 @@ if (!$conexion) {
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
             </div>
 
-            <iframe id="dashboardFrame" src="dashboard-capturas.html" onload="hideLoading()">
-            </iframe>
+            <iframe id="dashboardFrame"></iframe>
         </main>
     </div>
 
     <script>
-        // Toggle Sidebar
-
-
-        // Load Dashboard por defecto
-        function loadDashboard(url, element) {
-            // Prevenir comportamiento por defecto del enlace
-            event.preventDefault();
-
-            // Mostrar loading
-            showLoading();
-
-            // Actualizar menu activo
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            element.classList.add('active');
-
-            // Cargar dashboard
-            const frame = document.getElementById('dashboardFrame');
-            frame.src = url;
-
-            // Actualizar título
-            const titles = {
-                'dashboard-capturas.html': 'Capturas de Pantalla',
-                'dashboard-comercializacion.html': 'Información del Mercado'
-            };
-            document.getElementById('dashboardTitle').textContent = titles[url] || 'Dashboard';
-
-            // Cerrar sidebar en móvil
-            if (window.innerWidth < 1024) {
-                toggleSidebarCollapse();
-            }
-        }
-
-        //FUNCION CLAVE PARA CARGAR LAS VENTANAS 
-        //SE LE PASA EL NOMBRE DEL ARCHIVO QUE SE DESEA CARGAR Y SI TIENE SUB TIPOS LE DAMOS EL TIPO
-        //COMO POR EJEMPLO ('DASHBOARD-COMERCIO', 'TIPOCOMERCIO')
-        function loadDashboardAndData(dashboardUrl, tipo, title) {
-            const frame = document.getElementById('dashboardFrame');
-            const titulo = document.getElementById('dashboardTitle');
-            //se adiciona el dashboard al array de titulos para cargar el titulo y la pagina a la vez
-            const titles = {
-                'dashboard-registro-muestras.php': title,
-                //'dashboard-empreTransporte.php': title,
-
-                'dashboard-empresas-transporte.php': title,
-                'dashboard-laboratorio.php': 'Laboratorios',
-
-                'dashboard-tipo-muestra.php': 'Tipo muestra',
-                'dashboard-paquete-analisis.php': 'Paquete analisis',
-                'dashboard-analisis.php': 'Analisis',
-                'dashboard-registro-muestras-cabecera.php': 'Muestra cabecera',
-                'dashboard-detalle-muestras.php': 'Detalle',
-
-                'dashboard-rpta-laboratorio.php': title,
-                'dashboard-reportes.php': title,
-                'dashboard-registro-resultados.php': "Registro de resultados de solicitudes"
-                //seguir agregando mas si hay mas ventanas
-
-            };
-
-            titulo.textContent = titles[dashboardUrl] || 'Dashboard';
-            showLoading();
-
-            /*Aqui tener en cuenta que el dashboard cargado debe tener la funcion
-                "cargarDatos()" esta se encarga de cargar la tabla y demas data que se
-                desea mostrar, tener en cuenta la esctructua de JS
-                dashboarh.html -> controller -> service-> config
-            */
-
-            const run = () => {
-                try {
-                    if (frame.contentWindow && typeof frame.contentWindow.cargarDatos === 'function') {
-                        frame.contentWindow.cargarDatos(tipo);
-                    } else {
-                        //  console.error("La función cargarDatos no existe en el iframe.");
-                    }
-                } finally {
-                    hideLoading();
-                }
-            };
-
-            if (frame.src.includes(dashboardUrl)) {
-                // ya está cargado ese dashboard
-                run();
-            } else {
-                // esperar a que el nuevo dashboard se cargue
-                frame.onload = run;
-                frame.src = dashboardUrl;
-            }
-
-            if (window.innerWidth < 1024) toggleSidebarCollapse();
-        }
-
-        // Loading functions
         function showLoading() {
             document.getElementById('loadingIndicator').classList.remove('hidden');
         }
@@ -599,35 +484,46 @@ if (!$conexion) {
             document.getElementById('loadingIndicator').classList.add('hidden');
         }
 
-        // Responsive: cerrar sidebar al hacer clic fuera
-        window.addEventListener('resize', () => {
-            if (window.innerWidth >= 1024) {
-                document.getElementById('sidebar').classList.add('open');
-                document.getElementById('sidebarOverlay').classList.remove('active');
-            }
-        });
+        // Registrar correctamente el evento 'load' del iframe
+        document.getElementById('dashboardFrame').addEventListener('load', hideLoading);
 
-        // Inicializar sidebar abierto en desktop
-        if (window.innerWidth >= 1024) {
-            document.getElementById('sidebar').classList.add('open');
+        function toggleSidebarCollapse() {
+            const sidebar = document.getElementById('sidebar');
+            const contentWrapper = document.querySelector('.content-wrapper');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            const isCollapsed = sidebar.classList.contains('collapsed');
+
+            if (isCollapsed) {
+                // Vamos a abrir el sidebar (solo en móvil)
+                sidebar.classList.remove('collapsed');
+                if (window.innerWidth < 1024) {
+                    overlay.classList.add('active');
+                }
+            } else {
+                // Vamos a cerrar el sidebar
+                sidebar.classList.add('collapsed');
+                overlay.classList.remove('active'); // ← ¡IMPORTANTE!
+            }
+
+            contentWrapper.classList.toggle('sidebar-collapsed', !isCollapsed);
         }
 
-        // limpia y marca el elemento activo y su posible padre toggle
+        function toggleSubmenu(id, btn) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.classList.toggle('hidden');
+            if (btn) {
+                btn.classList.toggle('active');
+            }
+        }
+
         function markActiveElement(element) {
-            // quitar active de todos
             document.querySelectorAll('.menu-link.active, .menu-item.active, .submenu-toggle.active')
                 .forEach(el => el.classList.remove('active'));
-
             if (!element) return;
-
-            // marca el elemento clickeado (si es link o botón)
             element.classList.add('active');
 
-            // si el elemento es un link dentro de un submenu, marcar también el botón padre que abre ese submenu
-            const parentToggle = findParentToggleButton(element);
-            if (parentToggle) parentToggle.classList.add('active');
-
-            // además marcar el menu-group superior (si existe un .menu-item dentro del grupo)
             const menuGroup = element.closest('.menu-group');
             if (menuGroup) {
                 const topMenuItem = menuGroup.querySelector('.menu-item');
@@ -635,65 +531,66 @@ if (!$conexion) {
             }
         }
 
-        // buscar el botón toggle que controla el submenu donde está el elemento
-        function findParentToggleButton(el) {
-            let node = el;
-            while (node && node !== document) {
-                // si el padre más cercano es un submenu, intentamos buscar un botón anterior en ese mismo contenedor
-                if (node.classList && node.classList.contains('submenu')) {
-                    // buscar botón previo (por ejemplo: <button ...> </button> seguido por <div class="submenu">)
-                    let prev = node.previousElementSibling;
-                    if (prev && prev.tagName === 'BUTTON') return prev;
-                }
-                node = node.parentElement;
-            }
-
-            // alternativa: buscar un botón con clase .submenu-toggle dentro el ancestro directo
-            node = el.closest('.menu-group');
-            if (node) {
-                const innerToggle = node.querySelector('.submenu-toggle');
-                if (innerToggle) return innerToggle;
-            }
-
-            return null;
-        }
-
-        // función que usan tus links (ya la tenías, la adaptamos a markActiveElement)
         function selectMenuItem(element) {
             markActiveElement(element);
         }
 
-        // función que usaremos en botones que cargan dashboard directamente
-        function activateAndLoad(buttonOrLink, dashboardUrl, tipo, title) {
-            // marcar UI
+        function activateAndLoad(buttonOrLink, dashboardUrl, title, subtitle) {
             markActiveElement(buttonOrLink);
-
-            // llamar a tu función existente que carga el iframe
-            loadDashboardAndData(dashboardUrl, tipo, title);
+            loadDashboardAndData(dashboardUrl, title, subtitle);
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
-
-
+        function loadDashboardAndData(dashboardUrl, title, subtitle) {
             const frame = document.getElementById('dashboardFrame');
-            frame.src = 'dashboard-dashboard.php';
-            document.getElementById('dashboardTitle').textContent = 'Dashboard Principal';
+            document.getElementById('dashboardTitle').textContent = title;
+            document.getElementById('dashboardsubTitle').textContent = subtitle;
+            showLoading();
+            // Siempre reiniciar el src para forzar el evento 'load'
+            frame.src = dashboardUrl;
+            if (window.innerWidth < 1024) {
+                toggleSidebarCollapse();
+            }
 
-            // Ocultar loading cuando cargue
-            frame.onload = () => {
-                hideLoading();
-            };
-        });
+        }
 
-        function toggleSidebarCollapse() {
+        // Inicialización al cargar la página
+        window.addEventListener('DOMContentLoaded', () => {
             const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
             const contentWrapper = document.querySelector('.content-wrapper');
 
-            sidebar.classList.toggle('collapsed');
-            contentWrapper.classList.toggle('sidebar-collapsed');
-        }
-    </script>
+            if (window.innerWidth >= 1024) {
+                sidebar.classList.remove('collapsed');
+                contentWrapper.classList.remove('sidebar-collapsed');
+                overlay.classList.remove('active'); 
+            } else {
+                sidebar.classList.add('collapsed');
+                contentWrapper.classList.add('sidebar-collapsed');
+                overlay.classList.remove('active'); 
+            }
 
+            // Cargar dashboard por defecto
+            const defaultMenuItem = document.querySelector('[onclick*="dashboard-dashboard.php"]');
+            if (defaultMenuItem) {
+                activateAndLoad(defaultMenuItem, 'dashboard-dashboard.php', '📊 Dashboard de Reportes', 'Resumen visual de los datos registrados en el sistema');
+            } else {
+                const frame = document.getElementById('dashboardFrame');
+                frame.src = 'dashboard-dashboard.php';
+                document.getElementById('dashboardTitle').textContent = '📊 Dashboard de Reportes';
+                document.getElementById('dashboardsubTitle').textContent = 'Resumen visual de los datos registrados en el sistema';
+            }
+        });
+
+        // Ajuste al redimensionar
+        window.addEventListener('resize', () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if (window.innerWidth >= 1024) {
+                sidebar.classList.add('open');
+                overlay.classList.remove('active');
+            }
+        });
+    </script>
     <script src="logout.js"></script>
 
 </body>
