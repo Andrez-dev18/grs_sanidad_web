@@ -7,9 +7,10 @@ if (empty($_SESSION['active'])) {
 include_once '../conexion_grs_joya/conexion.php';
 $conexion = conectar_joya();
 if (!$conexion) {
-    die("Error de conexión: " . mysqli_connect_error());
+    die("Error de conexión.");
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 
@@ -17,195 +18,329 @@ if (!$conexion) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Análisis</title>
-    <!-- Tailwind CSS -->
     <link rel="stylesheet" href="css/output.css">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+      <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+
     <style>
+        /* Tus estilos existentes */
         body {
             background: #f8f9fa;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
 
-        .paquete-completo-badge {
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
             display: inline-flex;
-            flex-direction: column;
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            border: 1px solid #bbf7d0;
-            border-radius: 8px;
-            padding: 8px 12px;
-            min-width: 200px;
+            align-items: center;
+            gap: 0.5rem;
         }
 
-        .paquete-line {
-            font-size: 0.8rem;
-            color: #166534;
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
             font-weight: 600;
-            margin: 2px 0;
+            color: white;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-export:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-outline:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.625rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+
+         .table-wrapper {
+            overflow-x: auto;
+            overflow-y: visible;
+            width: 100%;
+            border-radius: 1rem;
+        }
+
+        .table-wrapper::-webkit-scrollbar {
+            height: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        .data-table {
+            width: 100% !important;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.875rem;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .data-table th {
+            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
+            font-weight: 600;
+            color: #ffffff !important;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #eff6ff !important;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            padding: 1rem;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            margin: 0 0.5rem;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            margin-left: 0.5rem;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.5rem 1rem !important;
+            margin: 0 0.25rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
+            color: white !important;
+            border: 1px solid #1e40af !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+        }
+
+        table.dataTable thead .sorting:before,
+        table.dataTable thead .sorting_asc:before,
+        table.dataTable thead .sorting_desc:before,
+        table.dataTable thead .sorting:after,
+        table.dataTable thead .sorting_asc:after,
+        table.dataTable thead .sorting_desc:after {
+            color: white !important;
+        }
+
+        .dataTables_wrapper {
+            overflow-x: visible !important;
         }
     </style>
 </head>
 
 <body class="bg-gray-50">
     <div class="container mx-auto px-6 py-12">
-        <!-- VISTA ANÁLISIS -->
-        <div id="viewAnalisis" class="content-view">
-            <div class="content-header max-w-7xl mx-auto mb-8">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="text-4xl">🔍</span>
-                    <h1 class="text-3xl font-bold text-gray-800">Análisis</h1>
-                </div>
-                <p class="text-gray-600 text-sm">Administre los análisis registrados en el sistema</p>
+
+        <!-- Encabezado con botones y exportar -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div class="flex items-center gap-4">
+
+                <a class="btn-export" href="exportar_analisis_excel.php"">
+                    📊 Exportar Todos
+                </a>
             </div>
-            <div class="form-container max-w-7xl mx-auto">
-                <div class="mb-6 flex justify-between items-center flex-wrap gap-3">
-                    <button type="button"
-                        class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
-                        onclick="exportarAnalisis()"
-                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
-                        📊 Exportar a Excel
+            <button type=" button" class="btn-secondary" onclick="openAnalisisModal('create')">
+                    Nuevo Analisis
                     </button>
-                    <button type="button"
-                        class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
-                        onclick="openAnalisisModal('create')">
-                        ➕ Nuevo Análisis
-                    </button>
-                </div>
-
-                <!-- Tabla de análisis -->
-                <div class="table-container border border-gray-300 rounded-2xl bg-white overflow-x-auto">
-                    <table class="data-table w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Código</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Nombre del Análisis
-                                </th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Paquete y Tipo de
-                                    Muestra</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="analisisTableBody" class="divide-y divide-gray-200">
-                            <?php
-                            // 🔁 Traemos paquete + tipo de muestra vía JOIN
-                            $query = "SELECT 
-                                        a.codigo,
-                                        a.nombre,
-                                        a.paquete,
-                                        pm.codigo AS paq_codigo,
-                                        pm.nombre AS paq_nombre,
-                                        tm.codigo AS tm_codigo,
-                                        tm.nombre AS tm_nombre
-                                      FROM san_dim_analisis a
-                                      LEFT JOIN san_dim_paquete pm ON a.paquete = pm.codigo
-                                      LEFT JOIN san_dim_tipo_muestra tm ON pm.tipoMuestra = tm.codigo
-                                      ORDER BY a.codigo";
-                            $result = mysqli_query($conexion, $query);
-                            if ($result && mysqli_num_rows($result) > 0) {
-                                while ($row = mysqli_fetch_assoc($result)) {
-                                    $paqueteHtml = '';
-                                    if (!empty($row['paq_codigo']) && !empty($row['tm_codigo'])) {
-                                        $paqueteHtml = '<div class="paquete-completo-badge">
-                                            <div class="paquete-line">Paquete: ' . htmlspecialchars($row['paq_codigo']) . ' - ' . htmlspecialchars($row['paq_nombre']) . '</div>
-                                            <div class="paquete-line">Muestra: ' . htmlspecialchars($row['tm_codigo']) . ' - ' . htmlspecialchars($row['tm_nombre']) . '</div>
-                                        </div>';
-                                    } else {
-                                        $paqueteHtml = '<span class="text-gray-400 italic">Sin paquete asignado</span>';
-                                    }
-
-                                    echo '<tr class="hover:bg-gray-50 transition">';
-                                    echo '<td class="px-6 py-4 text-gray-700 font-medium">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                ' . htmlspecialchars($row['codigo']) . '
-                                            </span>
-                                          </td>';
-                                    echo '<td class="px-6 py-4 text-gray-700 font-medium">' . htmlspecialchars($row['nombre']) . '</td>';
-                                    echo '<td class="px-6 py-4">' . $paqueteHtml . '</td>';
-                                    echo '<td class="px-6 py-4 flex gap-2">
-                                        <button class="btn-icon p-2 text-lg hover:bg-blue-100 rounded-lg transition" 
-                                                title="Editar" 
-                                                onclick="openAnalisisModal(\'edit\', ' . (int) $row['codigo'] . ', \'' . addslashes(htmlspecialchars($row['nombre'])) . '\', ' . (isset($row['paquete']) && $row['paquete'] ? (int) $row['paquete'] : 'null') . ')">
-                                            ✏️
-                                        </button>
-                                        <button class="btn-icon p-2 text-lg hover:bg-red-100 rounded-lg transition" 
-                                                title="Eliminar" 
-                                                onclick="confirmAnalisisDelete(' . (int) $row['codigo'] . ')">
-                                            🗑️
-                                        </button>
-                                    </td>';
-                                    echo '</tr>';
+            </div>
+            <!-- Tabla de análisis -->
+            <!--div class="card">-->
+          <div class="max-w-full mx-auto mt-6">
+            <div class="border border-gray-300 rounded-2xl bg-white overflow-hidden">
+                <div class="table-wrapper">
+                    <table id="tablaAnalisis" class="data-table display" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Enfermedad</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $query = "SELECT codigo, nombre, enfermedad FROM san_dim_analisis ORDER BY codigo ASC";
+                                $result = mysqli_query($conexion, $query);
+                                if (!$result) {
+                                    die("Error en consulta: " . mysqli_error($conexion));
                                 }
-                            } else {
-                                echo '<tr><td colspan="4" class="px-6 py-8 text-center text-gray-500">No hay análisis registrados</td></tr>';
-                            }
-                            ?>
-                        </tbody>
-                    </table>
+                                while ($row = mysqli_fetch_assoc($result)) {
+                                    ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($row['codigo']) ?></td>
+                                        <td><?= htmlspecialchars($row['nombre']) ?></td>
+                                        <td><?= htmlspecialchars($row['enfermedad'] ?? '') ?></td>
+                                        <td>
+                                            <div class="flex items-center gap-2">
+                                                <button class="btn-secondary text-xs px-3 py-1 flex items-center gap-1"
+                                                    onclick='openAnalisisModal("update", <?= json_encode($row["codigo"]) ?>, <?= json_encode($row["nombre"]) ?>, <?= json_encode($row["enfermedad"] ?? "") ?>)'>
+                                                    <i class="fas fa-pencil-alt"></i> Editar
+                                                </button>
+                                                <button
+                                                    class="btn-outline text-xs px-3 py-1 text-red-600 border-red-300 hover:bg-red-50 flex items-center gap-1"
+                                                    onclick='confirmDelete(<?= json_encode($row["codigo"]) ?>, <?= json_encode($row["nombre"]) ?>)'>
+                                                    <i class="fas fa-trash-alt"></i> Eliminar
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <?php
+                                }
+                                ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
+        <!--/div-->
 
         <!-- Modal -->
         <div id="analisisModal" style="display: none;"
             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-lg w-full max-w-lg">
+            <div
+                class="bg-white rounded-2xl shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
                 <div class="flex items-center justify-between p-6 border-b border-gray-200">
                     <h2 id="analisisModalTitle" class="text-xl font-bold text-gray-800">➕ Nuevo Análisis</h2>
-                    <button onclick="closeAnalisisModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                    <button onclick="closeAnalisisModal()" class="text-2xl text-gray-500 hover:text-gray-700">×</button>
                 </div>
-                <div class="p-6">
-                    <form id="analisisForm" onsubmit="return saveAnalisis(event)">
-                        <input type="hidden" id="analisisModalAction" value="create">
-                        <input type="hidden" id="analisisEditCodigo" value="">
+                <div class="flex-1 overflow-y-auto p-6" style="max-height: 60vh;">
+                    <form id="analisisForm">
+                        <input type="hidden" id="analisisModalAction" name="action" value="create">
+                        <input type="hidden" id="analisisEditCodigo" name="codigo" value="">
 
-                        <div class="form-field mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del Análisis <span
+                        <div class="mb-5">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del Análisis <span
                                     class="text-red-500">*</span></label>
-                            <input type="text" id="analisisModalNombre" name="nombre" maxlength="255"
-                                placeholder="Ingrese el nombre del análisis" required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg">
+                            <input type="text" id="analisisModalNombre" name="nombre" maxlength="100" required
+                                class="form-control">
                         </div>
 
-                        <!-- Select de Paquete + Muestra combinado -->
-                        <div class="form-field mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Paquete y Tipo de Muestra <span class="text-gray-500 text-xs">(Opcional)</span>
-                            </label>
-                            <select id="analisisModalPaquete" name="paquete"
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                <option value="">Ninguno</option>
-                                <?php
-                                // Traemos paquetes con su tipo de muestra
-                                $query_paquetes = "SELECT 
-                                                    pm.codigo,
-                                                    pm.nombre AS paq_nombre,
-                                                    tm.codigo AS tm_codigo,
-                                                    tm.nombre AS tm_nombre
-                                                  FROM san_dim_paquete pm
-                                                  LEFT JOIN san_dim_tipo_muestra tm ON pm.tipoMuestra = tm.codigo
-                                                  ORDER BY pm.codigo";
-                                $result_paquetes = mysqli_query($conexion, $query_paquetes);
-                                if ($result_paquetes) {
-                                    while ($p = mysqli_fetch_assoc($result_paquetes)) {
-                                        $label = '[Paq ' . $p['codigo'] . '] ' . $p['paq_nombre'] . ' → [Muestra ' . ($p['tm_codigo'] ?? '??') . '] ' . ($p['tm_nombre'] ?? 'Sin tipo');
-                                        echo '<option value="' . $p['codigo'] . '">' . htmlspecialchars($label) . '</option>';
-                                    }
-                                }
-                                ?>
-                            </select>
-                        </div>
-
-                        <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
-                            <button type="button" onclick="closeAnalisisModal()"
-                                class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg">
-                                Cancelar
-                            </button>
-                            <button type="submit"
-                                class="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg">
-                                💾 Guardar
-                            </button>
+                        <div class="mb-5">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Enfermedad</label>
+                            <input type="text" id="analisisModalEnfermedad" name="enfermedad" maxlength="100"
+                                class="form-control">
                         </div>
                     </form>
+                </div>
+                <div class="border-t border-gray-200 p-6 bg-gray-50">
+                    <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
+                        <button type="button" onclick="closeAnalisisModal()" class="btn-outline">Cancelar</button>
+                        <button type="submit" form="analisisForm" class="btn-primary">💾 Guardar Análisis</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -214,8 +349,42 @@ if (!$conexion) {
             <p class="text-gray-500 text-sm">Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
                 © 2025</p>
         </div>
-    </div>
-    <script src="analisis.js"></script>
+
+
+          <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+        <script src="analisis.js"></script>
+
+        <script>
+            $(document).ready(function () {
+                $('#tablaAnalisis').DataTable({
+                    language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+                    pageLength: 10,
+                    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+                    order: [[0, 'asc']]
+                });
+            });
+
+            function confirmDelete(codigo, nombre) {
+                if (confirm(`¿Eliminar el análisis "${nombre}"?\n\n⚠️ Si está asociado a paquetes, no se podrá eliminar.`)) {
+                    fetch('crud_analisis.php', {
+                        method: 'POST',
+                        body: new URLSearchParams({ action: 'delete', codigo: codigo })
+                    })
+                        .then(r => r.json())
+                        .then(d => {
+                            if (d.success) {
+                                alert('✅ ' + d.message);
+                                location.reload();
+                            } else {
+                                alert('❌ ' + d.message);
+                            }
+                        });
+                }
+            }
+        </script>
 </body>
 
 </html>

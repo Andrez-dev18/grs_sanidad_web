@@ -457,7 +457,7 @@ if (!$conexion) {
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="button" class="btn btn-primary" id="btnConfirmSubmit">
-                            ✅ Confirmar y Guardar
+                            Confirmar y Guardar
                         </button>
                     </div>
                 </div>
@@ -655,7 +655,7 @@ if (!$conexion) {
 
                         container.appendChild(boxesContainer);
                         container.appendChild(hiddenInput);
-                        resolve(); // ✅ DOM listo
+                        resolve(); //  DOM listo
                     })
                     .catch(error => {
                         console.error("Error al cargar config:", error);
@@ -673,7 +673,6 @@ if (!$conexion) {
             const tableBody = document.getElementById("samplesTableBody");
 
             if (newCount > currentCount) {
-                // ✅ Agregar filas nuevas
                 for (let i = currentCount; i < newCount; i++) {
                     const row = createSampleRow(i);
                     tableBody.appendChild(row);
@@ -683,13 +682,14 @@ if (!$conexion) {
                         codigoReferencia: '',
                         fechaToma: dateStr,
                         numeroMuestras: '1',
+
                         analisisSeleccionados: [],
                         observaciones: '',
                         analisisResumenHtml: ''
                     };
                 }
             } else {
-                // ❌ Eliminar filas sobrantes (de abajo hacia arriba)
+
                 for (let i = currentCount - 1; i >= newCount; i--) {
                     const row = document.getElementById(`sampleRow_${i}`);
                     if (row) row.remove();
@@ -733,13 +733,13 @@ if (!$conexion) {
             // 5. Análisis
             const anCell = document.createElement('td');
             anCell.innerHTML = `
-        <div class="d-flex flex-column">
-            <div class="d-flex gap-1 mb-1">
-                <button type="button" class="btn btn-sm btn-outline-primary btn-seleccionar" data-index="${i}">Seleccionar</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary btn-copiar" data-index="${i}">Copiar</button>
-            </div>
-            <div id="analisisResumen_${i}" style="font-size: 0.85em;"></div>
-        </div>`;
+            <div class="d-flex flex-column">
+                <div class="d-flex gap-1 mb-1">
+                    <button type="button" class="btn btn-sm btn-outline-primary btn-seleccionar" data-index="${i}">Seleccionar</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary btn-copiar" data-index="${i}">Copiar</button>
+                </div>
+                <div id="analisisResumen_${i}" style="font-size: 0.85em;"></div>
+            </div>`;
             row.appendChild(anCell);
 
             // 6. Observaciones
@@ -803,14 +803,14 @@ if (!$conexion) {
                 // 5. Celda Análisis
                 const anCell = document.createElement('td');
                 anCell.innerHTML = `
-    <div class="d-flex flex-column">
-        <div class="d-flex gap-1 mb-1">
-            <button type="button" class="btn btn-sm btn-outline-primary btn-seleccionar" data-index="${i}">Seleccionar</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary btn-copiar" data-index="${i}">Copiar</button>
+        <div class="d-flex flex-column">
+            <div class="d-flex gap-1 mb-1">
+                <button type="button" class="btn btn-sm btn-outline-primary btn-seleccionar" data-index="${i}">Seleccionar</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-copiar" data-index="${i}">Copiar</button>
+            </div>
+            <div id="analisisResumen_${i}" style="font-size: 0.85em;">Ninguno</div>
         </div>
-        <div id="analisisResumen_${i}" style="font-size: 0.85em;">Ninguno</div>
-    </div>
-`;
+    `;
                 row.appendChild(anCell);
 
                 // 6. Celda Observaciones
@@ -849,7 +849,7 @@ if (!$conexion) {
                     if (cache.observaciones) document.getElementById(`observaciones_${i}`).value = cache.observaciones;
 
                     if (cache.analisisSeleccionados && cache.analisisSeleccionados.length > 0) {
-                        // ✅ Si NO hay HTML bonito, es porque la fila nunca pasó por el modal.
+                        //  Si NO hay HTML bonito, es porque la fila nunca pasó por el modal.
                         //    En ese caso, NO mostramos nada bonito, pero tampoco destruimos el formato.
                         //    Simplemente dejamos que updateAnalisisResumen maneje el fallback.
                         updateAnalisisResumen(i);
@@ -857,7 +857,7 @@ if (!$conexion) {
                 }
             }
         }
-        // ✅ SOLUCIÓN: Cargar tipos de muestra de forma síncrona y usar delegación de eventos
+
         async function cargarTodosTiposMuestra(count) {
             try {
                 // Cargar tipos de muestra una sola vez si no están cargados
@@ -964,108 +964,26 @@ if (!$conexion) {
                 return;
             }
 
-            // ✅ Si ya tenemos el HTML bonito, lo usamos
+            //  Si ya tenemos el HTML bonito, lo usamos
             if (cache.analisisResumenHtml) {
                 resumenEl.innerHTML = cache.analisisResumenHtml;
                 return;
             }
 
-            // ✅ Si NO tenemos HTML bonito, pero SÍ tenemos objetos con nombre, generamos uno decente
+            //  Si NO tenemos HTML bonito, pero SÍ tenemos objetos con nombre, generamos uno decente
             if (typeof analisis[0] === 'object' && analisis[0].nombre) {
                 const nombres = analisis.map(a => a.nombre).join(', ');
                 resumenEl.innerHTML = `<small>${nombres}</small>`;
                 return;
             }
 
-            // ✅ Si solo tenemos códigos (strings), mostramos placeholder
+            //  Si solo tenemos códigos (strings), mostramos placeholder
             const codigos = analisis.map(a => typeof a === 'string' ? a : a.codigo);
             const nombres = codigos.map(c => `Análisis ${c}`).join(', ');
             resumenEl.innerHTML = `<small>${nombres}</small>`;
         }
 
-        /*function copyAnalisisTo(sourceIndex) {
-            const analisisResumenCell = document.querySelector(`#analisisResumen_${sourceIndex}`).closest('td');
-            const existingContainer = analisisResumenCell.querySelector('.copy-controls-container');
 
-            // ✅ Si ya existe el contenedor de copia, no crear otro
-            if (existingContainer) {
-                existingContainer.style.display = 'block';
-                return;
-            }
-
-            const sourceCache = sampleDataCache[sourceIndex];
-            if (!sourceCache || !sourceCache.analisisSeleccionados?.length) {
-                alert('No hay análisis seleccionados en la fila origen.');
-                return;
-            }
-
-            // ✅ Crear contenedor único para selección de destino
-            const container = document.createElement('div');
-            container.className = 'copy-controls-container mt-2 p-2 bg-gray-100 rounded';
-            container.innerHTML = `
-        <label class="text-sm">Copiar a fila:</label>
-        <select class="form-select copy-target-select mt-1">
-            <option value="">Seleccionar...</option>
-        </select>
-        <div class="mt-2">
-            <button type="button" class="btn btn-sm btn-primary copy-confirm">Copiar</button>
-            <button type="button" class="btn btn-sm btn-secondary copy-cancel ms-2">Cancelar</button>
-        </div>
-    `;
-            analisisResumenCell.appendChild(container);
-
-            // Llenar opciones (excluye la fila origen)
-            const selectEl = container.querySelector('.copy-target-select');
-            for (let i = 0; i < totalSamples; i++) {
-                if (i !== sourceIndex) {
-                    const opt = document.createElement('option');
-                    opt.value = i;
-                    opt.textContent = `Fila ${i + 1}`;
-                    selectEl.appendChild(opt);
-                }
-            }
-
-            // ✅ Confirmar copia
-            container.querySelector('.copy-confirm').onclick = () => {
-                const targetIndex = parseInt(selectEl.value);
-                if (isNaN(targetIndex) || targetIndex < 0 || targetIndex >= totalSamples) {
-                    alert('Seleccione una fila válida.');
-                    return;
-                }
-
-                // 1. Copiar tipo de muestra si es diferente
-                const srcSelect = document.getElementById(`tipoMuestra_${sourceIndex}`);
-                const tgtSelect = document.getElementById(`tipoMuestra_${targetIndex}`);
-                const srcTipo = srcSelect?.value || '';
-
-                if (srcTipo && srcTipo !== tgtSelect.value) {
-                    tgtSelect.value = srcTipo;
-                    tgtSelect.dispatchEvent(new Event('change', { bubbles: true }));
-                }
-
-                // 2. ✅ Copiar datos COMPLETOS desde la caché (incluyendo HTML del resumen)
-                sampleDataCache[targetIndex] = sampleDataCache[targetIndex] || {};
-                sampleDataCache[targetIndex].analisisSeleccionados = [...sourceCache.analisisSeleccionados];
-                sampleDataCache[targetIndex].tipoMuestra = srcTipo;
-
-                // ✅ Copiar el HTML exacto del resumen (lo que ya se generó en el modal)
-                if (sourceCache.analisisResumenHtml) {
-                    sampleDataCache[targetIndex].analisisResumenHtml = sourceCache.analisisResumenHtml;
-                }
-
-                // 3. ✅ Actualizar el resumen visual usando el HTML guardado
-                updateAnalisisResumen(targetIndex);
-
-                // 4. Notificación y limpieza
-                alert(`✅ Análisis copiados a la Fila ${targetIndex + 1}.`);
-                container.remove();
-            };
-
-            // ✅ Cancelar copia
-            container.querySelector('.copy-cancel').onclick = () => {
-                container.remove();
-            };
-        }*/
         function copyAnalisisTo(sourceIndex) {
             const sourceCache = sampleDataCache[sourceIndex];
             if (!sourceCache || !sourceCache.analisisSeleccionados?.length) {
@@ -1128,24 +1046,8 @@ if (!$conexion) {
 
             // 4. Cerrar modal y notificar
             bootstrap.Modal.getInstance(document.getElementById('copyAnalisisModal')).hide();
-            alert(`✅ Análisis copiados a la Solicitud ${targetIndex + 1}.`);
+            alert(` Análisis copiados a la Solicitud ${targetIndex + 1}.`);
         });
-        // === Función para abrir el modal de observaciones ===
-        function openObservacionesModal(sampleIndex) {
-            const observacionesInput = document.getElementById('observacionesInput');
-            const currentVal = document.getElementById(`observaciones_${sampleIndex}`).value;
-            observacionesInput.value = currentVal;
-
-            const saveButton = document.getElementById('saveObservaciones');
-            saveButton.onclick = function () {
-                const val = observacionesInput.value;
-                document.getElementById(`observaciones_${sampleIndex}`).value = val;
-                bootstrap.Modal.getInstance(document.getElementById('observacionesModal')).hide();
-            };
-
-            const modal = new bootstrap.Modal(document.getElementById('observacionesModal'));
-            modal.show();
-        }
 
         // === Función para abrir el modal de análisis ===
         window.openAnalisisModal = async function (sampleIndex) {
@@ -1155,7 +1057,6 @@ if (!$conexion) {
                 return;
             }
 
-            // ✅ Regenerar resumen bonito si existe análisis pero no HTML
             const cache = sampleDataCache[sampleIndex] || {};
             if (cache.analisisSeleccionados?.length > 0 && !cache.analisisResumenHtml) {
                 const tipoId = tipoMuestraSelect.value;
@@ -1213,57 +1114,57 @@ if (!$conexion) {
                         analisisDelPaquete.every(a => selectedAnalisisCodigos.has(String(a.codigo)));
 
                     html += `
-                <div class="mb-4">
-                    <div class="form-check">
-                        <input class="form-check-input paquete-checkbox" 
-                               type="checkbox" 
-                               data-paquete-id="${p.codigo}"
-                               ${todosAnalisisSeleccionados ? 'checked' : ''}>
-                        <label class="form-check-label fw-bold">${p.nombre}</label>
-                    </div>
-                    ${analisisDelPaquete.length ? `
-                        <div class="analisis-grid">
-                            ${analisisDelPaquete.map(a => `
-                                <div class="form-check">
-                                    <input class="form-check-input analisis-individual" 
-                                           type="checkbox" 
-                                           id="analisis_${a.codigo}_${sampleIndex}"
-                                           value="${a.codigo}" 
-                                           data-nombre="${a.nombre}"
-                                           ${selectedAnalisisCodigos.has(String(a.codigo)) ? 'checked' : ''}>
-                                    <label class="form-check-label" for="analisis_${a.codigo}_${sampleIndex}">${a.nombre}</label>
-                                </div>
-                            `).join('')}
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input paquete-checkbox" 
+                                type="checkbox" 
+                                data-paquete-id="${p.codigo}"
+                                ${todosAnalisisSeleccionados ? 'checked' : ''}>
+                            <label class="form-check-label fw-bold">${p.nombre}</label>
                         </div>
-                    ` : ''}
-                </div>
-            `;
+                        ${analisisDelPaquete.length ? `
+                            <div class="analisis-grid">
+                                ${analisisDelPaquete.map(a => `
+                                    <div class="form-check">
+                                        <input class="form-check-input analisis-individual" 
+                                            type="checkbox" 
+                                            id="analisis_${a.codigo}_${sampleIndex}"
+                                            value="${a.codigo}" 
+                                            data-nombre="${a.nombre}"
+                                            ${selectedAnalisisCodigos.has(String(a.codigo)) ? 'checked' : ''}>
+                                        <label class="form-check-label" for="analisis_${a.codigo}_${sampleIndex}">${a.nombre}</label>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
                 });
 
                 if (analisisSinPaquete.length > 0) {
                     html += `
-                <div class="mt-4 pt-3 border-top">
-                    <h6 class="fw-bold">Otros análisis</h6>
-                    <div class="analisis-grid">
-                        ${analisisSinPaquete.map(a => `
-                            <div class="form-check">
-                                <input class="form-check-input analisis-individual" 
-                                       type="checkbox" 
-                                       id="analisis_sueltos_${a.codigo}_${sampleIndex}"
-                                       value="${a.codigo}" 
-                                       data-nombre="${a.nombre}"
-                                       ${selectedAnalisisCodigos.has(String(a.codigo)) ? 'checked' : ''}>
-                                <label class="form-check-label" for="analisis_sueltos_${a.codigo}_${sampleIndex}">${a.nombre}</label>
-                            </div>
-                        `).join('')}
+                    <div class="mt-4 pt-3 border-top">
+                        <h6 class="fw-bold">Otros análisis</h6>
+                        <div class="analisis-grid">
+                            ${analisisSinPaquete.map(a => `
+                                <div class="form-check">
+                                    <input class="form-check-input analisis-individual" 
+                                        type="checkbox" 
+                                        id="analisis_sueltos_${a.codigo}_${sampleIndex}"
+                                        value="${a.codigo}" 
+                                        data-nombre="${a.nombre}"
+                                        ${selectedAnalisisCodigos.has(String(a.codigo)) ? 'checked' : ''}>
+                                    <label class="form-check-label" for="analisis_sueltos_${a.codigo}_${sampleIndex}">${a.nombre}</label>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
                 }
 
                 document.getElementById("analisisModalBody").innerHTML = html;
 
-                // ✅ Listener para checkboxes de paquetes
+                //  Listener para checkboxes de paquetes
                 document.querySelectorAll("#analisisModal .paquete-checkbox").forEach(cb => {
                     cb.addEventListener("change", function () {
                         const paqueteId = this.dataset.paqueteId;
@@ -1276,17 +1177,39 @@ if (!$conexion) {
                     });
                 });
 
-                // ✅ Guardar selección
+                //  Guardar selección
                 const saveBtn = document.getElementById("analisisModalSaveBtn");
-                // Evita múltiples listeners acumulados
+
                 saveBtn.replaceWith(saveBtn.cloneNode(true));
                 document.getElementById("analisisModalSaveBtn").onclick = () => {
                     const selectedAnalisis = Array.from(
                         document.querySelectorAll("#analisisModal .analisis-individual:checked")
-                    ).map(cb => ({
-                        codigo: cb.value,
-                        nombre: cb.dataset.nombre
-                    }));
+                    ).map(cb => {
+                        const analisisCodigo = cb.value;
+                        const analisisNombre = cb.dataset.nombre;
+
+                        // Buscar el paquete al que pertenece este análisis
+                        let paqueteCodigo = null;
+                        let paqueteNombre = "Sin paquete";
+
+                        for (const [pkgId, analisisList] of Object.entries(analisisPorPaquete)) {
+                            if (analisisList.some(a => String(a.codigo) === String(analisisCodigo))) {
+                                const pkg = data.paquetes.find(p => p.codigo === pkgId);
+                                if (pkg) {
+                                    paqueteCodigo = pkg.codigo;
+                                    paqueteNombre = pkg.nombre;
+                                }
+                                break;
+                            }
+                        }
+
+                        return {
+                            codigo: analisisCodigo,
+                            nombre: analisisNombre,
+                            paquete_codigo: paqueteCodigo,
+                            paquete_nombre: paqueteNombre
+                        };
+                    });
 
                     const resumenHtml = generateAnalisisResumen(selectedAnalisis, data.paquetes, analisisPorPaquete);
                     sampleDataCache[sampleIndex] = sampleDataCache[sampleIndex] || {};
@@ -1294,17 +1217,17 @@ if (!$conexion) {
                     sampleDataCache[sampleIndex].analisisResumenHtml = resumenHtml;
                     document.getElementById(`analisisResumen_${sampleIndex}`).innerHTML = resumenHtml;
 
-                    // ✅ Cerrar usando la instancia reutilizable
+                    //  Cerrar usando la instancia reutilizable
                     if (analisisModalInstance) {
                         analisisModalInstance.hide();
                     }
                 };
 
-                // ✅ Mostrar modal usando la instancia global
+                //  Mostrar modal usando la instancia global
                 if (analisisModalInstance) {
                     analisisModalInstance.show();
                 } else {
-                    console.error("❌ La instancia del modal de análisis no fue inicializada.");
+                    console.error("La instancia del modal de análisis no fue inicializada.");
                 }
 
             } catch (err) {
@@ -1448,32 +1371,32 @@ if (!$conexion) {
             }
 
             let previewHTML = `
-                <div class="pdf-preview">
-                    <div class="pdf-header">
-                        REGISTRO DE ENVÍO DE MUESTRAS
-                    </div>
-                    <div style="margin: 15px 0;">
-                        <div><strong>Fecha de envío:</strong> ${fechaEnvio} - Hora: ${horaEnvio.substring(0, 5)}</div>
-                        <div><strong>Código de envío:</strong> <span id="resumenCodigoEnvio"></span></div>
-                        <div><strong>Laboratorio:</strong> ${laboratorioNombre}</div>
-                        <div><strong>Empresa de transporte:</strong> ${empresaTransporte}</div>
-                        <div><strong>Autorizado por:</strong> ${autorizadoPor}</div>
-                        <div><strong>Usuario Registrador:</strong> ${usuarioRegistrador}</div>
-                        <div><strong>Usuario Responsable:</strong> ${usuarioResponsable}</div>
-                        <div><strong>Número de Solicitudes:</strong> ${numeroSolicitudes}</div>
-                    </div>
-                    <table class="pdf-table">
-                        <thead>
-                            <tr>
-                                <th>Cód. Ref.</th>
-                                <th>Toma de muestra</th>
-                                <th>N° muestras</th>
-                                <th>TIPO DE ANÁLISIS</th>
-                                <th>Observaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
+                    <div class="pdf-preview">
+                        <div class="pdf-header">
+                            REGISTRO DE ENVÍO DE MUESTRAS
+                        </div>
+                        <div style="margin: 15px 0;">
+                            <div><strong>Fecha de envío:</strong> ${fechaEnvio} - Hora: ${horaEnvio.substring(0, 5)}</div>
+                            <div><strong>Código de envío:</strong> <span id="resumenCodigoEnvio"></span></div>
+                            <div><strong>Laboratorio:</strong> ${laboratorioNombre}</div>
+                            <div><strong>Empresa de transporte:</strong> ${empresaTransporte}</div>
+                            <div><strong>Autorizado por:</strong> ${autorizadoPor}</div>
+                            <div><strong>Usuario Registrador:</strong> ${usuarioRegistrador}</div>
+                            <div><strong>Usuario Responsable:</strong> ${usuarioResponsable}</div>
+                            <div><strong>Número de Solicitudes:</strong> ${numeroSolicitudes}</div>
+                        </div>
+                        <table class="pdf-table">
+                            <thead>
+                                <tr>
+                                    <th>Cód. Ref.</th>
+                                    <th>Toma de muestra</th>
+                                    <th>N° muestras</th>
+                                    <th>TIPO DE ANÁLISIS</th>
+                                    <th>Observaciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
 
             for (let i = 0; i < numeroSolicitudes; i++) {
                 const tipoMuestraRadio = document.getElementById(`tipoMuestra_${i}`);
@@ -1513,27 +1436,27 @@ if (!$conexion) {
                 }
 
                 previewHTML += `
-                            <tr>
-                                <td>${codigoRef}</td>
-                                <td>${fechaToma}</td>
-                                <td>${numeroMuestras}</td>
-                                <td>${analisisHtml}</td>
-                                <td>${observaciones}</td>
-                            </tr>
-                `;
+                                <tr>
+                                    <td>${codigoRef}</td>
+                                    <td>${fechaToma}</td>
+                                    <td>${numeroMuestras}</td>
+                                    <td>${analisisHtml}</td>
+                                    <td>${observaciones}</td>
+                                </tr>
+                    `;
             }
 
             previewHTML += `
-                        </tbody>
-                    </table>
-                    <div class="pdf-footer">
-                        <table>
-                            <tr><td>Empresa:</td><td>COMITÉ 4</td></tr>
-                            <tr><td>Autorizado por:</td><td>Dr. Julio Alvan</td></tr>
+                            </tbody>
                         </table>
+                        <div class="pdf-footer">
+                            <table>
+                                <tr><td>Empresa:</td><td>COMITÉ 4</td></tr>
+                                <tr><td>Autorizado por:</td><td>Dr. Julio Alvan</td></tr>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
 
             return previewHTML;
         }
@@ -1585,7 +1508,7 @@ if (!$conexion) {
             // Mostrar tabla
             document.getElementById('samples-table-container').classList.remove('hidden');
 
-            // ✅ Ajustar filas de forma INCREMENTAL
+            //  Ajustar filas de forma INCREMENTAL
             adjustTableRows(count);
         }
 
@@ -1680,84 +1603,84 @@ if (!$conexion) {
             const autorizadoPor = formData.get("autorizado_por") || "No especificado";
 
             let summaryHTML = `
-    <div style="padding: 10px; font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; background: white;">
-        <!-- === CABECERA IDÉNTICA AL PDF === -->
-        <table width="100%" style="border-collapse: collapse; border: 1px solid #000; margin-bottom: 15px;">
-            <tr>
-                <td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 12px;">
-                    <img src="logo.png" style="height: 20px; vertical-align: top;"> GRANJA RINCONADA DEL SUR S.A.
-                </td>
-                <td style="width: 60%; text-align: center; padding: 5px; background-color: #6c5b7b; color: white; font-weight: bold; font-size: 14px;">
-                    REGISTRO DE ENVÍO DE MUESTRAS
-                </td>
-                <td style="width: 20%; background-color: #fff;"></td>
-            </tr>
-        </table>
-
-        <!-- === DATOS GENERALES EN DOS COLUMNAS, FORMATO PDF === -->
-        <table style="border-collapse: collapse; width: 100%; font-size: 10px; margin-bottom: 15px; line-height: 1.6;">
-            <tr>
-                <!-- Columna 1 -->
-                <td style="width: 50%; vertical-align: top; padding-right: 10px;">
-                    <table style="border-collapse: collapse; width: 100%;">
-                        <tr>
-                            <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Fecha de envío</strong></td>
-                            <td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
-                            <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${fechaEnvio}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Hora de envío</strong></td>
-                            <td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
-                            <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${horaEnvio.substring(0, 8)}</td>
-                        </tr>
-                    </table>
-                </td>
-
-                <!-- Columna 2 -->
-                <td style="width: 50%; vertical-align: top; padding-left: 10px;">
-                    <table style="border-collapse: collapse; width: 100%;">
-                        <tr>
-                            <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Código de envío</strong></td>
-                            <td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
-                            <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${codigoEnvio}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Laboratorio</strong></td>
-                            <td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
-                            <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${laboratorioNombre}</td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
-
-        <!-- === TABLA DE DETALLE === -->
-        <table style="border-collapse: collapse; width: 100%; font-size: 8px; margin-bottom: 20px;">
-            <thead>
+        <div style="padding: 10px; font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; background: white;">
+            <!-- === CABECERA IDÉNTICA AL PDF === -->
+            <table width="100%" style="border-collapse: collapse; border: 1px solid #000; margin-bottom: 15px;">
                 <tr>
-                    <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">Cód. Ref.</th>
-                    <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">Toma de muestra</th>
-                    <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white; height:80px; vertical-align:middle;">
-                        <div>N° muestras</div>
-                    </th>
-    `;
+                    <td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 12px;">
+                        <img src="logo.png" style="height: 20px; vertical-align: top;"> GRANJA RINCONADA DEL SUR S.A.
+                    </td>
+                    <td style="width: 60%; text-align: center; padding: 5px; background-color: #6c5b7b; color: white; font-weight: bold; font-size: 14px;">
+                        REGISTRO DE ENVÍO DE MUESTRAS
+                    </td>
+                    <td style="width: 20%; background-color: #fff;"></td>
+                </tr>
+            </table>
+
+            <!-- === DATOS GENERALES EN DOS COLUMNAS, FORMATO PDF === -->
+            <table style="border-collapse: collapse; width: 100%; font-size: 10px; margin-bottom: 15px; line-height: 1.6;">
+                <tr>
+                    <!-- Columna 1 -->
+                    <td style="width: 50%; vertical-align: top; padding-right: 10px;">
+                        <table style="border-collapse: collapse; width: 100%;">
+                            <tr>
+                                <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Fecha de envío</strong></td>
+                                <td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                                <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${fechaEnvio}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Hora de envío</strong></td>
+                                <td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                                <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${horaEnvio.substring(0, 8)}</td>
+                            </tr>
+                        </table>
+                    </td>
+
+                    <!-- Columna 2 -->
+                    <td style="width: 50%; vertical-align: top; padding-left: 10px;">
+                        <table style="border-collapse: collapse; width: 100%;">
+                            <tr>
+                                <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Código de envío</strong></td>
+                                <td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                                <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${codigoEnvio}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Laboratorio</strong></td>
+                                <td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                                <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${laboratorioNombre}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- === TABLA DE DETALLE === -->
+            <table style="border-collapse: collapse; width: 100%; font-size: 8px; margin-bottom: 20px;">
+                <thead>
+                    <tr>
+                        <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">Cód. Ref.</th>
+                        <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">Toma de muestra</th>
+                        <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white; height:80px; vertical-align:middle;">
+                            <div>N° muestras</div>
+                        </th>
+        `;
 
             // Columnas de tipos de muestra (rotadas)
             allTiposMuestra.forEach(tm => {
                 summaryHTML += `
-                    <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white; height:80px; vertical-align:middle;">
-                        <div>${tm.nombre}</div>
-                    </th>
-        `;
+                        <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white; height:80px; vertical-align:middle;">
+                            <div>${tm.nombre}</div>
+                        </th>
+            `;
             });
 
             summaryHTML += `
-                    <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">TIPO DE ANÁLISIS</th>
-                    <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">Observaciones</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
+                        <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">TIPO DE ANÁLISIS</th>
+                        <th style="border:1px solid #000; padding:4px; text-align:center; background-color:#6c5b7b; color:white;">Observaciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
 
             // Filas de solicitudes
             for (let i = 0; i < numeroSolicitudes; i++) {
@@ -1786,31 +1709,31 @@ if (!$conexion) {
             }
 
             summaryHTML += `
-            </tbody>
-        </table>
-
-        <!-- === PIE IDÉNTICO AL PDF === -->
-        <div style="margin-top:20px; font-size:10px; text-align:center;">
-            <table style="border-collapse: collapse; width: 60%; margin: 0 auto; font-size:10px; line-height:1.5;">
-                <tr>
-                    <td style="padding: 3px 0; vertical-align: top; text-align: left; width: 40%; white-space: nowrap;"><strong>Responsable de envío</strong></td>
-                    <td style="padding: 3px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
-                    <td style="padding: 3px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${responsableEnvio}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 3px 0; vertical-align: top; text-align: left; width: 40%; white-space: nowrap;"><strong>Empresa</strong></td>
-                    <td style="padding: 3px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
-                    <td style="padding: 3px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${empresaNombre}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 3px 0; vertical-align: top; text-align: left; width: 40%; white-space: nowrap;"><strong>Autorizado por</strong></td>
-                    <td style="padding: 3px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
-                    <td style="padding: 3px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${autorizadoPor}</td>
-                </tr>
+                </tbody>
             </table>
+
+            <!-- === PIE IDÉNTICO AL PDF === -->
+            <div style="margin-top:20px; font-size:10px; text-align:center;">
+                <table style="border-collapse: collapse; width: 60%; margin: 0 auto; font-size:10px; line-height:1.5;">
+                    <tr>
+                        <td style="padding: 3px 0; vertical-align: top; text-align: left; width: 40%; white-space: nowrap;"><strong>Responsable de envío</strong></td>
+                        <td style="padding: 3px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                        <td style="padding: 3px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${responsableEnvio}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 3px 0; vertical-align: top; text-align: left; width: 40%; white-space: nowrap;"><strong>Empresa</strong></td>
+                        <td style="padding: 3px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                        <td style="padding: 3px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${empresaNombre}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 3px 0; vertical-align: top; text-align: left; width: 40%; white-space: nowrap;"><strong>Autorizado por</strong></td>
+                        <td style="padding: 3px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
+                        <td style="padding: 3px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${autorizadoPor}</td>
+                    </tr>
+                </table>
+            </div>
         </div>
-    </div>
-    `;
+        `;
 
             document.getElementById("summaryContent").innerHTML = summaryHTML;
             // Al final de generateSummary()
@@ -1842,7 +1765,11 @@ if (!$conexion) {
 
                 // Tipo de muestra
                 const tipoMuestra = document.getElementById(`tipoMuestra_${i}`);
-                if (tipoMuestra) formData.append(`tipoMuestra_${i}`, tipoMuestra.value);
+                if (tipoMuestra) {
+                    formData.append(`tipoMuestra_${i}`, tipoMuestra.value);
+                    const nombreTipoMuestra = tipoMuestra.selectedOptions[0].text;
+                    formData.append(`tipoMuestraNombre_${i}`, nombreTipoMuestra);
+                } 
 
                 // Código de referencia
                 const codRef = document.getElementById(`codigoReferenciaValue_${i}`);
@@ -1856,12 +1783,16 @@ if (!$conexion) {
                 const numMuestras = document.getElementById(`numeroMuestras_${i}`);
                 if (numMuestras) formData.append(`numeroMuestras_${i}`, numMuestras.value);
 
+
                 // Análisis (como array)
-                const analisis = sampleDataCache[i]?.analisisSeleccionados || [];
+                /*const analisis = sampleDataCache[i]?.analisisSeleccionados || [];
                 analisis.forEach(item => {
                     // item es un objeto { codigo: "...", nombre: "..." }
                     formData.append(`analisis_${i}[]`, item.codigo);
-                });
+                });*/
+                const analisis = sampleDataCache[i]?.analisisSeleccionados || [];
+                // Serializar el array completo de objetos (incluyendo nombre y paquete)
+                formData.append(`analisis_completos_${i}`, JSON.stringify(analisis));
             }
             for (const [key, value] of formData.entries()) {
                 console.log(`${key}:`, value, value === '' ? '⚠️ VACÍO' : '');
@@ -1874,11 +1805,6 @@ if (!$conexion) {
 
                 const responseText = await response.text();
 
-                // 👁️ Ver qué devolvió el servidor (¡muy útil!)
-                console.log("✅ Respuesta cruda del servidor:");
-                console.log(responseText);
-
-                // ✅ Parsear JSON manualmente
                 let result;
                 try {
                     result = JSON.parse(responseText);
@@ -1898,7 +1824,7 @@ if (!$conexion) {
                     resetAllState();
 
                     // Mensaje de éxito
-                    alert("✅ Registro guardado exitosamente. Código: " + result.codigoEnvio);
+                    alert(" Registro guardado exitosamente. Código: " + result.codigoEnvio);
 
 
                 } else {
