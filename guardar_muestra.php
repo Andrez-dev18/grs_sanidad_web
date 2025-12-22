@@ -163,57 +163,76 @@ try {
     for ($i = 0; $i < $numeroSolicitudes; $i++) {
         $fechaToma = $_POST["fechaToma_{$i}"] ?? '';
         $codTipoMuestra = $_POST["tipoMuestra_{$i}"] ?? null;
+
+        $nomTipoMuestra = $_POST["tipoMuestraNombre_{$i}"] ?? null;
+
         $codigoReferencia = $_POST["codigoReferenciaValue_{$i}"] ?? '';
         $observacionesMuestra = $_POST["observaciones_{$i}"] ?? '';
         $numeroMuestras = $_POST["numeroMuestras_{$i}"] ?? '';
-        $analisisSeleccionados = $_POST["analisis_{$i}"] ?? [];
+        //$analisisSeleccionados = $_POST["analisis_{$i}"] ?? [];
+        $analisisArray = $_POST["analisis_completos_{$i}"] ?? [];
 
 
-        $stmt = mysqli_prepare($conexion, "SELECT nombre FROM san_dim_tipo_muestra WHERE codigo = ?");
+        /*$stmt = mysqli_prepare($conexion, "SELECT nombre FROM san_dim_tipo_muestra WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "s", $codTipoMuestra);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
         $tipoMuestra = mysqli_fetch_assoc($result);
         $nomTipoMuestra = $tipoMuestra['nombre'];
-
-        if (!empty($analisisSeleccionados)) {
-            $queryDetalle = "INSERT INTO san_fact_solicitud_det (
-                    codEnvio, posSolicitud, fecToma, numMuestras, codMuestra, nomMuestra, codAnalisis, nomAnalisis, codRef, obs, id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            $stmtDetalle = mysqli_prepare($conexion, $queryDetalle);
-            $posicionSolicitud = $i + 1;
-
-            foreach ($analisisSeleccionados as $idAnalisis) {
-                $uuid = generar_uuid_v4();
-
-                $stmtAnalisis = mysqli_prepare($conexion, "SELECT nombre FROM san_dim_analisis WHERE codigo = ?");
-                mysqli_stmt_bind_param($stmtAnalisis, "s", $idAnalisis);
-                mysqli_stmt_execute($stmtAnalisis);
-                $result = mysqli_stmt_get_result($stmtAnalisis);
-                $analisis = mysqli_fetch_assoc($result);
-                $nomAnalisis = $analisis['nombre'];
-
-
-                mysqli_stmt_bind_param(
-                    $stmtDetalle,
-                    "sssssssssss",
-                    $codigoEnvio,
-
-                    $posicionSolicitud,
-                    $fechaToma,
-                    $numeroMuestras,
-                    $codTipoMuestra,
-                    $nomTipoMuestra,
-                    $idAnalisis,
-                    $nomAnalisis,
-                    $codigoReferencia,
-                    $observacionesMuestra,
-                    $uuid
-                );
-
-                mysqli_stmt_execute($stmtDetalle);
-            }
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            // Manejo de error si el JSON es inválido
+            error_log("JSON inválido en analisis_completos_{$i}: " . $analisisJson);
+            $analisisArray = [];
+        }*/
+        $analisisArray = json_decode($analisisArray, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            error_log("❌ JSON inválido en solicitud {$i}: " . json_last_error_msg());
+            continue;
         }
+
+        $queryDetalle = "INSERT INTO san_fact_solicitud_det (
+                    codEnvio, posSolicitud, fecToma, numMuestras, codMuestra, nomMuestra, codPaquete, nomPaquete, codAnalisis, nomAnalisis, codRef, obs, id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmtDetalle = mysqli_prepare($conexion, $queryDetalle);
+        $posicionSolicitud = $i + 1;
+
+        foreach ($analisisArray as $analisis) {
+            $uuid = generar_uuid_v4();
+
+            /*$stmtAnalisis = mysqli_prepare($conexion, "SELECT nombre FROM san_dim_analisis WHERE codigo = ?");
+            mysqli_stmt_bind_param($stmtAnalisis, "s", $analisis['codigo']);
+            mysqli_stmt_execute($stmtAnalisis);
+            $result = mysqli_stmt_get_result($stmtAnalisis);
+            $analisis = mysqli_fetch_assoc($result);
+            $nomAnalisis = $analisis['nombre'];*/
+
+            $codAnalisis = $analisis['codigo'] ?? null;
+            $nomAnalisis = $analisis['nombre'] ?? null;
+            $codPaquete = $analisis['paquete_codigo'] ?? null;
+            $nomPaquete = $analisis['paquete_nombre'] ?? null;
+
+
+            mysqli_stmt_bind_param(
+                $stmtDetalle,
+                "sssssssssssss",
+                $codigoEnvio,
+                $posicionSolicitud,
+                $fechaToma,
+                $numeroMuestras,
+                $codTipoMuestra,
+                $nomTipoMuestra,
+                $codPaquete,
+                $nomPaquete,
+                $codAnalisis,
+                $nomAnalisis,
+                $codigoReferencia,
+                $observacionesMuestra,
+                $uuid
+            );
+
+            mysqli_stmt_execute($stmtDetalle);
+        }
+
     }
 
 
