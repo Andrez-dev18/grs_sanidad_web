@@ -56,7 +56,7 @@ function loadSidebar(page = 1) {
                                     </div>
 
                                     <!-- SUB ESTADOS -->
-                                    ${getSubEstadosBadge(row.estado_cuali, row.estado_cuanti)}
+                                    ${getSubEstadosBadge(row.estado_cuali, row.estado_cuanti, row.codEnvio, row.posSolicitud)}
                                 </div>
 
                                 <!-- DERECHA -->
@@ -101,38 +101,160 @@ function getEstadoBadge(estado) {
         </span>`;
 }
 
-function getSubEstadosBadge(cuali, cuanti) {
+function getSubEstadosBadge(cuali, cuanti, codEnvio, posSolicitud) {
+    const badge = (label, estado, tipo) => {
+        const isCompletado = estado === "completado";
 
-    if (cuali === "completado" && cuanti === "completado") {
-        return "";
-    }
-
-
-    const badge = (label, estado) => {
-        if (estado === "completado") {
+        if (isCompletado) {
             return `
-                <span class="px-1.5 py-0.5 text-[10px] rounded-full
-                    bg-green-50 text-green-700 border border-green-200">
+                <span onclick="event.stopPropagation(); abrirModalPendiente('${codEnvio}', '${posSolicitud}', '${tipo}')" 
+                      class="px-1.5 py-0.5 text-[10px] rounded-full
+                             bg-green-50 text-green-700 border border-green-200
+                             cursor-pointer hover:bg-green-100 hover:border-green-300 
+                             transition-colors duration-150 inline-block">
                     ${label} ✔
                 </span>`;
         }
 
         return `
-            <span class="px-1.5 py-0.5 text-[10px] rounded-full
-                bg-yellow-50 text-yellow-700 border border-yellow-200">
+            <span onclick="event.stopPropagation(); abrirModalCompletar('${codEnvio}', '${posSolicitud}', '${tipo}')" 
+                  class="px-1.5 py-0.5 text-[10px] rounded-full
+                         bg-yellow-50 text-yellow-700 border border-yellow-200
+                         cursor-pointer hover:bg-yellow-100 hover:border-yellow-300 
+                         transition-colors duration-150 inline-block">
                 ${label} ⏳
             </span>`;
     };
 
+
     return `
         <div class="flex gap-1 mt-1">
-            ${badge("Cuali", cuali)}
-            ${badge("Cuanti", cuanti)}
+            ${badge("Cuali", cuali, 'cualitativo')}
+            ${badge("Cuanti", cuanti, 'cuantitativo')}
         </div>
     `;
 }
 
+// Abrir el modal para completar
+let codEnvioCurrent = null;
+let posSolicitudCurrent = null;
+let tipoCurrent = null;
 
+function abrirModalCompletar(codEnvio, posSolicitud, tipo) {
+
+    codEnvioCurrent = codEnvio;
+    posSolicitudCurrent = posSolicitud;
+    tipoCurrent = tipo;
+
+    document.getElementById('comentarioCompletar').value = ''; // Limpiar comentario anterior
+    document.getElementById('modalCompletarResultado').classList.remove('hidden');
+    document.getElementById('lblModalCompletar').textContent = `¿Desea completar este resultado ${tipo}?`;
+}
+
+// Confirmar acción 
+function confirmarCompletado() {
+    const comentario = document.getElementById('comentarioCompletar').value.trim();
+
+    fetch('cambiar_estado_solicitud.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            codEnvio: codEnvioCurrent,
+            posSolicitud: posSolicitudCurrent,
+            tipo: tipoCurrent.toLowerCase(), // 'cualitativo' o 'cuantitativo'
+            nuevoEstado: 'completado',
+            comentario: comentario
+        })
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Resultado marcado como completado');
+                // Recargar sidebar
+                loadSidebar(1);
+
+            } else {
+                alert('No se pudo cambiar el estado: ' + data.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Error de conexión');
+        });
+
+    cerrarModalCompletar();
+}
+
+// Cerrar el modal
+function cerrarModalCompletar() {
+    document.getElementById('modalCompletarResultado').classList.add('hidden');
+}
+
+// Cerrar al hacer clic fuera del modal
+document.getElementById('modalCompletarResultado').addEventListener('click', function (e) {
+    if (e.target === this) {
+        cerrarModalCompletar();
+    }
+});
+
+
+// Abrir el modal para poner pendiente
+function abrirModalPendiente(codEnvio, posSolicitud, tipo) {
+
+    codEnvioCurrent = codEnvio;
+    posSolicitudCurrent = posSolicitud;
+    tipoCurrent = tipo;
+
+    document.getElementById('comentarioPendiente').value = ''; // Limpiar comentario anterior
+    document.getElementById('modalResultadoPendiente').classList.remove('hidden');
+    document.getElementById('lblModalPendiente').textContent = `¿Desea dejar como pendiente este resultado ${tipo}?`;
+}
+
+// Cerrar el modal
+function cerrarModalPendiente() {
+    document.getElementById('modalResultadoPendiente').classList.add('hidden');
+}
+
+// Confirmar acción (aquí pones tu lógica real)
+function confirmarPendiente() {
+    const comentario = document.getElementById('comentarioPendiente').value.trim();
+
+    fetch('cambiar_estado_solicitud.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            codEnvio: codEnvioCurrent,
+            posSolicitud: posSolicitudCurrent,
+            tipo: tipoCurrent.toLowerCase(), // 'cualitativo' o 'cuantitativo'
+            nuevoEstado: 'pendiente',
+            comentario: comentario
+        })
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Resultado marcado como pendiente');
+                // Recargar sidebar
+                loadSidebar(1);
+
+            } else {
+                alert('No se pudo cambiar el estado: ' + data.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Error de conexión');
+        });
+
+    cerrarModalPendiente();
+}
+
+// Cerrar al hacer clic fuera del modal
+document.getElementById('modalResultadoPendiente').addEventListener('click', function (e) {
+    if (e.target === this) {
+        cerrarModalPendiente();
+    }
+});
 /** render simple paginación */
 function renderPagination(page, total, limit) {
     const totalPages = Math.max(1, Math.ceil(total / limit));
@@ -246,7 +368,34 @@ function switchTab(tab) {
     }
 }
 
+async function openDetailPrincipal(code, fechaToma, posicion) {
+    // Configuración común para ambos modos
+    document.getElementById('emptyStatePanel').classList.add('hidden');
+    document.getElementById('responseDetailPanel').classList.remove('hidden');
+    document.getElementById('detailCodigo').textContent = code;
+    document.getElementById('detailFecha').textContent = fechaToma;
+    currentPosition = posicion;
 
+    const cont = document.getElementById("analisisContainer");
+    cont.innerHTML = "<div class='text-gray-500 text-sm'>Verificando estado de resultados...</div>";
+
+    try {
+        // 1. Consultar si ya hay resultados guardados
+        const checkRes = await fetch(`checkResultadosCualisGuardados.php?codigoEnvio=${code}&posicion=${posicion}`);
+        const checkData = await checkRes.json();
+
+        if (checkData.tieneResultados) {
+            // === MODO EDICIÓN: Ya hay resultados guardados ===
+            await openDetailCompletado(code, fechaToma, posicion);
+        } else {
+            // === MODO NUEVO: No hay resultados aún ===
+            await openDetail(code, fechaToma, posicion);
+        }
+    } catch (error) {
+
+        cont.innerHTML = "<div class='text-red-500 text-sm'>Error al cargar el detalle. Intente nuevamente.</div>";
+    }
+}
 
 async function openDetail(code, fechaToma, posicion) {
 
@@ -279,42 +428,6 @@ async function openDetail(code, fechaToma, posicion) {
     data.forEach(item => {
         crearBloqueAnalisis(item.analisisCodigo, item.nombre, item.resultados);
     });
-}
-
-function closeDetail() {
-    // Ocultar panel de detalle / mostrar empty
-    document.getElementById('responseDetailPanel').classList.add('hidden');
-    document.getElementById('emptyStatePanel').classList.remove('hidden');
-
-    // Quitar resaltado del sidebar (si existe)
-    document.querySelectorAll("#pendingOrdersList button").forEach(btn => {
-        btn.classList.remove("selected-order");
-    });
-
-    limpiarArchivosAdjuntos();
-
-    // Quitar foco activo (si venía del botón)
-    try {
-        if (document.activeElement && typeof document.activeElement.blur === "function") {
-            document.activeElement.blur();
-        }
-    } catch (e) {
-        // no romper si algo falla
-        console.warn("closeDetail blur failed:", e);
-    }
-}
-
-function resaltarItemSidebar(code, pos) {
-    // 1. remover selección previa
-    document.querySelectorAll("#pendingOrdersList button").forEach(btn => {
-        btn.classList.remove("selected-order");
-    });
-
-    // 2. agregar selección al actual
-    const item = document.getElementById(`item-${code}-${pos}`);
-    if (item) {
-        item.classList.add("selected-order");
-    }
 }
 
 async function openDetailCompletado(code, fechaToma, posicion) {
@@ -363,6 +476,43 @@ async function openDetailCompletado(code, fechaToma, posicion) {
     });
 }
 
+function closeDetail() {
+    // Ocultar panel de detalle / mostrar empty
+    document.getElementById('responseDetailPanel').classList.add('hidden');
+    document.getElementById('emptyStatePanel').classList.remove('hidden');
+    document.getElementById('fechaRegistroLab').value = '';
+
+    // Quitar resaltado del sidebar (si existe)
+    document.querySelectorAll("#pendingOrdersList button").forEach(btn => {
+        btn.classList.remove("selected-order");
+    });
+
+    limpiarArchivosAdjuntos();
+
+    // Quitar foco activo (si venía del botón)
+    try {
+        if (document.activeElement && typeof document.activeElement.blur === "function") {
+            document.activeElement.blur();
+        }
+    } catch (e) {
+        // no romper si algo falla
+        console.warn("closeDetail blur failed:", e);
+    }
+}
+
+function resaltarItemSidebar(code, pos) {
+    // 1. remover selección previa
+    document.querySelectorAll("#pendingOrdersList button").forEach(btn => {
+        btn.classList.remove("selected-order");
+    });
+
+    // 2. agregar selección al actual
+    const item = document.getElementById(`item-${code}-${pos}`);
+    if (item) {
+        item.classList.add("selected-order");
+    }
+}
+
 
 function cargarCabecera(codEnvio, fecToma, pos, codRef, estado_cuanti, nomMuestras) {
 
@@ -389,18 +539,34 @@ function cargarCabecera(codEnvio, fecToma, pos, codRef, estado_cuanti, nomMuestr
             estadoCuantiAux = estado_cuanti;
             nomMuestrasAux = nomMuestras;
 
+            const datosRef = decodificarCodRef(codRef);
+
+            document.getElementById('codRef_granja_display').value = datosRef.granja;
+            document.getElementById('codRef_granja').value = datosRef.granja;
+
+            document.getElementById('codRef_campana_display').value = datosRef.campana;
+            document.getElementById('codRef_campana').value = datosRef.campana;
+
+            document.getElementById('codRef_galpon_display').value = datosRef.galpon;
+            document.getElementById('codRef_galpon').value = datosRef.galpon;
+
+            document.getElementById('edadAves_display').value = datosRef.edad;
+
+            const edadField = document.getElementById('edadAves_display');
+            if (edadField) edadField.value = datosRef.edad;
+
             // Cambia badge
             const badge = document.getElementById("badgeStatusCuali");
             if (data.estado_cuali_general === "completado") {
-                openDetailCompletado(codEnvio, fecToma, pos);
+                //openDetailCompletado(codEnvio, fecToma, pos);
                 badge.textContent = "Completado";
                 badge.className = "inline-block mt-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium";
             } else {
-                openDetail(codEnvio, fecToma, pos);
+                //openDetail(codEnvio, fecToma, pos);
                 badge.textContent = "Pendiente";
                 badge.className = "inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium";
             }
-
+            openDetailPrincipal(codEnvio, fecToma, pos);
         });
 }
 
@@ -418,9 +584,7 @@ function toggleFiltros() {
     }
 }
 
-
-
-async function guardarResultados() {
+async function guardarResultados(estadoCuali) {
 
     let fechaRegistroLab = document.getElementById('fechaRegistroLab').value.trim();
 
@@ -454,7 +618,8 @@ async function guardarResultados() {
         body: JSON.stringify({
             codigoEnvio: code,
             posicion: currentPosition,
-            analisis: datos
+            analisis: datos,
+            estadoCuali: estadoCuali
         })
     });
 
@@ -524,9 +689,27 @@ async function guardarResultados() {
                 No hay solicitudes pendientes.
             </div>`;
     }
+    cerrarModalConfirmacion();
+}
+
+//modal de confirmacion para completar
+
+function abrirModalConfirmacion() {
+    document.getElementById('modalConfirmacion').classList.remove('hidden');
+}
+
+// Cerrar el modal
+function cerrarModalConfirmacion() {
+    document.getElementById('modalConfirmacion').classList.add('hidden');
 }
 
 
+// Cerrar al hacer clic fuera del modal
+document.getElementById('modalConfirmacion').addEventListener('click', function (e) {
+    if (e.target === this) {
+        cerrarModalConfirmacion();
+    }
+});
 
 document.getElementById("addAnalisis").addEventListener("click", abrirModalAnalisis);
 
@@ -629,6 +812,151 @@ async function confirmarAnalisisMultiples() {
     cerrarModalAnalisis();
 }
 
+//DESACTIVACION DE PANEL PARA RESULTADOS CUALITATIVOS
+function confirmarCambioCuali(checkbox) {
+
+    if (!checkbox.checked) {
+
+        const confirmar = confirm(
+            "⚠️ ¿Desea desactivar los resultados cualitativos?"
+        );
+
+        // ❌ Si cancela → volver a ON
+        if (!confirmar) {
+            checkbox.checked = true;
+            return;
+        }
+        desactivarResultadosCuali();
+        return;
+    }
+    if (checkbox.checked) {
+        const confirmar = confirm(
+            "⚠️ ¿Desea activar los resultados cualitativos?"
+        );
+
+        // ❌ Si cancela → volver a OFF
+        if (!confirmar) {
+            checkbox.checked = false;
+            return;
+        }
+        activarResultadosCuali();
+        return;
+    }
+}
+
+function desactivarResultadosCuali() {
+
+    const bloque = document.getElementById("bloqueCuali");
+
+    // 🔒 efecto visual
+    bloque.classList.add(
+        "opacity-50",
+        "pointer-events-none",
+        "bg-gray-100",
+        "rounded-xl",
+        "p-4"
+    );
+
+    // 🚫 deshabilitar inputs reales
+    bloque.querySelectorAll("input, select, textarea, button").forEach(el => {
+        el.disabled = true;
+    });
+
+    console.log("❌ Cuali desactivado");
+}
+
+function activarResultadosCuali() {
+
+    const bloque = document.getElementById("bloqueCuali");
+
+    // 🔓 quitar efecto visual
+    bloque.classList.remove(
+        "opacity-50",
+        "pointer-events-none",
+        "bg-gray-100",
+        "rounded-xl",
+        "p-4"
+    );
+
+    // ✅ habilitar inputs
+    bloque.querySelectorAll("input, select, textarea, button").forEach(el => {
+        el.disabled = false;
+    });
+
+    console.log("✅ Cuali activado");
+}
+
+
+//DESACTIVACION DE PANEL PARA RESULTADOS CUANTITATIVOS
+function confirmarCambioCuanti(checkbox) {
+
+    if (!checkbox.checked) {
+
+        const confirmar = confirm(
+            "⚠️ ¿Desea desactivar los resultados cuantitativos?"
+        );
+
+        // ❌ Si cancela → volver a ON
+        if (!confirmar) {
+            checkbox.checked = true;
+            return;
+        }
+        desactivarResultadosCuanti();
+        return;
+    }
+    if (checkbox.checked) {
+        const confirmar = confirm(
+            "⚠️ ¿Desea activar los resultados cuantitativos?"
+        );
+
+        // ❌ Si cancela → volver a OFF
+        if (!confirmar) {
+            checkbox.checked = false;
+            return;
+        }
+        activarResultadosCuanti();
+        return;
+    }
+}
+
+function desactivarResultadosCuanti() {
+
+    const bloque = document.getElementById("bloqueCuanti");
+
+    // efecto visual
+    bloque.classList.add(
+        "opacity-50",
+        "pointer-events-none",
+        "bg-gray-100",
+        "rounded-xl",
+        "p-4"
+    );
+
+    //  deshabilitar inputs
+    bloque.querySelectorAll("input, select, textarea, button").forEach(el => {
+        el.disabled = true;
+    });
+}
+
+function activarResultadosCuanti() {
+
+    const bloque = document.getElementById("bloqueCuanti");
+
+    // 🔓 quitar efecto visual
+    bloque.classList.remove(
+        "opacity-50",
+        "pointer-events-none",
+        "bg-gray-100",
+        "rounded-xl",
+        "p-4"
+    );
+
+    // ✅ habilitar inputs
+    bloque.querySelectorAll("input, select, textarea, button").forEach(el => {
+        el.disabled = false;
+    });
+
+}
 
 function crearBloqueAnalisis(
     codigo,
@@ -836,8 +1164,10 @@ inputPDF.addEventListener("change", () => {
 
 async function cargarArchivosCompletados(codigoEnvio, pos) {
 
+    let tipo = "cualitativo";
+
     const res = await fetch(
-        `getResultadoArchivos.php?codigoEnvio=${codigoEnvio}&posSolicitud=${pos}`
+        `getResultadoArchivos.php?codigoEnvio=${codigoEnvio}&posSolicitud=${pos}&tipo=${tipo.trim()}`
     );
     const data = await res.json();
 
@@ -846,38 +1176,60 @@ async function cargarArchivosCompletados(codigoEnvio, pos) {
 
     if (!Array.isArray(data) || data.length === 0) {
         fileListPrecargados.innerHTML = `
-            <p class="text-sm text-gray-500">No hay archivos adjuntos</p>
+            <p class="text-sm text-gray-500 italic">No hay archivos adjuntos</p>
         `;
         return;
     }
 
     data.forEach(f => {
+        const extension = (f.nombre.split('.').pop() || '').toLowerCase();
+        const esPdf = extension === 'pdf';
 
         const div = document.createElement("div");
-        div.className =
-            "flex justify-between items-center gap-3 p-2 border rounded-md bg-gray-50";
+        div.className = "flex justify-between items-center gap-4 p-3 border rounded-lg bg-gray-50 hover:bg-gray-100 transition";
 
         div.innerHTML = `
-            <div class="flex-1">
-                <p class="text-sm font-medium">${f.nombre}</p>
-                <p class="text-xs text-gray-500">
-                    ${f.tipo} • ${new Date(f.fecha).toLocaleDateString("es-PE")}
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-800 truncate">${escapeHtml(f.nombre)}</p>
+                <p class="text-xs text-gray-500 mt-1">
+                    ${f.tipo} • ${f.fecha ? new Date(f.fecha).toLocaleDateString("es-PE") : 'Sin fecha'}
                 </p>
             </div>
 
-            <!-- Descargar con validación -->
-            <button
-                title="Descargar archivo"
-                class="text-blue-600 hover:text-blue-800 text-lg"
-                onclick="descargarArchivo('${f.ruta}', '${f.nombre}')">
-                ⬇️
-            </button>
-            <button
-                title="Reemplazar archivo"
-                class="text-orange-600 hover:text-orange-800 text-lg"
-                onclick="reemplazarArchivo(${f.id})">
-                ♻️
-            </button>
+            <div class="flex items-center gap-3">
+                <!-- Botón Previsualizar (solo PDF) -->
+                ${esPdf ? `
+                    <button
+                        title="Previsualizar PDF"
+                        onclick="abrirModalPdf('${f.ruta}', '${escapeHtml(f.nombre)}')"
+                        class="text-blue-600 hover:text-blue-800 text-xl">
+                        👁️
+                    </button>
+                ` : ''}
+
+                <!-- Botón Descargar (todos) -->
+                <button
+                    title="Descargar archivo"
+                    onclick="descargarArchivo('${f.ruta}', '${escapeHtml(f.nombre)}')"
+                    class="text-green-600 hover:text-green-800 text-xl">
+                    ⬇️
+                </button>
+
+                <!-- Botón Reemplazar -->
+                <button
+                    title="Reemplazar archivo"
+                    onclick="reemplazarArchivo(${f.id})"
+                    class="text-orange-600 hover:text-orange-800 text-xl">
+                    ♻️
+                </button>
+
+                 <!-- ELIMINAR -->
+                <button title="Eliminar archivo" 
+                        onclick="eliminarArchivo(${f.id}, '${escapeHtml(f.nombre)}')"
+                        class="text-red-600 hover:text-red-800 text-xl">
+                    🗑️
+                </button>
+            </div>
         `;
 
         fileListPrecargados.appendChild(div);
@@ -974,6 +1326,46 @@ function reemplazarArchivo(idArchivo) {
 
     input.click();
 }
+
+function eliminarArchivo(idArchivo, nombreArchivo) {
+    if (!confirm(`¿Estás seguro de eliminar el archivo "${nombreArchivo}"?\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    const codigoEnvio = document.getElementById("detailCodigo").textContent;
+    fetch('eliminar_archivo.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            idArchivo: idArchivo
+        })
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Archivo eliminado correctamente');
+                // Recargar la lista de archivos
+                cargarArchivosCompletados(codigoEnvio, currentPosition);
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Error de conexión al eliminar archivo');
+        });
+}
+
+
+function abrirModalPdf(ruta, nombreArchivo) {
+    document.getElementById('iframePdfPreview').src = ruta;
+    document.getElementById('modalPdfPreview').classList.remove('hidden');
+}
+
+function cerrarModalPdf() {
+    document.getElementById('modalPdfPreview').classList.add('hidden');
+    document.getElementById('iframePdfPreview').src = '';
+}
+
 
 //####################################################################
 //## SERELOGIA RESULTADOS CUANTITATIVOS

@@ -57,11 +57,11 @@ if (!empty($nomLab)) {
     $conditions[] = "c.nomLab = '$labEsc'";
 }
 
-if (count($conditions) === 0) {
-    $conditions[] = "d.estado_cuali = 'pendiente'";
+//protegido si no tiene algun where para filtrar
+$where = "";
+if (count($conditions) > 0) {
+    $where = "WHERE " . implode(" AND ", $conditions);
 }
-
-$where = "WHERE " . implode(" AND ", $conditions);
 
 
 // -------- TOTAL --------
@@ -123,7 +123,7 @@ $query = "
 
     $where
     GROUP BY d.codEnvio, d.posSolicitud
-    ORDER BY d.codEnvio DESC, fecToma DESC
+    ORDER BY d.codEnvio DESC, d.posSolicitud ASC
     LIMIT $limit OFFSET $offset
 ";
 

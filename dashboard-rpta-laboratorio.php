@@ -239,6 +239,7 @@ $result = $conexion->query($query);
                             <select id="filtroEstado"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
                                 <option value="pendiente">Seleccionar</option>
+                                <option value="todos">Todos</option>
                                 <option value="pendiente">Pendientes</option>
                                 <option value="completado">Completados</option>
                             </select>
@@ -322,7 +323,16 @@ $result = $conexion->query($query);
 
                         <div class="bg-white rounded-lg shadow-sm p-4">
                             <!-- Cabecera detalle -->
-                            <div class="pb-6 border-b border-gray-200 ">
+                            <div class="pb-6 border-b border-gray-200 relative">
+                                <!-- Botón cerrar panel -->
+                                <button
+                                    onclick="closeDetail()"
+                                    title="Cerrar"
+                                    class="absolute right-4 w-9 h-9 flex items-center justify-center
+                                            rounded-full text-gray-400 hover:text-red-600
+                                            hover:bg-red-50 transition">
+                                    ✕
+                                </button>
 
                                 <!-- Fila superior -->
                                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -479,21 +489,38 @@ $result = $conexion->query($query);
                             <div id="tabContentAnalisis">
 
                                 <div>
-                                    <span id="badgeStatusCuali"
-                                        class="inline-block mt-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide
-                                                bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300">
-                                        Pendiente
-                                    </span>
-                                    <!-- analisis section -->
-                                    <div>
-                                        <div class="flex items-center justify-between mb-3">
-                                            <h3 class="text-lg font-semibold text-gray-800">Seleccionar resultados de análisis</h3>
+                                    <!-- Estado + Switch -->
+                                    <div class="flex items-center justify-between mb-4">
 
-                                            <button id="addAnalisis"
-                                                class="px-5 py-2 rounded-md text-white bg-green-600 hover:bg-green-700">
-                                                ➕ Agregar nuevo análisis
-                                            </button>
-                                        </div>
+                                        <!-- Badge estado -->
+                                        <span id="badgeStatusCuali"
+                                            class="inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide
+                                                bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300">
+                                            Pendiente
+                                        </span>
+
+                                        <!-- Switch -->
+                                        <label class="relative inline-flex items-center cursor-pointer hidden">
+                                            <input onchange="confirmarCambioCuali(this)" type="checkbox" id="switchCuali" class="sr-only peer" checked>
+                                            <div
+                                                class="w-11 h-6 bg-gray-200 rounded-full peer
+                                                        peer-checked:bg-blue-600
+                                                        after:content-['']
+                                                        after:absolute after:top-[2px] after:left-[2px]
+                                                        after:bg-white after:rounded-full after:h-5 after:w-5
+                                                        after:transition-all
+                                                        peer-checked:after:translate-x-5">
+                                            </div>
+                                            <span class="ml-3 text-sm font-medium text-gray-700">
+
+                                            </span>
+                                        </label>
+
+                                    </div>
+
+                                    <!-- analisis section -->
+                                    <div id="bloqueCuali" class="transition-all duration-300">
+
                                         <!-- NUEVA FECHA DE REGISTRO -->
                                         <div class="mt-6 mb-3">
                                             <label for="fechaRegistroLab" class="block text-sm font-medium text-gray-700 mb-1">
@@ -503,6 +530,14 @@ $result = $conexion->query($query);
                                             <input type="date"
                                                 id="fechaRegistroLab"
                                                 class="block w-full max-w-xs text-sm border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" />
+                                        </div>
+                                        <div class="flex items-center justify-between mb-3">
+                                            <h3 class="text-lg font-semibold text-gray-800">Seleccionar resultados de análisis</h3>
+
+                                            <button id="addAnalisis"
+                                                class="px-5 py-2 rounded-md text-white bg-green-600 hover:bg-green-700">
+                                                ➕ Agregar nuevo análisis
+                                            </button>
                                         </div>
                                         <div id="analisisContainer" class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4"></div>
 
@@ -531,12 +566,10 @@ $result = $conexion->query($query);
                                             <p class="text-xs text-gray-500 mt-1">(Máx. 10 MB por archivo)</p>
                                         </div>
 
-
-
                                         <!-- Botones -->
                                         <div class="mt-6 flex justify-end gap-3">
                                             <button onclick="closeDetail()" class="px-5 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100">Cancelar</button>
-                                            <button id="btnGuardarResultados" onclick="guardarResultados()" class="px-5 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700">💾 Guardar Respuesta</button>
+                                            <button id="btnGuardarResultados" onclick="abrirModalConfirmacion()" class="px-5 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700">💾 Guardar Respuesta</button>
                                         </div>
                                     </div>
                                 </div>
@@ -545,56 +578,81 @@ $result = $conexion->query($query);
                             <!-- TAB CONTENIDO CUANTITATIVO -->
                             <div id="tabContentSegundo" class="hidden">
                                 <div id="formPanel" class="">
-                                    <span id="badgeStatusCuanti"
-                                        class="inline-block mt-2 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide
+                                    <!-- Estado + Switch -->
+                                    <div class="flex items-center justify-between mb-4">
+
+                                        <!-- Badge estado -->
+                                        <span id="badgeStatusCuanti"
+                                            class="inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide
                                                 bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300">
-                                        Pendiente
-                                    </span>
-                                    <form id="formAnalisis" onsubmit="guardar(event)" class=">
-
-                                        <input type=" hidden" id="action" name="action" value="create">
-                                        <input type="hidden" id="tipo_ave_hidden" name="tipo_ave">
-                                        <input type="hidden" id="codRef_granja" name="codigo_granja">
-                                        <input type="hidden" id="codRef_campana" name="codigo_campana">
-                                        <input type="hidden" id="codRef_galpon" name="numero_galpon">
-
-
-                                        <div id="camposEspecificos" class=""></div>
-
-                                        <h3 class="text-sm font-bold text-gray-700 mb-3 uppercase">Resultados Analíticos</h3>
-
-                                        <span id="badgeTipo" class="px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-600">
-                                            ...
+                                            Pendiente
                                         </span>
-                                        <div id="contenedorEnfermedades" class="mt-4 space-y-4"></div>
 
-                                        <div class="mt-6">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                Subir archivos (PDF, Word, Excel, Imágenes, etc.) — Opcional
-                                            </label>
+                                        <!-- Switch -->
+                                        <label class="relative inline-flex items-center cursor-pointer hidden">
+                                            <input onchange="confirmarCambioCuanti(this)" type="checkbox" id="switchCuanti" class="sr-only peer" checked>
+                                            <div
+                                                class="w-11 h-6 bg-gray-200 rounded-full peer
+                                                        peer-checked:bg-blue-600
+                                                        after:content-['']
+                                                        after:absolute after:top-[2px] after:left-[2px]
+                                                        after:bg-white after:rounded-full after:h-5 after:w-5
+                                                        after:transition-all
+                                                        peer-checked:after:translate-x-5">
+                                            </div>
+                                            <span class="ml-3 text-sm font-medium text-gray-700">
 
-                                            <input type="file" id="archivoPdfCuanti" name="archivoPdfCuanti[]" multiple
-                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg" class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4
+                                            </span>
+                                        </label>
+
+                                    </div>
+                                    <div id="bloqueCuanti" class="transition-all duration-300">
+                                        <form id="formAnalisis" onsubmit="guardar(event)" class="">
+
+                                            <input type="hidden" id="action" name="action" value="create">
+                                            <input type="hidden" id="tipo_ave_hidden" name="tipo_ave">
+                                            <input type="hidden" id="codRef_granja" name="codigo_granja">
+                                            <input type="hidden" id="codRef_campana" name="codigo_campana">
+                                            <input type="hidden" id="codRef_galpon" name="numero_galpon">
+
+
+                                            <div id="camposEspecificos" class=""></div>
+
+                                            <h3 class="text-sm font-bold text-gray-700 mb-3 uppercase">Resultados Analíticos</h3>
+
+                                            <span id="badgeTipo" class="px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-600">
+                                                ...
+                                            </span>
+                                            <div id="contenedorEnfermedades" class="mt-4 space-y-4"></div>
+
+                                            <div class="mt-6">
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                                    Subir archivos (PDF, Word, Excel, Imágenes, etc.) — Opcional
+                                                </label>
+
+                                                <input type="file" id="archivoPdfCuanti" name="archivoPdfCuanti[]" multiple
+                                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg" class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4
                                             file:rounded-md file:border-0
                                             file:text-sm file:font-semibold
                                             file:bg-blue-600 file:text-white
                                             hover:file:bg-blue-700
                                             border border-gray-300 rounded-md p-1" />
 
-                                            <div id="fileListCuanti" class="mt-3 space-y-2"></div>
+                                                <div id="fileListCuanti" class="mt-3 space-y-2"></div>
 
-                                            <p class="text-xs text-gray-500 mt-1">(Máx. 10 MB por archivo)</p>
-                                        </div>
+                                                <p class="text-xs text-gray-500 mt-1">(Máx. 10 MB por archivo)</p>
+                                            </div>
 
-                                        <div class="mt-8 flex justify-end">
+                                            <div class="mt-8 flex justify-end">
 
-                                            <button type="submit"
-                                                class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105">
-                                                <i class="fas fa-save mr-2"></i> Guardar Resultados
-                                            </button>
-                                        </div>
-                                    </form>
-                                    <button onclick="closeDetail()" class="mr-2 px-5 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100">Cancelar</button>
+                                                <button type="submit"
+                                                    class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105">
+                                                    <i class="fas fa-save mr-2"></i> Guardar Resultados
+                                                </button>
+                                            </div>
+                                        </form>
+                                        <button onclick="closeDetail()" class="mr-2 px-5 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100">Cancelar</button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -633,6 +691,183 @@ $result = $conexion->query($query);
             </div>
         </div>
 
+
+        <!-- Modal de Confirmación -->
+        <div id="modalConfirmacion" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+                <!-- Header azul -->
+                <div class="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold">Confirmar Guardado de Resultados</h3>
+                        <button onclick="cerrarModalConfirmacion()" class="text-white hover:text-gray-200 text-2xl leading-none">
+                            ×
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cuerpo -->
+                <div class="px-6 py-8">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-blue-100 flex items-center justify-center">
+                            <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <p class="text-gray-800 text-lg font-medium mb-4">
+                            ¿Está seguro de guardar estos resultados como <strong>completados</strong>?
+                        </p>
+                    </div>
+
+                    <!-- Mensaje informativo -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 text-sm text-blue-900">
+                        <p class="font-medium mb-2">📌 Información importante:</p>
+                        <p>
+                            Marque como <strong>completado</strong> la respuesta si no tiene más datos por ingresar.<br>
+                            De lo contrario, si le faltan datos, puede marcarla como <strong>pendiente</strong> y guardar sus avances actuales.
+                        </p>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="flex gap-4 justify-center">
+                        <button onclick="guardarResultados('pendiente')"
+                            class="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">
+                            Guardar como pendiente
+                        </button>
+                        <button onclick="guardarResultados('completado')"
+                            class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-md">
+                            Guardar y completar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Modal de Confirmación para Completar Resultado -->
+        <div id="modalCompletarResultado" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+                <!-- Header verde -->
+                <div class="px-6 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold">Completar Resultado</h3>
+                        <button onclick="cerrarModalCompletar()" class="text-white hover:text-gray-200 text-2xl leading-none">
+                            ×
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cuerpo -->
+                <div class="px-6 py-8">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-green-100 flex items-center justify-center">
+                            <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <p id="lblModalCompletar" class="text-gray-800 text-lg font-medium">
+
+                        </p>
+                    </div>
+
+                    <!-- Campo de comentario -->
+                    <div class="mb-6">
+                        <label for="comentarioCompletar" class="block text-sm font-medium text-gray-700 mb-2">
+                            Comentario (opcional)
+                        </label>
+                        <textarea id="comentarioCompletar" rows="4"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition"
+                            placeholder="Explique el motivo por el cual marca este resultado como completado..."></textarea>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="flex gap-4 justify-center">
+                        <button onclick="cerrarModalCompletar()"
+                            class="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">
+                            Cancelar
+                        </button>
+                        <button onclick="confirmarCompletado()"
+                            class="px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition shadow-md">
+                            Confirmar y Completar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Modal de Confirmación para poner pendiente un resultado -->
+        <div id="modalResultadoPendiente" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+                <!-- Header verde -->
+                <div class="px-6 py-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold">Resultado Pendiente</h3>
+                        <button onclick="cerrarModalPendiente()" class="text-white hover:text-gray-200 text-2xl leading-none">
+                            ×
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cuerpo -->
+                <div class="px-6 py-8">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-yellow-100 flex items-center justify-center">
+                            <svg class="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <p id="lblModalPendiente" class="text-gray-800 text-lg font-medium">
+                            ¿Desea dejar como pendiente este resultado?
+                        </p>
+                    </div>
+
+                    <!-- Campo de comentario -->
+                    <div class="mb-6">
+                        <label for="comentarioPendiente" class="block text-sm font-medium text-gray-700 mb-2">
+                            Comentario (opcional)
+                        </label>
+                        <textarea id="comentarioPendiente" rows="4"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-green-500 transition"
+                            placeholder="Explique el motivo por el cual marca este resultado como pendiente..."></textarea>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="flex gap-4 justify-center">
+                        <button onclick="cerrarModalPendiente()"
+                            class="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">
+                            Cancelar
+                        </button>
+                        <button onclick="confirmarPendiente()"
+                            class="px-6 py-3 bg-yellow-600 text-white font-medium rounded-lg hover:bg-yellow-700 transition shadow-md">
+                            Confirmar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para previsualizar PDF -->
+        <div id="modalPdfPreview" class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-5/6 flex flex-col">
+                <!-- Header -->
+                <div class="flex justify-between items-center px-6 py-4 border-b bg-gray-50 rounded-t-xl">
+                    <h3 class="text-lg font-semibold text-gray-800">Previsualización del documento</h3>
+                    <button onclick="cerrarModalPdf()" class="text-gray-500 hover:text-gray-700 text-2xl">
+                        ×
+                    </button>
+                </div>
+                <!-- Contenido -->
+                <div class="flex-1 overflow-hidden bg-gray-100">
+                    <iframe id="iframePdfPreview" class="w-full h-full border-0" src="" frameborder="0"></iframe>
+                </div>
+                <!-- Footer -->
+                <div class="px-6 py-4 border-t bg-gray-50 rounded-b-xl text-right"></div>
+            </div>
+        </div>
+
         <!-- Footer -->
         <div class="text-center mt-12">
             <p class="text-gray-500 text-sm">
@@ -644,17 +879,14 @@ $result = $conexion->query($query);
 
     <script src="rptaLaboratorio.js"></script>
 
+    <script>
 
+    </script>
     <script>
 
     </script>
 
 
-
-
-    <script src="funciones.js"></script>
-    <script src="planificacion.js"></script>
-    <script src="manteminiento.js"></script>
 </body>
 
 </html>

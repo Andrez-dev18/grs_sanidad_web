@@ -331,11 +331,14 @@ if (!$conexion) {
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-reportes.php', 'reportes', 'Gestión de Reportes')"
                         class="menu-link block text-gray-400 hover:text-white">Formato de Muestras</a>
                     <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-seguimiento.php','seguimiento', 'Seguimiento de muestras')"
+                        class="menu-link block text-gray-400 hover:text-white">Seguimiento de muestras</a>
+                    <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-muestras-cabecera.php','Muestra cabecera', 'Muestra cabecera')"
-                        class="menu-link block text-gray-400 hover:text-white">Listado de Muestras</a>
+                        class="menu-link block text-gray-400 hover:text-white hidden">Listado de Muestras</a>
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-detalle-muestras.php','Detalle', 'Detalle')"
-                        class="menu-link block text-gray-400 hover:text-white">Listado de Solicitudes</a>
+                        class="menu-link block text-gray-400 hover:text-white hidden">Listado de Solicitudes</a>
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados.php','Resultados', 'Resultados')"
                         class="menu-link block text-gray-400 hover:text-white">Resultados cualitativos</a>
@@ -347,11 +350,7 @@ if (!$conexion) {
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados-pollo-adulto.php','Resultados', 'Resultados')"
                         class="menu-link block text-gray-400 hover:text-white">Resultados cuantitativos pollo
-                        adulto</a>
-                    <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-seguimiento.php','seguimiento', 'Seguimiento de muestras')"
-                        class="menu-link block text-gray-400 hover:text-white">Seguimiento</a>
-
+                        adulto</a>               
                 </div>
 
 

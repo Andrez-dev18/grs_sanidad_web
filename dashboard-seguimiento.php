@@ -693,32 +693,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                             <!-- Granja -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Granja</label>
-                                <select id="filtroGranja"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                                    <option value="">Seleccionar</option>
-                                    <?php
-                                    $sql = "
-                                        SELECT codigo, nombre
-                                        FROM ccos
-                                        WHERE LENGTH(codigo)=3
-                                        AND swac='A'
-                                        AND LEFT(codigo,1)='6'
-                                        AND codigo NOT IN ('650','668','669','600')
-                                        ORDER BY nombre
-                                    ";
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Granja(s)</label>
 
-                                    $res = mysqli_query($conexion, $sql);
+                                <div class="relative">
+                                    <button type="button" id="dropdownGranjaBtn"
+                                        class="w-full px-3 py-2 text-sm text-left bg-white border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center">
+                                        <span id="dropdownGranjaText" class="text-gray-500">Seleccionar granjas...</span>
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
 
-                                    if ($res && mysqli_num_rows($res) > 0) {
-                                        while ($row = mysqli_fetch_assoc($res)) {
-                                            echo '<option value="' . htmlspecialchars($row['codigo']) . '">'
-                                                . htmlspecialchars($row['nombre']) .
-                                                '</option>';
-                                        }
-                                    }
-                                    ?>
-                                </select>
+                                    <!-- Dropdown con checkboxes -->
+                                    <div id="dropdownGranjaMenu" class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto hidden">
+                                        <div class="p-2">
+                                            <?php
+                                            $sql = "
+                                                    SELECT codigo, nombre
+                                                    FROM ccos
+                                                    WHERE LENGTH(codigo)=3
+                                                    AND swac='A'
+                                                    AND LEFT(codigo,1)='6'
+                                                    AND codigo NOT IN ('650','668','669','600')
+                                                    ORDER BY nombre
+                                                ";
+
+                                            $res = mysqli_query($conexion, $sql);
+
+                                            if ($res && mysqli_num_rows($res) > 0) {
+                                                while ($row = mysqli_fetch_assoc($res)) {
+                                                    echo '
+                                                        <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                                                            <input type="checkbox" 
+                                                                name="filtroGranja[]" 
+                                                                value="' . htmlspecialchars($row['codigo']) . '" 
+                                                                class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                                            <span class="ml-3 text-sm text-gray-700">' . htmlspecialchars($row['nombre']) . '</span>
+                                                        </label>';
+                                                }
+                                            }
+                                            ?>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Galpón -->
@@ -776,6 +793,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                 style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
                                 📊 Exportar a Excel
                             </button>
+                            <button type="button"
+                                class="px-6 py-2.5 text-white font-medium rounded-lg transition inline-flex items-center gap-2"
+                                onclick="generarReportePDF()"
+                                style="background: linear-gradient(135deg, #b91b10e1 0%, #960f05ff 100%); box-shadow: 0 4px 6px rgba(185, 16, 38, 0.3);">
+                                Exportar a PDF
+                            </button>
                         </div>
 
                     </div>
@@ -803,6 +826,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                         <!-- NUEVAS COLUMNAS -->
                                         <th class="">Detalle</th>
                                         <th class="">Historial</th>
+                                        <th class="">PDF</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1031,21 +1055,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 </div>
 
                 <!-- Progreso General -->
-                <div id="resumenTracking" class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
-                    <div class="flex justify-between items-center mb-4">
+                <div id="resumenTracking"
+                    class="px-6 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200">
+
+                    <div class="flex justify-between items-center mb-2">
                         <div>
-                            <p class="text-sm text-gray-600">Progreso General del Envío</p>
-                            <p class="text-2xl font-bold text-gray-800" id="codEnvioTracking"></p>
+                            <p class="text-xs text-gray-600">Progreso General del Envío</p>
+                            <p class="text-lg font-bold text-gray-800" id="codEnvioTracking"></p>
                         </div>
-                        <div class="text-right">
-                            <p class="text-4xl font-bold text-blue-600" id="porcentajeComplecion">0%</p>
-                            <p class="text-sm text-gray-600">Completado</p>
+
+                        <div class="text-right leading-tight">
+                            <p class="text-2xl font-bold text-blue-600" id="porcentajeComplecion">0%</p>
+                            <p class="text-xs text-gray-600">Completado</p>
                         </div>
                     </div>
-                    <div class="w-full bg-gray-300 rounded-full h-3">
-                        <div id="barraProgreso" class="bg-gradient-to-r from-green-400 to-blue-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+
+                    <div class="w-full bg-gray-300 rounded-full h-2">
+                        <div id="barraProgreso"
+                            class="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-500"
+                            style="width: 0%">
+                        </div>
                     </div>
                 </div>
+
 
                 <!-- Timeline -->
                 <div class="flex-1 overflow-y-auto px-6 py-8">
@@ -1107,7 +1139,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             var laboratorio = $('#filtroLaboratorio').val();
             var muestra = $('#filtroTipoMuestra').val();
             var analisis = $('#filtroTipoAnalisis').val();
-            var granja = $('#filtroGranja').val();
+
+            //array de granjas
+            var granjas = Array.from(document.querySelectorAll('input[name="filtroGranja[]"]:checked'))
+                .map(cb => cb.value);
+
             var galpon = $('#filtroGalpon').val();
             var edadDesde = $('#filtroEdadDesde').val();
             var edadHasta = $('#filtroEdadHasta').val();
@@ -1143,7 +1179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         laboratorio: laboratorio,
                         muestra: muestra,
                         analisis: analisis,
-                        granja: granja,
+                        granjas: granjas,
                         galpon: galpon,
                         edadDesde: edadDesde,
                         edadHasta: edadHasta,
@@ -1298,6 +1334,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             <i class="fa-solid fa-clock-rotate-left text-lg"></i>
                         </button>`;
                         }
+                    },
+                    {
+                        data: null,
+                        className: 'text-center',
+                        orderable: false,
+                        render: function(data, type, row) {
+                            return `<button 
+                            class="text-red-600 hover:text-red-800 transition"
+                            title="Generar PDF"
+                            onclick="generarReportePDF('${row.codEnvio}')">
+                            <i class="fa-solid fa-file-pdf"></i>
+                        </button>`;
+                        }
                     }
                 ],
                 columnDefs: [{
@@ -1334,18 +1383,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 $('#filtroEstado').val('');
                 $('#filtroLaboratorio').val('');
                 $('#filtroTipoMuestra').val('');
-                //limpiar select2
+
+                // Limpiar select2 (si usas Select2 para análisis)
                 $('#filtroTipoAnalisis').val(null).trigger('change');
+
                 $('#filtroGalpon').val('');
-                $('#filtroGranja').val('');
                 $('#filtroEdadDesde').val('');
                 $('#filtroEdadHasta').val('');
+
+                // === NUEVO: Limpiar dropdown de granjas múltiples ===
+                const checkboxesGranja = document.querySelectorAll('input[name="filtroGranja[]"]');
+                checkboxesGranja.forEach(cb => {
+                    cb.checked = false;
+                });
+
+                // Restaurar texto del botón dropdown
+                const dropdownText = document.getElementById('dropdownGranjaText');
+                if (dropdownText) {
+                    dropdownText.textContent = "Seleccionar granjas...";
+                    dropdownText.classList.add('text-gray-500');
+                }
+
+                // Cerrar el dropdown si está abierto
+                const dropdownMenu = document.getElementById('dropdownGranjaMenu');
+                if (dropdownMenu) {
+                    dropdownMenu.classList.add('hidden');
+                }
+
+                // Recargar la tabla con filtros limpios
                 cargarTabla();
             });
         });
     </script>
 
-
+    <script>
+        function generarReportePDF(codEnvio) {
+            if (!codEnvio) {
+                alert('Seleccione una solicitud primero');
+                return;
+            }
+            window.open(`reports/reporteSeguimientoMuestrasPdf.php?codEnvio=${codEnvio}`, '_blank');
+        }
+    </script>
 
     <script>
         let codEnvioActual = null;
@@ -1557,70 +1636,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 const isCompleted = evento.estado === 'completado';
                 const iconClass = getIcono(evento.paso);
                 const colorClase = isCompleted ? 'bg-green-100 border-green-300' : 'bg-yellow-100 border-yellow-300';
-                const colorTexto = isCompleted ? 'text-green-700' : 'text-yellow-700';
                 const colorIcono = isCompleted ? 'bg-green-500' : 'bg-yellow-500';
 
                 let html = `
                     <div class="relative">
-                        <div class="flex gap-6">
+                        <div class="flex gap-4">
                             <!-- Línea vertical -->
                             <div class="flex flex-col items-center">
-                                <div class="${colorIcono} rounded-full w-12 h-12 flex items-center justify-center text-white shadow-lg">
-                                    <i class="fas ${iconClass} text-lg"></i>
+                                <div class="${colorIcono} rounded-full w-9 h-9 flex items-center justify-center text-white shadow">
+                                    <i class="fas ${iconClass} text-sm"></i>
                                 </div>
-                                ${index < timeline.length - 1 ? '<div class="w-1 h-20 bg-gray-300 my-2"></div>' : ''}
+                                ${
+                                    index < timeline.length - 1
+                                        ? '<div class="w-0.5 h-12 bg-gray-300 my-1"></div>'
+                                        : ''
+                                }
                             </div>
 
                             <!-- Contenido -->
-                            <div class="flex-1 pt-2 mb-4">
-                                <div class="p-4 ${colorClase} border border-opacity-30 rounded-lg">
-                                    <div class="flex justify-between items-start mb-4">
+                            <div class="flex-1 pt-1">
+                                <div class="p-3 ${colorClase} border border-opacity-30 rounded-lg">
+                                    <div class="flex justify-between items-start gap-3">
                                         <div>
-                                            <h3 class="font-bold text-gray-800 text-lg">${evento.titulo}</h3>
-                                            <p class="text-sm text-gray-600 mt-1">${evento.descripcion}</p>
+                                            <h3 class="font-bold text-gray-800 text-sm leading-tight">
+                                                ${evento.titulo}
+                                            </h3>
+                                            <p class="text-xs text-gray-600 mt-0.5 leading-snug">
+                                                ${evento.descripcion}
+                                            </p>
                                         </div>
-                                        <span class="inline-block px-3 py-1 rounded-full text-xs font-semibold ${isCompleted ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'}">
+                                        <span class="inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold
+                                            ${isCompleted ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'}">
                                             ${isCompleted ? 'Completado' : 'Pendiente'}
                                         </span>
                                     </div>
 
                                     <!-- Detalles -->
-                                    <div class="grid grid-cols-2 gap-3 mt-3 text-sm border-t border-opacity-20 border-gray-400 pt-3">
-                `;
+                                    <div class="grid grid-cols-3 gap-2 mt-2 text-xs border-t border-opacity-20 border-gray-400 pt-2">
+                    `;
 
                 // Agregar detalles
                 for (const [clave, valor] of Object.entries(evento.detalles)) {
                     html += `
-                        <div>
-                            <p class="text-gray-600 font-semibold">${clave}</p>
-                            <p class="text-gray-800">${valor}</p>
-                        </div>
-                    `;
+                <div>
+                    <p class="text-gray-600 font-semibold leading-tight">${clave}</p>
+                    <p class="text-gray-800 leading-tight">${valor}</p>
+                </div>
+            `;
                 }
 
                 html += `
-                                    </div>
+                            </div>
 
-                                    <!-- Meta información -->
-                                    <div class="flex justify-between items-center mt-3 text-xs text-gray-600 border-t border-opacity-20 border-gray-400 pt-3">
-                                        <div>
-                                            <i class="fas fa-user-circle mr-1"></i>
-                                            <strong>${evento.usuario}</strong>
-                                        </div>
-                                        <div>
-                                            <i class="fas fa-calendar mr-1"></i>
-                                            ${evento.fecha ? new Date(evento.fecha).toLocaleString('es-PE') : 'Sin fecha'}
-                                        </div>
-                                    </div>
+                            <!-- Meta información -->
+                            <div class="flex justify-between items-center mt-2 text-[11px] text-gray-600 border-t border-opacity-20 border-gray-400 pt-2">
+                                <div>
+                                    <i class="fas fa-user-circle mr-1"></i>
+                                    <strong>${evento.usuario}</strong>
+                                </div>
+                                <div>
+                                    <i class="fas fa-calendar mr-1"></i>
+                                    ${evento.fecha ? new Date(evento.fecha).toLocaleString('es-PE') : 'Sin fecha'}
                                 </div>
                             </div>
                         </div>
                     </div>
-                `;
+                </div>
+            </div>
+        `;
 
                 container.innerHTML += html;
             });
         }
+
 
         function getIcono(paso) {
             const iconos = {
@@ -1699,6 +1787,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             document.getElementById('modalPDF').classList.add('hidden');
             document.getElementById('iframePDF').src = '';
         }
+
+        // Dropdown Granja
+        const dropdownBtn = document.getElementById('dropdownGranjaBtn');
+        const dropdownMenu = document.getElementById('dropdownGranjaMenu');
+        const dropdownText = document.getElementById('dropdownGranjaText');
+        const checkboxes = dropdownMenu.querySelectorAll('input[type="checkbox"]');
+
+        dropdownBtn.addEventListener('click', () => {
+            dropdownMenu.classList.toggle('hidden');
+        });
+
+        // Actualizar texto del botón según selección
+        function updateGranjaText() {
+            const selected = Array.from(checkboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.parentElement.textContent.trim());
+
+            if (selected.length === 0) {
+                dropdownText.textContent = "Seleccionar granjas...";
+                dropdownText.classList.add('text-gray-500');
+            } else if (selected.length === 1) {
+                dropdownText.textContent = selected[0];
+                dropdownText.classList.remove('text-gray-500');
+            } else {
+                dropdownText.textContent = `${selected.length} granjas seleccionadas`;
+                dropdownText.classList.remove('text-gray-500');
+            }
+        }
+
+        // Escuchar cambios en checkboxes
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', updateGranjaText);
+        });
+
+        // Cerrar dropdown al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                dropdownMenu.classList.add('hidden');
+            }
+        });
     </script>
 
 

@@ -11,6 +11,7 @@ $input = json_decode(file_get_contents("php://input"), true);
 $codigoEnvio = $input["codigoEnvio"] ?? "";
 $analisis = $input["analisis"] ?? [];
 $pos = $input["posicion"] ?? "";
+$estado = $input["estadoCuali"] ?? "";
 $user = $_SESSION['usuario'] ?? null;
 
 if ($codigoEnvio == "" || empty($analisis) || $pos == "") {
@@ -108,10 +109,10 @@ foreach ($analisis as $a) {
         if ($conn->query($sql)) {
             $insertados++;
 
-            // ✅ ESTADO SOLO AL INSERTAR
+            // ✅ actualizar estado
             $conn->query("
                 UPDATE san_fact_solicitud_det 
-                SET estado_cuali = 'completado'
+                SET estado_cuali = '$estado'
                 WHERE codEnvio = '$codigoEnvio'
                   AND posSolicitud = '$pos'
                   AND codAnalisis = '$cod'
