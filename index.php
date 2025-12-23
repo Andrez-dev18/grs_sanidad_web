@@ -392,7 +392,7 @@ if (!$conexion) {
                             class="menu-link block text-gray-400 hover:text-white">Tipos de Muestra</a>
                         <a href="#"
                             onclick="selectMenuItem(this); loadDashboardAndData('dashboard-analisis.php','🔍 Analisis', 'Administre los analisis registrados en el sistema')"
-                            class="menu-link block text-gray-400 hover:text-white">Analisis</a>
+                            class="menu-link block text-gray-400 hover:text-white">Tipos de Analisis</a>
                         <a href="#"
                             onclick="selectMenuItem(this); loadDashboardAndData('dashboard-paquete-analisis.php','📦 Paquete analisis', 'Administre los paquetes de analisis registrados en el sistema')"
                             class="menu-link block text-gray-400 hover:text-white">Paquetes de Analisis</a>

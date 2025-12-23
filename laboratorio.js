@@ -9,7 +9,7 @@ function openLaboratorioModal(action, codigo = null, nombre = '') {
         document.getElementById('laboratorioModalAction').value = 'create';
         document.getElementById('laboratorioEditCodigo').value = '';
         document.getElementById('laboratorioModalNombre').value = '';
-    } else if (action === 'edit') {
+    } else if (action === 'update') {
         title.textContent = '✏️ Editar Laboratorio';
         document.getElementById('laboratorioModalAction').value = 'update';
         document.getElementById('laboratorioEditCodigo').value = codigo;

@@ -150,10 +150,10 @@ function savePaqueteMuestra(event) {
         document.getElementById('paqueteMuestraModalTipoMuestra').focus();
         return;
     }
-    if (analisis.length === 0) {
+   /* if (analisis.length === 0) {
         alert('⚠️ Debe seleccionar al menos un análisis.');
         return;
-    }
+    }*/
 
     const params = { action, nombre, tipoMuestra, analisis: JSON.stringify(analisis) };
     if (action === 'update') params.codigo = codigo;

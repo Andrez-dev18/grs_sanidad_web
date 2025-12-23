@@ -12,8 +12,9 @@ if (!$conexion) {
     exit();
 }
 
-$action = $_POST['action'] ?? '';
-$nombre = trim($_POST['nombre'] ?? '');
+// Usamos operador ?? (válido en PHP 7.2)
+$action = isset($_POST['action']) ? $_POST['action'] : '';
+$nombre = trim(isset($_POST['nombre']) ? $_POST['nombre'] : '');
 $codigo = isset($_POST['codigo']) ? (int) $_POST['codigo'] : null;
 
 // Validar nombre solo para crear/editar
@@ -26,11 +27,12 @@ mysqli_begin_transaction($conexion);
 
 try {
     if ($action === 'create') {
-        // Opcional: evitar duplicados
+        // Evitar duplicados
         $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_laboratorio WHERE nombre = ?");
         mysqli_stmt_bind_param($check, "s", $nombre);
         mysqli_stmt_execute($check);
-        $row = mysqli_stmt_get_result($check)->fetch_assoc();
+        $result = mysqli_stmt_get_result($check);
+        $row = mysqli_fetch_assoc($result);
         if ($row['cnt'] > 0) {
             throw new Exception('Ya existe un laboratorio con ese nombre.');
         }
@@ -39,24 +41,28 @@ try {
         mysqli_stmt_bind_param($stmt, "s", $nombre);
 
     } elseif ($action === 'update') {
-        if (!$codigo)
+        if ($codigo === null || $codigo <= 0) {
             throw new Exception('Código no válido.');
+        }
 
-        // Opcional: evitar duplicados (excluyendo el actual)
+        /*
         $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_laboratorio WHERE nombre = ? AND codigo != ?");
         mysqli_stmt_bind_param($check, "si", $nombre, $codigo);
         mysqli_stmt_execute($check);
-        $row = mysqli_stmt_get_result($check)->fetch_assoc();
+        $result = mysqli_stmt_get_result($check);
+        $row = mysqli_fetch_assoc($result);
         if ($row['cnt'] > 0) {
             throw new Exception('Ya existe otro laboratorio con ese nombre.');
         }
+        */
 
         $stmt = mysqli_prepare($conexion, "UPDATE san_dim_laboratorio SET nombre = ? WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "si", $nombre, $codigo);
 
     } elseif ($action === 'delete') {
-        if (!$codigo)
+        if ($codigo === null || $codigo <= 0) {
             throw new Exception('Código no válido.');
+        }
 
         $stmt = mysqli_prepare($conexion, "DELETE FROM san_dim_laboratorio WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "i", $codigo);
@@ -71,11 +77,20 @@ try {
 
     mysqli_commit($conexion);
 
-    $mensaje = match ($action) {
-        'create' => '✅ Laboratorio creado correctamente.',
-        'update' => '✅ Laboratorio actualizado correctamente.',
-        'delete' => '✅ Laboratorio eliminado correctamente.',
-    };
+    // Reemplazar match por switch (PHP 7.2 compatible)
+    switch ($action) {
+        case 'create':
+            $mensaje = '✅ Laboratorio creado correctamente.';
+            break;
+        case 'update':
+            $mensaje = '✅ Laboratorio actualizado correctamente.';
+            break;
+        case 'delete':
+            $mensaje = '✅ Laboratorio eliminado correctamente.';
+            break;
+        default:
+            $mensaje = 'Operación completada.';
+    }
 
     echo json_encode(['success' => true, 'message' => $mensaje]);
 

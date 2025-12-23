@@ -79,14 +79,7 @@ if (!$conexion) {
 
         <!-- VISTA EMPRESAS DE TRANSPORTE -->
         <div id="viewEmpresasTransporte" class="content-view">
-            <div class="content-header max-w-7xl mx-auto mb-8">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="text-4xl">🚚</span>
-                    <h1 class="text-3xl font-bold text-gray-800">Empresas de Transporte</h1>
-                </div>
-                <p class="text-gray-600 text-sm">Administre las empresas de transporte registradas en el sistema</p>
-            </div>
-
+            
             <div class="form-container max-w-7xl mx-auto">
                 <!-- Botones de acción -->
                 <div class="mb-6 flex justify-between items-center flex-wrap gap-3">

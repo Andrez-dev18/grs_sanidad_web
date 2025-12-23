@@ -56,7 +56,7 @@ $mail = new PHPMailer(true);
 try {
     // Configuración SMTP
     $mail->isSMTP();
-    $mail->Host       = 'mail.rinconadadelsur.com.pe'; // 'smtp.gmail.com';
+    $mail->Host       = 'mail.rinconadadelsur.com.pe'; 
     $mail->SMTPAuth   = true;
     $mail->Username   = $sender['correo'];
     $mail->Password   = base64_decode($sender['password']);
