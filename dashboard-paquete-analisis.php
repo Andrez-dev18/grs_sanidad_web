@@ -4,12 +4,10 @@ if (empty($_SESSION['active'])) {
     header('Location: login.php');
     exit();
 }
-
-//ruta relativa a la conexion
 include_once '../conexion_grs_joya/conexion.php';
 $conexion = conectar_joya();
 if (!$conexion) {
-    die("Error de conexión: " . mysqli_connect_error());
+    die("Error de conexión.");
 }
 ?>
 
@@ -20,12 +18,10 @@ if (!$conexion) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Paquetes de Muestra</title>
-
-    <!-- Tailwind CSS -->
     <link rel="stylesheet" href="css/output.css">
-
-    <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
 
     <style>
         body {
@@ -33,97 +29,275 @@ if (!$conexion) {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
 
-        .card {
-            transition: all 0.3s ease;
+        /* --- Botones --- */
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
             cursor: pointer;
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(59, 130, 246, 0.4);
         }
 
-        .icon-box {
-            width: 80px;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 16px;
-            margin: 0 auto 1rem;
-            font-size: 2.5rem;
-        }
-
-        .logo-container {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 2rem;
+        .btn-outline {
             background: white;
-            border-radius: 20px;
-            display: flex;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-outline:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            gap: 0.5rem;
         }
 
-        .logo-container img {
-            width: 90%;
-            height: 90%;
-            object-fit: contain;
+        .btn-export:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(16, 185, 129, 0.4);
         }
 
+        /* --- Inputs --- */
+        .form-control {
+            width: 100%;
+            padding: 0.625rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        /* --- Badges de tipo de muestra --- */
         .tipo-muestra-badge {
             display: inline-flex;
             flex-direction: column;
             background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
             border: 1px solid #bae6fd;
-            border-radius: 8px;
-            padding: 8px 12px;
-            min-width: 120px;
+            border-radius: 0.75rem;
+            min-width: 180px;
+            height: 56px;
+            justify-content: center;
+            align-items: center;
+            padding: 0.5rem 0.75rem;
+            box-sizing: border-box;
         }
 
         .tipo-codigo {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: #0369a1;
             font-weight: 600;
             margin-bottom: 2px;
             letter-spacing: 0.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .tipo-nombre {
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             color: #0c4a6e;
             font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .select-option-group {
+        /* --- Scrollbar personalizada --- */
+        .table-wrapper {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        .table-wrapper::-webkit-scrollbar {
+            height: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* --- ESTILO DE DATATABLES --- */
+
+        /* ✅ Cabecera de controles: fondo blanco */
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_length {
+            background: white;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
             display: flex;
             align-items: center;
-            padding: 8px 12px;
-        }
-
-        .select-codigo {
-            background: #3b82f6;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-right: 8px;
-            min-width: 40px;
-            text-align: center;
-        }
-
-        .select-nombre {
+            justify-content: space-between;
+            gap: 1rem;
             color: #374151;
-            font-size: 0.875rem;
         }
 
-        .formato-label {
-            font-size: 0.75rem;
-            color: #6b7280;
-            margin-top: 4px;
-            font-style: italic;
+        .dataTables_wrapper .dataTables_filter label,
+        .dataTables_wrapper .dataTables_length label {
+            font-weight: 500;
+            margin: 0;
+            color: #374151;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            background: white;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            background: white;
+        }
+
+        /* ✅ Cabecera de la tabla: azul con texto blanco */
+        #tablaPaquetes thead th {
+            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
+            color: white !important;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+        }
+
+        #tablaPaquetes tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        #tablaPaquetes tbody tr:hover {
+            background-color: #eff6ff !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.5rem 1rem !important;
+            margin: 0 0.25rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
+            color: white !important;
+            border: 1px solid #1e40af !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+        }
+
+        table.dataTable thead .sorting:before,
+        table.dataTable thead .sorting_asc:before,
+        table.dataTable thead .sorting_desc:before,
+        table.dataTable thead .sorting:after,
+        table.dataTable thead .sorting_asc:after,
+        table.dataTable thead .sorting_desc:after {
+            color: white !important;
+        }
+
+
+
+
+        /* Botón de exportar con estilo uniforme */
+        .btn-export {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-export:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(16, 185, 129, 0.4);
+        }
+
+        #limpiarBuscador {
+            font-size: 1.25rem;
+            line-height: 1;
+            padding: 0 0.25rem;
         }
     </style>
 </head>
@@ -131,200 +305,237 @@ if (!$conexion) {
 <body class="bg-gray-50">
     <div class="container mx-auto px-6 py-12">
 
-        <!-- VISTA PAQUETES DE MUESTRA -->
-        <div id="viewPaqueteMuestra" class="content-view">
-            <div class="content-header max-w-7xl mx-auto mb-8">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="text-4xl">📦</span>
-                    <h1 class="text-3xl font-bold text-gray-800">Paquetes de Muestra</h1>
-                </div>
-                <p class="text-gray-600 text-sm">Administre los paquetes de muestra registrados en el sistema</p>
+        <!-- Encabezado con botones y exportar -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div class="flex items-center gap-4">
+
+                <a class="btn-export" href="exportar_paquetes.php"">
+                    📊 Exportar Todos
+                </a>
+            </div>
+            <button type=" button" class="btn-secondary" onclick="openPaqueteMuestraModal('create')">
+                    Nuevo Paquete
+                    </button>
             </div>
 
-            <div class="form-container max-w-7xl mx-auto">
-                <!-- Botones de acción -->
-                <div class="mb-6 flex justify-between items-center flex-wrap gap-3">
-                    <button type="button"
-                        class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
-                        onclick="exportarPaquetesMuestra()"
-                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);"
-                        onmouseover="this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'"
-                        onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
-                        📊 Exportar a Excel
-                    </button>
-                    <button type="button"
-                        class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
-                        onclick="openPaqueteMuestraModal('create')">
-                        ➕ Nuevo Paquete
-                    </button>
-                </div>
+            <!-- Tabla de paquetes -->
 
-                <!-- Tabla de paquetes de muestra -->
-                <div class="table-container border border-gray-300 rounded-2xl bg-white overflow-x-auto">
-                    <table class="data-table w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Código</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Nombre del Paquete
-                                </th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Tipo de Muestra</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="paqueteMuestraTableBody" class="divide-y divide-gray-200">
-                            <?php
-                            // Consulta con JOIN para obtener código y nombre del tipo de muestra
-                            $query = "SELECT 
-                                        pm.codigo, 
-                                        pm.nombre, 
-                                        pm.tipoMuestra,
-                                        tm.nombre as tipo_muestra_nombre,
-                                        tm.codigo as tipo_muestra_codigo
-                                      FROM san_dim_paquete pm
-                                      LEFT JOIN san_dim_tipo_muestra tm ON pm.tipoMuestra = tm.codigo
-                                      ORDER BY pm.codigo";
-
-                            $result = mysqli_query($conexion, $query);
-                            if ($result && mysqli_num_rows($result) > 0) {
+            <div class="max-w-full mx-auto mt-6">
+                <div class="border border-gray-300 rounded-2xl bg-white overflow-hidden">
+                    <div class="table-wrapper">
+                        <table id="tablaPaquetes" class="data-table display" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre del Paquete</th>
+                                    <th>Tipo de Muestra</th>
+                                    <!--<th>N° Análisis</th>-->
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $query = "
+                        SELECT 
+                            p.codigo, 
+                            p.nombre, 
+                            p.tipoMuestra,
+                            tm.nombre as tipo_muestra_nombre,
+                            tm.codigo as tipo_muestra_codigo
+                           
+                        FROM san_dim_paquete p
+                        LEFT JOIN san_dim_tipo_muestra tm ON p.tipoMuestra = tm.codigo
+                        ORDER BY p.codigo ASC       
+                    ";
+                                $result = mysqli_query($conexion, $query);
+                                if (!$result) {
+                                    die("Error en consulta: " . mysqli_error($conexion));
+                                }
                                 while ($row = mysqli_fetch_assoc($result)) {
-                                    // Mostrar código y nombre del tipo de muestra en formato visual
                                     $tipoMuestraHtml = '';
                                     if ($row['tipo_muestra_nombre'] && $row['tipo_muestra_codigo']) {
                                         $tipoMuestraHtml = '<div class="tipo-muestra-badge">
-                                            <div class="tipo-codigo">Código: ' . htmlspecialchars($row['tipo_muestra_codigo']) . '</div>
-                                            <div class="tipo-nombre">Nombre: ' . htmlspecialchars($row['tipo_muestra_nombre']) . '</div>
-                                        </div>';
+                                <div class="tipo-codigo">Código: ' . htmlspecialchars($row['tipo_muestra_codigo']) . '</div>
+                                <div class="tipo-nombre">Nombre: ' . htmlspecialchars($row['tipo_muestra_nombre']) . '</div>
+                            </div>';
                                     } else {
-                                        $tipoMuestraHtml = '<span class="text-gray-400 italic">Sin tipo asignado</span>';
+                                        $tipoMuestraHtml = '<span class="text-gray-400 italic">Sin tipo</span>';
                                     }
 
-                                    echo '<tr class="hover:bg-gray-50 transition">';
-                                    echo '<td class="px-6 py-4 text-gray-700 font-medium">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                ' . htmlspecialchars($row['codigo']) . '
-                                            </span>
-                                          </td>';
-                                    echo '<td class="px-6 py-4 text-gray-700 font-medium">' . htmlspecialchars($row['nombre']) . '</td>';
-                                    echo '<td class="px-6 py-4">' . $tipoMuestraHtml . '</td>';
-                                    echo '<td class="px-6 py-4 flex gap-2">
-                                        <button class="btn-icon p-2 text-lg hover:bg-blue-100 rounded-lg transition" 
-                                                title="Editar" 
-                                                onclick="openPaqueteMuestraModal(\'edit\', ' . (int) $row['codigo'] . ', \'' .
-                                        addslashes(htmlspecialchars($row['nombre'])) . '\', ' .
-                                        (int) $row['tipoMuestra'] . ')">
-                                            ✏️
-                                        </button>
-                                        <button class="btn-icon p-2 text-lg hover:bg-red-100 rounded-lg transition" 
-                                                title="Eliminar" 
-                                                onclick="confirmPaqueteMuestraDelete(' . (int) $row['codigo'] . ')">
-                                            🗑️
-                                        </button>
-                                    </td>';
-                                    echo '</tr>';
-                                }
-                            } else {
-                                echo '<tr>';
-                                echo '<td colspan="4" class="px-6 py-8 text-center text-gray-500">No hay paquetes de muestra registrados</td>';
-                                echo '</tr>';
-                            }
-                            ?>
-                        </tbody>
-                    </table>
+                                    // Obtener análisis asociados para el modal de edición
+                                    $analisisRes = mysqli_query($conexion, "SELECT analisis FROM san_dim_analisis_paquete WHERE paquete = " . (int) $row['codigo']);
+                                    $analisisList = [];
+                                    while ($a = mysqli_fetch_assoc($analisisRes)) {
+                                        $analisisList[] = $a['analisis'];
+                                    }
+                                    $analisisJson = json_encode($analisisList);
+                                    ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($row['codigo']) ?></td>
+                                        <td><?= htmlspecialchars($row['nombre']) ?></td>
+                                        <td><?= $tipoMuestraHtml ?></td>
+                                        <td>
+                                            <div class="flex items-center gap-2">
+                                                <button class="btn-secondary text-xs px-3 py-1 flex items-center gap-1"
+                                                    onclick='openPaqueteMuestraModal("update", <?= (int) $row["codigo"] ?>, <?= json_encode($row["nombre"]) ?>, <?= json_encode($row["tipoMuestra"]) ?>, <?= $analisisJson ?>)'>
+                                                    <i class="fas fa-pencil-alt"></i> Editar
+                                                </button>
+                                                <button
+                                                    class="btn-outline text-xs px-3 py-1 text-red-600 border-red-300 hover:bg-red-50 flex items-center gap-1"
+                                                    onclick='confirmDelete(<?= (int) $row["codigo"] ?>, <?= json_encode($row["nombre"]) ?>)'>
+                                                    <i class="fas fa-trash-alt"></i> Eliminar
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php } ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Modal para Crear/Editar Paquete de Muestra -->
-        <div id="paqueteMuestraModal" style="display: none;"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-2xl shadow-lg w-full max-w-md">
-                <!-- Modal Header -->
-                <div class="flex items-center justify-between p-6 border-b border-gray-200">
-                    <h2 id="paqueteMuestraModalTitle" class="text-xl font-bold text-gray-800">➕ Nuevo Paquete de Muestra
-                    </h2>
-                    <button onclick="closePaqueteMuestraModal()"
-                        class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition">
-                        ×
-                    </button>
-                </div>
 
-                <!-- Modal Body -->
-                <div class="p-6">
-                    <form id="paqueteMuestraForm" onsubmit="return savePaqueteMuestra(event)">
-                        <input type="hidden" id="paqueteMuestraModalAction" value="create">
-                        <input type="hidden" id="paqueteMuestraEditCodigo" value="">
+            <!-- Modal para Crear/Editar Paquete de Muestra -->
+            <div id="paqueteMuestraModal" style="display: none;"
+                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div
+                    class="bg-white rounded-2xl shadow-lg w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                        <h2 id="paqueteMuestraModalTitle" class="text-xl font-bold text-gray-800">➕ Nuevo Paquete de
+                            Muestra
+                        </h2>
+                        <button onclick="closePaqueteMuestraModal()"
+                            class="text-2xl text-gray-500 hover:text-gray-700">×</button>
+                    </div>
 
-                        <!-- Campo Nombre -->
-                        <div class="form-field mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Nombre del Paquete <span class="text-red-500">*</span>
-                            </label>
-                            <input type="text" id="paqueteMuestraModalNombre" name="nombre" maxlength="100"
-                                placeholder="Ingrese el nombre del paquete" required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
-                        </div>
+                    <!-- Cuerpo con scroll -->
+                    <div class="flex-1 overflow-y-auto p-6" style="max-height: 60vh;">
+                        <!-- FORMULARIO COMPLETO -->
+                        <form id="paqueteMuestraForm">
+                            <!-- Campos ocultos -->
+                            <input type="hidden" id="paqueteMuestraModalAction" name="action" value="create">
+                            <input type="hidden" id="paqueteMuestraEditCodigo" name="codigo" value="">
 
-                        <!-- Campo Tipo de Muestra (con código y nombre en formato visual) -->
-                        <div class="form-field mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                Tipo de Muestra <span class="text-red-500">*</span>
-                                <!--<span class="formato-label">Formato: Código - Nombre</span>-->
-                            </label>
-                            <select id="paqueteMuestraModalTipoMuestra" name="tipoMuestra" required
-                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
-                                onchange="mostrarSeleccionTipoMuestra(this)">
-                                <option value="">Seleccione un tipo de muestra...</option>
-                                <?php
-                                // Obtener tipos de muestra con código y nombre
-                                $query_tipos = "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY codigo";
-                                $result_tipos = mysqli_query($conexion, $query_tipos);
-                                if ($result_tipos) {
-                                    while ($tipo = mysqli_fetch_assoc($result_tipos)) {
-                                        // Mostrar "Código - Nombre" en formato visual en el select
-                                        echo '<option value="' . $tipo['codigo'] . '" data-nombre="' . htmlspecialchars($tipo['nombre']) . '">' .
-                                            htmlspecialchars($tipo['codigo'] . ' - ' . $tipo['nombre']) .
-                                            '</option>';
-                                    }
-                                }
-                                ?>
-                            </select>
-
-                            <!-- Visualización de la selección actual -->
-                            <!--div id="tipoMuestraSeleccionado" class="mt-3 hidden">
-                                <div class="tipo-muestra-badge inline-block">
-                                    <div class="tipo-codigo">Código: <span id="codigoSeleccionado">-</span></div>
-                                    <div class="tipo-nombre">Nombre: <span id="nombreSeleccionado">-</span></div>
+                            <!-- Nombre y Tipo de Muestra en la MISMA FILA (siempre) -->
+                            <div style="display: flex; gap: 1.25rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
+                                <!-- Nombre del paquete -->
+                                <div style="flex: 1; min-width: 250px;">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del Paquete <span
+                                            class="text-red-500">*</span></label>
+                                    <input type="text" id="paqueteMuestraModalNombre" maxlength="100" required
+                                        class="form-control text-sm px-3 py-1.5 w-full">
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1 italic">Tipo de muestra seleccionado</p>
-                            </div-->
-                        </div>
 
-                        <!-- Botones -->
+                                <!-- Tipo de muestra -->
+                                <div style="flex: 1; min-width: 250px;">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Muestra <span
+                                            class="text-red-500">*</span></label>
+                                    <select id="paqueteMuestraModalTipoMuestra" required
+                                        class="form-control text-sm px-3 py-1.5 w-full">
+                                        <option value="">Seleccione...</option>
+                                        <?php
+                                        $query_tipos = "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY nombre";
+                                        $result_tipos = mysqli_query($conexion, $query_tipos);
+                                        while ($tipo = mysqli_fetch_assoc($result_tipos)) {
+                                            echo '<option value="' . htmlspecialchars($tipo['codigo']) . '">' .
+                                                htmlspecialchars($tipo['codigo'] . ' - ' . $tipo['nombre']) . '</option>';
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Campo de búsqueda compacto -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Buscar análisis</label>
+                                <div class="relative" style="width: 280px;">
+                                    <input type="text" id="buscadorAnalisis" placeholder="Nombre o código..."
+                                        class="w-full px-3 py-1.5 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <span id="iconoLimpiar"
+                                        style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: none; cursor: pointer; color: #9ca3af; font-weight: bold;"
+                                        onclick="limpiarBuscador()">
+                                        ×
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Análisis compactos en columnas -->
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Análisis a incluir <span class="text-red-500">*</span>
+                                    <span class="text-xs text-gray-500 ml-1">Seleccione uno o más</span>
+                                </label>
+                                <div id="analisisCheckboxes"
+                                    class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 max-h-60 overflow-y-auto p-3 border border-gray-200 rounded-xl bg-gray-50">
+                                    <p class="text-gray-500 italic col-span-full">Seleccione un tipo de muestra primero
+                                    </p>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Pie fijo -->
+                    <div class="border-t border-gray-200 p-6 bg-gray-50">
                         <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
                             <button type="button" onclick="closePaqueteMuestraModal()"
-                                class="px-6 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200">
-                                Cancelar
-                            </button>
-                            <button type="submit"
-                                class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2">
-                                💾 Guardar
-                            </button>
+                                class="btn-outline">Cancelar</button>
+                            <button type="submit" form="paqueteMuestraForm" class="btn-primary">💾 Guardar
+                                Paquete</button>
                         </div>
-                    </form>
+                    </div>
                 </div>
+            </div>
+            <div class="text-center mt-12">
+                <p class="text-gray-500 text-sm">Sistema desarrollado para <strong>Granja Rinconada Del Sur
+                        S.A.</strong> -
+                    © 2025</p>
             </div>
         </div>
 
-        <!-- Footer -->
-        <div class="text-center mt-12">
-            <p class="text-gray-500 text-sm">
-                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025
-            </p>
-        </div>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+        <script src="paquete_analisis.js"></script>
 
-    </div>
+        <script>
+            /*$(document).ready(function () {
+                var table = $('#tablaPaquetes').DataTable({
+                    language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+                    pageLength: 10,
+                    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+                    order: [[0, 'asc']],
+                    processing: true,
+                    deferRender: true,
+                    scrollY: 400,
+                    scrollCollapse: true,
+                    initComplete: function () {
+                        // Ocultar el spinner o mostrar la tabla completa
+                        $('.dataTables_processing').hide();
+                    }
+                });
+            });*/
+            $('#tablaPaquetes').DataTable({
+                language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+                order: [[0, 'asc']]
+            });
 
-    <script src="paquete-analisis.js"></script>
+            function confirmDelete(codigo, nombre) {
+                if (confirm(`¿Eliminar el paquete "${nombre}" y todos sus análisis asociados?`)) {
+                    fetch('crud_paquete_analisis.php', {
+                        method: 'POST',
+                        body: new URLSearchParams({ action: 'delete', codigo: codigo })
+                    })
+                        .then(r => r.json())
+                        .then(d => {
+                            if (d.success) location.reload();
+                            else alert('❌ ' + d.message);
+                        });
+                }
+            }
+        </script>
 </body>
 
 </html>

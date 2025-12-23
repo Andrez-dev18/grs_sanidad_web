@@ -10,6 +10,13 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Font Awesome -->
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap 5 JS + Popper (necesario para modales) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Font Awesome para íconos -->
     <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -29,7 +36,6 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
         }
 
-        /* Estilo para ítems de reporte (simulando filas de tabla en móvil) */
         .report-item {
             border: 1px solid #e5e7eb;
             border-radius: 12px;
@@ -51,6 +57,27 @@
             }
         }
 
+        .codigo-referencia-box {
+            width: 25px;
+            height: 25px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            border: 2px solid #cbd5e0;
+            border-radius: 4px;
+            background: #f7fafc;
+            padding: 0;
+            line-height: 25px;
+            box-sizing: border-box;
+            margin: 0 2px;
+        }
+
+        .codigo-referencia-container {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 2px;
+        }
+
         /* Asegura que el contenedor de botones no desborde en móvil */
         @media (max-width: 639px) {
             .report-card {
@@ -63,15 +90,6 @@
 
 <body class="bg-gray-50">
     <div class="container mx-auto px-6 py-12">
-
-        <!-- TÍTULO PRINCIPAL -->
-        <div class="content-header max-w-7xl mx-auto mb-8">
-            <div class="flex items-center gap-3 mb-2">
-                <span class="text-4xl">📊</span>
-                <h1 class="text-3xl font-bold text-gray-800">Reportes de muestras</h1>
-            </div>
-            <p class="text-gray-600 text-sm">Historial de muestras registradas por su cuenta</p>
-        </div>
 
         <!-- CONTENEDOR PRINCIPAL -->
         <div class="max-w-7xl mx-auto">
@@ -90,16 +108,7 @@
 
             <!-- LISTA DE REPORTES (dinámico) -->
             <div id="reportes-lista" class="space-y-3 mb-10">
-                <!-- Ejemplo visual (solo para diseño; será reemplazado por JS) -->
-                <!--
-                <div class="report-item">
-                    <div>
-                        <p class="font-medium text-gray-800">ENV-2025-001</p>
-                        <p class="text-sm text-gray-500">12 registros • 2025-04-10</p>
-                    </div>
-                    <button class="text-blue-600 hover:text-blue-800 font-medium mt-2 sm:mt-0">Ver detalle</button>
-                </div>
-                -->
+              
             </div>
 
             <!-- PAGINACIÓN -->
@@ -115,47 +124,65 @@
         </div>
 
     </div>
-    <!-- Modal para enviar correo desde el sistema -->
-    <div id="modalCorreo" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4 shadow-xl">
-            <h3 class="text-lg font-bold mb-4">Enviar reporte por correo</h3>
+    <!-- Modal Bootstrap -->
+    <div class="modal fade" id="modalCorreo" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h5 class="modal-title">Enviar reporte por correo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
 
-            <input type="hidden" id="codigoEnvio" value="">
+                <div class="modal-body flex-grow-1 overflow-auto">
+                    <input type="hidden" id="codigoEnvio" value="">
 
-            <label class="block text-sm text-gray-700 mb-1">Destinatario *</label>
-            <select id="destinatarioSelect"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 mb-4"
-                required>
-                <option value="">Seleccione un contacto</option>
-                <!-- Se llenará con JS -->
-            </select>
+                    <!-- DESTINATARIOS -->
+                    <div class="mb-3">
+                        <label class="form-label">Para (destinatarios) *</label>
+                        <button type="button" class="btn btn-outline-primary btn-sm d-flex align-items-center"
+                            id="btnMostrarSelect">
+                            <i class="fas fa-plus me-1"></i> Seleccionar contactos
+                        </button>
 
-            <!-- Opción para otro correo -->
-            <div class="flex items-center mb-3">
-                <input type="checkbox" id="otroCorreoCheck" class="mr-2">
-                <label for="otroCorreoCheck" class="text-sm text-gray-700">Otro correo</label>
+                        <!-- Select oculto con contactos -->
+                        <select id="destinatarioSelect" multiple class="form-select mt-2" size="6"
+                            style="display:none;"></select>
+
+                        <!-- Lista de destinatarios elegidos -->
+                        <div id="listaPara" class="mt-2 small"></div>
+                    </div>
+
+                    <!-- ASUNTO Y MENSAJE -->
+                    <div class="mb-3">
+                        <label class="form-label">Asunto *</label>
+                        <input type="text" id="asuntoCorreo" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mensaje *</label>
+                        <textarea id="mensajeCorreo" class="form-control" rows="3" required></textarea>
+                    </div>
+
+                    <!-- ARCHIVOS -->
+                    <div class="mt-4">
+                        <p class="fw-bold mb-2">Archivos adjuntos:</p>
+                        <div id="listaArchivos" class="mb-3"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Agregar más archivos</label>
+                        <input type="file" id="archivosAdjuntos" multiple class="form-control">
+                    </div>
+
+                    <div id="mensajeResultado" class="text-center small min-vh-25"></div>
+                </div>
+
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="enviarCorreoDesdeSistema()">Enviar</button>
+                </div>
             </div>
-            <input type="email" id="otroCorreo" placeholder="Ingrese otro correo"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 hidden" disabled>
-
-            <label class="block text-sm text-gray-700 mb-1">Asunto *</label>
-            <input type="text" id="asuntoCorreo" class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
-                required>
-
-            <label class="block text-sm text-gray-700 mb-1">Mensaje *</label>
-            <textarea id="mensajeCorreo" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4"
-                required></textarea>
-
-            <div class="flex gap-2">
-                <button type="button" onclick="cerrarModalCorreo()"
-                    class="flex-1 py-2 bg-gray-200 rounded">Cancelar</button>
-                <button type="button" onclick="enviarCorreoDesdeSistema()"
-                    class="flex-1 py-2 bg-blue-600 text-white rounded">Enviar</button>
-            </div>
-            <p id="mensajeResultado" class="mt-2 text-sm text-center min-h-[20px]"></p>
         </div>
     </div>
-    </div>
+   
     <script src="reportes.js"></script>
 </body>
 

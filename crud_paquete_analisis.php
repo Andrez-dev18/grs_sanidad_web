@@ -13,7 +13,6 @@ if (!$conexion) {
 }
 mysqli_set_charset($conexion, 'utf8');
 
-// === Obtener análisis (para frontend) ===
 if (isset($_GET['action']) && $_GET['action'] === 'get_analisis') {
     $query = "SELECT codigo, nombre FROM san_dim_analisis ORDER BY codigo ASC";
     $result = mysqli_query($conexion, $query);
@@ -165,7 +164,6 @@ try {
         $codigo = (int)($_POST['codigo'] ?? 0);
         if ($codigo <= 0) throw new Exception('Código inválido');
 
-        // === USAR CONSULTAS PREPARADAS (CORRECCIÓN CLAVE) ===
         mysqli_autocommit($conexion, false);
 
         $stmt1 = mysqli_prepare($conexion, "DELETE FROM san_dim_analisis_paquete WHERE paquete = ?");
