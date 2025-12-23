@@ -322,16 +322,6 @@ if (!$conexion) {
             </div>
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'dashboard-serologia.php', '📋 Registro Laboratorio', 'Registro de la respuesta  del laboratorio')">
-                    <span class="flex items-center gap-3">
-                        <i class="fa-solid fa-atom"></i>
-                        <span class="font-medium">3.- Registro Laboratorio</span>
-                    </span>
-                </button>
-
-            </div>
-            <div class="menu-group">
-                <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                     onclick="activateAndLoad(this, 'dashboard-planificacion.php', '📅 Planificación', 'Registro de la planificación')">
                     <span class="flex items-center gap-3">
                         <i class="fas fa-calendar"></i>
