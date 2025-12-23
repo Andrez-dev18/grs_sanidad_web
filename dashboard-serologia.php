@@ -14,7 +14,7 @@ if (!$conexion) {
 $queryPendientes = "
     SELECT 
         d.codEnvio,
-        MIN(d.posSolicitud) as posSolicitud,  -- Toma el primero
+        d.posSolicitud,
         d.fecToma,
         d.codRef,
         d.numMuestras AS numeroMuestras,
@@ -22,17 +22,20 @@ $queryPendientes = "
         c.nomLab,
         d.estado_cuanti AS estado_cuanti,
         
-        GROUP_CONCAT(DISTINCT d.nomAnalisis ORDER BY d.nomAnalisis SEPARATOR ', ') AS analisis,
-        GROUP_CONCAT(DISTINCT d.codAnalisis ORDER BY d.codAnalisis SEPARATOR ',') AS analisisCodigos,
+        GROUP_CONCAT(d.nomAnalisis ORDER BY d.nomAnalisis SEPARATOR ', ') AS analisis,
+        GROUP_CONCAT(d.codAnalisis ORDER BY d.codAnalisis SEPARATOR ',') AS analisisCodigos,
+        GROUP_CONCAT(IFNULL(a.enfermedad, '') ORDER BY d.nomAnalisis SEPARATOR '|') AS analisisEnfermedades,
         GROUP_CONCAT(d.obs ORDER BY d.posSolicitud SEPARATOR ' | ') AS observaciones
 
     FROM san_fact_solicitud_det d
     INNER JOIN san_fact_solicitud_cab c ON d.codEnvio = c.codEnvio
+    LEFT JOIN san_dim_analisis a ON d.codAnalisis = a.codigo
             
     WHERE d.estado_cuanti IN ('pendiente', 'completado')
 
     GROUP BY 
-        d.codEnvio,      -- Solo agrupar por código
+        d.codEnvio,
+        d.posSolicitud,
         d.fecToma,
         d.codRef,
         d.numMuestras,
@@ -41,7 +44,8 @@ $queryPendientes = "
         d.estado_cuanti
 
     ORDER BY d.fecToma DESC,
-             d.codEnvio DESC
+             d.codEnvio DESC,
+             d.posSolicitud ASC
 ";
 
 
@@ -166,21 +170,36 @@ $resPendientes = $conexion->query($queryPendientes);
                             <?php $estado_item = $row['estado_cuanti'] ?? 'pendiente'; ?>
                             <div class="sidebar-item cursor-pointer p-3 rounded bg-white border border-gray-200 hover:border-gray-400 transition-all"
                                 data-estado="<?= $estado_item ?>"
-                                onclick="cargarSolicitud('<?= $row['codEnvio'] ?>', '<?= $row['fecToma'] ?>', '<?= $row['codRef'] ?>', '<?= $estado_item ?>', '<?= addslashes($row['nomMuestra']) ?>')">
+                                onclick="cargarSolicitud('<?= $row['codEnvio'] ?>', '<?= $row['fecToma'] ?>', '<?= $row['codRef'] ?>', '<?= $estado_item ?>', '<?= addslashes($row['nomMuestra']) ?>', <?= $row['posSolicitud'] ?>, '<?= addslashes($row['analisis']) ?>', '<?= $row['analisisCodigos'] ?>', '<?= addslashes($row['analisisEnfermedades']) ?>')">
 
                                 <!-- Código -->
                                 <div class="font-bold text-sm text-gray-800 mb-1">
                                     <?= $row['codEnvio'] ?>
                                 </div>
 
-                                <!-- Estado debajo del código -->
+                                <!-- Análisis de esta solicitud (comentado)
+                                <div class="mb-2 flex flex-wrap gap-1">
+                                    <?php 
+                                    $analisisArray = explode(', ', $row['analisis']);
+                                    $enfermedadesArray = explode('|', $row['analisisEnfermedades'] ?? '');
+                                    foreach ($analisisArray as $idx => $analisis): 
+                                        $enfCompleta = isset($enfermedadesArray[$idx]) && !empty(trim($enfermedadesArray[$idx])) 
+                                            ? trim($analisis) . ' (' . trim($enfermedadesArray[$idx]) . ')' 
+                                            : trim($analisis);
+                                    ?>
+                                        <span class="inline-block px-2 py-0.5 text-xs font-bold rounded bg-blue-100 text-blue-800" title="<?= $enfCompleta ?>">
+                                            <?= trim($analisis) ?>
+                                        </span>
+                                    <?php endforeach; ?>
+                                </div>
+                                -->
+
+                                <!-- Estado -->
                                 <div class="mb-2">
                                     <?php if (strtolower($estado_item) === 'pendiente'): ?>
-                                        <span
-                                            class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pendiente</span>
+                                        <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pendiente</span>
                                     <?php else: ?>
-                                        <span
-                                            class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"><?= ucfirst($estado_item) ?></span>
+                                        <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"><?= ucfirst($estado_item) ?></span>
                                     <?php endif; ?>
                                 </div>
 
@@ -268,6 +287,16 @@ $resPendientes = $conexion->query($queryPendientes);
                     <div id="contenedorEnfermedades" class="space-y-4"></div>
 
                     <div class="mt-6">
+                        <!-- Archivos ya guardados (completados) -->
+                        <div id="seccionArchivosCompletados" class="hidden mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-paperclip text-blue-600"></i> Archivos Adjuntos
+                            </label>
+                            <div id="fileListPrecargados" class="space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <!-- Los archivos cargados aparecerán aquí -->
+                            </div>
+                        </div>
+
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Subir archivos (PDF, Word, Excel, Imágenes, etc.) — Opcional
                         </label>

@@ -1,5 +1,6 @@
 <?php
 include_once '../conexion_grs_joya/conexion.php';
+include_once 'historial_resultados.php';
 session_start();
 $conn = conectar_joya();
 if (!$conn) {
@@ -13,6 +14,9 @@ $analisis = $input["analisis"] ?? [];
 $pos = $input["posicion"] ?? "";
 $estado = $input["estadoCuali"] ?? "";
 $user = $_SESSION['usuario'] ?? null;
+
+$accion = "Se registro resultados para este analisis";
+$accionUpdate = "Se actualizo el resultado de los analisis";
 
 if ($codigoEnvio == "" || empty($analisis) || $pos == "") {
     echo json_encode(["error" => "Datos incompletos"]);
@@ -50,10 +54,10 @@ $actualizados = 0;
 $estadosActualizados = 0;
 $cabeceraCompletada = false;
 
+$analisisInsertados = [];
+$analisisActualizados = [];
 
-// GUARDAR RESULTADOS CUALITATIVOS + MARCAR estado_cuali
 foreach ($analisis as $a) {
-
     $cod = $a["analisisCodigo"];
     $nom = $conn->real_escape_string($a["analisisNombre"]);
     $resul = $conn->real_escape_string($a["resultado"]);
@@ -63,14 +67,11 @@ foreach ($analisis as $a) {
         : NULL;
 
     $idResultado = $a["id"] ?? null;
-
-    // NORMALIZAR id
     if ($idResultado === "null" || $idResultado === "" || $idResultado === null) {
         $idResultado = null;
     }
 
     if ($idResultado !== null) {
-
         // 🔁 UPDATE
         $sql = "
             UPDATE san_fact_resultado_analisis
@@ -83,10 +84,10 @@ foreach ($analisis as $a) {
 
         if ($conn->query($sql)) {
             $actualizados++;
+            $analisisActualizados[] = $nom; // Guardamos el nombre
         }
 
     } else {
-
         // ➕ INSERT
         $sql = "
             INSERT INTO san_fact_resultado_analisis 
@@ -108,9 +109,35 @@ foreach ($analisis as $a) {
 
         if ($conn->query($sql)) {
             $insertados++;
+            $analisisInsertados[] = $nom; // Guardamos el nombre
         }
     }
 }
+
+// === LOG ÚNICO CON TUS ACCIONES RESPETADAS ===
+$partesComentario = [];
+
+if ($insertados > 0) {
+    $partesComentario[] = $accion . ": " . implode(", ", $analisisInsertados);
+}
+
+if ($actualizados > 0) {
+    $partesComentario[] = $accionUpdate . ": " . implode(", ", $analisisActualizados);
+}
+
+$comentarioFinal = !empty($partesComentario)
+    ? implode(". ", $partesComentario)
+    : "No se realizaron cambios en los resultados";
+
+insertarHistorial(
+    $conn,
+    $codigoEnvio,
+    $pos,
+    'registro_resultados_cualitativos',
+    'cualitativo',
+    $comentarioFinal,
+    $user
+);
 
 // === AQUÍ LA CORRECCIÓN: Actualizar estado siempre al final ===
 $conn->query("

@@ -1,6 +1,8 @@
 <?php
 include_once '../conexion_grs_joya/conexion.php';
+include_once 'historial_resultados.php';
 $conn = conectar_joya();
+session_start();
 
 header('Content-Type: application/json');
 
@@ -9,10 +11,12 @@ if (!isset($_POST['codEnvio'], $_POST['posSolicitud'], $_POST['tipo'], $_POST['n
     exit;
 }
 
+$user = $_SESSION['usuario'] ?? null;
 $codEnvio = $_POST['codEnvio'];
 $posSolicitud = $_POST['posSolicitud'];
 $tipo = strtolower($_POST['tipo']); // 'cualitativo' or 'cuantitativo'
 $nuevoEstado = $_POST['nuevoEstado'];
+$comentario = $_POST['comentario'];
 
 if (!in_array($nuevoEstado, ['completado', 'pendiente'])) {
     echo json_encode(['success' => false, 'message' => 'Estado inválido']);
@@ -41,6 +45,10 @@ $stmt->bind_param("ssi", $nuevoEstado, $codEnvio, $posSolicitud);
 $stmt->execute();
 
 $affected = $stmt->affected_rows;
+
+$accion = "Se cambio el estado a " . $nuevoEstado;
+
+insertarHistorial($conn, $codEnvio, $posSolicitud, $accion, $tipo, $comentario, $user);
 
 $response = [
     'success' => true,

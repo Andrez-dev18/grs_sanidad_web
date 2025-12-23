@@ -41,12 +41,18 @@ function decodificarCodRef(codRef) {
 // ============================================
 // 2. CARGAR SOLICITUD DESDE SIDEBAR
 // ============================================
-function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMuestra = '') {
+function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMuestra = '', posSolicitud = 1, analisisStr = '', analisisCodigosStr = '', analisisEnfermedadesStr = '') {
     window.codigoEnvioActual = codigo;
+    window.posSolicitudActual = posSolicitud;
     window.enfermedadStates = {};
     
-    // ✅ NUEVO: Guardar estado global
     window.estadoActualSolicitud = estado.toLowerCase();
+    
+    // 🗑️ Limpiar archivos precargados
+    const seccionArchivos = document.getElementById('seccionArchivosCompletados');
+    if (seccionArchivos) seccionArchivos.classList.add('hidden');
+    const fileListPrecargados = document.getElementById('fileListPrecargados');
+    if (fileListPrecargados) fileListPrecargados.innerHTML = '';
 
     document.getElementById('emptyState').classList.add('hidden');
     document.getElementById('formPanel').classList.remove('hidden');
@@ -76,7 +82,7 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
     const edadField = document.getElementById('edadAves_display');
     if (edadField) edadField.value = datosRef.edad;
 
-    // ✅ NUEVO: Cambiar texto del botón según estado
+    // ✅ Cambiar texto del botón según estado
     const btnGuardar = document.querySelector('button[type="submit"]');
     if (btnGuardar) {
         if (estado.toLowerCase() === 'completado') {
@@ -88,34 +94,211 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
         }
     }
 
-    fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${codigo}&estado=${estado}`)
-        .then(r => {
-            if (!r.ok) throw new Error('HTTP error! status: ' + r.status);
-            return r.text();
-        })
-        .then(text => {
-            console.log('Respuesta del servidor:', text);
-            const data = JSON.parse(text);
-            if(data.success) {
-                window.enfermedadesActuales = data.enfermedades;
-                
-                detectarTipo(parseInt(datosRef.edad), nomMuestra);
-                
-                if (estado.toLowerCase() === 'completado') {
-                    setTimeout(() => {
-                        cargarDatosCompletados(codigo);
-                    }, 300);
+    // ✅ MODIFICADO: Cargar enfermedades desde los parámetros pasados (agrupadas por posSolicitud)
+    if (analisisStr && analisisCodigosStr) {
+        const nombresArr = analisisStr.split(', ').map(s => s.trim());
+        const codigosArr = analisisCodigosStr.split(',').map(s => s.trim());
+        const enfermedadesArr = analisisEnfermedadesStr ? analisisEnfermedadesStr.split('|').map(s => s.trim()) : [];
+        
+        window.enfermedadesActuales = nombresArr.map((nombre, i) => ({
+            nombre: nombre,
+            codigo: codigosArr[i] || '',
+            enfermedad: enfermedadesArr[i] || ''  // Nombre completo de la enfermedad
+        }));
+        
+        detectarTipo(parseInt(datosRef.edad), nomMuestra);
+        
+        if (estado.toLowerCase() === 'completado') {
+            setTimeout(() => {
+                cargarDatosCompletados(codigo);
+            }, 300);
+        }
+    } else {
+        // Fallback: cargar desde el servidor
+        fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${codigo}&posSolicitud=${posSolicitud}&estado=${estado}`)
+            .then(r => {
+                if (!r.ok) throw new Error('HTTP error! status: ' + r.status);
+                return r.text();
+            })
+            .then(text => {
+                console.log('Respuesta del servidor:', text);
+                const data = JSON.parse(text);
+                if(data.success) {
+                    window.enfermedadesActuales = data.enfermedades;
+                    
+                    detectarTipo(parseInt(datosRef.edad), nomMuestra);
+                    
+                    if (estado.toLowerCase() === 'completado') {
+                        setTimeout(() => {
+                            cargarDatosCompletados(codigo);
+                        }, 300);
+                    }
+                } else {
+                    alert('❌ Error: ' + (data.message || 'No se pudieron cargar enfermedades'));
                 }
-            } else {
-                alert('❌ Error: ' + (data.message || 'No se pudieron cargar enfermedades'));
-            }
-        })
-        .catch(e => {
-            console.error('Error completo:', e);
-            alert('❌ Error de conexión. Ver consola para detalles.');
-        });
+            })
+            .catch(e => {
+                console.error('Error completo:', e);
+                alert('❌ Error de conexión. Ver consola para detalles.');
+            });
+    }
 }
 
+
+// ============================================
+// CARGAR ARCHIVOS COMPLETADOS
+// ============================================
+async function cargarArchivosCompletados(codigoEnvio) {
+    const posSolicitud = window.posSolicitudActual || 1;
+    const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
+    
+    console.log('📎 Cargando archivos para:', codigoEnvio);
+    console.log('📌 posSolicitud:', posSolicitud);
+    console.log('📌 Tipo ave:', tipo);
+    
+    try {
+        const url = `getResultadoArchivos.php?codEnvio=${codigoEnvio}&posSolicitud=${posSolicitud}`;
+        console.log('🔗 URL de consulta:', url);
+        
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        console.log('📦 Datos recibidos:', data);
+        console.log('📁 Cantidad de archivos:', Array.isArray(data) ? data.length : 0);
+        
+        const seccion = document.getElementById('seccionArchivosCompletados');
+        const fileListPrecargados = document.getElementById('fileListPrecargados');
+        
+        if (!seccion || !fileListPrecargados) {
+            console.error('❌ No se encontraron elementos DOM');
+            return;
+        }
+        
+        fileListPrecargados.innerHTML = '';
+        
+        if (!Array.isArray(data) || data.length === 0) {
+            console.log('⚠️ No hay archivos para mostrar');
+            seccion.classList.add('hidden');
+            return;
+        }
+        
+        console.log('✅ Mostrando', data.length, 'archivos');
+        seccion.classList.remove('hidden');
+        
+        data.forEach(f => {
+            const div = document.createElement('div');
+            div.className = 'flex justify-between items-center gap-3 p-3 border rounded-md bg-white hover:bg-gray-50 transition';
+            
+            div.innerHTML = `
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-800">${f.nombre}</p>
+                    <p class="text-xs text-gray-500">
+                        ${f.tipo} • ${new Date(f.fecha).toLocaleDateString('es-PE')}
+                    </p>
+                </div>
+                <div class="flex gap-2">
+                    <button
+                        type="button"
+                        title="Descargar archivo"
+                        class="text-blue-600 hover:text-blue-800 text-xl"
+                        onclick="descargarArchivo('${f.ruta}', '${f.nombre}')">
+                        <i class="fas fa-download"></i>
+                    </button>
+                    <button
+                        type="button"
+                        title="Reemplazar archivo"
+                        class="text-orange-600 hover:text-orange-800 text-xl"
+                        onclick="reemplazarArchivo(${f.id})">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                </div>
+            `;
+            
+            fileListPrecargados.appendChild(div);
+        });
+        
+    } catch (e) {
+        console.error('Error cargando archivos:', e);
+    }
+}
+
+async function descargarArchivo(ruta, nombre) {
+    try {
+        const res = await fetch(ruta, { method: 'HEAD' });
+        
+        if (!res.ok) {
+            alert('❌ El archivo no existe o fue movido del servidor.');
+            return;
+        }
+        
+        const a = document.createElement('a');
+        a.href = ruta;
+        a.download = nombre;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+    } catch (err) {
+        alert('❌ No se pudo verificar el archivo.');
+        console.error(err);
+    }
+}
+
+function reemplazarArchivo(idArchivo) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg';
+    
+    input.onchange = async () => {
+        if (!input.files.length) return;
+        
+        const file = input.files[0];
+        
+        // Validaciones
+        if (!allowedTypes.includes(file.type)) {
+            alert('❌ Tipo de archivo no permitido');
+            return;
+        }
+        
+        if (file.size > MAX_SIZE) {
+            alert('❌ Archivo supera el tamaño permitido (máx. 10 MB)');
+            return;
+        }
+        
+        const codigoEnvio = window.codigoEnvioActual;
+        const posSolicitud = window.posSolicitudActual || 1;  // ✅ Usar posSolicitud guardada
+        
+        let formData = new FormData();
+        formData.append('archivo', file);
+        formData.append('idArchivo', idArchivo);
+        formData.append('codigoEnvio', codigoEnvio);
+        formData.append('posSolicitud', posSolicitud);  // ✅ Enviar posSolicitud correcto
+        formData.append('action', 'reemplazar_archivo');
+        
+        console.log('📤 Reemplazando archivo...');
+        
+        try {
+            const res = await fetch('crud-serologia.php', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const r = await res.json();
+            
+            if (r.success) {
+                alert('♻️ Archivo reemplazado correctamente');
+                cargarArchivosCompletados(codigoEnvio);
+            } else {
+                alert('❌ Error: ' + r.message);
+            }
+        } catch (e) {
+            alert('❌ Error al reemplazar archivo');
+            console.error(e);
+        }
+    };
+    
+    input.click();
+}
 
 // ============================================
 // CARGAR DATOS GUARDADOS (COMPLETADOS)
@@ -193,6 +376,9 @@ async function cargarDatosCompletados(codigoEnvio) {
         console.log(`🖊️ Rellenando panel de: ${selectEnf.value}`);
         populatePanelValues(selectEnf.value);
     }
+    
+    // 📎 Cargar archivos adjuntos
+    await cargarArchivosCompletados(codigoEnvio);
 }
 
 // ============================================
@@ -381,7 +567,10 @@ function renderizarEnfermedades(tipo) {
                     Seleccione Enfermedad (${enfermedades.length} asignada${enfermedades.length !== 1 ? 's' : ''})
                 </label>
                 <select id="selectEnfermedad" class="input-lab">
-                    ${enfermedades.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('')}
+                    ${enfermedades.map(e => {
+                        const displayText = e.enfermedad ? `${e.nombre} (${e.enfermedad})` : e.nombre;
+                        return `<option value="${e.nombre}">${displayText}</option>`;
+                    }).join('')}
                 </select>
             </div>
             <div class="pt-5">
@@ -582,8 +771,11 @@ function guardar(e) {
 
     const archivos = document.getElementById('archivoPdf') ? document.getElementById('archivoPdf').files : [];
 
+    console.log('📁 Archivos detectados:', archivos.length);
+    
     if (archivos && archivos.length > 0) {
         for (let i = 0; i < archivos.length; i++) {
+            console.log(`   Agregando archivo #${i}: ${archivos[i].name} (${archivos[i].size} bytes)`);
             fd2.append('archivoPdf[]', archivos[i]);
         }
     }
@@ -612,7 +804,7 @@ function guardar(e) {
 
     // ✅ Mensaje diferente según acción
     const accionTexto = esActualizacion ? 'Actualizar' : 'Guardar';
-    if (!confirm(`¿${accionTexto} análisis con ${enfermedadesConDatos} enfermedad(es) y ${archivosCount} archivo(s)?`)) {
+    if (!confirm(`¿${accionTexto} análisis?`)) {
         document.querySelectorAll('.tmp-enf-input').forEach(n => n.remove());
         return;
     }
@@ -622,6 +814,14 @@ function guardar(e) {
     const textoBoton = esActualizacion ? 'Actualizando...' : 'Guardando...';
     btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${textoBoton}`;
     btn.disabled = true;
+    
+    // ✅ Agregar posSolicitud al form
+    const inpPos = document.createElement('input');
+    inpPos.type = 'hidden';
+    inpPos.name = 'posSolicitud';
+    inpPos.value = window.posSolicitudActual || 1;
+    inpPos.className = 'tmp-enf-input';
+    form.appendChild(inpPos);
     
     console.log(`📤 ${accionTexto} datos:`, actionValue);
     for (let pair of fd2.entries()) {
@@ -654,11 +854,8 @@ function guardar(e) {
         }
         
         if (data.success) {
-            let mensaje = data.message;
-            if (data.archivos_guardados > 0) {
-                mensaje += `\n📎 ${data.archivos_guardados} archivo(s) cargado(s)`;
-            }
-            alert(mensaje);
+            const accionTexto = window.estadoActualSolicitud === 'completado' ? 'actualizado' : 'guardado';
+            alert(`✅ Análisis ${accionTexto} correctamente`);
             location.reload();
         } else {
             alert('❌ Error: ' + data.message);
@@ -842,16 +1039,34 @@ function abrirModalAgregarEnfermedad() {
     
     document.body.appendChild(modal);
     
+    console.log('🔍 Cargando catálogo de enfermedades...');
+    
     fetch('crud-serologia.php?action=get_catalogo_enfermedades')
-        .then(r => r.text())
+        .then(r => {
+            console.log('📥 Respuesta recibida, status:', r.status);
+            if (!r.ok) throw new Error('HTTP error! status: ' + r.status);
+            return r.text();
+        })
         .then(text => {
-            console.log('Catálogo:', text);
-            const data = JSON.parse(text);
-            if(data.success) mostrarCatalogoEnfermedades(data.enfermedades);
+            console.log('📄 Texto recibido:', text.substring(0, 200));
+            try {
+                const data = JSON.parse(text);
+                console.log('✅ JSON parseado:', data);
+                if(data.success) {
+                    mostrarCatalogoEnfermedades(data.enfermedades);
+                } else {
+                    throw new Error(data.message || 'Error desconocido');
+                }
+            } catch (e) {
+                console.error('❌ Error parseando JSON:', e);
+                document.getElementById('listadoEnfermedades').innerHTML = 
+                    `<p class="text-red-500 p-4">Error: ${e.message}<br><small>${text.substring(0, 200)}</small></p>`;
+            }
         })
         .catch(e => {
-            console.error(e);
-            document.getElementById('listadoEnfermedades').innerHTML = '<p class="text-red-500 p-4">Error al cargar catálogo</p>';
+            console.error('❌ Error en fetch:', e);
+            document.getElementById('listadoEnfermedades').innerHTML = 
+                `<p class="text-red-500 p-4">Error al cargar catálogo: ${e.message}</p>`;
         });
 }
 
