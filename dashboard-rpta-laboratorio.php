@@ -615,6 +615,26 @@ $result = $conexion->query($query);
                                             <input type="hidden" id="codRef_campana" name="codigo_campana">
                                             <input type="hidden" id="codRef_galpon" name="numero_galpon">
 
+                                            <div class=" hidden grid grid-cols-4 gap-4 mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                                <div>
+                                                    <label class="text-[10px] uppercase font-bold text-gray-500">Código</label>
+                                                    <input type="text" name="codigo_solicitud" id="codigoSolicitud" class="input-lab bg-white"
+                                                        readonly>
+                                                </div>
+                                                <div>
+                                                    <label class="text-[10px] uppercase font-bold text-gray-500">Fecha Toma</label>
+                                                    <input type="date" name="fecha_toma" id="fechaToma" class="input-lab bg-white" readonly>
+                                                </div>
+                                                <div>
+                                                    <label class="text-[10px] uppercase font-bold text-blue-700">REF</label>
+                                                    <input type="number" name="edad_aves" id="edadAves"
+                                                        class="input-lab font-bold text-blue-800 text-center" readonly>
+                                                </div>
+                                                <div>
+                                                    <label class="text-[10px] uppercase font-bold text-gray-500">Nº Informe</label>
+                                                    <input type="text" name="numero_informe" id="numeroInforme" class="input-lab">
+                                                </div>
+                                            </div>
 
                                             <div id="camposEspecificos" class=""></div>
 
