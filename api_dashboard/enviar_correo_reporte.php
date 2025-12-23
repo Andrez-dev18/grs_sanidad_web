@@ -22,62 +22,92 @@ if (!$sender) {
 }
 
 // Datos del correo
-$to = $_POST['to'] ?? '';
 $subject = $_POST['subject'] ?? '';
 $body = $_POST['body'] ?? '';
 $codigo = $_POST['codigo'] ?? '';
+$para = $_POST['para'] ?? []; // ← ¡Ahora usamos "para"!
 
-if (!$to || !$subject || !$body || !$codigo) {
-    echo json_encode(['success' => false, 'message' => 'Faltan datos']);
+// Validación
+if (!$subject || !$body || !$codigo || empty($para) || !is_array($para)) {
+    echo json_encode(['success' => false, 'message' => 'Faltan datos obligatorios o destinatarios inválidos.']);
     exit;
 }
 
+// Generar PDF
 require_once __DIR__ . '/pdf_generador.php';
-
 try {
     $pdfContent = generarPDFReporte($codigo, $conexion);
 } catch (Exception $e) {
     error_log("Error generando PDF: " . $e->getMessage());
-    echo json_encode(['success' => false, 'message' => 'Error al generar el PDF: ' . $e->getMessage()]);
+    echo json_encode(['success' => false, 'message' => 'Error al generar el PDF.']);
     exit;
 }
 
-// Guardar temporalmente
+// Guardar PDF temporalmente
 $tmpPdf = tempnam(sys_get_temp_dir(), 'reporte_') . '.pdf';
 file_put_contents($tmpPdf, $pdfContent);
 
-
-// --- ENVIAR CORREO ---
+// Enviar correo
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 require_once '../vendor/autoload.php';
 
 $mail = new PHPMailer(true);
 try {
+    // Configuración SMTP
     $mail->isSMTP();
-    $mail->Host       = 'mail.rinconadadelsur.com.pe';
-    $mail->SMTPAuth = true;
-    $mail->Username = $sender['correo'];
-    $mail->Password = base64_decode($sender['password']);
+    $mail->Host       = 'mail.rinconadadelsur.com.pe'; // 'smtp.gmail.com';
+    $mail->SMTPAuth   = true;
+    $mail->Username   = $sender['correo'];
+    $mail->Password   = base64_decode($sender['password']);
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-    $mail->Port = 587;
+    $mail->Port       = 587;
 
-    $mail->setFrom($sender['correo'], 'Sistema Reportes');
-    $mail->addAddress($to);
+    $mail->setFrom($sender['correo'], 'Sistema Reportes - Granja Rinconada');
     $mail->Subject = $subject;
-    $mail->Body = $body;
+    $mail->Body    = $body;
     $mail->isHTML(false);
+
+    // Añadir destinatarios en "Para"
+    $alMenosUnoValido = false;
+    foreach ($para as $email) {
+        $email = trim($email);
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $mail->addAddress($email);
+            $alMenosUnoValido = true;
+        }
+    }
+
+    if (!$alMenosUnoValido) {
+        throw new Exception('Ningún destinatario válido en "Para".');
+    }
+
+    // Adjuntar PDF
     $mail->addAttachment($tmpPdf, "Reporte_{$codigo}.pdf");
 
+    // Adjuntar archivos adicionales (si los hay)
+    if (!empty($_FILES['archivos_adjuntos']['tmp_name'][0])) {
+        foreach ($_FILES['archivos_adjuntos']['tmp_name'] as $index => $tmpName) {
+            if ($tmpName && $_FILES['archivos_adjuntos']['error'][$index] === UPLOAD_ERR_OK) {
+                $originalName = $_FILES['archivos_adjuntos']['name'][$index];
+                $mail->addAttachment($tmpName, $originalName);
+            }
+        }
+    }
+
     $mail->send();
-    echo json_encode(['success' => true, 'message' => 'Correo enviado correctamente']);
+    echo json_encode(['success' => true, 'message' => 'Correo enviado correctamente a todos los destinatarios.']);
 
 } catch (Exception $e) {
-    error_log("Error al enviar: " . $mail->ErrorInfo);
-    echo json_encode(['success' => false, 'message' => 'Error: ' . $mail->ErrorInfo]);
+    error_log("Error al enviar correo: " . $mail->ErrorInfo);
+    echo json_encode(['success' => false, 'message' => 'Error al enviar: ' . $mail->ErrorInfo]);
 }
 
-// Limpiar
-unlink($tmpPdf);
-mysqli_close($conexion);
+// Limpieza
+if (file_exists($tmpPdf)) {
+    unlink($tmpPdf);
+}
+if ($conexion) {
+    @mysqli_close($conexion);
+}
 ?>

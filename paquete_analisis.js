@@ -93,7 +93,7 @@ window.openPaqueteMuestraModal = function(action, codigo = null, nombre = '', ti
         modal.style.display = 'flex';
         cargarListaAnalisis();
     } 
-    // 🔑 Cambiado de 'update' a 'edit' (porque en tu HTML usas "edit")
+ 
     else if (action === 'update') {
         title.textContent = '✏️ Editar Paquete de Muestra';
         
@@ -106,7 +106,7 @@ window.openPaqueteMuestraModal = function(action, codigo = null, nombre = '', ti
                 .then(data => {
                     if (data.success) {
                         analisisDisponibles = data.analisis;
-                        // ✅ Ya no pasamos `analisis`, porque usamos `analisisSeleccionadosGlobal`
+                      
                         renderizarCheckboxes('');
                     } else {
                         document.getElementById('analisisCheckboxes').innerHTML = '<p class="text-red-500 col-span-full">Error al cargar análisis</p>';
@@ -118,7 +118,7 @@ window.openPaqueteMuestraModal = function(action, codigo = null, nombre = '', ti
                     modal.style.display = 'flex';
                 });
         } else {
-            // ✅ Renderizar con filtro vacío (usa analisisSeleccionadosGlobal internamente)
+          
             renderizarCheckboxes('');
             modal.style.display = 'flex';
         }

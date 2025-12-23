@@ -27,7 +27,7 @@ if ($busqueda !== '') {
     $params[] = "%$busqueda%";
 }
 
-// Contar total (solo cuando se pide)
+
 $total = false;
 if (isset($_GET['get_total'])) {
     $sqlTotal = "SELECT COUNT(*) AS total FROM san_fact_solicitud_cab c " . $condicion;
@@ -114,6 +114,7 @@ $result = mysqli_stmt_get_result($stmt);
             </div>
 
             <div class="absolute top-4 right-4 flex flex-col gap-2 w-36">
+                <!-- PDF y Correo (como ya tenías) -->
                 <button onclick="window.open('generar_pdf_tabla.php?codigo=<?= urlencode($row['codEnvio']) ?>', '_blank')"
                     class="flex items-center gap-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md shadow transition"
                     title="PDF Tabla">
@@ -132,7 +133,10 @@ $result = mysqli_stmt_get_result($stmt);
                     <span class="text-base min-w-[1.2em] text-center">✉️</span>
                     <span>Correo</span>
                 </button>
+              
             </div>
+
+
         </div>
     <?php endwhile; ?>
 <?php else: ?>

@@ -23,15 +23,6 @@
 <body class="bg-gray-50">
     <div class="container mx-auto px-6 py-12">
 
-        <!-- TÍTULO PRINCIPAL -->
-        <div class="content-header max-w-7xl mx-auto mb-8">
-            <div class="flex items-center gap-3 mb-2">
-                <span class="text-4xl">📧</span>
-                <h1 class="text-3xl font-bold text-gray-800">Configuración de Correo y Contactos</h1>
-            </div>
-            <p class="text-gray-600 text-sm">Gestiona tu cuenta de correo y tus contactos para envío de reportes</p>
-        </div>
-
         <!-- TABS -->
         <div class="max-w-7xl mx-auto mb-8">
             <div class="flex gap-2 border-b border-gray-200">
