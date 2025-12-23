@@ -13,7 +13,6 @@ if (!$conexion) {
     exit();
 }
 
-// Evitar salida no JSON
 ob_start();
 
 $input = json_decode(file_get_contents('php://input'), true);
@@ -35,57 +34,30 @@ if (empty($granjas) || empty($edades) || empty($analisisPorTipo)) {
     exit();
 }
 
-// Escapar para SQL
+// Separar edad 00 (bebe) de las demás
+$tieneEdadBebe = in_array('00', $edades);
+$edadesNormales = array_filter($edades, function($e) { return $e != '00'; });
+
+// Escapar granjas
 $granjasEscapadas = array();
 foreach ($granjas as $g) {
     $granjasEscapadas[] = "'" . mysqli_real_escape_string($conexion, $g) . "'";
 }
-$edadesEscapadas = array();
-foreach ($edades as $e) {
-    $edadesEscapadas[] = "'" . mysqli_real_escape_string($conexion, $e) . "'";
-}
-
 $granjasIn = implode(',', $granjasEscapadas);
-$edadesIn = implode(',', $edadesEscapadas);
 
 mysqli_autocommit($conexion, false);
 $errores = array();
 
 try {
-    // === OBTENER COMBINACIONES ÚNICAS ===
-    $sqlCombinaciones = "
-        SELECT DISTINCT
-            LEFT(tcencos, 3) AS granja,
-            RIGHT(tcencos, 3) AS campania,
-            tcodint AS galpon,
-            edad,
-            fecha
-        FROM cargapollo_proyeccion
-        WHERE 
-            LEFT(tcencos, 3) IN ($granjasIn)
-            AND edad IN ($edadesIn)
-            AND YEAR(fecha) = $year
-        ORDER BY granja, campania, galpon, edad
-    ";
-
-    $resCombinaciones = mysqli_query($conexion, $sqlCombinaciones);
-    if (!$resCombinaciones) {
-        throw new Exception("Error SQL: " . mysqli_error($conexion));
-    }
-
     // === PRECARGAR nombres ===
     $nombresTipos = array();
     $nombresPaquetes = array();
-
     foreach ($analisisPorTipo as $tipoId => $lista) {
-        // Tipo muestra
         $resTipo = mysqli_query($conexion, "SELECT nombre FROM san_dim_tipo_muestra WHERE codigo = " . (int)$tipoId);
         $nombresTipos[$tipoId] = '';
         if ($row = mysqli_fetch_assoc($resTipo)) {
             $nombresTipos[$tipoId] = $row['nombre'];
         }
-
-        // Paquetes
         if (is_array($lista)) {
             foreach ($lista as $analisis) {
                 $codPkg = isset($analisis['paquete']) ? $analisis['paquete'] : null;
@@ -100,59 +72,76 @@ try {
         }
     }
 
-    // === PROCESAR ===
-    while ($combo = mysqli_fetch_assoc($resCombinaciones)) {
-        $granja = $combo['granja'];
-        $galpon = $combo['galpon'];
-        $campania = str_pad($combo['campania'], 2, '0', STR_PAD_LEFT);
-        $edad = str_pad($combo['edad'], 2, '0', STR_PAD_LEFT); // edad a 2 dígitos
-        $fecha = $combo['fecha'];
-        $codRef = $granja . $galpon . $campania . $edad; // 3+2+3+2 = 10
+    // === 1. PROCESAR EDADES NORMALES (01-45) ===
+    if (!empty($edadesNormales)) {
+        $edadesNormalesEsc = array();
+        foreach ($edadesNormales as $e) {
+            $edadesNormalesEsc[] = "'" . mysqli_real_escape_string($conexion, $e) . "'";
+        }
+        $edadesNormIn = implode(',', $edadesNormalesEsc);
 
-        foreach ($analisisPorTipo as $tipoId => $listaAnalisis) {
-            if (empty($listaAnalisis) || !is_array($listaAnalisis)) continue;
+        $sqlNormal = "
+            SELECT DISTINCT
+                LEFT(tcencos, 3) AS granja,
+                RIGHT(tcencos, 3) AS campania,
+                tcodint AS galpon,
+                edad,
+                fecha
+            FROM cargapollo_proyeccion
+            WHERE 
+                LEFT(tcencos, 3) IN ($granjasIn)
+                AND edad IN ($edadesNormIn)
+                AND YEAR(fecha) = $year
+            ORDER BY granja, campania, galpon, edad
+        ";
 
-            $tipoNombre = isset($nombresTipos[$tipoId]) ? $nombresTipos[$tipoId] : '';
+        $resNormal = mysqli_query($conexion, $sqlNormal);
+        if ($resNormal) {
+            while ($combo = mysqli_fetch_assoc($resNormal)) {
+                $granja = $combo['granja'];
+                $galpon = $combo['campania'];
+                $campania = str_pad($combo['galpon'], 2, '0', STR_PAD_LEFT);
+                $edad = str_pad($combo['edad'], 2, '0', STR_PAD_LEFT);
+                $fecha = $combo['fecha'];
+                $codRef = $granja . $campania . $galpon . $edad;
 
-            foreach ($listaAnalisis as $analisis) {
-                if (!is_array($analisis)) continue;
-                $codAnalisis = (int)(isset($analisis['codigo']) ? $analisis['codigo'] : 0);
-                $nomAnalisis = isset($analisis['nombre']) ? $analisis['nombre'] : '';
-                $codPaquete = isset($analisis['paquete']) ? $analisis['paquete'] : null;
-                $nomPaquete = isset($nombresPaquetes[$codPaquete]) ? $nombresPaquetes[$codPaquete] : '';
+                insertarRegistros($conexion, $codRef, $fecha, $analisisPorTipo, $nombresTipos, $nombresPaquetes, $usuario, $errores);
+            }
+        }
+    }
 
-                if (!$codAnalisis || empty($nomAnalisis)) continue;
+    // === 2. PROCESAR EDAD BEBÉ (00) ===
+    if ($tieneEdadBebe) {
+        // Buscar registros con edad '01'
+        $sqlBebe = "
+            SELECT DISTINCT
+                LEFT(tcencos, 3) AS granja,
+                RIGHT(tcencos, 3) AS campania,
+                tcodint AS galpon,
+                '00' AS edad,
+                DATE_SUB(fecha, INTERVAL 1 DAY) AS fecha
+            FROM cargapollo_proyeccion
+            WHERE 
+                LEFT(tcencos, 3) IN ($granjasIn)
+                AND edad = '01'
+                AND YEAR(fecha) = $year
+            ORDER BY granja, campania, galpon
+        ";
 
-                $sql = "INSERT INTO san_planificacion (
-                    codRef, fecToma, codMuestra, nomMuestra,
-                    codAnalisis, nomAnalisis, codPaquete, nomPaquete,
-                    usuarioRegistrador, fechaHoraRegistro
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+        $resBebe = mysqli_query($conexion, $sqlBebe);
+        if ($resBebe) {
+            while ($combo = mysqli_fetch_assoc($resBebe)) {
+                $granja = $combo['granja'];
+                $galpon = $combo['campania'];
+                $campania = str_pad($combo['galpon'], 2, '0', STR_PAD_LEFT);
+                $edad = '00';
+                $fecha = $combo['fecha'];
+                $codRef = $granja . $campania . $galpon . $edad;
 
-                $stmt = mysqli_prepare($conexion, $sql);
-                if (!$stmt) {
-                    $errores[] = "Prepare falló: " . mysqli_error($conexion);
-                    continue;
+                // Validar que la fecha resultante sea del mismo año (opcional)
+                if ($fecha && date('Y', strtotime($fecha)) == $year) {
+                    insertarRegistros($conexion, $codRef, $fecha, $analisisPorTipo, $nombresTipos, $nombresPaquetes, $usuario, $errores);
                 }
-
-                mysqli_stmt_bind_param(
-                    $stmt,
-                    'sssssssss',
-                    $codRef,
-                    $fecha,
-                    $tipoId,
-                    $tipoNombre,
-                    $codAnalisis,
-                    $nomAnalisis,
-                    $codPaquete,
-                    $nomPaquete,
-                    $usuario
-                );
-
-                if (!mysqli_stmt_execute($stmt)) {
-                    $errores[] = mysqli_stmt_error($stmt);
-                }
-                mysqli_stmt_close($stmt);
             }
         }
     }
@@ -174,4 +163,54 @@ try {
 }
 
 mysqli_close($conexion);
+
+// === FUNCIÓN AUXILIAR PARA INSERTAR ===
+function insertarRegistros($conexion, $codRef, $fecha, $analisisPorTipo, $nombresTipos, $nombresPaquetes, $usuario, &$errores) {
+    foreach ($analisisPorTipo as $tipoId => $listaAnalisis) {
+        if (empty($listaAnalisis) || !is_array($listaAnalisis)) continue;
+
+        $tipoNombre = isset($nombresTipos[$tipoId]) ? $nombresTipos[$tipoId] : '';
+
+        foreach ($listaAnalisis as $analisis) {
+            if (!is_array($analisis)) continue;
+            $codAnalisis = (int)(isset($analisis['codigo']) ? $analisis['codigo'] : 0);
+            $nomAnalisis = isset($analisis['nombre']) ? $analisis['nombre'] : '';
+            $codPaquete = isset($analisis['paquete']) ? $analisis['paquete'] : null;
+            $nomPaquete = isset($nombresPaquetes[$codPaquete]) ? $nombresPaquetes[$codPaquete] : '';
+
+            if (!$codAnalisis || empty($nomAnalisis)) continue;
+
+            $sql = "INSERT INTO san_planificacion (
+                codRef, fecToma, codMuestra, nomMuestra,
+                codAnalisis, nomAnalisis, codPaquete, nomPaquete,
+                usuarioRegistrador, fechaHoraRegistro
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+
+            $stmt = mysqli_prepare($conexion, $sql);
+            if (!$stmt) {
+                $errores[] = "Prepare falló: " . mysqli_error($conexion);
+                continue;
+            }
+
+            mysqli_stmt_bind_param(
+                $stmt,
+                'sssssssss',
+                $codRef,
+                $fecha,
+                $tipoId,
+                $tipoNombre,
+                $codAnalisis,
+                $nomAnalisis,
+                $codPaquete,
+                $nomPaquete,
+                $usuario
+            );
+
+            if (!mysqli_stmt_execute($stmt)) {
+                $errores[] = mysqli_stmt_error($stmt);
+            }
+            mysqli_stmt_close($stmt);
+        }
+    }
+}
 ?>

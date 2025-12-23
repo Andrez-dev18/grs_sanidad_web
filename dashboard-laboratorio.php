@@ -80,13 +80,7 @@ if (!$conexion) {
 
         <!-- VISTA LABORATORIOS -->
         <div id="viewLaboratorio" class="content-view">
-            <div class="content-header max-w-7xl mx-auto mb-8">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="text-4xl">🔬</span>
-                    <h1 class="text-3xl font-bold text-gray-800">Laboratorios</h1>
-                </div>
-                <p class="text-gray-600 text-sm">Administre los laboratorios registrados en el sistema</p>
-            </div>
+            
 
             <div class="form-container max-w-7xl mx-auto">
                 <!-- Botones de acción -->
@@ -126,7 +120,7 @@ if (!$conexion) {
                                     echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['codigo']) . '</td>';
                                     echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['nombre']) . '</td>';
                                     echo '<td class="px-6 py-4 flex gap-2">
-                            <button class="btn-icon p-2 text-lg hover:bg-blue-100 rounded-lg transition" title="Editar" onclick="openLaboratorioModal(\'edit\', ' . (int) $row['codigo'] . ', \'' . addslashes(htmlspecialchars($row['nombre'])) . '\')">
+                            <button class="btn-icon p-2 text-lg hover:bg-blue-100 rounded-lg transition" title="Editar" onclick="openLaboratorioModal(\'update\', ' . (int) $row['codigo'] . ', \'' . addslashes(htmlspecialchars($row['nombre'])) . '\')">
                                 ✏️
                             </button>
                             <button class="btn-icon p-2 text-lg hover:bg-red-100 rounded-lg transition" title="Eliminar" onclick="confirmLaboratorioDelete(' . (int) $row['codigo'] . ')">

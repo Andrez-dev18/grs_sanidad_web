@@ -12,11 +12,12 @@ if (!$conexion) {
     exit();
 }
 
-$action = $_POST['action'] ?? '';
-$nombre = trim($_POST['nombre'] ?? '');
-$descripcion = trim($_POST['descripcion'] ?? '');
-$longitud_codigo = isset($_POST['longitud_codigo']) ? (int) $_POST['longitud_codigo'] : 8;
-$codigo = isset($_POST['codigo']) ? (int) $_POST['codigo'] : null;
+// PHP 7.2 compatible: ?? es válido, pero usamos isset() si prefieres (opcional)
+$action = isset($_POST['action']) ? $_POST['action'] : '';
+$nombre = trim(isset($_POST['nombre']) ? $_POST['nombre'] : '');
+$descripcion = trim(isset($_POST['descripcion']) ? $_POST['descripcion'] : '');
+$longitud_codigo = isset($_POST['longitud_codigo']) ? (int)$_POST['longitud_codigo'] : 8;
+$codigo = isset($_POST['codigo']) ? (int)$_POST['codigo'] : null;
 
 if (empty($nombre) && $action !== 'delete') {
     echo json_encode(['success' => false, 'message' => 'El nombre es obligatorio.']);
@@ -24,7 +25,7 @@ if (empty($nombre) && $action !== 'delete') {
 }
 
 if ($action !== 'delete' && ($longitud_codigo < 1)) {
-    echo json_encode(['success' => false, 'message' => 'La longitud de código debe ser mayor que 1.']);
+    echo json_encode(['success' => false, 'message' => 'La longitud de código debe ser mayor que 0.']); // corregido: "mayor que 0", no "1"
     exit();
 }
 
@@ -32,12 +33,15 @@ mysqli_begin_transaction($conexion);
 
 try {
     if ($action === 'create') {
-        // Verificar que no exista un tipo de muestra con el mismo nombre
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_tipo_muestra WHERE nombre = ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) FROM san_dim_tipo_muestra WHERE nombre = ?");
         mysqli_stmt_bind_param($check, "s", $nombre);
         mysqli_stmt_execute($check);
-        $row = mysqli_stmt_get_result($check)->fetch_assoc();
-        if ($row['cnt'] > 0) {
+        $count = 0;
+        mysqli_stmt_bind_result($check, $count);
+        mysqli_stmt_fetch($check);
+        mysqli_stmt_close($check);
+
+        if ($count > 0) {
             throw new Exception('Ya existe un tipo de muestra con ese nombre.');
         }
 
@@ -45,15 +49,19 @@ try {
         mysqli_stmt_bind_param($stmt, "ssi", $nombre, $descripcion, $longitud_codigo);
 
     } elseif ($action === 'update') {
-        if (!$codigo)
+        if ($codigo === null || $codigo <= 0) {
             throw new Exception('Código no válido.');
+        }
 
-        // Verificar que no exista otro tipo de muestra con el mismo nombre
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_tipo_muestra WHERE nombre = ? AND codigo != ?");
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) FROM san_dim_tipo_muestra WHERE nombre = ? AND codigo != ?");
         mysqli_stmt_bind_param($check, "si", $nombre, $codigo);
         mysqli_stmt_execute($check);
-        $row = mysqli_stmt_get_result($check)->fetch_assoc();
-        if ($row['cnt'] > 0) {
+        $count = 0;
+        mysqli_stmt_bind_result($check, $count);
+        mysqli_stmt_fetch($check);
+        mysqli_stmt_close($check);
+
+        if ($count > 0) {
             throw new Exception('Ya existe otro tipo de muestra con ese nombre.');
         }
 
@@ -61,27 +69,35 @@ try {
         mysqli_stmt_bind_param($stmt, "ssii", $nombre, $descripcion, $longitud_codigo, $codigo);
 
     } elseif ($action === 'delete') {
-        if (!$codigo)
+        if ($codigo === null || $codigo <= 0) {
             throw new Exception('Código no válido.');
-
-        // Verificar si el tipo de muestra está en uso en paquetes de análisis
-        $check = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_paquete WHERE tipoMuestra = ?");
-        mysqli_stmt_bind_param($check, "i", $codigo);
-        mysqli_stmt_execute($check);
-        $row = mysqli_stmt_get_result($check)->fetch_assoc();
-        if ($row['cnt'] > 0) {
-            throw new Exception('No se puede eliminar: el tipo de muestra está en uso en ' . $row['cnt'] . ' paquete(s) de análisis.');
         }
 
-        // Verificar si el tipo de muestra está en uso en análisis
-        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) AS cnt FROM san_dim_analisis a
-        JOIN san_dim_paquete pm ON a.paquete = pm.codigo
-        WHERE pm.tipoMuestra = ?");
+        // Verificar uso en paquetes
+        $check = mysqli_prepare($conexion, "SELECT COUNT(*) FROM san_dim_paquete WHERE tipoMuestra = ?");
+        mysqli_stmt_bind_param($check, "i", $codigo);
+        mysqli_stmt_execute($check);
+        $count = 0;
+        mysqli_stmt_bind_result($check, $count);
+        mysqli_stmt_fetch($check);
+        mysqli_stmt_close($check);
+
+        if ($count > 0) {
+            throw new Exception('No se puede eliminar: el tipo de muestra está en uso en ' . $count . ' paquete(s) de análisis.');
+        }
+
+        // Verificar uso en análisis
+        $check2 = mysqli_prepare($conexion, "SELECT COUNT(*) FROM san_dim_paquete p
+            WHERE p.tipoMuestra = ?");
         mysqli_stmt_bind_param($check2, "i", $codigo);
         mysqli_stmt_execute($check2);
-        $row2 = mysqli_stmt_get_result($check2)->fetch_assoc();
-        if ($row2['cnt'] > 0) {
-            throw new Exception('No se puede eliminar: el tipo de muestra está en uso en ' . $row2['cnt'] . ' análisis.');
+        $count2 = 0;
+        mysqli_stmt_bind_result($check2, $count2);
+        mysqli_stmt_fetch($check2);
+        mysqli_stmt_close($check2);
+
+        if ($count2 > 0) {
+            throw new Exception('No se puede eliminar: el tipo de muestra está en uso en ' . $count2 . ' análisis.');
         }
 
         $stmt = mysqli_prepare($conexion, "DELETE FROM san_dim_tipo_muestra WHERE codigo = ?");
@@ -94,6 +110,7 @@ try {
     if (!mysqli_stmt_execute($stmt)) {
         throw new Exception('Error en la base de datos: ' . mysqli_error($conexion));
     }
+    mysqli_stmt_close($stmt);
 
     mysqli_commit($conexion);
 
@@ -115,7 +132,7 @@ try {
 } catch (Exception $e) {
     mysqli_rollback($conexion);
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+} finally {
+    mysqli_close($conexion);
 }
-
-mysqli_close($conexion);
 ?>

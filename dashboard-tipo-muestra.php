@@ -79,13 +79,7 @@ if (!$conexion) {
 
         <!-- VISTA TIPOS DE MUESTRA -->
         <div id="viewTipoMuestra" class="content-view">
-            <div class="content-header max-w-7xl mx-auto mb-8">
-                <div class="flex items-center gap-3 mb-2">
-                    <span class="text-4xl">🧪</span>
-                    <h1 class="text-3xl font-bold text-gray-800">Tipos de Muestra</h1>
-                </div>
-                <p class="text-gray-600 text-sm">Administre los tipos de muestra registrados en el sistema</p>
-            </div>
+          
 
             <div class="form-container max-w-7xl mx-auto">
                 <!-- Botones de acción -->

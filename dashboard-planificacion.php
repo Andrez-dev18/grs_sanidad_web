@@ -242,111 +242,268 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
     }
 
     .calendar-container {
-    background: white;
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    display: flex;
-    flex-direction: column;
-  }
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+    }
 
-  .month-nav {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
 
-  .btn-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: #f1f3f5;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    color: #495057;
-  }
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: #f1f3f5;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #495057;
+    }
 
-  .btn-icon:hover {
-    background: #e9ecef;
-    color: #4361ee;
-  }
+    .btn-icon:hover {
+      background: #e9ecef;
+      color: #4361ee;
+    }
 
-  .current-month-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: #2d3748;
-    min-width: 160px;
-    text-align: center;
-  }
+    .current-month-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #2d3748;
+      min-width: 160px;
+      text-align: center;
+    }
 
-  .calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
-    flex: 1;
-    overflow: hidden;
-  }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      flex: 1;
+      overflow: hidden;
+    }
 
-  .calendar-day {
-    min-height: 80px;
-    border-radius: 8px;
-    padding: 6px;
-    background: #fff;
-    border: 1px solid #e9ecef;
-    cursor: default;
-    font-size: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
+    .calendar-day {
+      min-height: 80px;
+      border-radius: 8px;
+      padding: 6px;
+      background: #fff;
+      border: 1px solid #e9ecef;
+      cursor: default;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
 
-  .calendar-day.today {
-    border-color: #4361ee;
-    background: #eef2ff;
-  }
+    .calendar-day.today {
+      border-color: #4361ee;
+      background: #eef2ff;
+    }
 
-  .calendar-day.empty {
-    background: #f8fafc;
-    border: none;
-    cursor: default;
-  }
+    .calendar-day.empty {
+      background: #f8fafc;
+      border: none;
+      cursor: default;
+    }
 
-  .day-number {
-    font-weight: 700;
-    color: #212529;
-  }
+    .day-number {
+      font-weight: 700;
+      color: #212529;
+    }
 
-  .day-event {
-    background: #4361ee;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 10px;
-    cursor: pointer;
-    position: relative;
-  }
+    .day-event {
+      background: #4361ee;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      cursor: pointer;
+      position: relative;
+    }
 
-  .day-event:hover {
-    background: #3a56d4;
-  }
+    .day-event:hover {
+      background: #3a56d4;
+    }
 
-  .analisis-lista {
-    margin-top: 4px;
-    padding: 6px;
-    background: #f0f4ff;
-    border-radius: 4px;
-    font-size: 10px;
-    display: none; /* inicialmente oculto */
-  }
+    .analisis-lista {
+      margin-top: 4px;
+      padding: 6px;
+      background: #f0f4ff;
+      border-radius: 4px;
+      font-size: 10px;
+      display: none;
+      /* inicialmente oculto */
+    }
 
-  .analisis-item {
-    margin: 2px 0;
-    color: #2d3748;
-  }
+    .analisis-item {
+      margin: 2px 0;
+      color: #2d3748;
+    }
+
+    /* === CALENDARIO MODAL === */
+    .calendar-container {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: #f1f3f5;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #495057;
+    }
+
+    .btn-icon:hover {
+      background: #e9ecef;
+      color: #4361ee;
+    }
+
+    .current-month-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #2d3748;
+      min-width: 160px;
+      text-align: center;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .cal-day-header {
+      text-align: center;
+      font-weight: bold;
+      padding: 6px 0;
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+
+    .cal-day {
+      min-height: 80px;
+      border-radius: 8px;
+      padding: 4px;
+      background: #fff;
+      border: 1px solid #e9ecef;
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .cal-day.today {
+      border-color: #4361ee;
+      background: #f0f4ff;
+    }
+
+    .cal-day.empty {
+      background: #fafafa;
+      border-color: #f1f3f5;
+      cursor: default;
+    }
+
+    .cal-day-number {
+      font-weight: bold;
+      text-align: right;
+      padding-right: 4px;
+      font-size: 0.9rem;
+    }
+
+    .cal-event {
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+      text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .cal-event .btn-plus {
+      margin-left: 4px;
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+
+    .cal-event .btn-plus:hover {
+      opacity: 1;
+    }
+
+    /* Modal de análisis */
+    .modal-analisis {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1050;
+    }
+
+    .modal-analisis-content {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-analisis-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .modal-analisis-header h6 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .modal-analisis-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #6c757d;
+    }
   </style>
 </head>
 
@@ -428,11 +585,47 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
             </thead>
             <tbody></tbody>
           </table>
+
+        </div>
+
+
+      </div>
+    </div>
+
+  </div>
+  <!--div class="d-flex gap-3 mb-4"-->
+    <!-- Tus otros botones -->
+    <button class="btn-secondary" id="btnVerHorario">
+      <i class="fas fa-calendar-alt"></i> Ver Horario
+    </button>
+    <!-- CALENDARIO (sin modal) -->
+    <div id="seccionCalendario" class="card mt-5" style="display:none;">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Horario de Planificación</h5>
+        <button class="btn btn-sm btn-outline-secondary" id="btnCerrarCalendario">Cerrar</button>
+      </div>
+      <div class="card-body p-0">
+        <div class="calendar-container">
+          <div class="month-nav">
+            <button class="btn-icon" id="calPrev">&lt;</button>
+            <div class="current-month-title" id="calTitle">Junio 2025</div>
+            <button class="btn-icon" id="calNext">&gt;</button>
+          </div>
+          <div class="calendar-grid" id="calGrid"></div>
+        </div>
+
+        <!-- CONTENEDOR DE DETALLES -->
+        <div id="contenedorDetalles" class="p-4"
+          style="display:none; border-top: 1px solid #e9ecef; background: #f8fafc;">
+          <h6 class="mb-3">Detalles del Evento</h6>
+          <div id="detallesContenido"></div>
         </div>
       </div>
     </div>
-    
-  </div>
+  <!-- /div->
+
+
+
   <!-- MODAL PLANIFICACIÓN ACTUALIZADO -->
   <div class="modal fade" id="modalPlanificacion" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl">
@@ -466,6 +659,7 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
                 <label class="form-check-label" for="selectAllEdades">Seleccionar todas</label>
               </div>
               <select id="edadesPlan" class="form-control" multiple size="6">
+                <option value="00">0 POLLO BEBE</option>
                 <?php for ($e = 1; $e <= 45; $e++): ?>
                   <option value="<?= str_pad($e, 2, '0', STR_PAD_LEFT) ?>"><?= $e ?></option>
                 <?php endfor; ?>
@@ -491,51 +685,6 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
         <div class="modal-footer">
           <button type="button" class="btn-outline" data-bs-dismiss="modal">Cancelar</button>
           <button type="button" class="btn-primary" id="btnGuardarPlan">Guardar Planificación</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- MODAL PLANIFICACIÓN -->
-  <div class="modal fade" id="modalPlanificacion2" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Nueva Planificación</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
-          <div class="row g-3">
-            <div class="col-md-3">
-              <label class="form-label">Granja(s)</label>
-              <select id="granjasPlan" class="form-control" multiple size="6"></select>
-            </div>
-            <!-- <div class="col-md-2">
-              <label class="form-label">Campaña(s)</label>
-              <select id="campaniasPlan" class="form-control" multiple size="6"></select>
-            </div> -->
-            <!-- <div class="col-md-2">
-              <label class="form-label">Galpón(es)</label>
-              <select id="galponesPlan" class="form-control" multiple size="6"></select>
-            </div> -->
-            <div class="col-md-2">
-              <label class="form-label">Edad(es)</label>
-              <select id="edadesPlan" class="form-control" multiple size="6">
-                <?php for ($e = 1; $e <= 45; $e++): ?>
-                  <option value="<?= str_pad($e, 2, '0', STR_PAD_LEFT) ?>"><?= $e ?></option>
-                <?php endfor; ?>
-              </select>
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Tipo(s) de muestra</label>
-              <select id="tiposMuestraPlan" class="form-control" multiple size="6"></select>
-            </div>
-          </div>
-          <hr>
-          <div id="analisisContainer"></div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-outline" data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn-primary" id="btnGuardarPlan">Guardar</button>
         </div>
       </div>
     </div>
@@ -771,8 +920,6 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
       });
     });
 
-
-
     $('#btnGuardarPlan').on('click', async () => {
       const granjas = $('#granjasPlan').val() || [];
       const edades = $('#edadesPlan').val() || [];
@@ -884,6 +1031,212 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
 
         window.location.href = baseUrl + (params.toString() ? '?' + params.toString() : '');
       });
+      // === VARIABLES GLOBALES ===
+      let fechaCalendario = new Date();
+      let primerMesConRegistros = null;
+
+      // === ABRIR CALENDARIO ===
+      $('#btnVerHorario').on('click', async function () {
+        const filtros = obtenerFiltrosActuales();
+
+        // Determinar mes inicial
+        let mesInicial = new Date();
+
+        if (filtros.fecha_desde) {
+          // Usar el mes del filtro de fecha inicio
+          mesInicial = new Date(filtros.fecha_desde);
+        } else if (primerMesConRegistros) {
+          // Usar el primer mes con registros
+          mesInicial = new Date(primerMesConRegistros);
+        }
+
+        $('#seccionCalendario').show();
+        await cargarCalendario(mesInicial, filtros);
+      });
+
+      $('#btnCerrarCalendario').on('click', function () {
+        $('#seccionCalendario').hide();
+        $('#contenedorDetalles').hide();
+      });
+
+      // === OBTENER FILTROS ACTUALES ===
+      function obtenerFiltrosActuales() {
+        return {
+          fecha_desde: $('#fechaDesde').val(),
+          fecha_hasta: $('#fechaHasta').val(),
+          granja: $('#filtroGranja').val(),
+          campania: $('#filtroCampania').val(),
+          galpon: $('#filtroGalpon').val(),
+          edad: $('#filtroEdad').val()
+        };
+      }
+
+      // === CARGAR CALENDARIO ===
+      async function cargarCalendario(fecha, filtros = {}) {
+        fechaCalendario = fecha;
+        const year = fecha.getFullYear();
+        const month = fecha.getMonth() + 1;
+
+        // Rango del mes
+        const inicioMes = `${year}-${String(month).padStart(2, '0')}-01`;
+        const ultimoDia = new Date(year, month, 0).getDate();
+        const finMes = `${year}-${String(month).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
+
+        // Determinar rango de fechas
+        const fechaDesde = filtros.fecha_desde || inicioMes;
+        const fechaHasta = filtros.fecha_hasta || finMes;
+
+        const params = new URLSearchParams({ fecha_desde: fechaDesde, fecha_hasta: fechaHasta });
+        if (filtros.granja) params.append('granja', filtros.granja);
+        if (filtros.campania) params.append('campania', filtros.campania);
+        if (filtros.galpon) params.append('galpon', filtros.galpon);
+        if (filtros.edad) params.append('edad', filtros.edad);
+
+        try {
+          const res = await fetch(`api_dashboard/planificacion/listar_planificacion.php?${params.toString()}`);
+          const data = await res.json();
+
+          // Guardar el primer mes si no lo tenemos
+          if (!primerMesConRegistros && data.data.length > 0) {
+            const primeraFecha = data.data[data.data.length - 1].fecha; // más antigua
+            primerMesConRegistros = primeraFecha;
+          }
+
+          // Agrupar por fecha
+          const eventosPorFecha = {};
+          data.data.forEach(item => {
+            const fecha = item.fecha;
+            const evento = {
+              codRef: item.granja + item.campania + item.galpon + item.edad,
+              analisis: item.analisisResumen,
+              granja: item.granja,
+              campania: item.campania,
+              galpon: item.galpon,
+              edad: item.edad,
+              nombreGranja: item.nombreGranja
+            };
+            if (!eventosPorFecha[fecha]) eventosPorFecha[fecha] = [];
+            eventosPorFecha[fecha].push(evento);
+          });
+
+          renderizarCalendario(fecha, eventosPorFecha);
+        } catch (err) {
+          console.error("Error al cargar calendario:", err);
+          $('#calGrid').html('<div class="col-12 text-center text-danger py-3">Error al cargar datos</div>');
+        }
+      }
+
+      // === RENDERIZAR CALENDARIO ===
+      function renderizarCalendario(fecha, eventosPorFecha) {
+        const year = fecha.getFullYear();
+        const month = fecha.getMonth() + 1;
+        const primerDia = new Date(year, month - 1, 1);
+        const ultimoDia = new Date(year, month, 0);
+        const inicioSemana = new Date(primerDia);
+        inicioSemana.setDate(primerDia.getDate() - primerDia.getDay());
+
+        const grid = $('#calGrid');
+        grid.html('');
+
+        // Cabeceras
+        ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].forEach(dia => {
+          grid.append(`<div class="cal-day-header">${dia}</div>`);
+        });
+
+        const hoy = new Date();
+        for (let d = new Date(inicioSemana); d <= ultimoDia; d.setDate(d.getDate() + 1)) {
+          const esDelMes = d.getMonth() === month - 1;
+          const esHoy = d.toDateString() === hoy.toDateString();
+          const fechaStr = d.toISOString().split('T')[0];
+
+          let clase = 'cal-day';
+          if (!esDelMes) clase += ' empty';
+          if (esHoy) clase += ' today';
+
+          let html = `<div class="${clase}">
+      <div class="cal-day-number">${d.getDate()}</div>`;
+
+          if (esDelMes && eventosPorFecha[fechaStr]) {
+            eventosPorFecha[fechaStr].forEach((evento, index) => {
+              const color = generarColor(evento.granja);
+              // Guardar el índice del evento para referenciarlo
+              html += `
+          <div class="cal-event" style="background: ${color}" 
+               data-fecha="${fechaStr}" 
+               data-index="${index}">
+            ${evento.codRef}
+            <span class="btn-plus">+</span>
+          </div>`;
+            });
+          }
+
+          html += '</div>';
+          grid.append(html);
+        }
+
+        // Título
+        const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        $('#calTitle').text(`${meses[month - 1]} ${year}`);
+
+        // Eventos de navegación
+        $('#calPrev').off('click').on('click', () => {
+          fechaCalendario.setMonth(fechaCalendario.getMonth() - 1);
+          cargarCalendario(fechaCalendario, obtenerFiltrosActuales());
+        });
+
+        $('#calNext').off('click').on('click', () => {
+          fechaCalendario.setMonth(fechaCalendario.getMonth() + 1);
+          cargarCalendario(fechaCalendario, obtenerFiltrosActuales());
+        });
+
+        // Evento para mostrar detalles
+        $('.cal-event').off('click').on('click', function () {
+          const fecha = $(this).data('fecha');
+          const index = $(this).data('index');
+          const eventos = eventosPorFecha[fecha];
+          const evento = eventos[index];
+
+          // Mostrar detalles
+          $('#detallesContenido').html(`
+      <div class="row">
+        <div class="col-md-6">
+          <strong>Granja:</strong> ${evento.granja} - ${evento.nombreGranja}<br>
+          <strong>Campaña:</strong> ${evento.campania}<br>
+          <strong>Galpón:</strong> ${evento.galpon}<br>
+          <strong>Edad:</strong> ${evento.edad}
+        </div>
+        <div class="col-md-6">
+          <strong>Análisis:</strong><br>
+          <small>${evento.analisis.replace(/, /g, '<br>')}</small>
+        </div>
+      </div>
+    `);
+          $('#contenedorDetalles').show();
+        });
+      }
+
+      // === FUNCIONES AUXILIARES ===
+      function generarColor(texto) {
+        if (!texto) return '#6c757d';
+        let hash = 0;
+        for (let i = 0; i < texto.length; i++) {
+          hash = texto.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        let color = '#';
+        for (let i = 0; i < 3; i++) {
+          const value = (hash >> (i * 8)) & 0xFF;
+          color += ('00' + value.toString(16)).substr(-2);
+        }
+        // Asegurar contraste
+        const r = parseInt(color.substr(1, 2), 16);
+        const g = parseInt(color.substr(3, 2), 16);
+        const b = parseInt(color.substr(5, 2), 16);
+        const luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        if (luminancia > 0.7) {
+          color = `#${Math.max(0, r - 50).toString(16).padStart(2, '0')}${Math.max(0, g - 50).toString(16).padStart(2, '0')}${Math.max(0, b - 50).toString(16).padStart(2, '0')}`;
+        }
+        return color;
+      }
     });
   </script>
 

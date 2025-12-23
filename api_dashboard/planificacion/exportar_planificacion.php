@@ -34,10 +34,10 @@ $edad = $_GET['edad'] ?? null;
 $where = [];
 if ($fecha_desde) $where[] = "p.fecToma >= '" . mysqli_real_escape_string($conexion, $fecha_desde) . "'";
 if ($fecha_hasta) $where[] = "p.fecToma <= '" . mysqli_real_escape_string($conexion, $fecha_hasta) . "'";
-if ($granja && preg_match('/^\d{3}$/', $granja)) $where[] = "LEFT(p.codRef, 3) = '" . mysqli_real_escape_string($conexion, $granja) . "'";
-if ($campania && preg_match('/^\d{2}$/', $campania)) $where[] = "SUBSTRING(p.codRef, 4, 2) = '" . mysqli_real_escape_string($conexion, $campania) . "'";
-if ($galpon && preg_match('/^\d{2,3}$/', $galpon)) $where[] = "SUBSTRING(p.codRef, 6, " . strlen($galpon) . ") = '" . mysqli_real_escape_string($conexion, $galpon) . "'";
-if ($edad && preg_match('/^\d{2}$/', $edad)) $where[] = "SUBSTRING(p.codRef, 8, 2) = '" . mysqli_real_escape_string($conexion, $edad) . "'";
+if ($granja) $where[] = "LEFT(p.codRef, 3) = '" . mysqli_real_escape_string($conexion, $granja) . "'";
+if ($campania) $where[] = "SUBSTRING(p.codRef, 4, 3) = '" . mysqli_real_escape_string($conexion, $campania) . "'";
+if ($galpon) $where[] = "SUBSTRING(p.codRef, 7, 2) = '" . mysqli_real_escape_string($conexion, $galpon) . "'";
+if ($edad) $where[] = "SUBSTRING(p.codRef, 9, 2) = '" . mysqli_real_escape_string($conexion, $edad) . "'";
 
 $whereClause = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
@@ -47,8 +47,8 @@ $sql = "
         p.fecToma AS fecha,
         LEFT(p.codRef, 3) AS granja,
         c.nombre AS nombreGranja,
-        SUBSTRING(p.codRef, 4, 2) AS campania,
-        SUBSTRING(p.codRef, 6, 3) AS galpon,
+        SUBSTRING(p.codRef, 4, 3) AS campania,
+        SUBSTRING(p.codRef, 7, 2) AS galpon,
         SUBSTRING(p.codRef, 9, 2) AS edad,
         p.nomMuestra AS tipo_muestra,
         p.nomAnalisis AS analisis
