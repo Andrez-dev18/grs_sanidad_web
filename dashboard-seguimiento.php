@@ -794,7 +794,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                 📊 Exportar a Excel
                             </button>
                             <button type="button"
-                                class="px-6 py-2.5 text-white font-medium rounded-lg transition inline-flex items-center gap-2"
+                                class=" hidden px-6 py-2.5 text-white font-medium rounded-lg transition inline-flex items-center gap-2"
                                 onclick="generarReportePDF()"
                                 style="background: linear-gradient(135deg, #b91b10e1 0%, #960f05ff 100%); box-shadow: 0 4px 6px rgba(185, 16, 38, 0.3);">
                                 Exportar a PDF
@@ -803,6 +803,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                     </div>
                 </div>
+
+                <?php
+                $codigoUsuario = $_SESSION['usuario'] ?? 'USER';  // Cambia 'usuario' si tu sesión usa otro nombre
+                // Consulta directa, simple
+                $sql = "SELECT rol_sanidad FROM usuario WHERE codigo = '$codigoUsuario'";
+                $res = $conexion->query($sql);
+
+                $rol = 'user'; // valor por defecto si no encuentra nada
+
+                if ($res && $res->num_rows > 0) {
+                    $fila = $res->fetch_assoc();
+                    $rol = strtolower(trim($fila['rol_sanidad']));
+                }
+                ?>
+
+                <!-- Este <p> oculto guarda el rol para que JavaScript lo lea -->
+                <p id="idRolUser" data-rol="<?= htmlspecialchars($rol) ?>"></p>
 
                 <!-- Tabla  -->
                 <div class="max-w-full mx-auto mt-6">
@@ -827,6 +844,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                         <th class="">Detalle</th>
                                         <th class="">Historial</th>
                                         <th class="">PDF</th>
+                                        <th class="">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1347,6 +1365,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             <i class="fa-solid fa-file-pdf"></i>
                         </button>`;
                         }
+                    },
+                    {
+                        data: null,
+                        className: 'text-center',
+                        orderable: false,
+                        render: function(data, type, row) {
+                            // Obtener el rol del usuario desde el elemento oculto
+                            const rolUser = document.getElementById('idRolUser')?.textContent.trim().toLowerCase() ||
+                                document.getElementById('idRolUser')?.dataset.rol?.toLowerCase() ||
+                                '';
+
+                            // Solo mostrar el botón si es 'admin'
+                            if (rolUser === 'admin') {
+                                return `<button 
+                                    class="text-red-600 hover:text-red-800 transition"
+                                    title="Eliminar solicitud"
+                                    onclick="borrarRegistros('${row.codEnvio}')">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>`;
+                            } else {
+                                // Si no es admin, devolver vacío o un placeholder invisible
+                                return '';
+                            }
+                        }
                     }
                 ],
                 columnDefs: [{
@@ -1423,6 +1465,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 return;
             }
             window.open(`reports/reporteSeguimientoMuestrasPdf.php?codEnvio=${codEnvio}`, '_blank');
+        }
+
+        function borrarRegistros(codEnvio) {
+            // Confirmación simple y clara
+            if (!confirm(`¿Estás COMPLETAMENTE seguro de eliminar el envío "${codEnvio}"?\n\nEsta acción:\n• Eliminará todos los resultados, archivos y detalles asociados\n• NO se puede deshacer\n\n¿Continuar?`)) {
+                return; // Cancela si dice "No"
+            }
+
+            // Enviar al PHP
+            fetch('borrarSolicitudCompleto.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: 'codEnvio=' + encodeURIComponent(codEnvio)
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ Envío eliminado correctamente');
+                        // Recargar la tabla
+                        if (table) table.ajax.reload();
+                    } else {
+                        alert('❌ Error: ' + data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('❌ Error de conexión');
+                });
         }
     </script>
 

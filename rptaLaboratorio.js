@@ -42,7 +42,7 @@ function loadSidebar(page = 1) {
                     // resaltar visualmente
 
 
-                    //cargarSolicitud(row.codEnvio, row.fecToma, row.codRef, row.estado_cuanti, row.nomMuestras);
+                    cargarSolicitud(row.codEnvio, row.fecToma, row.codRef, row.estado_cuanti, row.nomMuestras, row.posSolicitud, row.analisis, row.analisisCodigos, row.analisisEnfermedades);
                     resaltarItemSidebar(row.codEnvio, row.posSolicitud);
                     cargarCabecera(row.codEnvio, row.fecToma, row.posSolicitud, row.codRef, row.estado_cuanti, row.nomMuestras);
                 };
@@ -333,13 +333,13 @@ function switchTab(tab) {
             btn: "tabSegundo",
             content: "tabContentSegundo",
             key: "segundo",
-            onActivate: () => cargarSolicitud(
+            /*onActivate: () => cargarSolicitud(
                 codEnvioCuantiAux,
                 fecTomaCuantiAux,
                 codRefCuantiAux,
                 estadoCuantiAux,
-                nomMuestrasAux
-            )
+                nomMuestrasAux, currentPosition, analisisStr = '', analisisCodigosStr = '', analisisEnfermedadesStr = ''
+            )*/
         }
     ];
 
@@ -1403,27 +1403,37 @@ const CONFIG = {
 // ============================================
 // 2. CARGAR SOLICITUD DESDE SIDEBAR
 // ============================================
-function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMuestra = '') {
+function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMuestra = '', posSolicitud = 1, analisisStr = '', analisisCodigosStr = '', analisisEnfermedadesStr = '') {
     window.codigoEnvioActual = codigo;
+    window.posSolicitudActual = posSolicitud;
     window.enfermedadStates = {};
-    const badgeCuanti = document.getElementById("badgeStatusCuanti");
-    if (estado === "completado") {
 
-        badgeCuanti.textContent = "Completado";
-        badgeCuanti.className = "mb-4 inline-block mt-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium";
-    } else {
-        badgeCuanti.textContent = "Pendiente";
-        badgeCuanti.className = "mb-4 inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium";
-    }
-
-    // ✅ NUEVO: Guardar estado global
     window.estadoActualSolicitud = estado.toLowerCase();
+
+    // 🗑️ Limpiar archivos precargados
+    const seccionArchivos = document.getElementById('seccionArchivosCompletados');
+    if (seccionArchivos) seccionArchivos.classList.add('hidden');
+    const fileListPrecargados = document.getElementById('fileListPrecargados');
+    if (fileListPrecargados) fileListPrecargados.innerHTML = '';
 
     //document.getElementById('emptyState').classList.add('hidden');
     document.getElementById('formPanel').classList.remove('hidden');
     //document.getElementById('lblCodigo').textContent = codigo;
 
+    const lblEstado = document.getElementById('lblEstado');
+    if (lblEstado) {
+        const e = String(estado || 'pendiente').toLowerCase();
+        if (e === 'pendiente') {
+            lblEstado.innerHTML = `<span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pendiente</span>`;
+        } else {
+            const cap = (e.charAt(0).toUpperCase() + e.slice(1));
+            lblEstado.innerHTML = `<span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">${cap}</span>`;
+        }
+    }
+
     document.getElementById('formAnalisis').reset();
+    document.getElementById('codigoSolicitud').value = codigo;
+    document.getElementById('fechaToma').value = fecha;
 
     const datosRef = decodificarCodRef(referencia);
     //document.getElementById('edadAves').value = datosRef.codRefCompleto;
@@ -1434,7 +1444,7 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
     const edadField = document.getElementById('edadAves_display');
     if (edadField) edadField.value = datosRef.edad;
 
-    // ✅ NUEVO: Cambiar texto del botón según estado
+    // ✅ Cambiar texto del botón según estado
     const btnGuardar = document.querySelector('button[type="submit"]');
     if (btnGuardar) {
         if (estado.toLowerCase() === 'completado') {
@@ -1446,32 +1456,76 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
         }
     }
 
-    fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${codigo}&estado=${estado}`)
-        .then(r => {
-            if (!r.ok) throw new Error('HTTP error! status: ' + r.status);
-            return r.text();
-        })
-        .then(text => {
+    // ✅ MODIFICADO: Cargar enfermedades desde los parámetros pasados
+    if (analisisStr && analisisCodigosStr) {
+        const nombresArr = analisisStr.split(', ').map(s => s.trim());
+        const codigosArr = analisisCodigosStr.split(',').map(s => s.trim());
+        const enfermedadesArr = analisisEnfermedadesStr ? analisisEnfermedadesStr.split(',').map(s => s.trim()).filter(s => s !== '') : []; // ← Cambio clave
 
-            const data = JSON.parse(text);
-            if (data.success) {
-                window.enfermedadesActuales = data.enfermedades;
+        window.enfermedadesActuales = nombresArr.map((nombre, i) => ({
+            nombre: nombre,
+            codigo: codigosArr[i] || '',
+            enfermedad: enfermedadesArr[i] || ''
+        }));
 
-                detectarTipo(parseInt(datosRef.edad), nomMuestra);
+        // === Llenar select de enfermedades ===
+        const selectEnfermedad = document.getElementById('selectEnfermedad');
+        if (selectEnfermedad) {
+            selectEnfermedad.innerHTML = '<option value="">Seleccionar enfermedad</option>';
 
-                if (estado.toLowerCase() === 'completado') {
-                    setTimeout(() => {
-                        cargarDatosCompletados(codigo);
-                    }, 300);
+            const enfermedadesUnicas = [...new Set(enfermedadesArr)];
+
+            enfermedadesUnicas.forEach(enfermedad => {
+                if (enfermedad) {
+                    const option = document.createElement('option');
+                    option.value = enfermedad;
+                    option.textContent = enfermedad;
+                    selectEnfermedad.appendChild(option);
                 }
-            } else {
-                alert('❌ Error: ' + (data.message || 'No se pudieron cargar enfermedades'));
+            });
+
+            const label = selectEnfermedad.parentElement.querySelector('label');
+            if (label) {
+                label.textContent = `Seleccione Enfermedad (${enfermedadesUnicas.length} asignadas)`;
             }
-        })
-        .catch(e => {
-            console.error('Error completo:', e);
-            alert('❌ Error de conexión. Ver consola para detalles.');
-        });
+        }
+
+        detectarTipo(parseInt(datosRef.edad), nomMuestra);
+
+        if (estado.toLowerCase() === 'completado') {
+            setTimeout(() => {
+                cargarDatosCompletados(codigo);
+            }, 300);
+        }
+    } else {
+        // Fallback: cargar desde el servidor
+        fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${codigo}&posSolicitud=${posSolicitud}&estado=${estado}`)
+            .then(r => {
+                if (!r.ok) throw new Error('HTTP error! status: ' + r.status);
+                return r.text();
+            })
+            .then(text => {
+                console.log('Respuesta del servidor:', text);
+                const data = JSON.parse(text);
+                if (data.success) {
+                    window.enfermedadesActuales = data.enfermedades;
+
+                    detectarTipo(parseInt(datosRef.edad), nomMuestra);
+
+                    if (estado.toLowerCase() === 'completado') {
+                        setTimeout(() => {
+                            cargarDatosCompletados(codigo);
+                        }, 300);
+                    }
+                } else {
+                    alert('❌ Error: ' + (data.message || 'No se pudieron cargar enfermedades'));
+                }
+            })
+            .catch(e => {
+                console.error('Error completo:', e);
+                alert('❌ Error de conexión. Ver consola para detalles.');
+            });
+    }
 }
 
 // ============================================
@@ -1492,28 +1546,29 @@ function decodificarCodRef(codRef) {
 // CARGAR DATOS GUARDADOS (COMPLETADOS)
 // ============================================
 async function cargarDatosCompletados(codigoEnvio) {
-
+    console.log('🔍 Cargando datos guardados para:', codigoEnvio);
 
     const enfermedades = window.enfermedadesActuales || [];
 
     if (enfermedades.length === 0) {
-
+        console.warn('No hay enfermedades para cargar datos');
         return;
     }
 
     const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
-
+    console.log('📊 Tipo detectado:', tipo);
 
     // Cargar TODAS las enfermedades en paralelo
     const promesas = enfermedades.map(async (enf) => {
         const url = `crud-serologia.php?action=get_resultados_guardados&codEnvio=${codigoEnvio}&enfermedad=${encodeURIComponent(enf.nombre)}`;
+        console.log('🌐 Consultando:', url);
 
         try {
             const response = await fetch(url);
             const data = await response.json();
 
             if (data.success && data.datos) {
-
+                console.log(`✅ Datos cargados para ${enf.nombre}:`, data.datos);
 
                 const state = {};
                 const d = data.datos;
@@ -1530,7 +1585,7 @@ async function cargarDatosCompletados(codigoEnvio) {
                         const colBD = `s${String(i).padStart(2, '0')}`;
                         const nombreInput = `${enf.nombre}_s${i}`;
                         state[nombreInput] = d[colBD] || '';
-
+                        console.log(`  ${nombreInput} = ${d[colBD]}`);
                     }
                 } else {
                     for (let i = 0; i <= 25; i++) {
@@ -1541,11 +1596,11 @@ async function cargarDatosCompletados(codigoEnvio) {
                 }
 
                 window.enfermedadStates[enf.nombre] = state;
-
+                console.log(`💾 Estado guardado para ${enf.nombre}:`, state);
 
                 return true;
             } else {
-
+                console.log(`ℹ️ Sin datos guardados para ${enf.nombre}`);
                 return false;
             }
         } catch (e) {
@@ -1560,9 +1615,12 @@ async function cargarDatosCompletados(codigoEnvio) {
     // AHORA SÍ rellenar el panel
     const selectEnf = document.getElementById('selectEnfermedad');
     if (selectEnf && selectEnf.value) {
-
+        console.log(`🖊️ Rellenando panel de: ${selectEnf.value}`);
         populatePanelValues(selectEnf.value);
     }
+
+    // 📎 Cargar archivos adjuntos
+    await cargarArchivosCompletados(codigoEnvio);
 }
 
 // ============================================
@@ -1646,26 +1704,7 @@ function renderizarCampos(tipo) {
             edadRef = tmp.length > 2 ? tmp.slice(-2) : tmp;
         }
 
-        container.innerHTML = `
-            
-
-            <div>
-                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Planta Incubación</label>
-                <select name="planta_incubacion" class="input-lab">
-                    <option value="CHINCHA">CHINCHA</option>
-                    <option value="HUARMEY">HUARMEY</option>
-                    <option value="ICA">ICA</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Lote</label>
-                <input type="text" name="lote" class="input-lab">
-            </div>
-            <div>
-                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Edad Reprod.</label>
-                <input type="number" name="edad_reproductora" class="input-lab">
-            </div>
-        `;
+        container.innerHTML = ``;
     } else {
         const granja = document.getElementById('codRef_granja')?.value || '';
         const campana = document.getElementById('codRef_campana')?.value || '';
@@ -1673,7 +1712,32 @@ function renderizarCampos(tipo) {
         const edad = document.getElementById('edadAves_display')?.value || '';
 
         container.innerHTML = `
-            
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 col-span-3">
+                <h4 class="text-[10px] font-bold text-blue-700 uppercase mb-3 flex items-center gap-1">
+                    <i class="fas fa-lock"></i> Datos Decodificados del Código Ref
+                </h4>
+                <div class="grid grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Granja</label>
+                        <input type="text" id="codRef_granja_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${granja}" readonly>
+                        <input type="hidden" id="codRef_granja" name="codigo_granja" value="${granja}">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Campaña</label>
+                        <input type="text" id="codRef_campana_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${campana}" readonly>
+                        <input type="hidden" id="codRef_campana" name="codigo_campana" value="${campana}">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Galpón</label>
+                        <input type="text" id="codRef_galpon_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${galpon}" readonly>
+                        <input type="hidden" id="codRef_galpon" name="numero_galpon" value="${galpon}">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Edad (Ref)</label>
+                        <input type="text" id="edadAves_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${edad}" readonly>
+                    </div>
+                </div>
+            </div>
         `;
     }
 }
@@ -1702,7 +1766,10 @@ function renderizarEnfermedades(tipo) {
                     Seleccione Enfermedad (${enfermedades.length} asignada${enfermedades.length !== 1 ? 's' : ''})
                 </label>
                 <select id="selectEnfermedad" class="input-lab">
-                    ${enfermedades.map(e => `<option value="${e.nombre}">${e.nombre}</option>`).join('')}
+                    ${enfermedades.map(e => {
+        const displayText = e.enfermedad ? `${e.nombre} (${e.enfermedad})` : e.nombre;
+        return `<option value="${e.nombre}">${displayText}</option>`;
+    }).join('')}
                 </select>
             </div>
             <div class="pt-5">
@@ -1727,13 +1794,14 @@ function renderizarEnfermedades(tipo) {
 
         if (window.currentEnfermedadSelected) {
             saveCurrentEnfermedadState(window.currentEnfermedadSelected);
-
+            console.log('💾 Guardado:', window.currentEnfermedadSelected);
         }
 
         window.currentEnfermedadSelected = nuevo;
         renderEnfermedadPanel(nuevo, conf, tipo);
         populatePanelValues(nuevo);
 
+        console.log('📂 Cargando:', nuevo);
     });
 }
 
@@ -1775,11 +1843,14 @@ function guardar(e) {
 
     const fd2 = new FormData(form);
 
-    const archivos = document.getElementById('archivoPdfCuanti') ? document.getElementById('archivoPdfCuanti').files : [];
+    const archivos = document.getElementById('archivoPdf') ? document.getElementById('archivoPdf').files : [];
+
+    console.log('📁 Archivos detectados:', archivos.length);
 
     if (archivos && archivos.length > 0) {
         for (let i = 0; i < archivos.length; i++) {
-            fd2.append('archivoPdfCuanti[]', archivos[i]);
+            console.log(`   Agregando archivo #${i}: ${archivos[i].name} (${archivos[i].size} bytes)`);
+            fd2.append('archivoPdf[]', archivos[i]);
         }
     }
 
@@ -1807,7 +1878,7 @@ function guardar(e) {
 
     // ✅ Mensaje diferente según acción
     const accionTexto = esActualizacion ? 'Actualizar' : 'Guardar';
-    if (!confirm(`¿${accionTexto} análisis con ${enfermedadesConDatos} enfermedad(es) y ${archivosCount} archivo(s)?`)) {
+    if (!confirm(`¿${accionTexto} análisis?`)) {
         document.querySelectorAll('.tmp-enf-input').forEach(n => n.remove());
         return;
     }
@@ -1818,6 +1889,15 @@ function guardar(e) {
     btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${textoBoton}`;
     btn.disabled = true;
 
+    // ✅ Agregar posSolicitud al form
+    const inpPos = document.createElement('input');
+    inpPos.type = 'hidden';
+    inpPos.name = 'posSolicitud';
+    inpPos.value = window.posSolicitudActual || 1;
+    inpPos.className = 'tmp-enf-input';
+    form.appendChild(inpPos);
+
+    console.log(`📤 ${accionTexto} datos:`, actionValue);
     for (let pair of fd2.entries()) {
         if (pair[1] instanceof File) {
             console.log(`  ${pair[0]}: [Archivo] ${pair[1].name}`);
@@ -1837,6 +1917,7 @@ function guardar(e) {
             return r.text();
         })
         .then(text => {
+            console.log('📥 Respuesta del servidor:', text);
 
             let data;
             try {
@@ -1847,11 +1928,8 @@ function guardar(e) {
             }
 
             if (data.success) {
-                let mensaje = data.message;
-                if (data.archivos_guardados > 0) {
-                    mensaje += `\n📎 ${data.archivos_guardados} archivo(s) cargado(s)`;
-                }
-                alert(mensaje);
+                const accionTexto = window.estadoActualSolicitud === 'completado' ? 'actualizado' : 'guardado';
+                alert(`✅ Análisis ${accionTexto} correctamente`);
                 location.reload();
             } else {
                 alert('❌ Error: ' + data.message);
@@ -1962,7 +2040,7 @@ function populatePanelValues(enfName) {
 
         const state = window.enfermedadStates[enfName];
         if (!state) {
-
+            console.log(`ℹ️ Sin estado guardado para: ${enfName}`);
             return;
         }
 
@@ -1972,19 +2050,19 @@ function populatePanelValues(enfName) {
             return;
         }
 
-
+        console.log('🔧 Rellenando campos con:', state);
 
         Object.keys(state).forEach(key => {
             const el = panel.querySelector(`[name="${key}"]`);
             if (el) {
                 el.value = state[key];
-
+                console.log(`  ✅ ${key} = ${state[key]}`);
             } else {
                 console.warn(`  ⚠️ Campo no encontrado: ${key}`);
             }
         });
 
-
+        console.log('✅ Restaurado estado de', enfName);
     } catch (e) {
         console.error('Error restaurando estado enfermedad:', e);
     }
@@ -2072,8 +2150,8 @@ function filtrarEnfermedadesCatalogo() {
 function agregarEnfermedadASolicitud(codigo, nombre) {
     if (!confirm(`¿Agregar "${nombre}" a la solicitud ${window.codigoEnvioActual}?`)) return;
 
-    const codRef = document.getElementById('edadAves').value;
-    const fecToma = document.getElementById('fechaToma').value;
+    const codRef = document.getElementById('edadAves_display').value;
+    //const fecToma = document.getElementById('fechaToma').value;
 
     const fd = new FormData();
     fd.append('action', 'agregar_enfermedad_solicitud');
@@ -2081,7 +2159,7 @@ function agregarEnfermedadASolicitud(codigo, nombre) {
     fd.append('codAnalisis', codigo);
     fd.append('nomAnalisis', nombre);
     fd.append('codRef', codRef);
-    fd.append('fecToma', fecToma);
+    fd.append('fecToma', fecTomaCuantiAux);
 
     fetch('crud-serologia.php', { method: 'POST', body: fd })
         .then(r => r.text())

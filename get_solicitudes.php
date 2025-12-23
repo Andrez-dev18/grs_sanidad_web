@@ -101,12 +101,9 @@ $query = "
             ELSE 'completado'
         END AS estado_cuanti,
 
-        -- ESTADO GENERAL (DERIVADO)
+        -- ESTADO GENERAL
         CASE 
-            WHEN 
-                SUM(d.estado_cuali = 'pendiente') = 0
-                AND
-                SUM(d.estado_cuanti = 'pendiente') = 0
+            WHEN SUM(d.estado_cuali = 'pendiente') = 0 AND SUM(d.estado_cuanti = 'pendiente') = 0
             THEN 'completado'
             ELSE 'pendiente'
         END AS estado_general,
@@ -114,13 +111,17 @@ $query = "
         MIN(d.fecToma) AS fecToma,
         MIN(d.codRef) AS codRef,
         MIN(d.numMuestras) AS numeroMuestras,
-        MIN(d.nomMuestra) AS nomMuestra,
-        MIN(c.nomLab) AS nomLab
+        GROUP_CONCAT(DISTINCT d.nomMuestra SEPARATOR ', ') AS nomMuestra,
+        MIN(c.nomLab) AS nomLab,
+
+        -- === NUEVOS CAMPOS QUE TE FALTABAN ===
+        GROUP_CONCAT(DISTINCT d.nomAnalisis ORDER BY d.nomAnalisis SEPARATOR ', ') AS analisis,
+        GROUP_CONCAT(DISTINCT d.codAnalisis ORDER BY d.codAnalisis SEPARATOR ', ') AS analisisCodigos,
+        GROUP_CONCAT(DISTINCT a.enfermedad ORDER BY a.enfermedad SEPARATOR ', ') AS analisisEnfermedades
 
     FROM san_fact_solicitud_det d
-    INNER JOIN san_fact_solicitud_cab c
-        ON c.codEnvio = d.codEnvio
-
+    INNER JOIN san_fact_solicitud_cab c ON c.codEnvio = d.codEnvio
+    LEFT JOIN san_dim_analisis a ON a.codigo = d.codAnalisis  -- Para traer la enfermedad
     $where
     GROUP BY d.codEnvio, d.posSolicitud
     ORDER BY d.codEnvio DESC, d.posSolicitud ASC
