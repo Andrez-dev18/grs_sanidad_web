@@ -7,6 +7,7 @@ header('Content-Type: application/json; charset=UTF-8');
 ob_start();
 
 include_once '../conexion_grs_joya/conexion.php';
+include_once 'historial_resultados.php';
 $conexion = conectar_joya();
 
 if (!$conexion) {
@@ -78,14 +79,16 @@ if ($action == 'get_enfermedades') {
     //leer datos
     // ==================== GET CATÁLOGO DE ENFERMEDADES ====================
     elseif ($action == 'get_catalogo_enfermedades') {
+        error_log('🔍 Obteniendo catálogo de enfermedades...');
+        
         $q = "SELECT codigo, nombre, enfermedad as enfermedad_completa
-              FROM san_dim_analisis 
-              WHERE paquete IS NOT NULL
+              FROM san_dim_analisis
               ORDER BY nombre";
 
         $res = $conexion->query($q);
 
         if (!$res) {
+            error_log('❌ Error en consulta catálogo: ' . $conexion->error);
             throw new Exception('Error en consulta catálogo: ' . $conexion->error);
         }
 
@@ -94,6 +97,8 @@ if ($action == 'get_enfermedades') {
             $enfermedades[] = $row;
         }
 
+        error_log('✅ Se obtuvieron ' . count($enfermedades) . ' enfermedades');
+        
         ob_end_clean();
         echo json_encode(['success' => true, 'enfermedades' => $enfermedades]);
         exit;
@@ -176,6 +181,18 @@ elseif ($action == 'get_resultados_guardados') {
         if (!$stmtInsert->execute()) {
             throw new Exception('Error al insertar: ' . $stmtInsert->error);
         }
+        
+        // ✅ REGISTRAR EN HISTORIAL
+        $userHistorial = $_SESSION['usuario'] ?? 'SISTEMA';
+        insertarHistorial(
+            $conexion,
+            $codEnvio,
+            $posSolicitud,
+            'agregar_enfermedad',
+            null,
+            "Enfermedad agregada: $nomAnalisis ($codAnalisis)",
+            $userHistorial
+        );
 
         ob_end_clean();
         echo json_encode(['success' => true, 'message' => 'Enfermedad agregada']);
@@ -202,12 +219,16 @@ elseif ($action == 'get_resultados_guardados') {
     
     // ==================== CREATE (GUARDAR ANÁLISIS) ====================
     elseif ($action == 'create') {
+        // 🔍 LOG: Verificar archivos recibidos
+        error_log("📥 FILES recibidos: " . print_r($_FILES, true));
+        
         mysqli_begin_transaction($conexion);
         
         try {
             $tipo = $_POST['tipo_ave'] ?? '';
             $cod = $_POST['codigo_solicitud'] ?? '';
             $fec = $_POST['fecha_toma'] ?? '';
+            $posSolicitud = $_POST['posSolicitud'] ?? 1;  // ✅ NUEVO: Recibir desde frontend
 
             // Saneamiento de edad_aves: el frontend a veces envía el codRef completo (número muy grande)
             // Si el valor es demasiado largo, tomar los últimos 2 dígitos que representan la edad real.
@@ -426,35 +447,58 @@ elseif ($action == 'get_resultados_guardados') {
             // PROCESAR ARCHIVOS
             $archivos_guardados = 0;
             
+            error_log("🔍 Verificando archivos...");
+            error_log("🔍 isset(\$_FILES['archivoPdf']): " . (isset($_FILES['archivoPdf']) ? 'SI' : 'NO'));
+            
+            if (isset($_FILES['archivoPdf'])) {
+                error_log("🔍 \$_FILES['archivoPdf']: " . print_r($_FILES['archivoPdf'], true));
+                error_log("🔍 empty(\$_FILES['archivoPdf']['name'][0]): " . (empty($_FILES['archivoPdf']['name'][0]) ? 'SI (vacío)' : 'NO (tiene archivos)'));
+            }
+            
             if (isset($_FILES['archivoPdf']) && !empty($_FILES['archivoPdf']['name'][0])) {
-                $uploadDir = '../uploads/resultados/';
+                $uploadDir = 'uploads/resultados/';
                 
                 if (!file_exists($uploadDir)) {
                     mkdir($uploadDir, 0777, true);
                 }
                 
-                $qPos = "SELECT posSolicitud FROM san_fact_solicitud_det WHERE codEnvio = ? LIMIT 1";
-                $stmtPos = $conexion->prepare($qPos);
-                $stmtPos->bind_param("s", $cod);
-                $stmtPos->execute();
-                $resPos = $stmtPos->get_result()->fetch_assoc();
-                $posSolicitud = $resPos['posSolicitud'] ?? 1;
+                // ✅ USAR posSolicitud QUE YA TENEMOS
+                // ✅ PREPARAR CONSULTA PARA VERIFICAR SI YA EXISTE
+                $qCheckArch = "SELECT id FROM san_fact_resultado_archivo WHERE codEnvio = ? AND posSolicitud = ? AND archRuta LIKE ? LIMIT 1";
+                $stmtCheckArch = $conexion->prepare($qCheckArch);
                 
-                $qArch = "INSERT INTO san_fact_resultado_archivo (codEnvio, posSolicitud, archRuta, tipo, fechaRegistro) VALUES (?, ?, ?, 'cuantitativo', NOW())";
+                $qArch = "INSERT INTO san_fact_resultado_archivo (codEnvio, posSolicitud, archRuta, tipo, fechaRegistro, usuarioRegistrador) VALUES (?, ?, ?, 'cuantitativo', NOW(), ?)";
                 $stmtArch = $conexion->prepare($qArch);
                 
-                if(!$stmtArch) {
+                if(!$stmtArch || !$stmtCheckArch) {
                     throw new Exception('Error preparando INSERT archivos: ' . $conexion->error);
                 }
                 
                 $archivos = $_FILES['archivoPdf'];
                 $totalArchivos = count($archivos['name']);
                 
+                error_log("📦 [CREATE] Total de archivos a procesar: $totalArchivos");
+                
                 for ($i = 0; $i < $totalArchivos; $i++) {
+                    error_log("📄 [CREATE] Procesando archivo #$i: " . $archivos['name'][$i]);
+                    error_log("   - Error code: " . $archivos['error'][$i]);
+                    error_log("   - Size: " . $archivos['size'][$i] . " bytes");
+                    
                     if ($archivos['error'][$i] === UPLOAD_ERR_OK) {
                         $nombreOriginal = basename($archivos['name'][$i]);
                         $extension = pathinfo($nombreOriginal, PATHINFO_EXTENSION);
                         $nombreSinExt = pathinfo($nombreOriginal, PATHINFO_FILENAME);
+                        
+                        // ✅ VERIFICAR SI YA EXISTE UN ARCHIVO CON NOMBRE SIMILAR
+                        $patronBusqueda = 'uploads/resultados/' . $cod . '_' . $posSolicitud . '_' . $nombreSinExt . '%';
+                        $stmtCheckArch->bind_param("sis", $cod, $posSolicitud, $patronBusqueda);
+                        $stmtCheckArch->execute();
+                        $resCheckArch = $stmtCheckArch->get_result();
+                        
+                        if ($resCheckArch->num_rows > 0) {
+                            error_log("⚠️ [CREATE] Archivo ya existe en BD, omitiendo: $nombreOriginal");
+                            continue; // ⛔ SALTAR si ya existe
+                        }
                         
                         $nombreFinal = $cod . '_' . $posSolicitud . '_' . $nombreSinExt . '.' . $extension;
                         $rutaCompleta = $uploadDir . $nombreFinal;
@@ -470,25 +514,44 @@ elseif ($action == 'get_resultados_guardados') {
                         }
                         
                         if (move_uploaded_file($archivos['tmp_name'][$i], $rutaCompleta)) {
-                            $stmtArch->bind_param("sis", $cod, $posSolicitud, $rutaRelativa);
+                            error_log("✅ Archivo movido exitosamente a: $rutaCompleta");
+                            
+                            $stmtArch->bind_param("siss", $cod, $posSolicitud, $rutaRelativa, $user);
                             
                             if ($stmtArch->execute()) {
                                 $archivos_guardados++;
+                                error_log("✅ Ruta guardada en BD: $rutaRelativa");
                             } else {
                                 throw new Exception('Error guardando ruta en BD: ' . $stmtArch->error);
                             }
                         } else {
+                            error_log("❌ Error al mover archivo: {$nombreOriginal} a {$rutaCompleta}");
                             throw new Exception("Error al mover archivo: {$nombreOriginal}");
                         }
                     }
                 }
+                
+                error_log("📊 [CREATE] Total de archivos guardados: $archivos_guardados");
             }
             
             // ACTUALIZAR ESTADO
-            $updateQuery = "UPDATE san_fact_solicitud_det SET estado_cuanti = 'completado' WHERE codEnvio = ?";
+            $updateQuery = "UPDATE san_fact_solicitud_det SET estado_cuanti = 'completado' WHERE codEnvio = ? AND posSolicitud = ?";
             $stmtUpdate = $conexion->prepare($updateQuery);
-            $stmtUpdate->bind_param("s", $cod);
+            $stmtUpdate->bind_param("si", $cod, $posSolicitud);
             $stmtUpdate->execute();
+            
+            // ✅ REGISTRAR EN HISTORIAL
+            $enfermedadesLista = implode(', ', $_POST['enfermedades']);
+            $comentarioHistorial = "Enfermedades: $enfermedadesLista. Archivos: $archivos_guardados";
+            insertarHistorial(
+                $conexion,
+                $cod,
+                $posSolicitud,
+                'registro_resultados_cuantitativos',
+                'cuantitativo',
+                $comentarioHistorial,
+                $user
+            );
             
             mysqli_commit($conexion);
             ob_end_clean();
@@ -515,6 +578,7 @@ elseif ($action == 'update') {
         $tipo = $_POST['tipo_ave'] ?? '';
         $cod = $_POST['codigo_solicitud'] ?? '';
         $fec = $_POST['fecha_toma'] ?? '';
+        $posSolicitud = $_POST['posSolicitud'] ?? 1;  // ✅ NUEVO: Recibir desde frontend
 
         $edad_raw = $_POST['edad_aves'] ?? '';
         $edad = 0;
@@ -756,38 +820,61 @@ elseif ($action == 'update') {
             $enfermedadesActualizadas++;
         }
         
-        // ARCHIVOS (igual que create)
+        // ARCHIVOS - SOLO AGREGAR NUEVOS (NO DUPLICAR)
         $archivos_guardados = 0;
         
+        error_log("🔄 [UPDATE] Verificando archivos...");
+        error_log("🔄 [UPDATE] isset(\$_FILES['archivoPdf']): " . (isset($_FILES['archivoPdf']) ? 'SI' : 'NO'));
+        
+        if (isset($_FILES['archivoPdf'])) {
+            error_log("🔄 [UPDATE] \$_FILES['archivoPdf']: " . print_r($_FILES['archivoPdf'], true));
+            error_log("🔄 [UPDATE] empty(\$_FILES['archivoPdf']['name'][0]): " . (empty($_FILES['archivoPdf']['name'][0]) ? 'SI (vacío)' : 'NO (tiene archivos)'));
+        }
+        
         if (isset($_FILES['archivoPdf']) && !empty($_FILES['archivoPdf']['name'][0])) {
-            $uploadDir = '../uploads/resultados/';
+            $uploadDir = 'uploads/resultados/';
             
             if (!file_exists($uploadDir)) {
                 mkdir($uploadDir, 0777, true);
             }
             
-            $qPos = "SELECT posSolicitud FROM san_fact_solicitud_det WHERE codEnvio = ? LIMIT 1";
-            $stmtPos = $conexion->prepare($qPos);
-            $stmtPos->bind_param("s", $cod);
-            $stmtPos->execute();
-            $resPos = $stmtPos->get_result()->fetch_assoc();
-            $posSolicitud = $resPos['posSolicitud'] ?? 1;
+            // ✅ USAR posSolicitud QUE YA TENEMOS
+            // ✅ PREPARAR CONSULTA PARA VERIFICAR SI YA EXISTE
+            $qCheckArch = "SELECT id FROM san_fact_resultado_archivo WHERE codEnvio = ? AND posSolicitud = ? AND archRuta LIKE ? LIMIT 1";
+            $stmtCheckArch = $conexion->prepare($qCheckArch);
             
-            $qArch = "INSERT INTO san_fact_resultado_archivo (codEnvio, posSolicitud, archRuta, tipo, fechaRegistro) VALUES (?, ?, ?, 'cuantitativo', NOW())";
+            $qArch = "INSERT INTO san_fact_resultado_archivo (codEnvio, posSolicitud, archRuta, tipo, fechaRegistro, usuarioRegistrador) VALUES (?, ?, ?, 'cuantitativo', NOW(), ?)";
             $stmtArch = $conexion->prepare($qArch);
             
-            if(!$stmtArch) {
+            if(!$stmtArch || !$stmtCheckArch) {
                 throw new Exception('Error preparando archivos: ' . $conexion->error);
             }
             
             $archivos = $_FILES['archivoPdf'];
             $totalArchivos = count($archivos['name']);
             
+            error_log("📦 [UPDATE] Total de archivos a procesar: $totalArchivos");
+            
             for ($i = 0; $i < $totalArchivos; $i++) {
+                error_log("📄 [UPDATE] Procesando archivo #$i: " . $archivos['name'][$i]);
+                error_log("   - Error code: " . $archivos['error'][$i]);
+                error_log("   - Size: " . $archivos['size'][$i] . " bytes");
+                
                 if ($archivos['error'][$i] === UPLOAD_ERR_OK) {
                     $nombreOriginal = basename($archivos['name'][$i]);
                     $extension = pathinfo($nombreOriginal, PATHINFO_EXTENSION);
                     $nombreSinExt = pathinfo($nombreOriginal, PATHINFO_FILENAME);
+                    
+                    // ✅ VERIFICAR SI YA EXISTE UN ARCHIVO CON NOMBRE SIMILAR
+                    $patronBusqueda = 'uploads/resultados/' . $cod . '_' . $posSolicitud . '_' . $nombreSinExt . '%';
+                    $stmtCheckArch->bind_param("sis", $cod, $posSolicitud, $patronBusqueda);
+                    $stmtCheckArch->execute();
+                    $resCheckArch = $stmtCheckArch->get_result();
+                    
+                    if ($resCheckArch->num_rows > 0) {
+                        error_log("⚠️ [UPDATE] Archivo ya existe en BD, omitiendo: $nombreOriginal");
+                        continue; // ⛔ SALTAR si ya existe
+                    }
                     
                     $nombreFinal = $cod . '_' . $posSolicitud . '_' . $nombreSinExt . '_' . time() . '.' . $extension;
                     $rutaCompleta = $uploadDir . $nombreFinal;
@@ -803,15 +890,35 @@ elseif ($action == 'update') {
                     }
                     
                     if (move_uploaded_file($archivos['tmp_name'][$i], $rutaCompleta)) {
-                        $stmtArch->bind_param("sis", $cod, $posSolicitud, $rutaRelativa);
+                        error_log("✅ [UPDATE] Archivo movido exitosamente a: $rutaCompleta");
+                        
+                        $stmtArch->bind_param("siss", $cod, $posSolicitud, $rutaRelativa, $user);
                         
                         if ($stmtArch->execute()) {
                             $archivos_guardados++;
+                            error_log("✅ [UPDATE] Ruta guardada en BD: $rutaRelativa");
                         }
+                    } else {
+                        error_log("❌ [UPDATE] Error al mover archivo: {$nombreOriginal} a {$rutaCompleta}");
                     }
                 }
             }
+            
+            error_log("📊 [UPDATE] Total de archivos guardados: $archivos_guardados");
         }
+        
+        // ✅ REGISTRAR EN HISTORIAL
+        $enfermedadesLista = implode(', ', $_POST['enfermedades']);
+        $comentarioHistorial = "Actualizado: $enfermedadesLista. Archivos nuevos: $archivos_guardados";
+        insertarHistorial(
+            $conexion,
+            $cod,
+            $posSolicitud,
+            'actualizacion_resultados_cuantitativos',
+            'cuantitativo',
+            $comentarioHistorial,
+            $user
+        );
         
         mysqli_commit($conexion);
         ob_end_clean();
@@ -825,6 +932,102 @@ elseif ($action == 'update') {
     } catch (Exception $e) {
         mysqli_rollback($conexion);
         throw $e;
+    }
+}
+
+// ==================== REEMPLAZAR ARCHIVO ====================
+elseif ($action == 'reemplazar_archivo') {
+    try {
+        $idArchivo = $_POST['idArchivo'] ?? '';
+        $codigoEnvio = $_POST['codigoEnvio'] ?? '';
+        
+        if (empty($idArchivo) || !isset($_FILES['archivo'])) {
+            throw new Exception('Datos incompletos');
+        }
+        
+        // Obtener archivo anterior
+        $qArch = "SELECT archRuta FROM san_fact_resultado_archivo WHERE id = ?";
+        $stmtArch = $conexion->prepare($qArch);
+        $stmtArch->bind_param("i", $idArchivo);
+        $stmtArch->execute();
+        $resArch = $stmtArch->get_result()->fetch_assoc();
+        
+        if (!$resArch) {
+            throw new Exception('Archivo no encontrado');
+        }
+        
+        $rutaAnterior = $resArch['archRuta'];
+        
+        // Borrar archivo anterior
+        if (file_exists($rutaAnterior)) {
+            @unlink($rutaAnterior);
+            error_log("🗑️ Archivo anterior eliminado: $rutaAnterior");
+        }
+        
+        // Procesar nuevo archivo
+        $file = $_FILES['archivo'];
+        
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception('Error al subir archivo: ' . $file['error']);
+        }
+        
+        if ($file['size'] > 10 * 1024 * 1024) {
+            throw new Exception('Archivo supera 10 MB');
+        }
+        
+        $nombreOriginal = basename($file['name']);
+        $extension = strtolower(pathinfo($nombreOriginal, PATHINFO_EXTENSION));
+        $permitidos = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt', 'png', 'jpg', 'jpeg'];
+        
+        if (!in_array($extension, $permitidos)) {
+            throw new Exception("Extensión no permitida: $extension");
+        }
+        
+        $uploadDir = 'uploads/resultados/';
+        if (!file_exists($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+        
+        $nombreFinal = $codigoEnvio . '_1_' . time() . '_' . pathinfo($nombreOriginal, PATHINFO_FILENAME) . '.' . $extension;
+        $rutaCompleta = $uploadDir . $nombreFinal;
+        $rutaRelativa = 'uploads/resultados/' . $nombreFinal;
+        
+        if (!move_uploaded_file($file['tmp_name'], $rutaCompleta)) {
+            throw new Exception('Error al mover archivo');
+        }
+        
+        error_log("✅ Archivo movido exitosamente a: $rutaCompleta");
+        
+        // Actualizar BD con usuario
+        $user = $_SESSION['usuario'] ?? 'SISTEMA';
+        $qUpd = "UPDATE san_fact_resultado_archivo SET archRuta = ?, fechaRegistro = NOW(), usuarioRegistrador = ? WHERE id = ?";
+        $stmtUpd = $conexion->prepare($qUpd);
+        $stmtUpd->bind_param("ssi", $rutaRelativa, $user, $idArchivo);
+        
+        if (!$stmtUpd->execute()) {
+            throw new Exception('Error actualizando BD: ' . $stmtUpd->error);
+        }
+        
+        // ✅ REGISTRAR EN HISTORIAL
+        $posSolicitud = $_POST['posSolicitud'] ?? 1;
+        insertarHistorial(
+            $conexion,
+            $codigoEnvio,
+            $posSolicitud,
+            'reemplazo_archivo',
+            'cuantitativo',
+            "Archivo reemplazado: $nombreOriginal",
+            $user
+        );
+        
+        ob_end_clean();
+        echo json_encode(['success' => true, 'message' => 'Archivo reemplazado correctamente']);
+        exit;
+        
+    } catch (Exception $e) {
+        ob_end_clean();
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        exit;
     }
 }
 
@@ -845,4 +1048,5 @@ elseif ($action == 'update') {
 $conexion->close();
 
 ?>
+
 
