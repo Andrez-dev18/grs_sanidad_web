@@ -22,21 +22,61 @@
 
 <body class="bg-gray-50">
     <div class="container mx-auto px-6 py-12">
-        <div class="content-header max-w-4xl mx-auto mb-8">
-            <div class="flex items-center gap-3 mb-2">
-                <span class="text-4xl">📊</span>
-                <h1 class="text-3xl font-bold text-gray-800">Dashboard de Reportes</h1>
-            </div>
-            <p class="text-gray-600 text-sm">Resumen visual de muestras y envíos registrados</p>
+        <div id="metrics-cards" class="max-w-6xl mx-auto grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
+            <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
+            <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
+            <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
+            <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
+            <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
         </div>
-    <div id="metrics-cards" class="max-w-6xl mx-auto grid grid-cols-2 gap-4 mb-6">
-    <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
-    <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
-    <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
-    <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
-    <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
-    <div class="bg-gray-100 rounded-xl h-24 animate-pulse"></div>
-</div>
+        <!-- Últimos 10 envíos (versión compacta en 2 columnas) -->
+        <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-sm p-4 border border-gray-200 mb-6">
+            <h3 class="text-base font-semibold text-gray-800 mb-2">Últimos 10 envíos</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Columna 1 -->
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-100 text-xs">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left font-medium text-gray-600 uppercase tracking-wider">
+                                    Código Envío</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-600 uppercase tracking-wider">Fecha
+                                    Envío</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-600 uppercase tracking-wider">
+                                    Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaEnviosRecientesCol1" class="divide-y divide-gray-100">
+                            <tr>
+                                <td colspan="3" class="px-3 py-2 text-center text-gray-500">Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Columna 2 -->
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-100 text-xs">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-3 py-2 text-left font-medium text-gray-600 uppercase tracking-wider">
+                                    Código Envío</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-600 uppercase tracking-wider">Fecha
+                                    Envío</th>
+                                <th class="px-3 py-2 text-left font-medium text-gray-600 uppercase tracking-wider">
+                                    Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaEnviosRecientesCol2" class="divide-y divide-gray-100">
+                            <tr>
+                                <td colspan="3" class="px-3 py-2 text-center text-gray-500">Cargando...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
         <!-- Filtro por año -->
         <div class="max-w-4xl mx-auto mb-6">
             <label for="yearFilter" class="block text-sm font-medium text-gray-700 mb-2">Filtrar por año:</label>
@@ -129,9 +169,6 @@
             const currentYear = new Date().getFullYear();
             let selectedYear = currentYear;
 
-            // --- Llenar opciones del select (últimos 5 años + actual) ---
-
-            // Llenar el select con años (últimos 5 + actual)
             function populateYearSelect() {
                 const current = new Date().getFullYear();
                 const startYear = current - 5;
@@ -147,7 +184,6 @@
 
             // Inicialización principal
             document.addEventListener('DOMContentLoaded', () => {
-                // ✅ Ahora sí el DOM está listo
                 yearSelect = document.getElementById('yearFilter');
                 if (!yearSelect) {
                     console.error('❌ No se encontró el elemento #yearFilter en el DOM');
@@ -163,31 +199,31 @@
                 });
             });
 
-           function renderMetricsCards({
-    totalEnvios,
-    pctCompletasGeneral,
-    pctCuantCompletas,
-    pctCualiCompletas,
-    topMuestras,
-    topAnalisis
-}) {
-    const cardContainer = document.getElementById('metrics-cards');
-    if (!cardContainer) return;
+            function renderMetricsCards({
+                totalEnvios,
+                pctCompletasGeneral,
+                pctCuantCompletas,
+                pctCualiCompletas,
+                topMuestras,
+                topAnalisis
+            }) {
+                const cardContainer = document.getElementById('metrics-cards');
+                if (!cardContainer) return;
 
-    const [m1, m2, m3] = topMuestras || [{ nomMuestra: '-', total: 0 }];
-    const [a1, a2, a3] = topAnalisis || [{ nomAnalisis: '-', total: 0 }];
+                const [m1, m2, m3] = topMuestras || [{ nomMuestra: '-', total: 0 }];
+                const [a1, a2, a3] = topAnalisis || [{ nomAnalisis: '-', total: 0 }];
 
-    // Colores suaves para las tarjetas
-    const colors = [
-        'bg-blue-50 border-blue-200 text-blue-800',      // Envíos Totales
-        'bg-green-50 border-green-200 text-green-800',    // % Completas General
-        'bg-purple-50 border-purple-200 text-purple-800',  // Cualitativas Completas
-        'bg-indigo-50 border-indigo-200 text-indigo-800',  // Cuantitativas Completas
-        'bg-amber-50 border-amber-200 text-amber-800',     // Muestra más común
-        'bg-pink-50 border-pink-200 text-pink-800'        // Análisis más común
-    ];
+                // Colores suaves para las tarjetas
+                const colors = [
+                    'bg-blue-50 border-blue-200 text-blue-800',      // Envíos Totales
+                    'bg-green-50 border-green-200 text-green-800',    // % Completas General
+                    'bg-purple-50 border-purple-200 text-purple-800',  // Cualitativas Completas
+                    'bg-indigo-50 border-indigo-200 text-indigo-800',  // Cuantitativas Completas
+                    'bg-amber-50 border-amber-200 text-amber-800',     // Muestra más común
+                    'bg-pink-50 border-pink-200 text-pink-800'        // Análisis más común
+                ];
 
-    cardContainer.innerHTML = `
+                cardContainer.innerHTML = `
         <!-- Fila 1 -->
         <div class="bg-gradient-to-br ${colors[0]} rounded-xl shadow-sm p-4 border text-center flex flex-col justify-center">
             <p class="text-xs font-medium">Envíos Totales</p>
@@ -222,7 +258,7 @@
             <p class="text-xs">${a3?.nomAnalisis ? `3°: ${a3.nomAnalisis}` : ''}</p>
         </div>
     `;
-}
+            }
 
             async function loadData(year) {
                 const qs = `?year=${year}`;
@@ -243,7 +279,7 @@
                     renderChartCualitativas(cualiData);
                     renderChartTopMuestras(muestrasData);
                     renderChartTopAnalisis(analisisData);
-
+                    cargarEnviosRecientes(year);
                     // Calcular métricas para los recuadros
                     const totalEnvios = estadoData.completadas + estadoData.pendientes;
                     const pctCompGen = totalEnvios ? ((estadoData.completadas / totalEnvios) * 100).toFixed(1) : 0;
@@ -268,9 +304,6 @@
                     alert('⚠️ No se pudieron cargar los datos del dashboard.');
                 }
             }
-
-
-
 
             // --- Funciones de renderizado (sin cambios respecto a tu versión estable) ---
             function renderChartEnviosMes(data) {
@@ -371,25 +404,25 @@
                 const pctComp = total ? ((data.completadas / total) * 100).toFixed(1) : 0;
                 const pctPend = total ? ((data.pendientes / total) * 100).toFixed(1) : 0;
 
-                // Mostrar leyenda debajo del gráfico
+                //leyenda debajo del gráfico
                 document.getElementById('cuant-summary').innerHTML = `
-    <div class="flex flex-col md:flex-row flex-wrap justify-center gap-3 md:gap-6 text-sm">
-        <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0"></span>
-            <div class="text-left">
-                <strong class="block">Completadas:</strong>
-                <span>${data.completadas} — ${pctComp}%</span>
-            </div>
-        </div>
-        <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded-full bg-amber-500 flex-shrink-0"></span>
-            <div class="text-left">
-                <strong class="block">Pendientes:</strong>
-                <span>${data.pendientes} — ${pctPend}%</span>
-            </div>
-        </div>
-    </div>
-`;
+                        <div class="flex flex-col md:flex-row flex-wrap justify-center gap-3 md:gap-6 text-sm">
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0"></span>
+                                <div class="text-left">
+                                    <strong class="block">Completadas:</strong>
+                                    <span>${data.completadas} — ${pctComp}%</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-3 h-3 rounded-full bg-amber-500 flex-shrink-0"></span>
+                                <div class="text-left">
+                                    <strong class="block">Pendientes:</strong>
+                                    <span>${data.pendientes} — ${pctPend}%</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
 
                 chartCuantitativas = new Chart(ctx, {
                     type: 'doughnut',
@@ -418,25 +451,25 @@
                 const pctComp = total ? ((data.completadas / total) * 100).toFixed(1) : 0;
                 const pctPend = total ? ((data.pendientes / total) * 100).toFixed(1) : 0;
 
-                // Mostrar leyenda debajo del gráfico
+                //leyenda debajo del gráfico
                 document.getElementById('cuali-summary').innerHTML = `
-    <div class="flex flex-col md:flex-row flex-wrap justify-center gap-3 md:gap-6 text-sm">
-        <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0"></span>
-            <div class="text-left">
-                <strong class="block">Completadas:</strong>
-                <span>${data.completadas} — ${pctComp}%</span>
-            </div>
-        </div>
-        <div class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded-full bg-red-500 flex-shrink-0"></span>
-            <div class="text-left">
-                <strong class="block">Pendientes:</strong>
-                <span>${data.pendientes} — ${pctPend}%</span>
-            </div>
-        </div>
-    </div>
-`;
+                <div class="flex flex-col md:flex-row flex-wrap justify-center gap-3 md:gap-6 text-sm">
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0"></span>
+                        <div class="text-left">
+                            <strong class="block">Completadas:</strong>
+                            <span>${data.completadas} — ${pctComp}%</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full bg-red-500 flex-shrink-0"></span>
+                        <div class="text-left">
+                            <strong class="block">Pendientes:</strong>
+                            <span>${data.pendientes} — ${pctPend}%</span>
+                        </div>
+                    </div>
+                </div>
+            `;
 
                 chartCualitativas = new Chart(ctx, {
                     type: 'doughnut',
@@ -476,7 +509,7 @@
                     }
                 });
 
-                // Generar resumen en dos columnas
+                //resumen en dos columnas
                 const summaryEl = document.getElementById('top-muestras-resumen');
                 if (summaryEl && data.length > 0) {
                     const half = Math.ceil(data.length / 2);
@@ -524,17 +557,74 @@
                     const col2 = data.slice(half);
 
                     summaryEl.innerHTML = `
-            <div class="text-xs font-medium text-gray-500 mb-1">Top 10 Análisis:</div>
-            <div class="grid grid-cols-2 gap-2 text-xs">
-                <div class="flex flex-col gap-1">
-                    ${col1.map((d, i) => `<div><strong>${i + 1}.</strong> ${d.nomAnalisis} — ${d.total}</div>`).join('')}
-                </div>
-                <div class="flex flex-col gap-1">
-                    ${col2.map((d, i) => `<div><strong>${half + i + 1}.</strong> ${d.nomAnalisis} — ${d.total}</div>`).join('')}
-                </div>
-            </div>
-        `;
+                        <div class="text-xs font-medium text-gray-500 mb-1">Top 10 Análisis:</div>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="flex flex-col gap-1">
+                                ${col1.map((d, i) => `<div><strong>${i + 1}.</strong> ${d.nomAnalisis} — ${d.total}</div>`).join('')}
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                ${col2.map((d, i) => `<div><strong>${half + i + 1}.</strong> ${d.nomAnalisis} — ${d.total}</div>`).join('')}
+                            </div>
+                        </div>
+                    `;
                 }
+            }
+            async function cargarEnviosRecientes(year) {
+                try {
+                    const response = await fetch(`api_dashboard/envios-recientes.php?year=${year}`);
+                    const data = await response.json();
+
+                    // Dividir los datos en dos mitades
+                    const half = Math.ceil(data.length / 2);
+                    const col1 = data.slice(0, half);
+                    const col2 = data.slice(half);
+
+                    // Renderizar columna 1
+                    renderTablaEnvios(col1, 'tablaEnviosRecientesCol1');
+
+                    // Renderizar columna 2
+                    renderTablaEnvios(col2, 'tablaEnviosRecientesCol2');
+
+                } catch (err) {
+                    console.error('Error al cargar envíos recientes:', err);
+                    document.getElementById('tablaEnviosRecientesCol1').innerHTML = `<tr><td colspan="3" class="px-3 py-2 text-center text-red-500">Error al cargar</td></tr>`;
+                    document.getElementById('tablaEnviosRecientesCol2').innerHTML = `<tr><td colspan="3" class="px-3 py-2 text-center text-red-500">Error al cargar</td></tr>`;
+                }
+            }
+
+            function renderTablaEnvios(envios, tbodyId) {
+                const tbody = document.getElementById(tbodyId);
+                if (!tbody) return;
+
+                if (!envios || envios.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-2 text-center text-gray-500">No hay envíos</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = envios.map(envio => {
+                    // Formatear fecha a dd-mm-yyyy
+                    const fecha = new Date(envio.fecEnvio);
+                    const dia = String(fecha.getDate()).padStart(2, '0');
+                    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                    const año = fecha.getFullYear();
+                    const fechaFormateada = `${dia}-${mes}-${año}`;
+
+                    const estadoClase = envio.estado === 'completado'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800';
+
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-3 py-2 font-mono text-gray-800">${envio.codEnvio}</td>
+                            <td class="px-3 py-2 text-gray-700">${fechaFormateada}</td>
+                            <td class="px-3 py-2">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${estadoClase}">
+                                    ${envio.estado.charAt(0).toUpperCase() + envio.estado.slice(1)}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
             }
         </script>
 </body>
