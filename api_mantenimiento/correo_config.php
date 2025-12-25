@@ -6,7 +6,9 @@ include_once '../../conexion_grs_joya/conexion.php';
 $conexion = conectar_joya();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $_GET['action'] === 'get') {
-    $stmt = mysqli_prepare($conexion, "SELECT correo, password FROM san_correo_sanidad LIMIT 1");
+    $codigo = $_SESSION['usuario'];
+    $stmt = mysqli_prepare($conexion, "SELECT correo, password FROM san_correo_sanidad WHERE codigo = ?");
+    mysqli_stmt_bind_param($stmt, 's', $codigo);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
     $row = mysqli_fetch_assoc($result) ?: ['correo' => '', 'password' => ''];

@@ -328,25 +328,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         $stmt->execute();
         $result = $stmt->get_result();
 
+        $BASE_URL = 'https://granjarinconadadelsur.com/sanidad';
+        //$BASE_URL = 'https://toshia-glucidic-herlinda.ngrok-free.dev/gc_sanidad_web';
+
         if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
                 // Extraer extensión del archivo
                 $ruta = $row['archRuta'];
+                $nombreArchivo = basename($ruta);
+                $rutaPublica = $BASE_URL . '/' . ltrim($ruta, '/');
                 $extension = strtolower(pathinfo($ruta, PATHINFO_EXTENSION));
 
-                // Botón según tipo
                 if ($extension === 'pdf') {
-                    $boton = '<button onclick="previsualizarPDF(\'' . htmlspecialchars($ruta) . '\')" 
-                                 class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm font-medium">
-                            📄 Ver PDF
-                          </button>';
+
+                    $boton = '<button onclick="previsualizarPDF(\'' . htmlspecialchars($rutaPublica) . '\')" 
+                                class="px-4 py-2 bg-red-600 text-white rounded-lg">
+                                📄 Ver PDF
+                            </button>';
+                } elseif (in_array($extension, ['doc', 'docx', 'xls', 'xlsx'])) {
+
+                    $boton = '<button onclick="previsualizarOffice(\'' . htmlspecialchars($rutaPublica) . '\')" 
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg">
+                                📊 Ver Documento
+                            </button>';
                 } else {
-                    $boton = '<a href="' . htmlspecialchars($ruta) . '" download 
-                               class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium inline-block">
-                            ⬇️ Descargar
-                          </a>
-                          <p class="text-xs text-gray-500 mt-1">Formato no previsualizable</p>';
+
+                    $boton = '<a href="' . htmlspecialchars($rutaPublica) . '" download
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg">
+                                ⬇️ Descargar
+                            </a>';
                 }
+
 
                 echo "<tr class='hover:bg-gray-50 transition'>
                 <td class='px-4 py-3 text-sm'>" . htmlspecialchars($row['codEnvio']) . "</td>
@@ -361,6 +373,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 <td class='px-4 py-3 text-sm'>" . htmlspecialchars($row['nomMuestra'] ?? '—') . "</td>
                 <td class='px-4 py-3 text-sm'>" . htmlspecialchars($row['tipo'] ?? '—') . "</td>
                 <td class='px-4 py-3 text-sm text-center'>" . htmlspecialchars($row['usuarioRegistrador'] ?? '—') . "</td>
+                <td class='px-4 py-3 text-sm text-gray-700'>" . htmlspecialchars($nombreArchivo) . "</td>
                 <td class='px-4 py-3 text-center'>
                     $boton
                 </td>
@@ -1026,14 +1039,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             <table class="w-full border-collapse text-sm">
                                 <thead class="sticky top-0 bg-gray-100 border-b border-gray-300 z-10">
                                     <tr>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Pos</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Cod Ref</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha</th>
+                                        <th class="px-4 py-3 text-centerfont-semibold text-gray-700 whitespace-nowrap">Código</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Pos</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Cod Ref</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Fecha</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">N° Muestras</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Muestra</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Tipo</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Muestra</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Tipo</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">User Registro</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Archivo</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Acciones</th>
                                     </tr>
                                 </thead>
@@ -1116,15 +1130,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         <!-- Modal para PDF -->
         <div id="modalPDF" class="fixed inset-0 bg-black bg-opacity-75 hidden flex items-center justify-center z-50">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-5/6 flex flex-col">
-                <div class="flex justify-between items-center px-6 py-4 border-b">
-                    <h3 class="text-lg font-semibold">Previsualización del documento</h3>
-                    <button onclick="cerrarModalPDF()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+
+                <!-- Header -->
+                <div class="flex items-center justify-between px-6 py-4 border-b">
+
+                    <!-- Título + Descargar -->
+                    <div class="flex items-center gap-4">
+                        <button
+                            onclick="descargarArchivo()"
+                            class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center gap-1">
+                            ⬇️ Descargar
+                        </button>
+                    </div>
+
+                    <!-- Cerrar -->
+                    <button
+                        onclick="cerrarModalPDF()"
+                        class="text-gray-500 hover:text-gray-700 text-2xl leading-none">
+                        ×
+                    </button>
                 </div>
+
+
+                <!-- Body -->
                 <div class="flex-1 overflow-hidden">
                     <iframe id="iframePDF" class="w-full h-full" frameborder="0"></iframe>
                 </div>
             </div>
         </div>
+
 
         <!-- Footer -->
         <div class="text-center mt-12">
@@ -1846,19 +1880,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     </script>
 
     <script>
+        let archivoActual = '';
+
         function exportarReporteExcel() {
             window.location.href = "exportar_excel_resultados.php";
         }
 
         function previsualizarPDF(ruta) {
+            archivoActual = ruta;
+
             document.getElementById('iframePDF').src = ruta;
+            document.getElementById('modalPDF').classList.remove('hidden');
+        }
+
+        function previsualizarOffice(ruta) {
+            archivoActual = ruta;
+
+            const viewer =
+                'https://docs.google.com/gview?url=' +
+                encodeURIComponent(ruta) +
+                '&embedded=true';
+
+            document.getElementById('iframePDF').src = viewer;
             document.getElementById('modalPDF').classList.remove('hidden');
         }
 
         function cerrarModalPDF() {
             document.getElementById('modalPDF').classList.add('hidden');
             document.getElementById('iframePDF').src = '';
+            archivoActual = '';
         }
+
+        function descargarArchivo() {
+            if (!archivoActual) return;
+
+            // Fuerza descarga en nueva pestaña
+            window.open(archivoActual, '_blank');
+        }
+
 
         // Dropdown Granja
         const dropdownBtn = document.getElementById('dropdownGranjaBtn');
