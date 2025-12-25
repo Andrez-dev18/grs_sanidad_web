@@ -58,6 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     ? 'bg-green-100 text-green-700'
                     : 'bg-yellow-100 text-yellow-700';
 
+                $boton = '<button 
+                            class="text-indigo-600 hover:text-indigo-800 transition"
+                            title="Ver historial de acciones"
+                            onclick="verHistorialResults(\'' . $row['codEnvio'] . '\', ' . $row['posSolicitud'] . ')">
+                            <i class="fas fa-history text-lg"></i>
+                        </button>';
+
 
                 echo "<tr>
                                 <td class='px-4 py-2'>{$row['codEnvio']}</td>
@@ -81,6 +88,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     </td>
 
                     <td class='px-4 py-2'>{$row['obs']}</td>
+                    <td class='text-center'>
+                        $boton
+                    </td>
                 </tr>";
             }
         } else {
@@ -855,7 +865,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                         <th class="">Obs</th>
                                         <!-- NUEVAS COLUMNAS -->
                                         <th class="">Detalle</th>
-                                        <th class="">Historial</th>
+                                        <th class="">Seguimiento</th>
                                         <th class="">PDF</th>
                                         <th class="">Acciones</th>
                                     </tr>
@@ -917,7 +927,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Análisis</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Estado Cuali</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Estado Cuanti</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Observaciones</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Observaciones</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Historial</th>
                                     </tr>
                                 </thead>
                                 <tbody id="detalleBody" class="divide-y divide-gray-200">
@@ -1155,6 +1166,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 <!-- Body -->
                 <div class="flex-1 overflow-hidden">
                     <iframe id="iframePDF" class="w-full h-full" frameborder="0"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Historial de Resultados -->
+        <div id="modalHistorial" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+                <!-- Header -->
+                <div class="flex justify-between items-center px-6 py-4 border-b bg-gray-50 rounded-t-xl">
+                    <h3 class="text-lg font-bold text-gray-800">Historial de Acciones</h3>
+                    <button onclick="cerrarModalHistorial()" class="text-gray-500 hover:text-gray-700 text-2xl">
+                        ×
+                    </button>
+                </div>
+
+                <!-- Contenido scrollable -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <div class="text-center mb-4">
+                        <p class="text-sm text-gray-600">Código: <strong id="historialCodEnvio"></strong> • Posición: <strong id="historialPos"></strong></p>
+                    </div>
+
+                    <div id="historialContainer" class="space-y-4">
+                        <!-- Se llena con JS -->
+                        <p class="text-center text-gray-500 py-8">Cargando historial...</p>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-6 py-4 border-t bg-gray-50 rounded-b-xl text-right">
+                    <button onclick="cerrarModalHistorial()" class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                        Cerrar
+                    </button>
                 </div>
             </div>
         </div>
@@ -1490,6 +1533,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 cargarTabla();
             });
         });
+
+
+        function verHistorialResults(codEnvio, posSolicitud) {
+            document.getElementById('historialCodEnvio').textContent = codEnvio;
+            document.getElementById('historialPos').textContent = posSolicitud;
+
+            const container = document.getElementById('historialContainer');
+            container.innerHTML = '<p class="text-center text-gray-500 py-8">Cargando historial...</p>';
+
+            document.getElementById('modalHistorial').classList.remove('hidden');
+
+            fetch('get_historial_resultados.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `codEnvio=${encodeURIComponent(codEnvio)}&posSolicitud=${posSolicitud}`
+                })
+                .then(r => r.json())
+                .then(data => {
+                    container.innerHTML = '';
+
+                    if (!data.success || data.historial.length === 0) {
+                        container.innerHTML = '<p class="text-center text-gray-500 py-8">No hay acciones registradas para esta solicitud.</p>';
+                        return;
+                    }
+
+                    // Ordenar por fecha descendente (más reciente arriba)
+                    data.historial.sort((a, b) => new Date(b.fechaHoraRegistro) - new Date(a.fechaHoraRegistro));
+
+                    data.historial.forEach(item => {
+                        const fecha = new Date(item.fechaHoraRegistro).toLocaleString('es-PE');
+
+                        const div = document.createElement('div');
+                        div.className = 'flex gap-4 py-3 border-b border-gray-200 last:border-0';
+
+                        div.innerHTML = `
+                <div class="flex-shrink-0">
+                    <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                        <i class="fas fa-user text-gray-600"></i>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-medium text-gray-800">${item.accion}</p>
+                            <p class="text-sm text-gray-600 mt-1">${item.comentario || 'Sin comentario'}</p>
+                            ${item.tipo_analisis ? `<span class="inline-block mt-2 px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">${item.tipo_analisis}</span>` : ''}
+                        </div>
+                        <span class="text-xs text-gray-500">${fecha}</span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">
+                        <i class="fas fa-user mr-1"></i> ${item.usuario}
+                    </p>
+                </div>
+            `;
+
+                        container.appendChild(div);
+                    });
+                })
+                .catch(err => {
+                    console.error(err);
+                    container.innerHTML = '<p class="text-center text-red-500 py-8">Error al cargar el historial.</p>';
+                });
+        }
+
+        function cerrarModalHistorial() {
+            document.getElementById('modalHistorial').classList.add('hidden');
+        }
     </script>
 
     <script>
