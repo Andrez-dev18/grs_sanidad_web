@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../vendor\autoload.php'; // Composer autoload para mPDF
+require_once __DIR__ . '/../vendor/autoload.php'; // Composer autoload para mPDF
 
 include_once __DIR__ . '/../../conexion_grs_joya/conexion.php';
 $conn = conectar_joya();
@@ -93,7 +93,8 @@ $mpdf = new \Mpdf\Mpdf([
     'margin_top' => 20,
     'margin_bottom' => 20,
     'margin_header' => 10,
-    'margin_footer' => 10
+    'margin_footer' => 10,
+    'tempDir' => dirname(__DIR__) . '/pdf_tmp'
 ]);
 
 // === Estilos CSS (neutros, profesionales, sin azules) ===
