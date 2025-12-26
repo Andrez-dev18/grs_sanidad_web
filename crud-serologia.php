@@ -37,7 +37,7 @@ try {
     // ==================== GET ENFERMEDADES DE UNA SOLICITUD ====================
 if ($action == 'get_enfermedades') {
     $codEnvio = $_GET['codEnvio'] ?? '';
-    $posSolicitud = $_GET['posSolicitud'] ?? ''; // ✅ Nuevo parámetro
+    $posSolicitud = $_GET['posSolicitud'] ?? ''; // 
     $estado = strtolower(trim($_GET['estado'] ?? 'pendiente'));
 
     if (empty($codEnvio)) {
@@ -140,8 +140,16 @@ if ($action == 'get_enfermedades') {
     elseif ($action == 'get_catalogo_enfermedades') {
         error_log('🔍 Obteniendo catálogo de enfermedades...');
         
+        /* CODIGO ANTERIOR - mostraba todas las enfermedades incluyendo las que tienen enfermedad NULL
         $q = "SELECT codigo, nombre, enfermedad as enfermedad_completa
               FROM san_dim_analisis
+              ORDER BY nombre";
+        */
+        
+        //  Solo mostrar enfermedades que tienen el campo 'enfermedad' con valor (no NULL)
+        $q = "SELECT codigo, nombre, enfermedad as enfermedad_completa
+              FROM san_dim_analisis
+              WHERE enfermedad IS NOT NULL AND enfermedad != ''
               ORDER BY nombre";
 
         $res = $conexion->query($q);
@@ -165,7 +173,7 @@ if ($action == 'get_enfermedades') {
     // ==================== GET RESULTADOS GUARDADOS ====================
 elseif ($action == 'get_resultados_guardados') {
     $codEnvio = $_GET['codEnvio'] ?? '';
-    $posSolicitud = $_GET['posSolicitud'] ?? ''; // ✅ Nuevo parámetro
+    $posSolicitud = $_GET['posSolicitud'] ?? ''; // 
     $enfermedad = $_GET['enfermedad'] ?? '';
     
     if (empty($codEnvio) || empty($enfermedad)) {
@@ -291,6 +299,80 @@ elseif ($action == 'get_resultados_guardados') {
         ob_end_clean();
         echo json_encode(['success' => true, 'message' => 'Enfermedad agregada']);
         exit;
+    }
+    
+    // ==================== ELIMINAR ENFERMEDAD DE SOLICITUD ====================
+    elseif ($action == 'eliminar_enfermedad_solicitud') {
+        $codEnvio = $_POST['codEnvio'] ?? '';
+        $posSolicitud = $_POST['posSolicitud'] ?? '';
+        $codAnalisis = $_POST['codAnalisis'] ?? '';
+        $nomAnalisis = $_POST['nomAnalisis'] ?? '';
+
+        if (empty($codEnvio) || empty($posSolicitud) || empty($codAnalisis)) {
+            throw new Exception('Datos incompletos para eliminar');
+        }
+
+        /* CODIGO ANTERIOR - no permitía eliminar si tenía resultados
+        // Verificar si tiene resultados guardados en san_analisis_pollo_bb_adulto
+        $qCheck = "SELECT id FROM san_analisis_pollo_bb_adulto 
+                   WHERE codigo_envio = ? AND pos_solicitud = ? AND nombre_analisis = ?";
+        $stmtCheck = $conexion->prepare($qCheck);
+        $stmtCheck->bind_param("sis", $codEnvio, $posSolicitud, $nomAnalisis);
+        $stmtCheck->execute();
+        $resCheck = $stmtCheck->get_result();
+        
+        if ($resCheck->num_rows > 0) {
+            throw new Exception('No se puede eliminar: ya tiene resultados guardados');
+        }
+        */
+
+        //  Primero eliminar resultados guardados si existen
+        $resultadosEliminados = 0;
+        $qDeleteResultados = "DELETE FROM san_analisis_pollo_bb_adulto 
+                              WHERE codigo_envio = ? AND pos_solicitud = ? AND nombre_analisis = ?";
+        $stmtDeleteResultados = $conexion->prepare($qDeleteResultados);
+        if ($stmtDeleteResultados) {
+            $stmtDeleteResultados->bind_param("sis", $codEnvio, $posSolicitud, $nomAnalisis);
+            $stmtDeleteResultados->execute();
+            $resultadosEliminados = $stmtDeleteResultados->affected_rows;
+        }
+
+        // Eliminar de san_fact_solicitud_det
+        $qDelete = "DELETE FROM san_fact_solicitud_det 
+                    WHERE codEnvio = ? AND posSolicitud = ? AND codAnalisis = ?";
+        $stmtDelete = $conexion->prepare($qDelete);
+        if (!$stmtDelete) {
+            throw new Exception('Error preparando DELETE: ' . $conexion->error);
+        }
+        $stmtDelete->bind_param("sis", $codEnvio, $posSolicitud, $codAnalisis);
+        
+        if (!$stmtDelete->execute()) {
+            throw new Exception('Error al eliminar: ' . $stmtDelete->error);
+        }
+
+        if ($stmtDelete->affected_rows === 0) {
+            throw new Exception('No se encontró la enfermedad para eliminar');
+        }
+
+        // ✅ REGISTRAR EN HISTORIAL
+        $userHistorial = $_SESSION['usuario'] ?? 'SISTEMA';
+        $detalleHistorial = "Enfermedad eliminada: $nomAnalisis ($codAnalisis)";
+        if ($resultadosEliminados > 0) {
+            $detalleHistorial .= " - Se eliminaron $resultadosEliminados resultado(s) guardado(s)";
+        }
+        insertarHistorial(
+            $conexion,
+            $codEnvio,
+            $posSolicitud,
+            'eliminar_enfermedad',
+            null,
+            $detalleHistorial,
+            $userHistorial
+        );
+
+        ob_end_clean();
+        echo json_encode(['success' => true, 'message' => 'Enfermedad eliminada']);
+        exit;
     } 
     
     // ==================== GET PENDIENTES ====================
@@ -322,7 +404,7 @@ elseif ($action == 'get_resultados_guardados') {
             $tipo = $_POST['tipo_ave'] ?? '';
             $cod = $_POST['codigo_solicitud'] ?? '';
             $fec = $_POST['fecha_toma'] ?? '';
-            $posSolicitud = $_POST['posSolicitud'] ?? 1;  // ✅ NUEVO: Recibir desde frontend
+            $posSolicitud = $_POST['posSolicitud'] ?? 1;  //  Recibir desde frontend
 
             // Saneamiento de edad_aves: el frontend a veces envía el codRef completo (número muy grande)
             // Si el valor es demasiado largo, tomar los últimos 2 dígitos que representan la edad real.
@@ -692,7 +774,7 @@ elseif ($action == 'update') {
         $tipo = $_POST['tipo_ave'] ?? '';
         $cod = $_POST['codigo_solicitud'] ?? '';
         $fec = $_POST['fecha_toma'] ?? '';
-        $posSolicitud = $_POST['posSolicitud'] ?? 1;  // ✅ NUEVO: Recibir desde frontend
+        $posSolicitud = $_POST['posSolicitud'] ?? 1;  //  Recibir desde frontend
 
         $edad_raw = $_POST['edad_aves'] ?? '';
         $edad = 0;

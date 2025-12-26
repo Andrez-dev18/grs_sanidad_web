@@ -2214,6 +2214,7 @@ function renderizarEnfermedades(tipo) {
         ? { color: 'blue', bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-200' }
         : { color: 'orange', bg: 'bg-orange-50', text: 'text-orange-800', border: 'border-orange-200' };
 
+    /* CODIGO ANTERIOR - Mostraba badges/chips de enfermedades arriba del select
     let html = `
         <div class="flex justify-between items-center mb-4 gap-3">
             <div class="flex-1">
@@ -2224,6 +2225,31 @@ function renderizarEnfermedades(tipo) {
                     ${enfermedades.map(e => {
         const displayText = e.enfermedad ? `${e.nombre} (${e.enfermedad})` : e.nombre;
         return `<option value="${e.nombre}">${displayText}</option>`;
+    }).join('')}
+                </select>
+            </div>
+            <div class="pt-5">
+                <button type="button" onclick="abrirModalAgregarEnfermedad()" 
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg transition-all">
+                    <i class="fas fa-plus-circle mr-2"></i> Agregar Enfermedad
+                </button>
+            </div>
+        </div>
+        <div id="enfermedadPanel"></div>
+    `;
+    */
+
+    //  Solo select y botón agregar, sin badges arriba
+    let html = `
+        <div class="flex justify-between items-center mb-4 gap-3">
+            <div class="flex-1">
+                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-2">
+                    SELECCIONE ENFERMEDAD PARA EDITAR RESULTADOS
+                </label>
+                <select id="selectEnfermedad" class="input-lab">
+                    ${enfermedades.map(e => {
+        const displayText = e.enfermedad ? `${e.nombre} (${e.enfermedad})` : e.nombre;
+        return `<option value="${e.nombre}" data-codigo="${e.codigo}">${displayText}</option>`;
     }).join('')}
                 </select>
             </div>
@@ -2555,6 +2581,13 @@ function guardar(e, estadoCuanti = 'completado') {
                 
                 // Recargar los archivos guardados de cuantitativos
                 cargarArchivosCompletadosCuanti(window.codigoEnvioActual, window.posSolicitudActual);
+                
+                // ✅ Limpiar registro de enfermedades agregadas recientemente (ya están guardadas)
+                window.enfermedadesAgregadasReciente = {};
+                
+                // ✅ Re-renderizar el panel para quitar la X de eliminar
+                const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
+                renderizarEnfermedades(tipo);
             } else {
                 alert('❌ Error: ' + data.message);
                 if (btn) {
@@ -2579,6 +2612,20 @@ function guardar(e, estadoCuanti = 'completado') {
 function renderEnfermedadPanel(enf, conf, tipo) {
     const panel = document.getElementById('enfermedadPanel');
 
+    // ✅ Verificar si la enfermedad fue agregada recientemente (en esta sesión)
+    const esEnfermedadReciente = window.enfermedadesAgregadasReciente && 
+        window.enfermedadesAgregadasReciente[enf] !== undefined;
+
+    // Obtener código de la enfermedad del select o del registro de recientes
+    const selectEnf = document.getElementById('selectEnfermedad');
+    const optionSeleccionada = selectEnf ? selectEnf.querySelector(`option[value="${enf}"]`) : null;
+    let codigoEnfermedad = optionSeleccionada ? optionSeleccionada.dataset.codigo : '';
+    
+    // Si es reciente, usar el código guardado
+    if (esEnfermedadReciente && !codigoEnfermedad) {
+        codigoEnfermedad = window.enfermedadesAgregadasReciente[enf];
+    }
+
     let nivelesHtml = '';
     if ((tipo || '').toUpperCase() === 'ADULTO') {
         nivelesHtml = `<div class="mt-2 grid grid-cols-6 gap-2 bg-gray-50 p-2 rounded border border-gray-100">` +
@@ -2601,12 +2648,34 @@ function renderEnfermedadPanel(enf, conf, tipo) {
             `</div></div>`;
     }
 
+    /* CODIGO ANTERIOR - sin botón de eliminar enfermedad
     panel.innerHTML = `
         <div class="border ${conf.border} rounded-lg bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
             <div class="px-4 py-2 ${conf.bg} border-b ${conf.border} flex justify-between items-center">
                 <span class="font-bold ${conf.text}">${enf}</span>
                 <input type="hidden" name="enfermedades[]" value="${enf}">
                 <span class="text-[10px] text-gray-500 opacity-70">Resultados</span>
+            </div>
+    */
+
+    //  Panel con X roja solo para enfermedades agregadas recientemente
+    const botonEliminar = esEnfermedadReciente ? `
+            <button type="button" 
+                onclick="eliminarEnfermedadCuanti('${enf}', '${codigoEnfermedad}')"
+                title="Eliminar enfermedad"
+                class="absolute top-1 right-1 text-red-500 hover:text-red-700 text-lg font-bold z-10 w-6 h-6 flex items-center justify-center hover:bg-red-50 rounded">
+                ×
+            </button>` : '';
+
+    panel.innerHTML = `
+        <div class="relative border border-gray-200 rounded-lg bg-white overflow-hidden shadow-sm">
+            <!-- X roja para eliminar enfermedad (solo visible si fue agregada recientemente) -->
+            ${botonEliminar}
+            
+            <div class="px-4 py-2 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <span class="font-bold text-gray-700">${enf}</span>
+                <input type="hidden" name="enfermedades[]" value="${enf}">
+                <span class="text-[10px] text-gray-500 opacity-70 mr-6">Resultados</span>
             </div>
             <div class="p-4">
                 <div class="grid grid-cols-4 gap-4 mb-4">
@@ -2638,6 +2707,73 @@ function renderEnfermedadPanel(enf, conf, tipo) {
         </div>`;
 
     populatePanelValues(enf);
+}
+
+// ============================================
+// ELIMINAR ENFERMEDAD DE CUANTITATIVOS
+// ============================================
+function eliminarEnfermedadCuanti(nombreEnfermedad, codigoEnfermedad) {
+    /* CODIGO ANTERIOR - no permitía eliminar si tenía resultados
+    const tieneEstado = window.enfermedadStates && 
+        window.enfermedadStates[nombreEnfermedad] && 
+        Object.keys(window.enfermedadStates[nombreEnfermedad]).some(k => {
+            const val = window.enfermedadStates[nombreEnfermedad][k];
+            return val !== null && val !== '' && val !== '0' && val !== 0;
+        });
+
+    if (tieneEstado) {
+        alert('⚠️ Esta enfermedad ya tiene resultados guardados. No se puede eliminar.');
+        return;
+    }
+    */
+
+    //  Permitir eliminar aunque tenga resultados (solo enfermedades agregadas recientemente)
+    if (!confirm(`¿Eliminar "${nombreEnfermedad}" de esta solicitud?\n\nSi tiene resultados guardados, también se eliminarán.`)) {
+        return;
+    }
+
+    // Llamar al backend para eliminar de san_fact_solicitud_det
+    const fd = new FormData();
+    fd.append('action', 'eliminar_enfermedad_solicitud');
+    fd.append('codEnvio', window.codigoEnvioActual);
+    fd.append('posSolicitud', window.posSolicitudActual);
+    fd.append('codAnalisis', codigoEnfermedad);
+    fd.append('nomAnalisis', nombreEnfermedad);
+
+    fetch('crud-serologia.php', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Enfermedad eliminada');
+                
+                // Eliminar del estado local
+                if (window.enfermedadStates && window.enfermedadStates[nombreEnfermedad]) {
+                    delete window.enfermedadStates[nombreEnfermedad];
+                }
+                
+                // Eliminar del registro de enfermedades recientes
+                if (window.enfermedadesAgregadasReciente && window.enfermedadesAgregadasReciente[nombreEnfermedad]) {
+                    delete window.enfermedadesAgregadasReciente[nombreEnfermedad];
+                }
+                
+                // Recargar lista de enfermedades
+                fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}&posSolicitud=${window.posSolicitudActual}`)
+                    .then(r => r.json())
+                    .then(dd => {
+                        if (dd.success) {
+                            window.enfermedadesActuales = dd.enfermedades;
+                            const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
+                            renderizarEnfermedades(tipo);
+                        }
+                    });
+            } else {
+                alert('❌ Error: ' + (data.message || 'No se pudo eliminar'));
+            }
+        })
+        .catch(e => {
+            console.error(e);
+            alert('❌ Error de conexión');
+        });
 }
 
 // ============================================
@@ -2792,6 +2928,7 @@ function agregarEnfermedadASolicitud(codigo, nombre) {
 
     // ✅ Guardar el nombre de la enfermedad que se está agregando
     const nombreEnfermedadNueva = nombre;
+    const codigoEnfermedadNueva = codigo;
 
     fetch('crud-serologia.php', { method: 'POST', body: fd })
         .then(r => r.text())
@@ -2821,6 +2958,12 @@ function agregarEnfermedadASolicitud(codigo, nombre) {
                                         }
                                     });
                                     
+                                    // ✅ Marcar la enfermedad como agregada recientemente (para mostrar X)
+                                    if (!window.enfermedadesAgregadasReciente) {
+                                        window.enfermedadesAgregadasReciente = {};
+                                    }
+                                    window.enfermedadesAgregadasReciente[nombreEnfermedadNueva] = codigoEnfermedadNueva;
+                                    
                                     const tipo = document.getElementById('tipo_ave_hidden') ? document.getElementById('tipo_ave_hidden').value : 'BB';
                                     
                                     /* CODIGO ANTERIOR (solo renderizaba sin seleccionar la nueva)
@@ -2835,7 +2978,7 @@ function agregarEnfermedadASolicitud(codigo, nombre) {
                                     }
                                     */
                                     
-                                    // ✅ NUEVO: Seleccionar automáticamente la nueva enfermedad agregada
+                                    //  Seleccionar automáticamente la nueva enfermedad agregada
                                     // Primero renderizamos las enfermedades (esto pondrá la primera por defecto)
                                     renderizarEnfermedades(tipo);
                                     
