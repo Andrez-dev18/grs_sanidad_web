@@ -90,21 +90,42 @@ $query = "
         d.posSolicitud,
 
         -- ESTADO CUALI
+        /* CODIGO ANTERIOR (si alguna pendiente = todo pendiente)
         CASE 
             WHEN SUM(d.estado_cuali = 'pendiente') > 0 THEN 'pendiente'
             ELSE 'completado'
         END AS estado_cuali,
+        */
+        CASE 
+            WHEN SUM(d.estado_cuali = 'completado') > 0 THEN 'completado'
+            ELSE 'pendiente'
+        END AS estado_cuali,
 
         -- ESTADO CUANTI
+        /* CODIGO ANTERIOR (si alguna pendiente = todo pendiente)
         CASE 
             WHEN SUM(d.estado_cuanti = 'pendiente') > 0 THEN 'pendiente'
             ELSE 'completado'
         END AS estado_cuanti,
+        */
+        CASE 
+            WHEN SUM(d.estado_cuanti = 'completado') > 0 THEN 'completado'
+            ELSE 'pendiente'
+        END AS estado_cuanti,
 
-        -- ESTADO GENERAL
+        -- ESTADO GENERAL (completado si ambos están completados)
+        /* CODIGO ANTERIOR
         CASE 
             WHEN SUM(d.estado_cuali = 'pendiente') = 0 AND SUM(d.estado_cuanti = 'pendiente') = 0
             THEN 'completado'
+            ELSE 'pendiente'
+        END AS estado_general,
+        */
+        CASE 
+            WHEN SUM(d.estado_cuali = 'completado') > 0 AND SUM(d.estado_cuanti = 'completado') > 0
+            THEN 'completado'
+            WHEN SUM(d.estado_cuali = 'completado') > 0 OR SUM(d.estado_cuanti = 'completado') > 0
+            THEN 'parcial'
             ELSE 'pendiente'
         END AS estado_general,
 

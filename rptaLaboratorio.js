@@ -1,4 +1,4 @@
-//###################################################
+﻿//###################################################
 //BLOQUE PARA CARGAR SIDEBAR CON LAS SOLICITUDES
 //####################################################
 
@@ -154,31 +154,130 @@ function abrirModalCompletar(codEnvio, posSolicitud, tipo) {
 // Confirmar acción 
 function confirmarCompletado() {
     const comentario = document.getElementById('comentarioCompletar').value.trim();
+    
+    // ✅ Validar que tenemos los datos necesarios
+    if (!codEnvioCurrent || !posSolicitudCurrent || !tipoCurrent) {
+        alert('Error: Datos de solicitud no válidos');
+        cerrarModalCompletar();
+        return;
+    }
+    
+    console.log('📤 Enviando cambio de estado:', {
+        codEnvio: codEnvioCurrent,
+        posSolicitud: posSolicitudCurrent,
+        tipo: tipoCurrent,
+        nuevoEstado: 'completado'
+    });
 
+    // Guardar referencia local porque las variables globales pueden cambiar
+    const codEnvioAActualizar = codEnvioCurrent;
+    const posSolicitudAActualizar = posSolicitudCurrent;
+    const tipoAActualizar = tipoCurrent.toLowerCase();
+
+    /* CODIGO ANTERIOR
     fetch('cambiar_estado_solicitud.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
             codEnvio: codEnvioCurrent,
             posSolicitud: posSolicitudCurrent,
-            tipo: tipoCurrent.toLowerCase(), // 'cualitativo' o 'cuantitativo'
+            tipo: tipoCurrent.toLowerCase(),
+            nuevoEstado: 'completado',
+            comentario: comentario
+        })
+    })
+    */
+
+    fetch('cambiar_estado_solicitud.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            codEnvio: codEnvioAActualizar,
+            posSolicitud: posSolicitudAActualizar,
+            tipo: tipoAActualizar,
             nuevoEstado: 'completado',
             comentario: comentario
         })
     })
         .then(r => r.json())
         .then(data => {
+            console.log('📥 Respuesta del servidor:', data);
+            
             if (data.success) {
+                /* CODIGO ANTERIOR
                 alert('Resultado marcado como completado');
-                // Recargar sidebar
-                loadSidebar(1);
+                */
+                alert(`Resultado marcado como completado (${data.affected_rows} registros actualizados)`);
+                
+                // ✅ Verificar si el panel actual corresponde a la solicitud que se actualizó
+                const esMismaSolicitud = (window.codigoEnvioActual === codEnvioAActualizar && 
+                                          String(window.posSolicitudActual) === String(posSolicitudAActualizar));
+                
+                /* CODIGO ANTERIOR (actualizaba siempre sin verificar)
+                if (tipoCurrent.toLowerCase() === 'cuantitativo') {
+                    const badgeCuanti = document.getElementById('badgeStatusCuanti');
+                    if (badgeCuanti) {
+                        badgeCuanti.textContent = 'COMPLETADO';
+                        badgeCuanti.className = 'inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-green-100 text-green-800 ring-2 ring-green-300';
+                    }
+                    window.estadoActualSolicitud = 'completado';
+                    
+                    const btnGuardar = document.querySelector('#formAnalisis button[type="submit"]');
+                    if (btnGuardar) {
+                        btnGuardar.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Actualizar Resultados';
+                    }
+                } else if (tipoCurrent.toLowerCase() === 'cualitativo') {
+                    const badgeCuali = document.getElementById('badgeStatusCuali');
+                    if (badgeCuali) {
+                        badgeCuali.textContent = 'Completado';
+                        badgeCuali.className = 'inline-block mt-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium';
+                    }
+                }
+                
+                loadSidebar(currentPage || 1);
+                
+                setTimeout(() => {
+                    resaltarItemSidebar(codEnvioCurrent, posSolicitudCurrent);
+                }, 300);
+                */
+
+                // ✅ Actualizar el badge del panel SOLO si es la misma solicitud
+                if (esMismaSolicitud) {
+                    if (tipoAActualizar === 'cuantitativo') {
+                        const badgeCuanti = document.getElementById('badgeStatusCuanti');
+                        if (badgeCuanti) {
+                            badgeCuanti.textContent = 'COMPLETADO';
+                            badgeCuanti.className = 'inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-green-100 text-green-800 ring-2 ring-green-300';
+                        }
+                        window.estadoActualSolicitud = 'completado';
+                        
+                        const btnGuardar = document.querySelector('#formAnalisis button[type="submit"]');
+                        if (btnGuardar) {
+                            btnGuardar.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Actualizar Resultados';
+                        }
+                    } else if (tipoAActualizar === 'cualitativo') {
+                        const badgeCuali = document.getElementById('badgeStatusCuali');
+                        if (badgeCuali) {
+                            badgeCuali.textContent = 'Completado';
+                            badgeCuali.className = 'inline-block mt-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium';
+                        }
+                    }
+                }
+                
+                // ✅ Recargar sidebar para reflejar el cambio
+                loadSidebar(currentPage || 1);
+                
+                // ✅ Esperar y resaltar el item correcto (el que está seleccionado en el panel)
+                setTimeout(() => {
+                    resaltarItemSidebar(window.codigoEnvioActual, window.posSolicitudActual);
+                }, 300);
 
             } else {
                 alert('No se pudo cambiar el estado: ' + data.message);
             }
         })
         .catch(err => {
-            console.error(err);
+            console.error('Error:', err);
             alert('Error de conexión');
         });
 
@@ -219,13 +318,32 @@ function cerrarModalPendiente() {
 function confirmarPendiente() {
     const comentario = document.getElementById('comentarioPendiente').value.trim();
 
+    // Guardar referencia local porque las variables globales pueden cambiar
+    const codEnvioAActualizar = codEnvioCurrent;
+    const posSolicitudAActualizar = posSolicitudCurrent;
+    const tipoAActualizar = tipoCurrent.toLowerCase();
+
+    /* CODIGO ANTERIOR
     fetch('cambiar_estado_solicitud.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
             codEnvio: codEnvioCurrent,
             posSolicitud: posSolicitudCurrent,
-            tipo: tipoCurrent.toLowerCase(), // 'cualitativo' o 'cuantitativo'
+            tipo: tipoCurrent.toLowerCase(),
+            nuevoEstado: 'pendiente',
+            comentario: comentario
+        })
+    })
+    */
+
+    fetch('cambiar_estado_solicitud.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            codEnvio: codEnvioAActualizar,
+            posSolicitud: posSolicitudAActualizar,
+            tipo: tipoAActualizar,
             nuevoEstado: 'pendiente',
             comentario: comentario
         })
@@ -234,8 +352,69 @@ function confirmarPendiente() {
         .then(data => {
             if (data.success) {
                 alert('Resultado marcado como pendiente');
-                // Recargar sidebar
-                loadSidebar(1);
+                
+                // ✅ Verificar si el panel actual corresponde a la solicitud que se actualizó
+                const esMismaSolicitud = (window.codigoEnvioActual === codEnvioAActualizar && 
+                                          String(window.posSolicitudActual) === String(posSolicitudAActualizar));
+                
+                /* CODIGO ANTERIOR (actualizaba siempre sin verificar)
+                if (tipoCurrent.toLowerCase() === 'cuantitativo') {
+                    const badgeCuanti = document.getElementById('badgeStatusCuanti');
+                    if (badgeCuanti) {
+                        badgeCuanti.textContent = 'PENDIENTE';
+                        badgeCuanti.className = 'inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300';
+                    }
+                    window.estadoActualSolicitud = 'pendiente';
+                    
+                    const btnGuardar = document.querySelector('#formAnalisis button[type="submit"]');
+                    if (btnGuardar) {
+                        btnGuardar.innerHTML = '<i class="fas fa-save mr-2"></i> Guardar Resultados';
+                    }
+                } else if (tipoCurrent.toLowerCase() === 'cualitativo') {
+                    const badgeCuali = document.getElementById('badgeStatusCuali');
+                    if (badgeCuali) {
+                        badgeCuali.textContent = 'Pendiente';
+                        badgeCuali.className = 'inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium';
+                    }
+                }
+                
+                loadSidebar(currentPage || 1);
+                
+                setTimeout(() => {
+                    resaltarItemSidebar(codEnvioCurrent, posSolicitudCurrent);
+                }, 300);
+                */
+
+                // ✅ Actualizar el badge del panel SOLO si es la misma solicitud
+                if (esMismaSolicitud) {
+                    if (tipoAActualizar === 'cuantitativo') {
+                        const badgeCuanti = document.getElementById('badgeStatusCuanti');
+                        if (badgeCuanti) {
+                            badgeCuanti.textContent = 'PENDIENTE';
+                            badgeCuanti.className = 'inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300';
+                        }
+                        window.estadoActualSolicitud = 'pendiente';
+                        
+                        const btnGuardar = document.querySelector('#formAnalisis button[type="submit"]');
+                        if (btnGuardar) {
+                            btnGuardar.innerHTML = '<i class="fas fa-save mr-2"></i> Guardar Resultados';
+                        }
+                    } else if (tipoAActualizar === 'cualitativo') {
+                        const badgeCuali = document.getElementById('badgeStatusCuali');
+                        if (badgeCuali) {
+                            badgeCuali.textContent = 'Pendiente';
+                            badgeCuali.className = 'inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium';
+                        }
+                    }
+                }
+                
+                // ✅ Recargar sidebar para reflejar el cambio
+                loadSidebar(currentPage || 1);
+                
+                // ✅ Esperar y resaltar el item correcto (el que está seleccionado en el panel)
+                setTimeout(() => {
+                    resaltarItemSidebar(window.codigoEnvioActual, window.posSolicitudActual);
+                }, 300);
 
             } else {
                 alert('No se pudo cambiar el estado: ' + data.message);
@@ -555,6 +734,7 @@ function cargarCabecera(codEnvio, fecToma, pos, codRef, estado_cuanti, nomMuestr
             const edadField = document.getElementById('edadAves_display');
             if (edadField) edadField.value = datosRef.edad;
 
+            /* CODIGO ANTERIOR
             // Cambia badge
             const badge = document.getElementById("badgeStatusCuali");
             if (data.estado_cuali_general === "completado") {
@@ -566,6 +746,31 @@ function cargarCabecera(codEnvio, fecToma, pos, codRef, estado_cuanti, nomMuestr
                 badge.textContent = "Pendiente";
                 badge.className = "inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium";
             }
+            openDetailPrincipal(codEnvio, fecToma, pos);
+            */
+
+            // Cambia badge cuali
+            const badge = document.getElementById("badgeStatusCuali");
+            if (data.estado_cuali_general === "completado") {
+                //openDetailCompletado(codEnvio, fecToma, pos);
+                badge.textContent = "Completado";
+                badge.className = "inline-block mt-2 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-medium";
+            } else {
+                //openDetail(codEnvio, fecToma, pos);
+                badge.textContent = "Pendiente";
+                badge.className = "inline-block mt-2 px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-xs font-medium";
+            }
+
+            // Cambia badge cuanti
+            const badgeCuanti = document.getElementById("badgeStatusCuanti");
+            if (data.estado_cuanti_general === "completado") {
+                badgeCuanti.textContent = "COMPLETADO";
+                badgeCuanti.className = "inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-green-100 text-green-800 ring-2 ring-green-300";
+            } else {
+                badgeCuanti.textContent = "PENDIENTE";
+                badgeCuanti.className = "inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300";
+            }
+
             openDetailPrincipal(codEnvio, fecToma, pos);
         });
 }
@@ -1197,9 +1402,11 @@ async function cargarArchivosCompletados(codigoEnvio, pos) {
             </div>
 
             <div class="flex items-center gap-3">
+                <!-- CODIGO ANTERIOR: botones sin type="button" causaban submit del formulario -->
                 <!-- Botón Previsualizar (solo PDF) -->
                 ${esPdf ? `
                     <button
+                        type="button"
                         title="Previsualizar PDF"
                         onclick="abrirModalPdf('${f.ruta}', '${escapeHtml(f.nombre)}')"
                         class="text-blue-600 hover:text-blue-800 text-xl">
@@ -1209,6 +1416,7 @@ async function cargarArchivosCompletados(codigoEnvio, pos) {
 
                 <!-- Botón Descargar (todos) -->
                 <button
+                    type="button"
                     title="Descargar archivo"
                     onclick="descargarArchivo('${f.ruta}', '${escapeHtml(f.nombre)}')"
                     class="text-green-600 hover:text-green-800 text-xl">
@@ -1217,6 +1425,7 @@ async function cargarArchivosCompletados(codigoEnvio, pos) {
 
                 <!-- Botón Reemplazar -->
                 <button
+                    type="button"
                     title="Reemplazar archivo"
                     onclick="reemplazarArchivo(${f.id})"
                     class="text-orange-600 hover:text-orange-800 text-xl">
@@ -1224,7 +1433,8 @@ async function cargarArchivosCompletados(codigoEnvio, pos) {
                 </button>
 
                  <!-- ELIMINAR -->
-                <button title="Eliminar archivo" 
+                <button type="button"
+                        title="Eliminar archivo" 
                         onclick="eliminarArchivo(${f.id}, '${escapeHtml(f.nombre)}')"
                         class="text-red-600 hover:text-red-800 text-xl">
                     🗑️
@@ -1277,6 +1487,193 @@ function limpiarArchivosAdjuntos() {
     if (fileListPrecargados) {
         fileListPrecargados.innerHTML = "";
     }
+
+    /* CODIGO ANTERIOR
+    // Solo limpiaba cualitativos, no cuantitativos
+    */
+    
+    // Limpiar también cuantitativos
+    limpiarArchivosCuanti();
+}
+
+// ============================================
+// FUNCIONES PARA ARCHIVOS CUANTITATIVOS
+// ============================================
+
+function limpiarArchivosCuanti() {
+    const inputPDFCuanti = document.getElementById("archivoPdfCuanti");
+    const fileListCuanti = document.getElementById("fileListCuanti");
+    const fileListPrecargadosCuanti = document.getElementById("fileListPrecargadosCuanti");
+
+    if (inputPDFCuanti) {
+        const dt = new DataTransfer();
+        inputPDFCuanti.files = dt.files;
+    }
+
+    if (fileListCuanti) {
+        fileListCuanti.innerHTML = "";
+    }
+    if (fileListPrecargadosCuanti) {
+        fileListPrecargadosCuanti.innerHTML = "";
+    }
+}
+
+async function cargarArchivosCompletadosCuanti(codigoEnvio, pos) {
+    let tipo = "cuantitativo";
+
+    const res = await fetch(
+        `getResultadoArchivos.php?codigoEnvio=${codigoEnvio}&posSolicitud=${pos}&tipo=${tipo.trim()}`
+    );
+    const data = await res.json();
+
+    const fileListPrecargadosCuanti = document.getElementById("fileListPrecargadosCuanti");
+    if (!fileListPrecargadosCuanti) return;
+    
+    fileListPrecargadosCuanti.innerHTML = "";
+
+    if (!Array.isArray(data) || data.length === 0) {
+        fileListPrecargadosCuanti.innerHTML = `
+            <p class="text-sm text-gray-500 italic">No hay archivos adjuntos</p>
+        `;
+        return;
+    }
+
+    data.forEach(f => {
+        const extension = (f.nombre.split('.').pop() || '').toLowerCase();
+        const esPdf = extension === 'pdf';
+
+        const div = document.createElement("div");
+        div.className = "flex justify-between items-center gap-4 p-3 border rounded-lg bg-gray-50 hover:bg-gray-100 transition";
+
+        div.innerHTML = `
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-800 truncate">${escapeHtml(f.nombre)}</p>
+                <p class="text-xs text-gray-500 mt-1">
+                    ${f.tipo} • ${f.fecha ? f.fecha : 'Sin fecha'}
+                </p>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <!-- CODIGO ANTERIOR: botones sin type="button" causaban submit del formulario -->
+                <!-- Botón Previsualizar (solo PDF) -->
+                ${esPdf ? `
+                    <button
+                        type="button"
+                        title="Previsualizar PDF"
+                        onclick="abrirModalPdf('${f.ruta}', '${escapeHtml(f.nombre)}')"
+                        class="text-blue-600 hover:text-blue-800 text-xl">
+                        👁️
+                    </button>
+                ` : ''}
+
+                <!-- Botón Descargar (todos) -->
+                <button
+                    type="button"
+                    title="Descargar archivo"
+                    onclick="descargarArchivo('${f.ruta}', '${escapeHtml(f.nombre)}')"
+                    class="text-green-600 hover:text-green-800 text-xl">
+                    ⬇️
+                </button>
+
+                <!-- Botón Reemplazar -->
+                <button
+                    type="button"
+                    title="Reemplazar archivo"
+                    onclick="reemplazarArchivoCuanti(${f.id})"
+                    class="text-orange-600 hover:text-orange-800 text-xl">
+                    ♻️
+                </button>
+
+                 <!-- ELIMINAR -->
+                <button type="button" 
+                        title="Eliminar archivo" 
+                        onclick="eliminarArchivoCuanti(${f.id}, '${escapeHtml(f.nombre)}')"
+                        class="text-red-600 hover:text-red-800 text-xl">
+                    🗑️
+                </button>
+            </div>
+        `;
+
+        fileListPrecargadosCuanti.appendChild(div);
+    });
+}
+
+function reemplazarArchivoCuanti(idArchivo) {
+    const input = document.createElement("input");
+    input.type = "file";
+
+    input.onchange = async () => {
+        if (!input.files.length) return;
+
+        const file = input.files[0];
+
+        // Validaciones
+        if (!allowedTypes.includes(file.type)) {
+            alert("❌ Tipo de archivo no permitido");
+            return;
+        }
+
+        if (file.size > MAX_SIZE) {
+            alert("❌ Archivo supera el tamaño permitido");
+            return;
+        }
+
+        const codigoEnvio = window.codigoEnvioActual;
+        const posSolicitud = window.posSolicitudActual;
+
+        let formData = new FormData();
+        formData.append("archivo", file);
+        formData.append("idArchivo", idArchivo);
+        formData.append("codigoEnvio", codigoEnvio);
+        formData.append("posSolicitud", posSolicitud);
+
+        const res = await fetch("actualizarResultadoArchivo.php", {
+            method: "POST",
+            body: formData
+        });
+
+        const r = await res.json();
+
+        if (r.success) {
+            alert("♻️ Archivo reemplazado correctamente");
+            cargarArchivosCompletadosCuanti(codigoEnvio, posSolicitud);
+        } else {
+            alert("❌ Error: " + r.error);
+        }
+    };
+
+    input.click();
+}
+
+function eliminarArchivoCuanti(idArchivo, nombreArchivo) {
+    if (!confirm(`¿Estás seguro de eliminar el archivo "${nombreArchivo}"?\nEsta acción no se puede deshacer.`)) {
+        return;
+    }
+    
+    const codigoEnvio = window.codigoEnvioActual;
+    const posSolicitud = window.posSolicitudActual;
+    
+    fetch('eliminar_archivo.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            idArchivo: idArchivo
+        })
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Archivo eliminado correctamente');
+                // Recargar la lista de archivos cuantitativos
+                cargarArchivosCompletadosCuanti(codigoEnvio, posSolicitud);
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Error de conexión al eliminar archivo');
+        });
 }
 
 function reemplazarArchivo(idArchivo) {
@@ -1416,6 +1813,16 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
     const fileListPrecargados = document.getElementById('fileListPrecargados');
     if (fileListPrecargados) fileListPrecargados.innerHTML = '';
 
+    /* CODIGO ANTERIOR
+    // No se limpiaban ni cargaban archivos cuantitativos aquí
+    */
+    
+    // 🗑️ Limpiar archivos cuantitativos
+    limpiarArchivosCuanti();
+
+    // 📎 Cargar archivos cuantitativos existentes (siempre)
+    cargarArchivosCompletadosCuanti(codigo, posSolicitud);
+
     //document.getElementById('emptyState').classList.add('hidden');
     document.getElementById('formPanel').classList.remove('hidden');
     //document.getElementById('lblCodigo').textContent = codigo;
@@ -1435,6 +1842,12 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
     document.getElementById('codigoSolicitud').value = codigo;
     document.getElementById('fechaToma').value = fecha;
 
+    // ✅ Limpiar fecha de registro del laboratorio al cambiar de solicitud
+    const fechaLabCuanti = document.getElementById('fechaRegistroLabCuanti');
+    if (fechaLabCuanti) {
+        fechaLabCuanti.value = '';
+    }
+
     const datosRef = decodificarCodRef(referencia);
     //document.getElementById('edadAves').value = datosRef.codRefCompleto;
     document.getElementById('codRef_granja').value = datosRef.granja;
@@ -1449,7 +1862,7 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
     if (btnGuardar) {
         if (estado.toLowerCase() === 'completado') {
             btnGuardar.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Actualizar Resultados';
-            btnGuardar.className = 'bg-orange-600 hover:bg-orange-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-orange-500/30 transition-all transform hover:scale-105';
+            btnGuardar.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105';
         } else {
             btnGuardar.innerHTML = '<i class="fas fa-save mr-2"></i> Guardar Resultados';
             btnGuardar.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105';
@@ -1492,11 +1905,18 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
 
         detectarTipo(parseInt(datosRef.edad), nomMuestra);
 
+        /* CODIGO ANTERIOR (solo cargaba datos cuando estado era completado)
         if (estado.toLowerCase() === 'completado') {
             setTimeout(() => {
                 cargarDatosCompletados(codigo);
             }, 300);
         }
+        */
+        
+        // ✅ Siempre intentar cargar datos guardados (incluso si está pendiente)
+        setTimeout(() => {
+            cargarDatosCompletados(codigo);
+        }, 300);
     } else {
         // Fallback: cargar desde el servidor
         fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${codigo}&posSolicitud=${posSolicitud}&estado=${estado}`)
@@ -1512,11 +1932,18 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
 
                     detectarTipo(parseInt(datosRef.edad), nomMuestra);
 
+                    /* CODIGO ANTERIOR (solo cargaba datos cuando estado era completado)
                     if (estado.toLowerCase() === 'completado') {
                         setTimeout(() => {
                             cargarDatosCompletados(codigo);
                         }, 300);
                     }
+                    */
+                    
+                    // ✅ Siempre intentar cargar datos guardados (incluso si está pendiente)
+                    setTimeout(() => {
+                        cargarDatosCompletados(codigo);
+                    }, 300);
                 } else {
                     alert('❌ Error: ' + (data.message || 'No se pudieron cargar enfermedades'));
                 }
@@ -1556,11 +1983,20 @@ async function cargarDatosCompletados(codigoEnvio) {
     }
 
     const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
+    const posSolicitud = window.posSolicitudActual || 1; // ✅ Obtener posSolicitud actual
     console.log('📊 Tipo detectado:', tipo);
+    console.log('📌 posSolicitud:', posSolicitud);
+
+    // Variable para guardar la fecha de registro del laboratorio (solo se necesita cargar una vez)
+    let fechaRegistroLabCargada = false;
 
     // Cargar TODAS las enfermedades en paralelo
     const promesas = enfermedades.map(async (enf) => {
+        /* CODIGO ANTERIOR (no incluía posSolicitud)
         const url = `crud-serologia.php?action=get_resultados_guardados&codEnvio=${codigoEnvio}&enfermedad=${encodeURIComponent(enf.nombre)}`;
+        */
+        // ✅ Incluir posSolicitud en la URL
+        const url = `crud-serologia.php?action=get_resultados_guardados&codEnvio=${codigoEnvio}&posSolicitud=${posSolicitud}&enfermedad=${encodeURIComponent(enf.nombre)}`;
         console.log('🌐 Consultando:', url);
 
         try {
@@ -1572,6 +2008,16 @@ async function cargarDatosCompletados(codigoEnvio) {
 
                 const state = {};
                 const d = data.datos;
+
+                // ✅ Cargar fecha de registro del laboratorio (solo una vez)
+                if (!fechaRegistroLabCargada && d.fecha_registro_lab) {
+                    const inputFechaLab = document.getElementById('fechaRegistroLabCuanti');
+                    if (inputFechaLab) {
+                        inputFechaLab.value = d.fecha_registro_lab;
+                        console.log('📅 Fecha de registro del laboratorio cargada:', d.fecha_registro_lab);
+                    }
+                    fechaRegistroLabCargada = true;
+                }
 
                 // Campos principales
                 state[`${enf.nombre}_gmean`] = d.gmean || '';
@@ -1619,8 +2065,13 @@ async function cargarDatosCompletados(codigoEnvio) {
         populatePanelValues(selectEnf.value);
     }
 
-    // 📎 Cargar archivos adjuntos
+    /* CODIGO ANTERIOR
+    // 📎 Cargar archivos adjuntos (usaba función de cualitativos)
     await cargarArchivosCompletados(codigoEnvio);
+    */
+    
+    // 📎 Cargar archivos adjuntos cuantitativos
+    await cargarArchivosCompletadosCuanti(codigoEnvio, posSolicitud);
 }
 
 // ============================================
@@ -1711,6 +2162,7 @@ function renderizarCampos(tipo) {
         const galpon = document.getElementById('codRef_galpon')?.value || '';
         const edad = document.getElementById('edadAves_display')?.value || '';
 
+        /* CODIGO ANTERIOR (panel de datos decodificados visible)
         container.innerHTML = `
             <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 col-span-3">
                 <h4 class="text-[10px] font-bold text-blue-700 uppercase mb-3 flex items-center gap-1">
@@ -1739,6 +2191,9 @@ function renderizarCampos(tipo) {
                 </div>
             </div>
         `;
+        */
+        // Panel comentado - no se muestra
+        container.innerHTML = ``;
     }
 }
 
@@ -1805,9 +2260,74 @@ function renderizarEnfermedades(tipo) {
     });
 }
 
+// ============================================
+// MODAL DE CONFIRMACIÓN PARA CUANTITATIVOS
+// ============================================
+function abrirModalConfirmacionCuanti() {
+    // Validar fecha de registro del laboratorio
+    let fechaRegistroLabCuanti = document.getElementById('fechaRegistroLabCuanti').value.trim();
 
+    if (!fechaRegistroLabCuanti) {
+        alert("⚠️ Tiene que seleccionar una fecha de registro del laboratorio primero.");
+        return;
+    }
+
+    // Validar que hay datos antes de abrir el modal
+    const enfermedadStates = window.enfermedadStates || {};
+    let enfermedadesConDatos = Object.keys(enfermedadStates).filter(enf => {
+        const st = enfermedadStates[enf] || {};
+        return Object.keys(st).some(k => st[k] !== null && st[k] !== '');
+    }).length;
+
+    if (enfermedadesConDatos === 0) {
+        const visibles = document.querySelectorAll('input[name="enfermedades[]"]');
+        enfermedadesConDatos = visibles.length || 0;
+    }
+
+    if (enfermedadesConDatos === 0) {
+        alert('⚠️ No hay enfermedades con datos para guardar');
+        return;
+    }
+
+    document.getElementById('modalConfirmacionCuanti').classList.remove('hidden');
+}
+
+function cerrarModalConfirmacionCuanti() {
+    document.getElementById('modalConfirmacionCuanti').classList.add('hidden');
+}
+
+// Cerrar al hacer clic fuera del modal
+document.addEventListener('DOMContentLoaded', function() {
+    const modalCuanti = document.getElementById('modalConfirmacionCuanti');
+    if (modalCuanti) {
+        modalCuanti.addEventListener('click', function (e) {
+            if (e.target === this) {
+                cerrarModalConfirmacionCuanti();
+            }
+        });
+    }
+});
+
+function guardarResultadosCuanti(estadoCuanti) {
+    cerrarModalConfirmacionCuanti();
+    guardar(null, estadoCuanti);
+}
+
+/* CODIGO ANTERIOR
 function guardar(e) {
     e.preventDefault();
+
+    saveCurrentEnfermedadState(window.currentEnfermedadSelected);
+
+    const form = document.getElementById('formAnalisis');
+    document.querySelectorAll('.tmp-enf-input').forEach(n => n.remove());
+
+    // ✅ Determinar si es UPDATE o CREATE según el estado
+    const esActualizacion = window.estadoActualSolicitud === 'completado';
+*/
+
+function guardar(e, estadoCuanti = 'completado') {
+    if (e) e.preventDefault();
 
     saveCurrentEnfermedadState(window.currentEnfermedadSelected);
 
@@ -1843,6 +2363,7 @@ function guardar(e) {
 
     const fd2 = new FormData(form);
 
+    /* CODIGO ANTERIOR
     const archivos = document.getElementById('archivoPdf') ? document.getElementById('archivoPdf').files : [];
 
     console.log('📁 Archivos detectados:', archivos.length);
@@ -1851,6 +2372,19 @@ function guardar(e) {
         for (let i = 0; i < archivos.length; i++) {
             console.log(`   Agregando archivo #${i}: ${archivos[i].name} (${archivos[i].size} bytes)`);
             fd2.append('archivoPdf[]', archivos[i]);
+        }
+    }
+    */
+    
+    // Usar archivoPdfCuanti para cuantitativos
+    const archivosCuanti = document.getElementById('archivoPdfCuanti') ? document.getElementById('archivoPdfCuanti').files : [];
+
+    console.log('📁 Archivos cuantitativos detectados:', archivosCuanti.length);
+
+    if (archivosCuanti && archivosCuanti.length > 0) {
+        for (let i = 0; i < archivosCuanti.length; i++) {
+            console.log(`   Agregando archivo #${i}: ${archivosCuanti[i].name} (${archivosCuanti[i].size} bytes)`);
+            fd2.append('archivoPdf[]', archivosCuanti[i]);
         }
     }
 
@@ -1876,6 +2410,7 @@ function guardar(e) {
         return;
     }
 
+    /* CODIGO ANTERIOR
     // ✅ Mensaje diferente según acción
     const accionTexto = esActualizacion ? 'Actualizar' : 'Guardar';
     if (!confirm(`¿${accionTexto} análisis?`)) {
@@ -1888,14 +2423,29 @@ function guardar(e) {
     const textoBoton = esActualizacion ? 'Actualizando...' : 'Guardando...';
     btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${textoBoton}`;
     btn.disabled = true;
+    */
 
-    // ✅ Agregar posSolicitud al form
-    const inpPos = document.createElement('input');
-    inpPos.type = 'hidden';
-    inpPos.name = 'posSolicitud';
-    inpPos.value = window.posSolicitudActual || 1;
-    inpPos.className = 'tmp-enf-input';
-    form.appendChild(inpPos);
+    /* CODIGO ANTERIOR (selector incorrecto)
+    const btn = document.querySelector('#formAnalisis button[type="button"]');
+    */
+
+    // ✅ Ahora el confirm ya no es necesario porque usamos el modal
+    const accionTexto = esActualizacion ? 'Actualizar' : 'Guardar';
+
+    // ✅ Usar el ID específico del botón de guardar cuantitativos
+    const btn = document.getElementById('btnGuardarCuanti');
+    const original = btn ? btn.innerHTML : '';
+    const textoBoton = esActualizacion ? 'Actualizando...' : 'Guardando...';
+    if (btn) {
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${textoBoton}`;
+        btn.disabled = true;
+    }
+
+    // ✅ Agregar posSolicitud directamente al FormData (NO al form, ya que fd2 ya fue creado)
+    fd2.append('posSolicitud', window.posSolicitudActual || 1);
+    
+    // ✅ Agregar estado cuantitativo al FormData
+    fd2.append('estadoCuanti', estadoCuanti);
 
     console.log(`📤 ${accionTexto} datos:`, actionValue);
     for (let pair of fd2.entries()) {
@@ -1929,19 +2479,97 @@ function guardar(e) {
 
             if (data.success) {
                 const accionTexto = window.estadoActualSolicitud === 'completado' ? 'actualizado' : 'guardado';
+                
+                /* CODIGO ANTERIOR
                 alert(`✅ Análisis ${accionTexto} correctamente`);
-                location.reload();
-            } else {
-                alert('❌ Error: ' + data.message);
+                
+                // Restaurar botón
                 btn.innerHTML = original;
                 btn.disabled = false;
+                
+                // Actualizar estado a completado sin recargar la página
+                window.estadoActualSolicitud = 'completado';
+                
+                // Actualizar el badge de estado cuantitativo
+                const badgeCuanti = document.getElementById('badgeStatusCuanti');
+                if (badgeCuanti) {
+                    badgeCuanti.textContent = 'Completado';
+                    badgeCuanti.className = 'inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-green-100 text-green-800 ring-2 ring-green-300';
+                }
+                
+                // Actualizar el botón a modo "Actualizar"
+                btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Actualizar Resultados';
+                btn.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105';
+                */
+
+                const estadoGuardado = estadoCuanti; // Estado seleccionado en el modal
+                alert(`✅ Análisis ${accionTexto} como ${estadoGuardado}`);
+                
+                // Restaurar botón
+                if (btn) {
+                    btn.innerHTML = original;
+                    btn.disabled = false;
+                }
+                
+                // Actualizar estado según lo seleccionado en el modal
+                window.estadoActualSolicitud = estadoGuardado;
+                
+                // Actualizar el badge de estado cuantitativo según el estado seleccionado
+                const badgeCuanti = document.getElementById('badgeStatusCuanti');
+                if (badgeCuanti) {
+                    if (estadoGuardado === 'completado') {
+                        badgeCuanti.textContent = 'COMPLETADO';
+                        badgeCuanti.className = 'inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-green-100 text-green-800 ring-2 ring-green-300';
+                    } else {
+                        badgeCuanti.textContent = 'PENDIENTE';
+                        badgeCuanti.className = 'inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300';
+                    }
+                }
+                
+                // Actualizar el botón según el estado
+                if (btn) {
+                    if (estadoGuardado === 'completado') {
+                        btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Actualizar Resultados';
+                    } else {
+                        btn.innerHTML = '<i class="fas fa-save mr-2"></i> Guardar Resultados';
+                    }
+                    btn.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105';
+                }
+                
+                // Actualizar el sidebar para reflejar el cambio de estado
+                loadSidebar(currentPage);
+                
+                // Limpiar inputs temporales
+                document.querySelectorAll('.tmp-enf-input').forEach(n => n.remove());
+
+                // Limpiar input de archivos nuevos y recargar archivos guardados
+                const inputPDFCuantiLocal = document.getElementById('archivoPdfCuanti');
+                if (inputPDFCuantiLocal) {
+                    const dt = new DataTransfer();
+                    inputPDFCuantiLocal.files = dt.files;
+                }
+                const fileListCuantiLocal = document.getElementById('fileListCuanti');
+                if (fileListCuantiLocal) {
+                    fileListCuantiLocal.innerHTML = '';
+                }
+                
+                // Recargar los archivos guardados de cuantitativos
+                cargarArchivosCompletadosCuanti(window.codigoEnvioActual, window.posSolicitudActual);
+            } else {
+                alert('❌ Error: ' + data.message);
+                if (btn) {
+                    btn.innerHTML = original;
+                    btn.disabled = false;
+                }
             }
         })
         .catch(e => {
             console.error('Error completo:', e);
             alert('❌ Error de conexión: ' + e.message);
-            btn.innerHTML = original;
-            btn.disabled = false;
+            if (btn) {
+                btn.innerHTML = original;
+                btn.disabled = false;
+            }
         });
 }
 
@@ -2148,7 +2776,7 @@ function filtrarEnfermedadesCatalogo() {
 }
 
 function agregarEnfermedadASolicitud(codigo, nombre) {
-    if (!confirm(`¿Agregar "${nombre}" a la solicitud ${window.codigoEnvioActual}?`)) return;
+    if (!confirm(`¿Agregar "${nombre}" a la solicitud ${window.codigoEnvioActual} (Pos: ${window.posSolicitudActual})?`)) return;
 
     const codRef = document.getElementById('edadAves_display').value;
     //const fecToma = document.getElementById('fechaToma').value;
@@ -2156,10 +2784,14 @@ function agregarEnfermedadASolicitud(codigo, nombre) {
     const fd = new FormData();
     fd.append('action', 'agregar_enfermedad_solicitud');
     fd.append('codEnvio', window.codigoEnvioActual);
+    fd.append('posSolicitud', window.posSolicitudActual); // ✅ Enviar posSolicitud actual
     fd.append('codAnalisis', codigo);
     fd.append('nomAnalisis', nombre);
     fd.append('codRef', codRef);
     fd.append('fecToma', fecTomaCuantiAux);
+
+    // ✅ Guardar el nombre de la enfermedad que se está agregando
+    const nombreEnfermedadNueva = nombre;
 
     fetch('crud-serologia.php', { method: 'POST', body: fd })
         .then(r => r.text())
@@ -2170,15 +2802,64 @@ function agregarEnfermedadASolicitud(codigo, nombre) {
                     alert('✅ Enfermedad agregada');
                     cerrarModalAgregarEnfermedad();
 
+                    /* CODIGO ANTERIOR (no incluía posSolicitud en la consulta)
                     fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}`)
+                    */
+                    // ✅ Incluir posSolicitud en la consulta para obtener solo las enfermedades de esta solicitud
+                    fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}&posSolicitud=${window.posSolicitudActual}`)
                         .then(r => r.text())
                         .then(t => {
                             try {
                                 const dd = JSON.parse(t);
                                 if (dd.success) {
                                     window.enfermedadesActuales = dd.enfermedades;
+                                    
+                                    // ✅ Inicializar el estado de la nueva enfermedad (vacío para poder guardar datos)
+                                    dd.enfermedades.forEach(enf => {
+                                        if (!window.enfermedadStates[enf.nombre]) {
+                                            window.enfermedadStates[enf.nombre] = {};
+                                        }
+                                    });
+                                    
                                     const tipo = document.getElementById('tipo_ave_hidden') ? document.getElementById('tipo_ave_hidden').value : 'BB';
+                                    
+                                    /* CODIGO ANTERIOR (solo renderizaba sin seleccionar la nueva)
                                     renderizarEnfermedades(tipo);
+                                    const selectEnfermedad = document.getElementById('selectEnfermedad');
+                                    if (selectEnfermedad) {
+                                        const enfermedadesUnicas = [...new Set(dd.enfermedades.map(e => e.enfermedad || e.nombre))];
+                                        const label = selectEnfermedad.parentElement?.querySelector('label');
+                                        if (label) {
+                                            label.textContent = `Seleccione Enfermedad (${enfermedadesUnicas.length} asignadas)`;
+                                        }
+                                    }
+                                    */
+                                    
+                                    // ✅ NUEVO: Seleccionar automáticamente la nueva enfermedad agregada
+                                    // Primero renderizamos las enfermedades (esto pondrá la primera por defecto)
+                                    renderizarEnfermedades(tipo);
+                                    
+                                    const selectEnfermedad = document.getElementById('selectEnfermedad');
+                                    if (selectEnfermedad) {
+                                        // Buscar la opción que coincida con el nombre de la enfermedad agregada
+                                        const opciones = Array.from(selectEnfermedad.options);
+                                        const opcionNueva = opciones.find(opt => opt.value === nombreEnfermedadNueva);
+                                        
+                                        if (opcionNueva) {
+                                            // Cambiar el valor del select a la nueva enfermedad
+                                            selectEnfermedad.value = nombreEnfermedadNueva;
+                                            window.currentEnfermedadSelected = nombreEnfermedadNueva;
+                                            
+                                            // Disparar el evento change para que se renderice el panel correcto
+                                            selectEnfermedad.dispatchEvent(new Event('change'));
+                                        }
+                                        
+                                        const enfermedadesUnicas = [...new Set(dd.enfermedades.map(e => e.enfermedad || e.nombre))];
+                                        const label = selectEnfermedad.parentElement?.querySelector('label');
+                                        if (label) {
+                                            label.textContent = `Seleccione Enfermedad (${enfermedadesUnicas.length} asignadas)`;
+                                        }
+                                    }
                                 }
                             } catch (e) {
                                 console.error('Error parseando respuesta:', e);

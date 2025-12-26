@@ -31,7 +31,12 @@ $q = "
         CASE 
             WHEN SUM(d.estado_cuali = 'pendiente') > 0 THEN 'pendiente'
             ELSE 'completado'
-        END AS estado_cuali_general
+        END AS estado_cuali_general,
+
+        CASE 
+            WHEN SUM(d.estado_cuanti = 'pendiente') > 0 THEN 'pendiente'
+            ELSE 'completado'
+        END AS estado_cuanti_general
 
     FROM san_fact_solicitud_cab c
     INNER JOIN san_fact_solicitud_det d

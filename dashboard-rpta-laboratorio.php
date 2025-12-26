@@ -16,8 +16,8 @@ if (!$conexion) {
 
 // Recibir filtros si vienen del AJAX
 $fechaInicio = $_GET['fechaInicio'] ?? null;
-$fechaFin    = $_GET['fechaFin'] ?? null;
-$estado      = $_GET['estado'] ?? 'pendiente';  // default
+$fechaFin = $_GET['fechaFin'] ?? null;
+$estado = $_GET['estado'] ?? 'pendiente';  // default
 
 // Construir condiciones dinámicas
 $conditions = [];
@@ -202,8 +202,7 @@ $result = $conexion->query($query);
                 <div class="mt-2 bg-white">
 
                     <!-- HEADER FILTROS (con botón plegable) -->
-                    <div class="flex items-center justify-between cursor-pointer"
-                        onclick="toggleFiltros()">
+                    <div class="flex items-center justify-between cursor-pointer" onclick="toggleFiltros()">
                         <h3 class="text-sm font-semibold text-[#2c3e50]">
                             🔍 Filtros de búsqueda
                         </h3>
@@ -283,16 +282,12 @@ $result = $conexion->query($query);
             <div class="flex flex-1 overflow-hidden flex-col md:flex-row">
 
                 <!-- SIDEBAR -->
-                <aside class="bg-white w-full md:w-[300px] rounded-xl shadow-sm border border-[#e5e7eb] mt-4 mr-3 flex flex-col">
+                <aside
+                    class="bg-white w-full md:w-[300px] rounded-xl shadow-sm border border-[#e5e7eb] mt-4 mr-3 flex flex-col">
                     <div class="px-6 py-5 border-b border-[#e5e7eb]">
                         <h3 class="text-base font-semibold text-[#2c3e50]">Solicitudes</h3>
 
-                        <input
-                            id="searchInput"
-                            type="text"
-                            placeholder="Buscar..."
-
-                            class="mt-3 w-full px-3 py-2 border border-[#d0d7de] rounded-md text-sm placeholder-[#a0aec0]
+                        <input id="searchInput" type="text" placeholder="Buscar..." class="mt-3 w-full px-3 py-2 border border-[#d0d7de] rounded-md text-sm placeholder-[#a0aec0]
                                 focus:outline-none focus:ring-2 focus:ring-[#0066cc]/30">
                     </div>
 
@@ -305,14 +300,17 @@ $result = $conexion->query($query);
                 </aside>
 
                 <!-- MAIN CONTENT -->
-                <main class="flex-1 overflow-y-auto mt-4 bg-white rounded-xl shadow-sm border border-[#e5e7eb] p-6 md:p-10">
+                <main
+                    class="flex-1 overflow-y-auto mt-4 bg-white rounded-xl shadow-sm border border-[#e5e7eb] p-6 md:p-10">
 
                     <!-- EMPTY STATE (lo que se ve al inicio) -->
                     <div id="emptyStatePanel" class="mx-auto max-w-6xl">
-                        <div class="border-2 border-dashed border-[#cfd8e3] rounded-md p-12 md:p-32 bg-white flex items-center justify-center">
+                        <div
+                            class="border-2 border-dashed border-[#cfd8e3] rounded-md p-12 md:p-32 bg-white flex items-center justify-center">
                             <div class="text-center">
                                 <h3 class="text-lg font-medium text-[#374151] mb-1">Seleccione una solicitud</h3>
-                                <p class="text-sm text-[#9ca3af]">Elija una orden de la lista para adjuntar su respuesta</p>
+                                <p class="text-sm text-[#9ca3af]">Elija una orden de la lista para adjuntar su respuesta
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -325,10 +323,7 @@ $result = $conexion->query($query);
                             <!-- Cabecera detalle -->
                             <div class="pb-6 border-b border-gray-200 relative">
                                 <!-- Botón cerrar panel -->
-                                <button
-                                    onclick="closeDetail()"
-                                    title="Cerrar"
-                                    class="absolute right-4 w-9 h-9 flex items-center justify-center
+                                <button onclick="closeDetail()" title="Cerrar" class="absolute right-4 w-9 h-9 flex items-center justify-center
                                             rounded-full text-gray-400 hover:text-red-600
                                             hover:bg-red-50 transition">
                                     ✕
@@ -345,8 +340,7 @@ $result = $conexion->query($query);
                                                 SAN-000000
                                             </h2>
 
-                                            <span id="cabPosSolicitud"
-                                                class="inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide
+                                            <span id="cabPosSolicitud" class="inline-block mt-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide
                                                 bg-blue-100 text-blue-800 ring-2 ring-blue-300">
                                                 N
                                             </span>
@@ -382,7 +376,8 @@ $result = $conexion->query($query);
 
                                     <!-- Transporte -->
                                     <div class="flex items-center gap-4">
-                                        <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                                        <div
+                                            class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
                                             <span class="text-orange-600 text-lg">🚚</span>
                                         </div>
                                         <div>
@@ -393,7 +388,8 @@ $result = $conexion->query($query);
 
                                     <!-- Registrado por -->
                                     <div class="flex items-center gap-4">
-                                        <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                                        <div
+                                            class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
                                             <span class="text-purple-600 text-lg">👤</span>
                                         </div>
                                         <div>
@@ -426,7 +422,8 @@ $result = $conexion->query($query);
 
                                     <!-- Código referencia -->
                                     <div class="flex items-center gap-4">
-                                        <div class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
+                                        <div
+                                            class="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
                                             <span class="text-indigo-600 text-lg">🔑</span>
                                         </div>
                                         <div>
@@ -445,23 +442,36 @@ $result = $conexion->query($query);
                                 </h4>
                                 <div class="grid grid-cols-4 gap-3">
                                     <div>
-                                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Granja</label>
-                                        <input type="text" id="codRef_granja_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${granja}" readonly>
+                                        <label
+                                            class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Granja</label>
+                                        <input type="text" id="codRef_granja_display"
+                                            class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed"
+                                            value="${granja}" readonly>
                                         <input type="hidden" id="codRef_granja" name="codigo_granja" value="${granja}">
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Campaña</label>
-                                        <input type="text" id="codRef_campana_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${campana}" readonly>
-                                        <input type="hidden" id="codRef_campana" name="codigo_campana" value="${campana}">
+                                        <label
+                                            class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Campaña</label>
+                                        <input type="text" id="codRef_campana_display"
+                                            class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed"
+                                            value="${campana}" readonly>
+                                        <input type="hidden" id="codRef_campana" name="codigo_campana"
+                                            value="${campana}">
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Galpón</label>
-                                        <input type="text" id="codRef_galpon_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${galpon}" readonly>
+                                        <label
+                                            class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Galpón</label>
+                                        <input type="text" id="codRef_galpon_display"
+                                            class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed"
+                                            value="${galpon}" readonly>
                                         <input type="hidden" id="codRef_galpon" name="numero_galpon" value="${galpon}">
                                     </div>
                                     <div>
-                                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Edad (Ref)</label>
-                                        <input type="text" id="edadAves_display" class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed" value="${edadRef}" readonly>
+                                        <label class="block text-[10px] font-bold text-blue-700 uppercase mb-1">Edad
+                                            (Ref)</label>
+                                        <input type="text" id="edadAves_display"
+                                            class="input-lab bg-blue-100 border-blue-300 text-blue-900 font-bold text-center cursor-not-allowed"
+                                            value="${edadRef}" readonly>
                                     </div>
                                 </div>
                             </div>
@@ -469,16 +479,12 @@ $result = $conexion->query($query);
                             <!-- TABS -->
                             <div class="border-b border-gray-200 mb-6">
                                 <nav class="flex gap-6" aria-label="Tabs">
-                                    <button
-                                        id="tabAnalisis"
-                                        onclick="switchTab('analisis')"
+                                    <button id="tabAnalisis" onclick="switchTab('analisis')"
                                         class="tab-btn pb-3 text-sm font-medium border-b-2 transition-all duration-200 border-blue-600 text-blue-600">
                                         Resultados Cualitativos
                                     </button>
 
-                                    <button
-                                        id="tabSegundo"
-                                        onclick="switchTab('segundo')"
+                                    <button id="tabSegundo" onclick="switchTab('segundo')"
                                         class="tab-btn pb-3 text-sm font-medium border-b-2 transition-all duration-200 border-transparent text-gray-500 hover:text-gray-700">
                                         Resultados Cuantitativos
                                     </button>
@@ -487,23 +493,23 @@ $result = $conexion->query($query);
 
                             <!-- TAB CONTENIDO cualitativos -->
                             <div id="tabContentAnalisis">
+                                <!-- lo avias puesto dentro de un div ctv tu kieres bronca no?-->
+                                <div id="formPanel" class="">
 
-                                <div>
                                     <!-- Estado + Switch -->
                                     <div class="flex items-center justify-between mb-4">
 
                                         <!-- Badge estado -->
-                                        <span id="badgeStatusCuali"
-                                            class="inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide
+                                        <span id="badgeStatusCuali" class="inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide
                                                 bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300">
                                             Pendiente
                                         </span>
 
                                         <!-- Switch -->
                                         <label class="relative inline-flex items-center cursor-pointer hidden">
-                                            <input onchange="confirmarCambioCuali(this)" type="checkbox" id="switchCuali" class="sr-only peer" checked>
-                                            <div
-                                                class="w-11 h-6 bg-gray-200 rounded-full peer
+                                            <input onchange="confirmarCambioCuali(this)" type="checkbox"
+                                                id="switchCuali" class="sr-only peer" checked>
+                                            <div class="w-11 h-6 bg-gray-200 rounded-full peer
                                                         peer-checked:bg-blue-600
                                                         after:content-['']
                                                         after:absolute after:top-[2px] after:left-[2px]
@@ -515,64 +521,65 @@ $result = $conexion->query($query);
 
                                             </span>
                                         </label>
-
                                     </div>
+                                </div>
 
-                                    <!-- analisis section -->
-                                    <div id="bloqueCuali" class="transition-all duration-300">
+                                <!-- analisis section -->
+                                <div id="bloqueCuali" class="transition-all duration-300">
 
-                                        <!-- NUEVA FECHA DE REGISTRO -->
-                                        <div class="mt-6 mb-3">
-                                            <label for="fechaRegistroLab" class="block text-sm font-medium text-gray-700 mb-1">
-                                                📅 Fecha de registro del laboratorio
-                                            </label>
+                                    <!-- NUEVA FECHA DE REGISTRO -->
+                                    <div class="mt-6 mb-3">
+                                        <label for="fechaRegistroLab"
+                                            class="block text-sm font-medium text-gray-700 mb-1">
+                                            📅 Fecha de registro del laboratorio
+                                        </label>
 
-                                            <input type="date"
-                                                id="fechaRegistroLab"
-                                                class="block w-full max-w-xs text-sm border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" />
-                                        </div>
-                                        <div class="flex items-center justify-between mb-3">
-                                            <h3 class="text-lg font-semibold text-gray-800">Seleccionar resultados de análisis</h3>
+                                        <input type="date" id="fechaRegistroLab"
+                                            class="block w-full max-w-xs text-sm border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" />
+                                    </div>
+                                    <div class="flex items-center justify-between mb-3">
+                                        <h3 class="text-lg font-semibold text-gray-800">Seleccionar resultados de
+                                            análisis</h3>
 
-                                            <button id="addAnalisis"
-                                                class="px-5 py-2 rounded-md text-white bg-green-600 hover:bg-green-700">
-                                                ➕ Agregar nuevo análisis
-                                            </button>
-                                        </div>
-                                        <div id="analisisContainer" class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4"></div>
+                                        <button id="addAnalisis"
+                                            class="px-5 py-2 rounded-md text-white bg-green-600 hover:bg-green-700">
+                                            ➕ Agregar nuevo análisis
+                                        </button>
+                                    </div>
+                                    <div id="analisisContainer"
+                                        class="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4"></div>
 
-                                        <div class="mt-6">
-                                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                                Subir archivos (PDF, Word, Excel, Imágenes, etc.) — Opcional
-                                            </label>
+                                    <div class="mt-6">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                                            Subir archivos (PDF, Word, Excel, Imágenes, etc.) — Opcional
+                                        </label>
 
-                                            <input type="file"
-                                                id="archivoPdf"
-                                                name="archivoPdf[]"
-                                                multiple
-                                                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg"
-                                                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4
+                                        <input type="file" id="archivoPdf" name="archivoPdf[]" multiple
+                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg" class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4
                                             file:rounded-md file:border-0
                                             file:text-sm file:font-semibold
                                             file:bg-blue-600 file:text-white
                                             hover:file:bg-blue-700
                                             border border-gray-300 rounded-md p-1" />
 
-                                            <div id="fileList" class="mt-3 space-y-2"></div>
+                                        <div id="fileList" class="mt-3 space-y-2"></div>
 
-                                            <!-- ARCHIVOS PRECARGADOS -->
-                                            <div id="fileListPrecargados" class="mt-3 space-y-2"></div>
+                                        <!-- ARCHIVOS PRECARGADOS -->
+                                        <div id="fileListPrecargados" class="mt-3 space-y-2"></div>
 
-                                            <p class="text-xs text-gray-500 mt-1">(Máx. 10 MB por archivo)</p>
-                                        </div>
+                                        <p class="text-xs text-gray-500 mt-1">(Máx. 10 MB por archivo)</p>
+                                    </div>
 
-                                        <!-- Botones -->
-                                        <div class="mt-6 flex justify-end gap-3">
-                                            <button onclick="closeDetail()" class="px-5 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100">Cancelar</button>
-                                            <button id="btnGuardarResultados" onclick="abrirModalConfirmacion()" class="px-5 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700">💾 Guardar Respuesta</button>
-                                        </div>
+                                    <!-- Botones -->
+                                    <div class="mt-6 flex justify-end gap-3">
+                                        <button onclick="closeDetail()"
+                                            class="px-5 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100">Cancelar</button>
+                                        <button id="btnGuardarResultados" onclick="abrirModalConfirmacion()"
+                                            class="px-5 py-2 rounded-md text-white bg-blue-600 hover:bg-blue-700">💾
+                                            Guardar Respuesta</button>
                                     </div>
                                 </div>
+
                             </div>
 
                             <!-- TAB CONTENIDO CUANTITATIVO -->
@@ -582,17 +589,16 @@ $result = $conexion->query($query);
                                     <div class="flex items-center justify-between mb-4">
 
                                         <!-- Badge estado -->
-                                        <span id="badgeStatusCuanti"
-                                            class="inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide
+                                        <span id="badgeStatusCuanti" class="inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide
                                                 bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300">
                                             Pendiente
                                         </span>
 
                                         <!-- Switch -->
                                         <label class="relative inline-flex items-center cursor-pointer hidden">
-                                            <input onchange="confirmarCambioCuanti(this)" type="checkbox" id="switchCuanti" class="sr-only peer" checked>
-                                            <div
-                                                class="w-11 h-6 bg-gray-200 rounded-full peer
+                                            <input onchange="confirmarCambioCuanti(this)" type="checkbox"
+                                                id="switchCuanti" class="sr-only peer" checked>
+                                            <div class="w-11 h-6 bg-gray-200 rounded-full peer
                                                         peer-checked:bg-blue-600
                                                         after:content-['']
                                                         after:absolute after:top-[2px] after:left-[2px]
@@ -615,32 +621,52 @@ $result = $conexion->query($query);
                                             <input type="hidden" id="codRef_campana" name="codigo_campana">
                                             <input type="hidden" id="codRef_galpon" name="numero_galpon">
 
-                                            <div class=" hidden grid grid-cols-4 gap-4 mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                            <!-- FECHA DE REGISTRO DEL LABORATORIO CUANTITATIVOS -->
+                                            <div class="mt-6 mb-3">
+                                                <label for="fechaRegistroLabCuanti"
+                                                    class="block text-sm font-medium text-gray-700 mb-1">
+                                                    📅 Fecha de registro del laboratorio
+                                                </label>
+
+                                                <input type="date" id="fechaRegistroLabCuanti" name="fecha_registro_lab"
+                                                    class="block w-full max-w-xs text-sm border border-gray-300 rounded-md p-2 focus:ring-blue-500 focus:border-blue-500" />
+                                            </div>
+
+                                            <div
+                                                class=" hidden grid grid-cols-4 gap-4 mb-6 bg-blue-50 p-4 rounded-lg border border-blue-100">
                                                 <div>
-                                                    <label class="text-[10px] uppercase font-bold text-gray-500">Código</label>
-                                                    <input type="text" name="codigo_solicitud" id="codigoSolicitud" class="input-lab bg-white"
-                                                        readonly>
+                                                    <label
+                                                        class="text-[10px] uppercase font-bold text-gray-500">Código</label>
+                                                    <input type="text" name="codigo_solicitud" id="codigoSolicitud"
+                                                        class="input-lab bg-white" readonly>
                                                 </div>
                                                 <div>
-                                                    <label class="text-[10px] uppercase font-bold text-gray-500">Fecha Toma</label>
-                                                    <input type="date" name="fecha_toma" id="fechaToma" class="input-lab bg-white" readonly>
+                                                    <label class="text-[10px] uppercase font-bold text-gray-500">Fecha
+                                                        Toma</label>
+                                                    <input type="date" name="fecha_toma" id="fechaToma"
+                                                        class="input-lab bg-white" readonly>
                                                 </div>
                                                 <div>
-                                                    <label class="text-[10px] uppercase font-bold text-blue-700">REF</label>
+                                                    <label
+                                                        class="text-[10px] uppercase font-bold text-blue-700">REF</label>
                                                     <input type="number" name="edad_aves" id="edadAves"
                                                         class="input-lab font-bold text-blue-800 text-center" readonly>
                                                 </div>
                                                 <div>
-                                                    <label class="text-[10px] uppercase font-bold text-gray-500">Nº Informe</label>
-                                                    <input type="text" name="numero_informe" id="numeroInforme" class="input-lab">
+                                                    <label class="text-[10px] uppercase font-bold text-gray-500">Nº
+                                                        Informe</label>
+                                                    <input type="text" name="numero_informe" id="numeroInforme"
+                                                        class="input-lab">
                                                 </div>
                                             </div>
 
                                             <div id="camposEspecificos" class=""></div>
 
-                                            <h3 class="text-sm font-bold text-gray-700 mb-3 uppercase">Resultados Analíticos</h3>
+                                            <h3 class="text-sm font-bold text-gray-700 mb-3 uppercase">Resultados
+                                                Analíticos</h3>
 
-                                            <span id="badgeTipo" class="px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-600">
+                                            <span id="badgeTipo"
+                                                class="px-3 py-1 rounded-full text-xs font-bold bg-gray-200 text-gray-600">
                                                 ...
                                             </span>
                                             <div id="contenedorEnfermedades" class="mt-4 space-y-4"></div>
@@ -650,7 +676,8 @@ $result = $conexion->query($query);
                                                     Subir archivos (PDF, Word, Excel, Imágenes, etc.) — Opcional
                                                 </label>
 
-                                                <input type="file" id="archivoPdfCuanti" name="archivoPdfCuanti[]" multiple
+                                                <input type="file" id="archivoPdfCuanti" name="archivoPdfCuanti[]"
+                                                    multiple
                                                     accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.png,.jpg,.jpeg" class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4
                                             file:rounded-md file:border-0
                                             file:text-sm file:font-semibold
@@ -660,18 +687,28 @@ $result = $conexion->query($query);
 
                                                 <div id="fileListCuanti" class="mt-3 space-y-2"></div>
 
+                                                <!-- ARCHIVOS PRECARGADOS CUANTITATIVOS -->
+                                                <div id="fileListPrecargadosCuanti" class="mt-3 space-y-2"></div>
+
                                                 <p class="text-xs text-gray-500 mt-1">(Máx. 10 MB por archivo)</p>
                                             </div>
 
                                             <div class="mt-8 flex justify-end">
 
+                                                <!-- CODIGO ANTERIOR
                                                 <button type="submit"
+                                                    class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105">
+                                                    <i class="fas fa-save mr-2"></i> Guardar Resultados
+                                                </button>
+                                                -->
+                                                <button type="button" id="btnGuardarCuanti" onclick="abrirModalConfirmacionCuanti()"
                                                     class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105">
                                                     <i class="fas fa-save mr-2"></i> Guardar Resultados
                                                 </button>
                                             </div>
                                         </form>
-                                        <button onclick="closeDetail()" class="mr-2 px-5 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100">Cancelar</button>
+                                        <button onclick="closeDetail()"
+                                            class="mr-2 px-5 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100">Cancelar</button>
                                     </div>
                                 </div>
                             </div>
@@ -702,8 +739,7 @@ $result = $conexion->query($query);
 
                 <div class="flex justify-end mt-6 gap-3">
                     <button onclick="cerrarModalAnalisis()" class="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
-                    <button onclick="confirmarAnalisisMultiples()"
-                        class="px-4 py-2 bg-blue-600 text-white rounded">
+                    <button onclick="confirmarAnalisisMultiples()" class="px-4 py-2 bg-blue-600 text-white rounded">
                         Agregar Seleccionados
                     </button>
                 </div>
@@ -712,14 +748,16 @@ $result = $conexion->query($query);
         </div>
 
 
-        <!-- Modal de Confirmación -->
-        <div id="modalConfirmacion" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <!-- Modal de Confirmación para Cuantitativos -->
+        <div id="modalConfirmacionCuanti"
+            class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
                 <!-- Header azul -->
                 <div class="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
                     <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-bold">Confirmar Guardado de Resultados</h3>
-                        <button onclick="cerrarModalConfirmacion()" class="text-white hover:text-gray-200 text-2xl leading-none">
+                        <h3 class="text-lg font-bold">Confirmar Guardado de Resultados Cuantitativos</h3>
+                        <button onclick="cerrarModalConfirmacionCuanti()"
+                            class="text-white hover:text-gray-200 text-2xl leading-none">
                             ×
                         </button>
                     </div>
@@ -744,7 +782,62 @@ $result = $conexion->query($query);
                         <p class="font-medium mb-2">📌 Información importante:</p>
                         <p>
                             Marque como <strong>completado</strong> la respuesta si no tiene más datos por ingresar.<br>
-                            De lo contrario, si le faltan datos, puede marcarla como <strong>pendiente</strong> y guardar sus avances actuales.
+                            De lo contrario, si le faltan datos, puede marcarla como <strong>pendiente</strong> y
+                            guardar sus avances actuales.
+                        </p>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="flex gap-4 justify-center">
+                        <button onclick="guardarResultadosCuanti('pendiente')"
+                            class="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">
+                            Guardar como pendiente
+                        </button>
+                        <button onclick="guardarResultadosCuanti('completado')"
+                            class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-md">
+                            Guardar y completar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Confirmación -->
+        <div id="modalConfirmacion"
+            class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+                <!-- Header azul -->
+                <div class="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-lg font-bold">Confirmar Guardado de Resultados</h3>
+                        <button onclick="cerrarModalConfirmacion()"
+                            class="text-white hover:text-gray-200 text-2xl leading-none">
+                            ×
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cuerpo -->
+                <div class="px-6 py-8">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-blue-100 flex items-center justify-center">
+                            <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <p class="text-gray-800 text-lg font-medium mb-4">
+                            ¿Está seguro de guardar estos resultados como <strong>completados</strong>?
+                        </p>
+                    </div>
+
+                    <!-- Mensaje informativo -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 text-sm text-blue-900">
+                        <p class="font-medium mb-2">📌 Información importante:</p>
+                        <p>
+                            Marque como <strong>completado</strong> la respuesta si no tiene más datos por ingresar.<br>
+                            De lo contrario, si le faltan datos, puede marcarla como <strong>pendiente</strong> y
+                            guardar sus avances actuales.
                         </p>
                     </div>
 
@@ -765,13 +858,15 @@ $result = $conexion->query($query);
 
 
         <!-- Modal de Confirmación para Completar Resultado -->
-        <div id="modalCompletarResultado" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div id="modalCompletarResultado"
+            class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
                 <!-- Header verde -->
                 <div class="px-6 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white">
                     <div class="flex justify-between items-center">
                         <h3 class="text-lg font-bold">Completar Resultado</h3>
-                        <button onclick="cerrarModalCompletar()" class="text-white hover:text-gray-200 text-2xl leading-none">
+                        <button onclick="cerrarModalCompletar()"
+                            class="text-white hover:text-gray-200 text-2xl leading-none">
                             ×
                         </button>
                     </div>
@@ -818,13 +913,15 @@ $result = $conexion->query($query);
 
 
         <!-- Modal de Confirmación para poner pendiente un resultado -->
-        <div id="modalResultadoPendiente" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div id="modalResultadoPendiente"
+            class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
                 <!-- Header verde -->
                 <div class="px-6 py-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white">
                     <div class="flex justify-between items-center">
                         <h3 class="text-lg font-bold">Resultado Pendiente</h3>
-                        <button onclick="cerrarModalPendiente()" class="text-white hover:text-gray-200 text-2xl leading-none">
+                        <button onclick="cerrarModalPendiente()"
+                            class="text-white hover:text-gray-200 text-2xl leading-none">
                             ×
                         </button>
                     </div>
@@ -834,7 +931,8 @@ $result = $conexion->query($query);
                 <div class="px-6 py-8">
                     <div class="text-center mb-6">
                         <div class="w-16 h-16 mx-auto mb-5 rounded-full bg-yellow-100 flex items-center justify-center">
-                            <svg class="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
@@ -870,7 +968,8 @@ $result = $conexion->query($query);
         </div>
 
         <!-- Modal para previsualizar PDF -->
-        <div id="modalPdfPreview" class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center z-50 p-4">
+        <div id="modalPdfPreview"
+            class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-5/6 flex flex-col">
                 <!-- Header -->
                 <div class="flex justify-between items-center px-6 py-4 border-b bg-gray-50 rounded-t-xl">

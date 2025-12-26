@@ -37,26 +37,85 @@ try {
     // ==================== GET ENFERMEDADES DE UNA SOLICITUD ====================
 if ($action == 'get_enfermedades') {
     $codEnvio = $_GET['codEnvio'] ?? '';
+    $posSolicitud = $_GET['posSolicitud'] ?? ''; // ✅ Nuevo parámetro
     $estado = strtolower(trim($_GET['estado'] ?? 'pendiente'));
 
     if (empty($codEnvio)) {
         throw new Exception('Código de envío vacío');
     }
 
-    // CORREGIDO: Siempre cargar desde san_fact_solicitud_det
-    // Esta tabla mantiene la lista correcta de enfermedades asignadas
+    /* CODIGO ANTERIOR (no filtraba por posSolicitud)
     $q = "SELECT DISTINCT nomAnalisis as nombre, codAnalisis as codigo
           FROM san_fact_solicitud_det 
           WHERE codEnvio = ? 
           AND estado_cuanti IN ('pendiente', 'completado')
           ORDER BY codAnalisis";
-
     $stmt = $conexion->prepare($q);
-    if (!$stmt) {
-        throw new Exception('Error preparando consulta: ' . $conexion->error);
+    $stmt->bind_param("s", $codEnvio);
+    */
+
+    /* CODIGO ANTERIOR (no traía el campo enfermedad)
+    // ✅ CORREGIDO: Filtrar por posSolicitud si se proporciona
+    if (!empty($posSolicitud)) {
+        $q = "SELECT DISTINCT nomAnalisis as nombre, codAnalisis as codigo
+              FROM san_fact_solicitud_det 
+              WHERE codEnvio = ? 
+              AND posSolicitud = ?
+              AND estado_cuanti IN ('pendiente', 'completado')
+              ORDER BY codAnalisis";
+
+        $stmt = $conexion->prepare($q);
+        if (!$stmt) {
+            throw new Exception('Error preparando consulta: ' . $conexion->error);
+        }
+        $stmt->bind_param("si", $codEnvio, $posSolicitud);
+    } else {
+        // Mantener compatibilidad si no se envía posSolicitud
+        $q = "SELECT DISTINCT nomAnalisis as nombre, codAnalisis as codigo
+              FROM san_fact_solicitud_det 
+              WHERE codEnvio = ? 
+              AND estado_cuanti IN ('pendiente', 'completado')
+              ORDER BY codAnalisis";
+
+        $stmt = $conexion->prepare($q);
+        if (!$stmt) {
+            throw new Exception('Error preparando consulta: ' . $conexion->error);
+        }
+        $stmt->bind_param("s", $codEnvio);
+    }
+    */
+
+    // ✅ CORREGIDO: Filtrar por posSolicitud y hacer JOIN para obtener el nombre completo de enfermedad
+    if (!empty($posSolicitud)) {
+        $q = "SELECT DISTINCT d.nomAnalisis as nombre, d.codAnalisis as codigo, a.enfermedad
+              FROM san_fact_solicitud_det d
+              LEFT JOIN san_dim_analisis a ON d.codAnalisis = a.codigo
+              WHERE d.codEnvio = ? 
+              AND d.posSolicitud = ?
+              AND d.estado_cuanti IN ('pendiente', 'completado')
+              ORDER BY d.codAnalisis";
+
+        $stmt = $conexion->prepare($q);
+        if (!$stmt) {
+            throw new Exception('Error preparando consulta: ' . $conexion->error);
+        }
+        $stmt->bind_param("si", $codEnvio, $posSolicitud);
+    } else {
+        // Mantener compatibilidad si no se envía posSolicitud
+        $q = "SELECT DISTINCT d.nomAnalisis as nombre, d.codAnalisis as codigo, a.enfermedad
+              FROM san_fact_solicitud_det d
+              LEFT JOIN san_dim_analisis a ON d.codAnalisis = a.codigo
+              WHERE d.codEnvio = ? 
+              AND d.estado_cuanti IN ('pendiente', 'completado')
+              ORDER BY d.codAnalisis";
+
+        $stmt = $conexion->prepare($q);
+        if (!$stmt) {
+            throw new Exception('Error preparando consulta: ' . $conexion->error);
+        }
+        $stmt->bind_param("s", $codEnvio);
     }
 
-    $stmt->bind_param("s", $codEnvio);
     $stmt->execute();
     $res = $stmt->get_result();
 
@@ -106,22 +165,47 @@ if ($action == 'get_enfermedades') {
     // ==================== GET RESULTADOS GUARDADOS ====================
 elseif ($action == 'get_resultados_guardados') {
     $codEnvio = $_GET['codEnvio'] ?? '';
+    $posSolicitud = $_GET['posSolicitud'] ?? ''; // ✅ Nuevo parámetro
     $enfermedad = $_GET['enfermedad'] ?? '';
     
     if (empty($codEnvio) || empty($enfermedad)) {
         throw new Exception('Parámetros incompletos');
     }
     
+    /* CODIGO ANTERIOR (no filtraba por posSolicitud)
     $q = "SELECT * FROM san_analisis_pollo_bb_adulto 
           WHERE codigo_envio = ? AND enfermedad = ? 
           LIMIT 1";
-    
     $stmt = $conexion->prepare($q);
-    if (!$stmt) {
-        throw new Exception('Error preparando consulta: ' . $conexion->error);
+    $stmt->bind_param("ss", $codEnvio, $enfermedad);
+    */
+
+    // ✅ Filtrar por posSolicitud si se proporciona
+    if (!empty($posSolicitud)) {
+        $q = "SELECT * FROM san_analisis_pollo_bb_adulto 
+              WHERE codigo_envio = ? AND posSolicitud = ? AND enfermedad = ? 
+              LIMIT 1";
+        
+        $stmt = $conexion->prepare($q);
+        if (!$stmt) {
+            throw new Exception('Error preparando consulta: ' . $conexion->error);
+        }
+        
+        $stmt->bind_param("sis", $codEnvio, $posSolicitud, $enfermedad);
+    } else {
+        // Mantener compatibilidad si no se envía posSolicitud
+        $q = "SELECT * FROM san_analisis_pollo_bb_adulto 
+              WHERE codigo_envio = ? AND enfermedad = ? 
+              LIMIT 1";
+        
+        $stmt = $conexion->prepare($q);
+        if (!$stmt) {
+            throw new Exception('Error preparando consulta: ' . $conexion->error);
+        }
+        
+        $stmt->bind_param("ss", $codEnvio, $enfermedad);
     }
     
-    $stmt->bind_param("ss", $codEnvio, $enfermedad);
     $stmt->execute();
     $res = $stmt->get_result();
     $datos = $res->fetch_assoc();
@@ -138,23 +222,33 @@ elseif ($action == 'get_resultados_guardados') {
     // ==================== AGREGAR ENFERMEDAD A SOLICITUD ====================
     elseif ($action == 'agregar_enfermedad_solicitud') {
         $codEnvio = $_POST['codEnvio'] ?? '';
+        $posSolicitud = $_POST['posSolicitud'] ?? ''; // ✅ Recibir posSolicitud desde frontend
         $codAnalisis = $_POST['codAnalisis'] ?? '';
         $nomAnalisis = $_POST['nomAnalisis'] ?? '';
         $codRef = $_POST['codRef'] ?? '';
         $fecToma = $_POST['fecToma'] ?? '';
         $codMuestra = $_POST['codMuestra'] ?? 3;
 
-        if (empty($codEnvio) || empty($codAnalisis)) {
+        if (empty($codEnvio) || empty($codAnalisis) || empty($posSolicitud)) {
             throw new Exception('Datos incompletos');
         }
 
-        // Obtener último posSolicitud
-        $qPos = "SELECT MAX(posSolicitud) as maxPos FROM san_fact_solicitud_det WHERE codEnvio = ?";
-        $stmtPos = $conexion->prepare($qPos);
-        $stmtPos->bind_param("s", $codEnvio);
-        $stmtPos->execute();
-        $resPos = $stmtPos->get_result()->fetch_assoc();
-        $posSolicitud = ($resPos['maxPos'] ?? 0) + 1;
+        /* CODIGO ANTERIOR (verificaba solo por codEnvio sin posSolicitud)
+        $qCheck = "SELECT id FROM san_fact_solicitud_det WHERE codEnvio = ? AND codAnalisis = ?";
+        $stmtCheck = $conexion->prepare($qCheck);
+        $stmtCheck->bind_param("si", $codEnvio, $codAnalisis);
+        */
+
+        // ✅ Verificar si ya existe esta enfermedad en esta solicitud
+        $qCheck = "SELECT id FROM san_fact_solicitud_det WHERE codEnvio = ? AND posSolicitud = ? AND codAnalisis = ?";
+        $stmtCheck = $conexion->prepare($qCheck);
+        $stmtCheck->bind_param("sii", $codEnvio, $posSolicitud, $codAnalisis);
+        $stmtCheck->execute();
+        $resCheck = $stmtCheck->get_result();
+        
+        if ($resCheck->num_rows > 0) {
+            throw new Exception('Esta enfermedad ya existe en la solicitud');
+        }
 
         // Obtener nombre muestra
         $qMuestra = "SELECT nombre FROM san_dim_tipo_muestra WHERE codigo = ?";
@@ -276,6 +370,7 @@ elseif ($action == 'get_resultados_guardados') {
             $est = $_POST['estado'] ?? 'ANALIZADO';
             $inf = isset($_POST['numero_informe']) ? $_POST['numero_informe'] : '';
             $fecInf = isset($_POST['fecha_informe']) ? $_POST['fecha_informe'] : NULL;
+            $fechaRegistroLab = isset($_POST['fecha_registro_lab']) && $_POST['fecha_registro_lab'] !== '' ? $_POST['fecha_registro_lab'] : NULL;
             $user = $_SESSION['usuario'] ?? 'SISTEMA';
             
             // Validar que existan enfermedades
@@ -325,12 +420,18 @@ elseif ($action == 'get_resultados_guardados') {
                 $s = isset($_POST[$enf.'_sd']) && $_POST[$enf.'_sd'] !== '' ? (float)$_POST[$enf.'_sd'] : NULL;
                 $cnt = isset($_POST[$enf.'_count']) ? (int)$_POST[$enf.'_count'] : 20;
                 
-                // Construir columnas base
+                // ✅ Construir codRef completo
+                $codRefCompleto = str_pad($granja ?? '', 3, '0', STR_PAD_LEFT) 
+                                . str_pad($camp ?? '', 3, '0', STR_PAD_LEFT) 
+                                . str_pad($galp ?? '', 2, '0', STR_PAD_LEFT) 
+                                . str_pad($edad ?? '', 2, '0', STR_PAD_LEFT);
+                
+                // Construir columnas base - ✅ AGREGADO posSolicitud, codRef y fecha_registro_lab
                 $baseCols = [
-                    'codigo_envio','fecha_toma_muestra','edad_aves','tipo_ave',
+                    'codigo_envio','posSolicitud','codRef','fecha_toma_muestra','edad_aves','tipo_ave',
                     'planta_incubacion','lote','codigo_granja','codigo_campana',
                     'numero_galpon','edad_reproductora','condicion','estado',
-                    'numero_informe','fecha_informe','usuario_registro','fecha_solicitud',
+                    'numero_informe','fecha_informe','fecha_registro_lab','usuario_registro','fecha_solicitud',
                     'enfermedad','codigo_enfermedad',
                     'gmean','cv','desviacion_estandar','count_muestras'
                 ];
@@ -378,10 +479,10 @@ elseif ($action == 'get_resultados_guardados') {
                 $codigo_enf = $nameToCode[$enf] ?? null;
 
                 $values = [
-                    $cod, $fec, $edad, $tipo,
+                    $cod, $posSolicitud, $codRefCompleto, $fec, $edad, $tipo,
                     $planta, $lote, $granja, $camp,
                     $galp, $edRep, $cond, $est,
-                    $inf, $fecInf, $user,
+                    $inf, $fecInf, $fechaRegistroLab, $user,
                     // fecha_solicitud usamos valor directo (will be bound as string but DB may accept NULL)
                     null,
                     $enf, $codigo_enf,
@@ -534,10 +635,23 @@ elseif ($action == 'get_resultados_guardados') {
                 error_log("📊 [CREATE] Total de archivos guardados: $archivos_guardados");
             }
             
+            /* CODIGO ANTERIOR
             // ACTUALIZAR ESTADO
             $updateQuery = "UPDATE san_fact_solicitud_det SET estado_cuanti = 'completado' WHERE codEnvio = ? AND posSolicitud = ?";
             $stmtUpdate = $conexion->prepare($updateQuery);
             $stmtUpdate->bind_param("si", $cod, $posSolicitud);
+            $stmtUpdate->execute();
+            */
+            
+            // ACTUALIZAR ESTADO (según lo seleccionado en el modal)
+            $estadoCuanti = $_POST['estadoCuanti'] ?? 'completado';
+            // Validar que sea un valor válido
+            if (!in_array($estadoCuanti, ['pendiente', 'completado'])) {
+                $estadoCuanti = 'completado';
+            }
+            $updateQuery = "UPDATE san_fact_solicitud_det SET estado_cuanti = ? WHERE codEnvio = ? AND posSolicitud = ?";
+            $stmtUpdate = $conexion->prepare($updateQuery);
+            $stmtUpdate->bind_param("ssi", $estadoCuanti, $cod, $posSolicitud);
             $stmtUpdate->execute();
             
             // ✅ REGISTRAR EN HISTORIAL
@@ -622,6 +736,7 @@ elseif ($action == 'update') {
         $est = $_POST['estado'] ?? 'ANALIZADO';
         $inf = isset($_POST['numero_informe']) ? $_POST['numero_informe'] : '';
         $fecInf = isset($_POST['fecha_informe']) ? $_POST['fecha_informe'] : NULL;
+        $fechaRegistroLab = isset($_POST['fecha_registro_lab']) && $_POST['fecha_registro_lab'] !== '' ? $_POST['fecha_registro_lab'] : NULL;
         $user = $_SESSION['usuario'] ?? 'SISTEMA';
         
         if(!isset($_POST['enfermedades']) || !is_array($_POST['enfermedades'])) {
@@ -665,11 +780,18 @@ elseif ($action == 'update') {
             $s = isset($_POST[$enf.'_sd']) && $_POST[$enf.'_sd'] !== '' ? (float)$_POST[$enf.'_sd'] : NULL;
             $cnt = isset($_POST[$enf.'_count']) ? (int)$_POST[$enf.'_count'] : 20;
             
+            // ✅ Construir codRef completo
+            $codRefCompleto = str_pad($granja ?? '', 3, '0', STR_PAD_LEFT) 
+                            . str_pad($camp ?? '', 3, '0', STR_PAD_LEFT) 
+                            . str_pad($galp ?? '', 2, '0', STR_PAD_LEFT) 
+                            . str_pad($edad ?? '', 2, '0', STR_PAD_LEFT);
+            
+            // ✅ AGREGADO posSolicitud, codRef y fecha_registro_lab
             $baseCols = [
-                'codigo_envio','fecha_toma_muestra','edad_aves','tipo_ave',
+                'codigo_envio','posSolicitud','codRef','fecha_toma_muestra','edad_aves','tipo_ave',
                 'planta_incubacion','lote','codigo_granja','codigo_campana',
                 'numero_galpon','edad_reproductora','condicion','estado',
-                'numero_informe','fecha_informe','usuario_registro','fecha_solicitud',
+                'numero_informe','fecha_informe','fecha_registro_lab','usuario_registro','fecha_solicitud',
                 'enfermedad','codigo_enfermedad',
                 'gmean','cv','desviacion_estandar','count_muestras'
             ];
@@ -706,10 +828,10 @@ elseif ($action == 'update') {
             $codigo_enf = $nameToCode[$enf] ?? null;
 
             $values = [
-                $cod, $fec, $edad, $tipo,
+                $cod, $posSolicitud, $codRefCompleto, $fec, $edad, $tipo,
                 $planta, $lote, $granja, $camp,
                 $galp, $edRep, $cond, $est,
-                $inf, $fecInf, $user,
+                $inf, $fecInf, $fechaRegistroLab, $user,
                 null,
                 $enf, $codigo_enf,
                 $g, $c, $s, $cnt
@@ -738,28 +860,28 @@ elseif ($action == 'update') {
                 throw new Exception('No hay columnas válidas');
             }
 
-            // ✅ VERIFICAR (SIN columna id)
-            $checkQuery = "SELECT codigo_envio FROM san_analisis_pollo_bb_adulto WHERE codigo_envio = ? AND enfermedad = ? LIMIT 1";
+            // ✅ VERIFICAR incluyendo posSolicitud para no confundir solicitudes
+            $checkQuery = "SELECT codigo_envio FROM san_analisis_pollo_bb_adulto WHERE codigo_envio = ? AND posSolicitud = ? AND enfermedad = ? LIMIT 1";
             $stmtCheck = $conexion->prepare($checkQuery);
             
             if (!$stmtCheck) {
                 throw new Exception('Error preparando SELECT: ' . $conexion->error);
             }
             
-            $stmtCheck->bind_param("ss", $cod, $enf);
+            $stmtCheck->bind_param("sis", $cod, $posSolicitud, $enf);
             $stmtCheck->execute();
             $resCheck = $stmtCheck->get_result();
             
             if ($resCheck->num_rows > 0) {
-                // ✅ ACTUALIZAR
+                // ✅ ACTUALIZAR - incluyendo posSolicitud en WHERE
                 $updateParts = [];
                 foreach ($filteredCols as $colName) {
-                    if ($colName !== 'codigo_envio' && $colName !== 'enfermedad') {
+                    if ($colName !== 'codigo_envio' && $colName !== 'enfermedad' && $colName !== 'posSolicitud') {
                         $updateParts[] = "$colName = ?";
                     }
                 }
                 
-                $sqlUpdate = "UPDATE san_analisis_pollo_bb_adulto SET " . implode(', ', $updateParts) . " WHERE codigo_envio = ? AND enfermedad = ?";
+                $sqlUpdate = "UPDATE san_analisis_pollo_bb_adulto SET " . implode(', ', $updateParts) . " WHERE codigo_envio = ? AND posSolicitud = ? AND enfermedad = ?";
                 
                 $stmtUpdate = $conexion->prepare($sqlUpdate);
                 if (!$stmtUpdate) {
@@ -768,11 +890,12 @@ elseif ($action == 'update') {
                 
                 $updateValues = [];
                 foreach ($filteredCols as $idx => $colName) {
-                    if ($colName !== 'codigo_envio' && $colName !== 'enfermedad') {
+                    if ($colName !== 'codigo_envio' && $colName !== 'enfermedad' && $colName !== 'posSolicitud') {
                         $updateValues[] = $filteredValues[$idx];
                     }
                 }
                 $updateValues[] = $cod;
+                $updateValues[] = $posSolicitud;
                 $updateValues[] = $enf;
                 
                 $types = '';
@@ -907,9 +1030,20 @@ elseif ($action == 'update') {
             error_log("📊 [UPDATE] Total de archivos guardados: $archivos_guardados");
         }
         
+        // ACTUALIZAR ESTADO CUANTITATIVO (según lo seleccionado en el modal)
+        $estadoCuanti = $_POST['estadoCuanti'] ?? 'completado';
+        // Validar que sea un valor válido
+        if (!in_array($estadoCuanti, ['pendiente', 'completado'])) {
+            $estadoCuanti = 'completado';
+        }
+        $updateEstadoQuery = "UPDATE san_fact_solicitud_det SET estado_cuanti = ? WHERE codEnvio = ? AND posSolicitud = ?";
+        $stmtUpdateEstado = $conexion->prepare($updateEstadoQuery);
+        $stmtUpdateEstado->bind_param("ssi", $estadoCuanti, $cod, $posSolicitud);
+        $stmtUpdateEstado->execute();
+        
         // ✅ REGISTRAR EN HISTORIAL
         $enfermedadesLista = implode(', ', $_POST['enfermedades']);
-        $comentarioHistorial = "Actualizado: $enfermedadesLista. Archivos nuevos: $archivos_guardados";
+        $comentarioHistorial = "Actualizado: $enfermedadesLista. Archivos nuevos: $archivos_guardados. Estado: $estadoCuanti";
         insertarHistorial(
             $conexion,
             $cod,
