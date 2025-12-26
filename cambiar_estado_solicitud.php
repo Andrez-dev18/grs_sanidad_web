@@ -76,30 +76,36 @@ $rowPos = $checkPos->get_result()->fetch_assoc();
 $posCompleta = ($rowPos['pendientes'] == 0);
 $response['posCompleta'] = $posCompleta;
 
-// === 3. Si la posición está completa, verificar si el envío completo ===
-$cabeceraCompletada = false;
-if ($posCompleta) {
-    $checkCab = $conn->prepare("
-        SELECT COUNT(*) AS pendientes
-        FROM san_fact_solicitud_det
-        WHERE codEnvio = ?
-          AND (estado_cuali = 'pendiente' OR estado_cuanti = 'pendiente')
-    ");
-    $checkCab->bind_param("s", $codEnvio);
-    $checkCab->execute();
-    $rowCab = $checkCab->get_result()->fetch_assoc();
+// ======================================================
+// 3. VERIFICAR ESTADO GLOBAL Y ACTUALIZAR CABECERA SIEMPRE
+// ======================================================
 
-    if ($rowCab['pendientes'] == 0) {
-        $updateCab = $conn->prepare("UPDATE san_fact_solicitud_cab SET estado = 'completado' WHERE codEnvio = ?");
-        $updateCab->bind_param("s", $codEnvio);
-        $updateCab->execute();
-        $cabeceraCompletada = ($updateCab->affected_rows > 0);
-        $response['cabeceraUpdated'] = $cabeceraCompletada;
-        $updateCab->close();
-    }
-    $checkCab->close();
-}
-$response['cabeceraCompletada'] = $cabeceraCompletada;
+$checkCab = $conn->prepare("
+    SELECT COUNT(*) AS pendientes
+    FROM san_fact_solicitud_det
+    WHERE codEnvio = ?
+      AND (estado_cuali = 'pendiente' OR estado_cuanti = 'pendiente')
+");
+$checkCab->bind_param("s", $codEnvio);
+$checkCab->execute();
+$rowCab = $checkCab->get_result()->fetch_assoc();
+
+$nuevoEstadoCab = ($rowCab['pendientes'] == 0) ? 'completado' : 'pendiente';
+
+$updateCab = $conn->prepare("
+    UPDATE san_fact_solicitud_cab
+    SET estado = ?
+    WHERE codEnvio = ?
+");
+$updateCab->bind_param("ss", $nuevoEstadoCab, $codEnvio);
+$updateCab->execute();
+
+$response['cabeceraEstado'] = $nuevoEstadoCab;
+$response['cabeceraUpdated'] = ($updateCab->affected_rows > 0);
+
+$checkCab->close();
+$updateCab->close();
+
 
 // Cerrar recursos
 $stmt->close();

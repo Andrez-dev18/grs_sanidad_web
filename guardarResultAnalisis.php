@@ -177,32 +177,28 @@ $posCompleta = ($rowPos["pendientes"] == 0);
 // (cuali y cuanti), SE COMPLETA LA CABECERA
 // ------------------------------------------------------------
 
-if ($posCompleta) {
+// ======================================================
+// VERIFICAR ESTADO GLOBAL DEL ENVÍO Y ACTUALIZAR CABECERA
+// ======================================================
 
-    $checkCab = $conn->query("
-        SELECT COUNT(*) AS pendientes
-        FROM san_fact_solicitud_det
-        WHERE codEnvio = '$codigoEnvio'
-          AND (
-                estado_cuali = 'pendiente'
-             OR estado_cuanti = 'pendiente'
-          )
-    ");
+$checkCab = $conn->query("
+    SELECT COUNT(*) AS pendientes
+    FROM san_fact_solicitud_det
+    WHERE codEnvio = '$codigoEnvio'
+      AND (estado_cuali = 'pendiente' OR estado_cuanti = 'pendiente')
+");
 
-    $rowCab = $checkCab->fetch_assoc();
+$rowCab = $checkCab->fetch_assoc();
+$nuevoEstadoCab = ($rowCab['pendientes'] == 0) ? 'completado' : 'pendiente';
 
-    if ($rowCab["pendientes"] == 0) {
-        $conn->query("
-            UPDATE san_fact_solicitud_cab
-            SET estado = 'completado'
-            WHERE codEnvio = '$codigoEnvio'
-        ");
+$conn->query("
+    UPDATE san_fact_solicitud_cab
+    SET estado = '$nuevoEstadoCab'
+    WHERE codEnvio = '$codigoEnvio'
+");
 
-        if ($conn->affected_rows > 0) {
-            $cabeceraCompletada = true;
-        }
-    }
-}
+$cabeceraCompletada = ($nuevoEstadoCab === 'completado');
+
 
 
 echo json_encode([
