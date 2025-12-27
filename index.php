@@ -12,6 +12,26 @@ $conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
+
+// === OBTENER ROL DEL USUARIO ===
+$codigoUsuario = $_SESSION['usuario'] ?? null;
+$isTransportista = false; // por defecto NO es transportista
+
+if ($codigoUsuario) {
+    $sql = "SELECT rol_sanidad FROM usuario WHERE codigo = ? AND estado = 'A'";
+    $stmt = $conexion->prepare($sql);
+    if ($stmt) {
+        $stmt->bind_param("s", $codigoUsuario);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $rol = strtolower(trim($row['rol_sanidad'] ?? 'user'));
+            $isTransportista = ($rol === 'transport');
+        }
+        $stmt->close();
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -299,17 +319,18 @@ if (!$conexion) {
 
             </div>
 
-            <div class="menu-group">
-                <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'dashboard-registro-muestras.php', '📋 Registro de Muestras', 'Registro del pedido de muestra')">
-                    <span class="flex items-center gap-3">
-                        <i class="fas fa-vial"></i>
-                        <span class="font-medium">2.- Registro de Muestras</span>
-                    </span>
-                </button>
+            <?php if (!$isTransportista): ?>
+                <div class="menu-group">
+                    <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                        onclick="activateAndLoad(this, 'dashboard-registro-muestras.php', '📋 Registro de Muestras', 'Registro del pedido de muestra')">
+                        <span class="flex items-center gap-3">
+                            <i class="fas fa-vial"></i>
+                            <span class="font-medium">2.- Registro de Muestras</span>
+                        </span>
+                    </button>
 
-            </div>
-
+                </div>
+            
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                     onclick="activateAndLoad(this, 'dashboard-rpta-laboratorio.php', '📋 Registro Laboratorio', 'Registro de la respuesta  del laboratorio')">
@@ -404,7 +425,30 @@ if (!$conexion) {
                             class="menu-link block text-gray-400 hover:text-white">Correo contactos</a>
                     </div>
                 </div>
+            <?php endif; ?>
+                <div class="menu-group">
+                    <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                        onclick="toggleSubmenu('submenu-tracking')">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <span class="font-medium">7.- Tracking</span>
+                        </span>
+                        <i class="fas fa-chevron-down text-sm"></i>
+                    </button>
 
+                    <div id="submenu-tracking" class="submenu hidden pl-10 mt-2 space-y-2">
+
+                        <a href="#"
+                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-escaneoQR.php','Escaneo QR', 'Escaneo tracking')"
+                            class="menu-link block text-gray-400 hover:text-white">7.1 .- Escaneo</a>
+                        <a href="#"
+                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-tracking-muestra.php','Seguimiento de envios', 'Visualice el seguimiento de muestra')"
+                            class="menu-link block text-gray-400 hover:text-white">7.2 .- Seguimiento de envios</a>
+                        <a href="#"
+                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-tipo-muestra.php','🧪 Tipo muestra', 'Administre los tipos de muestra registrados en el sistema')"
+                            class="menu-link block text-gray-400 hover:text-white">7.3 .- Reporte</a>
+                    </div>
+                </div>
 
 
         </nav>
@@ -562,11 +606,11 @@ if (!$conexion) {
             if (window.innerWidth >= 1024) {
                 sidebar.classList.remove('collapsed');
                 contentWrapper.classList.remove('sidebar-collapsed');
-                overlay.classList.remove('active'); 
+                overlay.classList.remove('active');
             } else {
                 sidebar.classList.add('collapsed');
                 contentWrapper.classList.add('sidebar-collapsed');
-                overlay.classList.remove('active'); 
+                overlay.classList.remove('active');
             }
 
             // Cargar dashboard por defecto

@@ -8,6 +8,7 @@ if (empty($_SESSION['active'])) {
 
 //ruta relativa a la conexion
 include_once '../conexion_grs_joya/conexion.php';
+include_once 'historial_resultados.php';
 $conexion = conectar_joya();
 if (!$conexion) {
     http_response_code(500);
@@ -232,7 +233,21 @@ try {
 
             mysqli_stmt_execute($stmtDetalle);
         }
+    }
 
+    $historialOk = insertarHistorial(
+        $conexion,
+        $codigoEnvio,        // codEnvio
+        0,                   // posSolicitud (0 = acción general)
+        'ENVIO_REGISTRADO',  // acción
+        null,                // tipo_analisis
+        'Se registro el envio de muestra',
+        $usuarioRegistrador,
+        'GRS'
+    );
+
+    if (!$historialOk) {
+        throw new Exception('Error al registrar historial del envío');
     }
 
 

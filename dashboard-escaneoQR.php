@@ -1,0 +1,643 @@
+<?php
+
+session_start();
+if (empty($_SESSION['active'])) {
+    header('Location: login.php');
+    exit();
+}
+
+//ruta relativa a la conexion
+include_once '../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
+if (!$conexion) {
+    die("Error de conexión: " . mysqli_connect_error());
+}
+?>
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - base</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="assets/fontawesome/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .icon-box {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16px;
+            margin: 0 auto 1rem;
+            font-size: 2.5rem;
+        }
+
+        .logo-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            background: white;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-container img {
+            width: 90%;
+            height: 90%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+    <div class="container mx-auto px-6 py-12">
+
+        <!-- SECCION DE SCANEO Y CODIGO -->
+        <div class="max-w-xl mx-auto bg-white rounded-lg shadow-md p-6">
+            <!-- TÍTULO -->
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Escanear QR</h2>
+
+            <!-- Tabs -->
+            <div class="flex border-b mb-4">
+                <button id="tab-camara"
+                    class="px-4 py-2 text-sm font-medium border-b-2 transition-colors duration-200 ease-in-out border-blue-600 text-blue-600">
+                    Cámara
+                </button>
+                <button id="tab-codigo"
+                    class="px-4 py-2 text-sm font-medium text-gray-500 hover:text-blue-600 hover:border-blue-600 border-b-2 border-transparent">
+                    N° de orden
+                </button>
+            </div>
+            <!-- MODO DE RECEPCIÓN -->
+
+            <!-- Contenido de tabs -->
+            <div id="panel-camara">
+
+                <div id="reader" class="mb-3"></div>
+
+                <div id="cardqr"
+                    class="mb-3 relative w-full h-60 border-2 border-dashed border-blue-400 rounded-xl flex items-center justify-center bg-white shadow-sm">
+                    <div class="absolute inset-0 pointer-events-none rounded-xl border-4 border-blue-500 opacity-20"></div>
+                    <i class="fa-solid fa-qrcode text-blue-600 text-8xl z-10"></i>
+                </div>
+
+                <select id="selectCamara"
+                    class="w-full border border-gray-300 rounded-md px-3 py-2 mb-3 focus:ring focus:ring-blue-300 focus:outline-none">
+                    <option value="">Seleccione una cámara</option>
+                </select>
+
+                <div>
+                    <button id="startScan"
+                        class="w-full bg-blue-800 text-white py-2 rounded-md hover:bg-blue-900 transition mb-2">
+                        Abrir cámara
+                    </button>
+                    <button id="stopScan"
+                        class="w-full bg-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-400 transition">
+                        Detener cámara
+                    </button>
+                </div>
+            </div>
+
+            <div id="panel-codigo" class="hidden">
+                <label for="codigoPase" class="block text-sm font-medium text-gray-700 mb-1">
+                    Ingrese el numero de orden
+                </label>
+                <div class="flex mb-3">
+                    <input type="text" id="codigoPase" placeholder="Código"
+                        class="flex-1 border border-gray-300 rounded-l-md px-3 py-2 focus:ring focus:ring-blue-300 focus:outline-none">
+                    <button id="btnValidar" class="bg-blue-600 text-white px-4 rounded-r-md hover:bg-blue-700 transition">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </div>
+
+                <div id="mensajeValidacion" class="text-center text-sm text-gray-600 mt-4"></div>
+
+            </div>
+        </div>
+
+
+        <!-- MODAL DETALLE ORDEN -->
+        <div id="modalOrden"
+            class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 animate-fade-in">
+
+                <!-- Header -->
+                <div class="flex justify-between items-center px-6 py-4 border-b">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        Detalle de la orden de envío
+                    </h3>
+
+                    <button onclick="cerrarModalOrden()"
+                        class="text-gray-400 hover:text-gray-600 text-2xl leading-none">
+                        ×
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="px-6 py-4">
+
+                    <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-700 mb-4">
+
+                        <div>
+                            <span class="font-medium text-gray-600">Código de envío:</span>
+                            <span id="d_codEnvio" class="ml-1 font-semibold"></span>
+                        </div>
+
+                        <div>
+                            <span class="font-medium text-gray-600">Fecha de envío:</span>
+                            <span id="d_fechaEnvio" class="ml-1"></span>
+                        </div>
+
+                        <div>
+                            <span class="font-medium text-gray-600">Hora de envío:</span>
+                            <span id="d_horaEnvio" class="ml-1"></span>
+                        </div>
+
+                        <div>
+                            <span class="font-medium text-gray-600">Laboratorio:</span>
+                            <span id="d_laboratorio" class="ml-1"></span>
+                        </div>
+
+                        <div>
+                            <span class="font-medium text-gray-600">Análisis registrados:</span>
+                            <span id="d_totalAnalisis" class="ml-1 font-semibold"></span>
+                        </div>
+
+                    </div>
+                    <!-- SELECTOR: ¿Quién está recibiendo? -->
+                    <div class="mb-6">
+                        <label for="tipoReceptor" class="block text-sm font-medium text-gray-700 mb-2">
+                            ¿Quién está realizando la recepción?
+                        </label>
+                        <select id="tipoReceptor"
+                            class="w-full border border-gray-300 rounded-md px-2 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-600 focus:outline-none transition">
+                            <option value="">Seleccione una opción</option>
+                            <option value="Transporte" selected>Transportista</option>
+                            <option value="Laboratorio">Laboratorio</option>
+                        </select>
+                        <p id="errorReceptor" class="text-red-600 text-sm mt-2 hidden">
+                            Por favor, seleccione quién está realizando la recepción.
+                        </p>
+                    </div>
+                    <!-- OBSERVACIONES -->
+                    <div class="mb-4">
+                        <label for="observaciones" class="block text-sm font-medium text-gray-700 mb-1">
+                            Observaciones
+                        </label>
+
+                        <textarea id="observaciones" rows="3"
+                            placeholder="Ingrese alguna observación (opcional)"
+                            class="w-full border border-gray-300 rounded-md px-3 py-2
+                            focus:ring focus:ring-blue-300 focus:outline-none resize-none"></textarea>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50 rounded-b-xl">
+                    <button onclick="cerrarModalOrden()"
+                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                        Cancelar
+                    </button>
+
+                    <button id="btnRecepcionar"
+                        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                        Recepcionar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- Footer -->
+        <div class="text-center mt-12">
+            <p class="text-gray-500 text-sm">
+                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025
+            </p>
+        </div>
+
+    </div>
+
+    <script src="assets/js/scanapp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let html5QrCode = null;
+        let isScanning = false;
+        let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        // Método que hace la lectura
+        function onScanSuccess(decodedText, decodedResult) {
+            if (!isScanning) return;
+
+            isScanning = false;
+            html5QrCode
+                .stop()
+                .then(() => {
+                    console.log("Escaneo detenido");
+                    document.getElementById("cardqr").classList.remove("hidden");
+                    if (!isMobile) document.getElementById("selectCamara").value = "";
+                    document.getElementById("startScan").disabled = false;
+                })
+                .catch((err) => console.error("Error al detener: ", err));
+
+            validarOrden(decodedText);
+        }
+
+        function onScanFailure(error) {
+            // console.warn(`Code scan error = ${error}`);
+        }
+
+        // Seleccionar cámara por defecto (trasera en móviles)
+        function getDefaultCamera(devices) {
+            if (isMobile) {
+                const backCamera = devices.find((device) =>
+                    device.label.toLowerCase().includes("back") || device.label.toLowerCase().includes("rear")
+                );
+                return backCamera ? backCamera.id : devices[0].id;
+            }
+            return devices[0].id;
+        }
+
+        // Cargar cámaras disponibles
+        Html5Qrcode.getCameras()
+            .then((devices) => {
+                if (devices && devices.length) {
+                    let select = document.getElementById("selectCamara");
+
+                    // Si es móvil, ocultar el select y no cargarlo
+                    if (isMobile) {
+                        select.style.display = "none";
+                    } else {
+                        // Si no es móvil, mostrar el select y cargarlo
+                        let html = `<option value="" selected>Seleccione una cámara</option>`;
+                        devices.forEach((device) => {
+                            html += `<option value="${device.id}">${device.label}</option>`;
+                        });
+                        select.innerHTML = html;
+                        select.value = getDefaultCamera(devices); // Preseleccionar en escritorio
+                    }
+
+                    // Guardar las cámaras disponibles para usarlas después
+                    window.availableCameras = devices;
+                }
+            })
+            .catch((err) => {
+                console.error("Error al obtener cámaras: ", err);
+            });
+
+        // Iniciar el escaneo desde el botón
+        const iniciarEscaneo = () => {
+            let idCamara;
+
+            if (isMobile) {
+                // En móvil, usar la cámara trasera por defecto
+                if (!window.availableCameras) {
+                    Swal.fire("No se han cargado las cámaras aún. Intenta de nuevo.");
+                    return;
+                }
+                idCamara = getDefaultCamera(window.availableCameras);
+            } else {
+                // En escritorio, usar la cámara seleccionada en el select
+                idCamara = document.getElementById("selectCamara").value;
+                if (!idCamara) {
+                    Swal.fire("Por favor, selecciona una cámara.");
+                    return;
+                }
+            }
+
+            document.getElementById("cardqr").classList.add("hidden");
+            document.getElementById("startScan").disabled = true;
+
+            html5QrCode = new Html5Qrcode("reader");
+            isScanning = true;
+            html5QrCode
+                .start(
+                    idCamara, {
+                        fps: 10,
+                        qrbox: {
+                            width: 450,
+                            height: 450
+                        },
+                    },
+                    onScanSuccess,
+                    onScanFailure
+                )
+                .catch((err) => {
+                    console.error("Error al iniciar la cámara: ", err);
+                    isScanning = false;
+                    document.getElementById("startScan").disabled = false;
+                    Swal.fire("Error al iniciar la cámara: " + err.message);
+                });
+        };
+
+        // Detener la cámara manualmente
+        const detenerCamara = () => {
+            if (html5QrCode && isScanning) {
+                isScanning = false;
+                html5QrCode
+                    .stop()
+                    .then(() => {
+                        document.getElementById("cardqr").classList.remove("hidden");
+                        if (!isMobile) document.getElementById("selectCamara").value = "";
+                        document.getElementById("startScan").disabled = false;
+                    })
+                    .catch((err) => console.error("Error al detener: ", err));
+            }
+        };
+
+        function convertirJSON(dataForm) {
+            const formJson = {};
+            dataForm.forEach((value, key) => {
+                formJson[key] = value;
+            });
+            return formJson;
+        }
+
+
+        document.getElementById('btnValidar').addEventListener('click', function() {
+            const codigo = document.getElementById('codigoPase').value.trim();
+            validarOrden(codigo);
+        });
+
+        document.getElementById('btnRecepcionar').addEventListener('click', recepcionarOrden);
+
+        let ordenActual = null;
+
+        function validarOrden(codigo) {
+
+            if (!codigo) return;
+
+            fetch('buscar_orden.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        codigo
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+
+                    if (!data.ok) {
+                        mostrarMensaje(data.mensaje, true);
+                        return;
+                    }
+
+                    ordenActual = data;
+
+                    document.getElementById('d_codEnvio').textContent = data.codEnvio;
+                    document.getElementById('d_fechaEnvio').textContent = data.fecEnvio;
+                    document.getElementById('d_horaEnvio').textContent = data.horaEnvio;
+                    document.getElementById('d_laboratorio').textContent = data.nomLab;
+                    document.getElementById('d_totalAnalisis').textContent = data.totalAnalisis;
+
+                    abrirModalOrden();
+                    mostrarMensaje('');
+                });
+        }
+
+        function abrirModalOrden() {
+            document.getElementById('modalOrden')
+                .classList.remove('hidden');
+            document.getElementById('modalOrden')
+                .classList.add('flex');
+        }
+
+        function cerrarModalOrden() {
+            document.getElementById('modalOrden')
+                .classList.add('hidden');
+            document.getElementById('modalOrden')
+                .classList.remove('flex');
+        }
+
+
+        function recepcionarOrden() {
+            if (!ordenActual) return;
+
+            let observaciones = document.getElementById('observaciones').value;
+            let tipoReceptor = document.getElementById('tipoReceptor').value;
+
+            fetch('recepcionar_orden.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        codEnvio: ordenActual.codEnvio,
+                        obs: observaciones,
+                        tipoReceptor
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok) {
+                        cerrarModalOrden();
+                        mostrarAlertaRecepcion(ordenActual.codEnvio, tipoReceptor);
+                        resetOrden();
+                    } else {
+                        mostrarAlertaError(data.mensaje || 'Error al registrar la recepción');
+                    }
+                });
+        }
+
+        function resetOrden() {
+            ordenActual = null;
+            document.getElementById('codigoPase').value = '';
+            document.getElementById('observaciones').value = '';
+        }
+
+        function mostrarAlertaRecepcion(codigoEnvio, tipoReceptor) {
+            const receptor = tipoReceptor === 'Transporte' ? 'Transportista' : 'Laboratorio';
+
+            // Fecha y hora actual bonitas
+            const ahora = new Date();
+            const fecha = ahora.toLocaleDateString('es-PE', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            }); // ej: 27 de diciembre de 2025
+            const hora = ahora.toLocaleTimeString('es-PE', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }); // ej: 18:45
+
+            const mensaje = `Muestra ${codigoEnvio} recepcionada por ${receptor} hoy ${fecha} a las ${hora}`;
+
+            Swal.fire({
+                icon: 'success',
+                title: '¡Recepción registrada!',
+                text: mensaje,
+                confirmButtonText: 'Aceptar',
+                customClass: {
+                    popup: 'rounded-xl',
+                    confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg'
+                }
+            });
+        }
+
+        function mostrarAlertaError(mensaje) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: mensaje,
+                confirmButtonText: 'Cerrar',
+                customClass: {
+                    confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-2'
+                }
+            });
+        }
+
+        // Asignar el evento al botón
+        document.getElementById("startScan").onclick = iniciarEscaneo;
+        document.getElementById("stopScan").onclick = detenerCamara;
+
+        function alertScanSuccess(response, estado) {
+
+            Swal.fire({
+                icon: "success",
+                html: htmlCardSweet(response, estado),
+                confirmButtonText: "Cerrar",
+                customClass: {
+                    popup: 'text-sm rounded-lg p-4'
+                }
+            });
+        }
+
+
+        document.getElementById("tab-camara").addEventListener('click', function() {
+            activarTab('camara');
+        });
+
+        document.getElementById("tab-codigo").addEventListener('click', function() {
+            activarTab('codigo');
+        });
+
+        function activarTab(tab) {
+            const camaraBtn = document.getElementById('tab-camara');
+            const codigoBtn = document.getElementById('tab-codigo');
+            const panelCamara = document.getElementById('panel-camara');
+            const panelCodigo = document.getElementById('panel-codigo');
+
+            // Resetear ambos tabs
+            [camaraBtn, codigoBtn].forEach(btn => {
+                btn.classList.remove('text-blue-600', 'border-blue-600');
+                btn.classList.add(
+                    'text-gray-500',
+                    'border-transparent',
+                    'hover:text-blue-600',
+                    'hover:border-blue-600'
+                );
+            });
+
+            if (tab === 'camara') {
+                // Activar cámara
+                camaraBtn.classList.remove('text-gray-500', 'border-transparent');
+                camaraBtn.classList.add('text-blue-600', 'border-blue-600');
+
+                panelCamara.classList.remove('hidden');
+                panelCodigo.classList.add('hidden');
+            } else {
+                // Activar código
+                codigoBtn.classList.remove('text-gray-500', 'border-transparent');
+                codigoBtn.classList.add('text-blue-600', 'border-blue-600');
+
+                panelCodigo.classList.remove('hidden');
+                panelCamara.classList.add('hidden');
+            }
+        }
+
+
+        function htmlCardSweet(d, estado) {
+
+            const html = `
+          <div class="text-left rounded-md p-4 bg-white shadow-lg border border-gray-100">
+          <h2 class="text-center mb-3 text-xl font-semibold">Pase Vehicular valido!</h2>
+          <p class="text-center mb-3 text-base font-semibold">Se registro una ${estado}</p>
+            <div class="flex items-center space-x-3 mb-4">
+              <i class="fa-solid fa-user text-blue-600 text-xl"></i>
+              <div>
+                <p class="text-sm text-gray-700">Estudiante</p>
+                <p class="font-semibold text-gray-800">${d.data.alumno}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-3 mb-4">
+              <i class="fa-solid fa-graduation-cap text-blue-600 text-xl"></i>
+              <div>
+                <p class="text-sm text-gray-700">Carrera</p>
+                <p class="font-semibold text-gray-800">${d.data.carrera}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-3 mb-4">
+              <i class="fa-solid fa-id-card text-blue-600 text-xl"></i>
+              <div>
+                <p class="text-sm text-gray-700">Código</p>
+                <p class="font-semibold text-gray-800">${d.data.codigoQR}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-3 mb-4">
+              <i class="fa-solid fa-car text-blue-600 text-xl"></i>
+              <div>
+                <p class="text-sm text-gray-700">Vehículo</p>
+                <p class="font-semibold text-gray-800">${d.data.marca} ${d.data.modelo}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+              <i class="fa-solid fa-rectangle-list text-blue-600 text-xl"></i>
+              <div>
+                <p class="text-sm text-gray-700">Placa</p>
+                <p class="font-semibold text-gray-800">${d.data.placa}</p>
+              </div>
+            </div>
+
+          </div>
+        `;
+            return html;
+        }
+
+        function alertErrors(icon, titulo, texto) {
+            Swal.fire({
+                icon: icon,
+                title: titulo,
+                text: texto,
+                confirmButtonText: "Cerrar",
+            })
+        }
+    </script>
+
+</body>
+
+</html>

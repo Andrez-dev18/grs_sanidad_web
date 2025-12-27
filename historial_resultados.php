@@ -10,6 +10,7 @@
  * @param string|null $tipo_analisis 'cualitativo' o 'cuantitativo'
  * @param string|null $comentario
  * @param string|null $usuario
+ * @param string|null $ubicacion 'GRS', 'Transporte' o 'Laboratorio'
  * @return bool
  */
 function insertarHistorial(
@@ -19,7 +20,8 @@ function insertarHistorial(
     $accion,
     $tipo_analisis = null,
     $comentario = null,
-    $usuario = null
+    $usuario = null,
+    $ubicacion = null
 ) {
     // Usuario por defecto
     if (!$usuario && isset($_SESSION['usuario'])) {
@@ -29,8 +31,8 @@ function insertarHistorial(
 
     $stmt = $conn->prepare("
         INSERT INTO san_dim_historial_resultados 
-        (codEnvio, posSolicitud, tipo_analisis, accion, comentario, usuario)
-        VALUES (?, ?, ?, ?, ?, ?)
+        (codEnvio, posSolicitud, tipo_analisis, accion, comentario, usuario, ubicacion)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
     ");
 
     if (!$stmt) {
@@ -38,7 +40,7 @@ function insertarHistorial(
         return false;
     }
 
-    $stmt->bind_param("sissss", $codEnvio, $posSolicitud, $tipo_analisis, $accion, $comentario, $usuario);
+    $stmt->bind_param("sisssss", $codEnvio, $posSolicitud, $tipo_analisis, $accion, $comentario, $usuario, $ubicacion);
 
     $exito = $stmt->execute();
 

@@ -746,7 +746,8 @@ elseif ($action == 'get_resultados_guardados') {
                 'registro_resultados_cuantitativos',
                 'cuantitativo',
                 $comentarioHistorial,
-                $user
+                $user,
+                'Laboratorio'
             );
             
             mysqli_commit($conexion);

@@ -136,7 +136,8 @@ insertarHistorial(
     'registro_resultados_cualitativos',
     'cualitativo',
     $comentarioFinal,
-    $user
+    $user,
+    'Laboratorio'
 );
 
 // === AQUÍ LA CORRECCIÓN: Actualizar estado siempre al final ===
