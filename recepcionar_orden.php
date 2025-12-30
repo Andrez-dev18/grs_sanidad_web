@@ -75,41 +75,37 @@ if ($stmtCheck->get_result()->num_rows > 0) {
 }
 $stmtCheck->close();
 
-// === PROCESAR IMAGEN (si se envió) ===
-if (isset($_FILES['evidencia']) && $_FILES['evidencia']['error'] === UPLOAD_ERR_OK) {
-    $archivo = $_FILES['evidencia'];
+// === PROCESAR MÚLTIPLES EVIDENCIAS ===
+$rutaEvidencia = null;
+$rutasEvidencias = [];
 
-    // Validaciones de seguridad
-    $extensionesPermitidas = ['jpg', 'jpeg', 'png', 'gif'];
-    $tamanoMaximo = 5 * 1024 * 1024; // 5MB
-    $extension = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
+if (isset($_FILES['evidencias']) && !empty($_FILES['evidencias']['name'][0])) {
+    $archivos = $_FILES['evidencias'];
+    $cantidad = count($archivos['name']);
 
-    if (!in_array($extension, $extensionesPermitidas)) {
-        echo json_encode(['ok' => false, 'mensaje' => 'Solo se permiten imágenes JPG, PNG o GIF']);
-        exit;
+    for ($i = 0; $i < $cantidad; $i++) {
+        if ($archivos['error'][$i] !== UPLOAD_ERR_OK) continue;
+
+        $archivoTmp = $archivos['tmp_name'][$i];
+        $nombreOriginal = $archivos['name'][$i];
+        $tamano = $archivos['size'][$i];
+
+        $extension = strtolower(pathinfo($nombreOriginal, PATHINFO_EXTENSION));
+        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) continue;
+        if ($tamano > 5 * 1024 * 1024) continue; // 5MB
+
+        $fechaHora = date('Ymd_His') . "_{$i}";
+        $nombreArchivo = "evidencia_{$codEnvio}_{$fechaHora}.{$extension}";
+        $rutaCompleta = $carpetaEvidencias . $nombreArchivo;
+
+        if (move_uploaded_file($archivoTmp, $rutaCompleta)) {
+            $rutasEvidencias[] = $rutaRelativaBD . $nombreArchivo;
+        }
     }
 
-    if ($archivo['size'] > $tamanoMaximo) {
-        echo json_encode(['ok' => false, 'mensaje' => 'La imagen no debe superar los 5MB']);
-        exit;
+    if (!empty($rutasEvidencias)) {
+        $rutaEvidencia = implode(',', $rutasEvidencias); // "ruta1.jpg,ruta2.jpg,ruta3.jpg"
     }
-
-    // Nombre único
-    $fechaHora = date('Ymd_His');
-    $nombreArchivo = "evidencia_{$codEnvio}_{$fechaHora}.{$extension}";
-    $rutaCompleta = $carpetaEvidencias . $nombreArchivo;
-
-    // Guardar archivo
-    if (!move_uploaded_file($archivo['tmp_name'], $rutaCompleta)) {
-        echo json_encode([
-            'ok' => false,
-            'mensaje' => 'Error al guardar la imagen en el servidor.'
-        ]);
-        exit;
-    }
-
-    // Ruta para la BD
-    $rutaEvidencia = $rutaRelativaBD . $nombreArchivo;
 }
 
 // === INSERTAR EN LA BASE DE DATOS ===

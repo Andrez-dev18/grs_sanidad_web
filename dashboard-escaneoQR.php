@@ -135,13 +135,10 @@ if (!$conexion) {
                         SAN-
                     </div>
 
-                    <!-- Select para el año -->
+                    <!-- Select para el año (DINÁMICO) -->
                     <select id="anioCodigo"
                         class="w-full sm:w-24 text-center border border-gray-300 px-2 py-2 focus:ring focus:ring-blue-300 focus:outline-none bg-white">
-                        <option value="025" selected>025</option>
-                        <option value="024">024</option>
-                        <option value="023">023</option>
-                        <!-- Agrega más años si necesitas -->
+                        <!-- Las opciones se generarán automáticamente con JS -->
                     </select>
 
                     <!-- Campo para los últimos 4 dígitos -->
@@ -206,35 +203,34 @@ if (!$conexion) {
                         </p>
                     </div>
 
-                    <!-- EVIDENCIA FOTOGRÁFICA (OPCIONAL) -->
+                    <!-- EVIDENCIA FOTOGRÁFICA (OPCIONAL - MÚLTIPLES FOTOS) -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Evidencia fotográfica <span class="text-gray-500 text-xs">(opcional)</span>
+                            Evidencia fotográfica <span class="text-gray-500 text-xs">(opcional - hasta 3 fotos recomendadas)</span>
                         </label>
 
-                        <!-- Área de vista previa de la imagen -->
-                        <div id="previewContainer" class="hidden mb-4">
-                            <img id="previewImagen" class="w-full rounded-lg border border-gray-300 shadow-sm object-cover max-h-64" alt="Vista previa">
-                            <button type="button" onclick="removerImagen()" class="mt-2 text-sm text-red-600 hover:text-red-800">
-                                ✕ Remover foto
-                            </button>
+                        <!-- Contenedor de fotos seleccionadas -->
+                        <div id="fotosContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+                            <!-- Las miniaturas se agregarán aquí dinámicamente -->
                         </div>
 
-                        <!-- Botones responsivos: lado a lado en desktop, uno debajo del otro en móvil -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Área para agregar más fotos (siempre visible si hay menos de 10) -->
+                        <div id="addFotoContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <label class="cursor-pointer block">
-                                <input type="file" id="inputFoto" accept="image/*" capture="environment" class="hidden">
+                                <input type="file" id="inputFoto" accept="image/*" capture="environment" class="hidden" multiple>
                                 <div class="border-2 border-dashed border-gray-400 rounded-lg px-4 py-8 text-center hover:border-blue-500 transition h-full flex flex-col items-center justify-center">
                                     <i class="fa-solid fa-camera text-4xl text-gray-400 mb-3"></i>
-                                    <p class="text-base font-medium text-gray-700">Tomar foto</p>
+                                    <p class="text-base font-medium text-gray-700">Tomar fotos</p>
+                                    <p class="text-xs text-gray-500 mt-1">máx. 3 recomendadas</p>
                                 </div>
                             </label>
 
                             <label class="cursor-pointer block">
-                                <input type="file" id="inputGaleria" accept="image/*" class="hidden">
+                                <input type="file" id="inputGaleria" accept="image/*" class="hidden" multiple>
                                 <div class="border-2 border-dashed border-gray-400 rounded-lg px-4 py-8 text-center hover:border-blue-500 transition h-full flex flex-col items-center justify-center">
-                                    <i class="fa-solid fa-image text-4xl text-gray-400 mb-3"></i>
+                                    <i class="fa-solid fa-images text-4xl text-gray-400 mb-3"></i>
                                     <p class="text-base font-medium text-gray-700">Desde galería</p>
+                                    <p class="text-xs text-gray-500 mt-1">seleccionar varias</p>
                                 </div>
                             </label>
                         </div>
@@ -280,64 +276,131 @@ if (!$conexion) {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        let fotoSeleccionada = null;
+        // Generar años dinámicamente al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAnio = document.getElementById('anioCodigo');
+            const anioActual = new Date().getFullYear(); // 2025 hoy, 2026 mañana
+            const anioCortoActual = anioActual.toString().slice(-3); // "025", "026", etc.
 
-        // Elementos del DOM
-        const previewContainer = document.getElementById('previewContainer');
-        const previewImagen = document.getElementById('previewImagen');
-        const botonesContainer = previewContainer.parentElement.querySelector('.grid'); // el div con grid-cols
+            // Generar los últimos 4 años (puedes cambiar el número)
+            for (let i = 0; i < 4; i++) {
+                const anio = anioActual - i;
+                const anioCorto = anio.toString().slice(-3); // "025", "024", "023", "022"
 
-        // Función para mostrar vista previa y ocultar botones
-        function mostrarPreview(file) {
-            if (!file || !file.type.startsWith('image/')) {
-                return;
-            }
+                const option = document.createElement('option');
+                option.value = anioCorto;
+                option.textContent = anioCorto;
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                previewImagen.src = e.target.result;
-                previewContainer.classList.remove('hidden');
+                // Seleccionar automáticamente el año actual
+                if (anioCorto === anioCortoActual) {
+                    option.selected = true;
+                }
 
-                // OCULTAR los botones de selección
-                botonesContainer.classList.add('hidden');
-
-                // Scroll suave a la vista previa
-                previewContainer.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'nearest'
-                });
-            };
-            reader.readAsDataURL(file);
-
-            fotoSeleccionada = file;
-        }
-
-        // Función para remover la foto y mostrar botones de nuevo
-        function removerImagen() {
-            fotoSeleccionada = null;
-
-            previewImagen.src = '';
-            previewContainer.classList.add('hidden');
-
-            // MOSTRAR de nuevo los botones
-            botonesContainer.classList.remove('hidden');
-
-            // Resetear inputs
-            document.getElementById('inputFoto').value = '';
-            document.getElementById('inputGaleria').value = '';
-        }
-
-        // Event listeners
-        document.getElementById('inputFoto').addEventListener('change', function(e) {
-            if (e.target.files && e.target.files[0]) {
-                mostrarPreview(e.target.files[0]);
+                selectAnio.appendChild(option);
             }
         });
 
-        document.getElementById('inputGaleria').addEventListener('change', function(e) {
-            if (e.target.files && e.target.files[0]) {
-                mostrarPreview(e.target.files[0]);
+        let fotosSeleccionadas = []; // Array de objetos {file, previewUrl}
+
+        const fotosContainer = document.getElementById('fotosContainer');
+        const addFotoContainer = document.getElementById('addFotoContainer');
+
+        // Compresión simple pero efectiva (calidad 0.7 = ~70% reducción promedio)
+        async function comprimirImagen(file) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+
+                        // Máximo 1200px de ancho/alto para mantener calidad
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > 1200 || height > 1200) {
+                            if (width > height) {
+                                height = Math.round(height * (1200 / width));
+                                width = 1200;
+                            } else {
+                                width = Math.round(width * (1200 / height));
+                                height = 1200;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        canvas.toBlob((blob) => {
+                            const archivoComprimido = new File([blob], file.name, {
+                                type: 'image/jpeg',
+                                lastModified: Date.now()
+                            });
+                            resolve(archivoComprimido);
+                        }, 'image/jpeg', 0.7); // calidad 70%
+                    };
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Agregar fotos con vista previa
+        async function agregarFotos(files) {
+            for (let file of files) {
+                if (!file.type.startsWith('image/')) continue;
+
+                // Comprimir
+                const archivoComprimido = await comprimirImagen(file);
+
+                // Crear vista previa
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const div = document.createElement('div');
+                    div.className = 'relative group';
+                    div.innerHTML = `
+                <img src="${e.target.result}" class="w-full h-32 object-cover rounded-lg shadow-md border border-gray-200">
+                <button type="button" onclick="removerFoto(this)" 
+                        class="absolute top-2 right-2 bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                    ×
+                </button>
+            `;
+                    fotosContainer.appendChild(div);
+                };
+                reader.readAsDataURL(archivoComprimido);
+
+                fotosSeleccionadas.push(archivoComprimido);
             }
+
+            // Ocultar botones si hay 5 o más fotos
+            if (fotosSeleccionadas.length >= 3) {
+                addFotoContainer.classList.add('hidden');
+            }
+        }
+
+        // Remover foto
+        function removerFoto(boton) {
+            const index = Array.from(fotosContainer.children).indexOf(boton.parentElement);
+            if (index > -1) {
+                fotosSeleccionadas.splice(index, 1);
+                boton.parentElement.remove();
+
+                // Mostrar botones de agregar si hay menos de 5
+                if (fotosSeleccionadas.length < 3) {
+                    addFotoContainer.classList.remove('hidden');
+                }
+            }
+        }
+
+        // Event listeners
+        document.getElementById('inputFoto').addEventListener('change', (e) => {
+            if (e.target.files.length) agregarFotos(e.target.files);
+        });
+
+        document.getElementById('inputGaleria').addEventListener('change', (e) => {
+            if (e.target.files.length) agregarFotos(e.target.files);
         });
     </script>
 
@@ -575,9 +638,10 @@ if (!$conexion) {
             formData.append('obs', observaciones);
             formData.append('tipoReceptor', tipoReceptor);
 
-            if (fotoSeleccionada) {
-                formData.append('evidencia', fotoSeleccionada, fotoSeleccionada.name);
-            }
+            // Agregar todas las fotos comprimidas
+            fotosSeleccionadas.forEach((foto, index) => {
+                formData.append('evidencias[]', foto, foto.name);
+            });
 
             fetch('recepcionar_orden.php', {
                     method: 'POST',
@@ -601,9 +665,20 @@ if (!$conexion) {
 
         function resetOrden() {
             ordenActual = null;
-           // document.getElementById('codigoPase').value = '';
-           removerImagen();
+
+            // Limpiar observaciones
             document.getElementById('observaciones').value = '';
+
+            // Limpiar todas las fotos
+            fotosSeleccionadas = []; // vaciar array
+            fotosContainer.innerHTML = ''; // remover todas las miniaturas
+
+            // Mostrar de nuevo los botones para agregar fotos
+            addFotoContainer.classList.remove('hidden');
+
+            // Resetear inputs file (importante para permitir subir la misma foto de nuevo)
+            document.getElementById('inputFoto').value = '';
+            document.getElementById('inputGaleria').value = '';
         }
 
         function mostrarAlertaRecepcion(codigoEnvio, tipoReceptor) {

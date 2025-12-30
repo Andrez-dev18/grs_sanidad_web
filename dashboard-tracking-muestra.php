@@ -111,13 +111,10 @@ if (!$conexion) {
                         SAN-
                     </div>
 
-                    <!-- Select para el año -->
+                    <!-- Select para el año (DINÁMICO) -->
                     <select id="anioCodigo"
                         class="w-full sm:w-24 text-center border border-gray-300 px-2 py-2 focus:ring focus:ring-blue-300 focus:outline-none bg-white">
-                        <option value="025" selected>025</option>
-                        <option value="024">024</option>
-                        <option value="023">023</option>
-                        <!-- Agrega más años si necesitas -->
+                        <!-- Las opciones se generarán automáticamente con JS -->
                     </select>
 
                     <!-- Campo para los últimos 4 dígitos -->
@@ -177,7 +174,7 @@ if (!$conexion) {
                     Realizar otra consulta
                 </button>
             </div>
-           
+
             <!-- CABECERA DEL ENVÍO - DISEÑO PROFESIONAL -->
             <div class=" p-6 mb-8 ">
                 <div class="flex items-center justify-between mb-5">
@@ -341,17 +338,52 @@ if (!$conexion) {
 
         </div>
 
-        <!-- MODAL PARA VER EVIDENCIA -->
-        <div id="modalEvidencia" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-50 px-4">
-            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
-                <div class="flex justify-between items-center px-6 py-4 border-b">
-                    <h3 class="text-lg font-semibold">Evidencia fotográfica</h3>
-                    <button onclick="cerrarModalEvidencia()" class="text-gray-500 hover:text-gray-700 text-2xl">
-                        ×
-                    </button>
-                </div>
-                <div class="p-4 flex-1 overflow-auto bg-gray-50">
-                    <img id="imgEvidencia" src="" alt="Evidencia" class="w-full rounded-lg shadow-md object-contain max-h-[70vh]">
+        <!-- MODAL PARA VER MÚLTIPLES EVIDENCIAS -->
+        <div id="modalEvidencia" class="fixed inset-0 bg-black/80 hidden z-50">
+            <!-- Fondo oscuro sin padding lateral para maximizar espacio -->
+            <div class="flex min-h-full items-start justify-center pt-4 px-4 sm:pt-0 sm:items-center">
+
+                <div class="bg-white rounded-t-3xl sm:rounded-xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col">
+
+                    <!-- Header -->
+                    <div class="flex justify-between items-center px-6 py-4 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800">
+                            Evidencia fotográfica
+                        </h3>
+                        <div class="flex items-center gap-3">
+                            <!-- Botón abrir en nueva pestaña (solo ícono) -->
+                            <button onclick="abrirFotoActualEnPestana()"
+                                class="text-blue-600 hover:text-blue-800 transition bg-blue-100 hover:bg-blue-200 rounded-full p-2">
+                                <i class="fa-solid fa-external-link-alt text-lg"></i>
+                            </button>
+
+                            <!-- Botón cerrar -->
+                            <button onclick="cerrarModalEvidencia()" class="text-gray-500 hover:text-gray-700 text-2xl">
+                                ×
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Carrusel de imágenes -->
+                    <div class="flex-1 overflow-hidden relative bg-gray-50">
+                        <div id="carruselFotos" class="flex transition-transform duration-300 ease-in-out h-full">
+                            <!-- Imágenes dinámicas -->
+                        </div>
+
+                        <!-- Flechas -->
+                        <button id="prevFoto" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-3 shadow-lg transition z-10">
+                            <i class="fa-solid fa-chevron-left text-2xl text-gray-800"></i>
+                        </button>
+                        <button id="nextFoto" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-3 shadow-lg transition z-10">
+                            <i class="fa-solid fa-chevron-right text-2xl text-gray-800"></i>
+                        </button>
+
+                        <!-- Contador -->
+                        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm font-medium z-10">
+                            <span id="contadorFotos">1 / 1</span>
+                        </div>
+
+                    </div>
                 </div>
             </div>
         </div>
@@ -366,6 +398,108 @@ if (!$conexion) {
     </div>
 
     <script src="assets/js/scanapp.min.js"></script>
+
+    <script>
+        // Generar años dinámicamente al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAnio = document.getElementById('anioCodigo');
+            const anioActual = new Date().getFullYear(); // 2025 hoy, 2026 mañana
+            const anioCortoActual = anioActual.toString().slice(-3); // "025", "026", etc.
+
+            // Generar los últimos 4 años (puedes cambiar el número)
+            for (let i = 0; i < 4; i++) {
+                const anio = anioActual - i;
+                const anioCorto = anio.toString().slice(-3); // "025", "024", "023", "022"
+
+                const option = document.createElement('option');
+                option.value = anioCorto;
+                option.textContent = anioCorto;
+
+                // Seleccionar automáticamente el año actual
+                if (anioCorto === anioCortoActual) {
+                    option.selected = true;
+                }
+
+                selectAnio.appendChild(option);
+            }
+        });
+
+        let evidenciasActuales = []; // Array de rutas
+        let indiceFotoActual = 0;
+
+        function abrirModalEvidencia(rutasEvidencia) {
+            if (!rutasEvidencia || rutasEvidencia.trim() === '') return;
+
+            evidenciasActuales = rutasEvidencia.split(',').map(r => r.trim()).filter(r => r);
+
+            if (evidenciasActuales.length === 0) return;
+
+            indiceFotoActual = 0;
+            renderizarCarrusel();
+            document.getElementById('modalEvidencia').classList.remove('hidden');
+        }
+
+        function cerrarModalEvidencia() {
+            document.getElementById('modalEvidencia').classList.add('hidden');
+            document.getElementById('carruselFotos').innerHTML = '';
+            evidenciasActuales = [];
+        }
+
+        function renderizarCarrusel() {
+            const carrusel = document.getElementById('carruselFotos');
+            carrusel.innerHTML = '';
+
+            evidenciasActuales.forEach((ruta, index) => {
+                const div = document.createElement('div');
+                div.className = 'min-w-full h-full flex items-center justify-center px-4';
+                div.innerHTML = `
+            <img src="${ruta}" alt="Evidencia ${index + 1}" 
+                 class="max-w-full max-h-full object-contain rounded-lg shadow-xl">
+        `;
+                carrusel.appendChild(div);
+            });
+
+            // Posicionar en la foto actual
+            carrusel.style.transform = `translateX(-${indiceFotoActual * 100}%)`;
+
+            // Actualizar contador
+            document.getElementById('contadorFotos').textContent = `${indiceFotoActual + 1} / ${evidenciasActuales.length}`;
+
+            // Ocultar flechas si solo hay una foto
+            const prev = document.getElementById('prevFoto');
+            const next = document.getElementById('nextFoto');
+            if (evidenciasActuales.length <= 1) {
+                prev.classList.add('hidden');
+                next.classList.add('hidden');
+            } else {
+                prev.classList.remove('hidden');
+                next.classList.remove('hidden');
+            }
+        }
+
+        // Navegación
+        document.getElementById('prevFoto').addEventListener('click', () => {
+            if (indiceFotoActual > 0) {
+                indiceFotoActual--;
+                renderizarCarrusel();
+            }
+        });
+
+        document.getElementById('nextFoto').addEventListener('click', () => {
+            if (indiceFotoActual < evidenciasActuales.length - 1) {
+                indiceFotoActual++;
+                renderizarCarrusel();
+            }
+        });
+
+        // Abrir foto actual en nueva pestaña
+        function abrirFotoActualEnPestana() {
+            if (evidenciasActuales.length > 0) {
+                window.open(evidenciasActuales[indiceFotoActual], '_blank');
+            }
+        }
+    </script>
+
     <script>
         let html5QrCode = null;
         let isScanning = false;
@@ -669,11 +803,11 @@ if (!$conexion) {
                 let botonEvidencia = '';
                 if (h.evidencia && h.evidencia.trim() !== '') {
                     botonEvidencia = `
-                <button onclick="abrirModalEvidencia('${h.evidencia}')" 
-                        class="absolute top-4 right-4 text-blue-600 hover:text-blue-800 transition">
-                    <i class="fa-solid fa-eye text-xl"></i>
-                </button>
-            `;
+                        <button onclick="abrirModalEvidencia('${h.evidencia.replace(/'/g, "\\'")}')" 
+                                class="absolute top-4 right-4 text-blue-600 hover:text-blue-800 transition">
+                            <i class="fa-solid fa-eye text-xl"></i> 
+                        </button>
+                    `;
                 }
 
                 div.innerHTML = `
@@ -700,16 +834,6 @@ if (!$conexion) {
                 details.classList.add('hidden');
                 button.textContent = 'VER DETALLE';
             }
-        }
-
-        function abrirModalEvidencia(rutaImagen) {
-            document.getElementById('imgEvidencia').src = rutaImagen;
-            document.getElementById('modalEvidencia').classList.remove('hidden');
-        }
-
-        function cerrarModalEvidencia() {
-            document.getElementById('modalEvidencia').classList.add('hidden');
-            document.getElementById('imgEvidencia').src = '';
         }
 
         // Asignar el evento al botón
