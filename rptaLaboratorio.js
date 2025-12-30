@@ -734,6 +734,10 @@ function cargarCabecera(codEnvio, fecToma, pos, codRef, estado_cuanti, nomMuestr
             const edadField = document.getElementById('edadAves_display');
             if (edadField) edadField.value = datosRef.edad;
 
+            // ✅ Guardar codRef completo en campo hidden
+            const codRefCompletoField = document.getElementById('codRef_completo');
+            if (codRefCompletoField) codRefCompletoField.value = codRef;
+
             /* CODIGO ANTERIOR
             // Cambia badge
             const badge = document.getElementById("badgeStatusCuali");
@@ -2388,7 +2392,15 @@ function guardar(e, estadoCuanti = 'completado') {
     // Cambiar el valor del action hidden
     document.getElementById('action').value = actionValue;
 
-    Object.keys(window.enfermedadStates || {}).forEach(enfName => {
+    // ✅ LOG: Ver qué enfermedades se van a enviar
+    const enfermedadesAEnviar = Object.keys(window.enfermedadStates || {});
+    console.log('📋 Enfermedades a enviar:', enfermedadesAEnviar);
+    console.log('📋 Total enfermedades:', enfermedadesAEnviar.length);
+    
+    // ✅ Usar Set para evitar duplicados
+    const enfermedadesUnicas = [...new Set(enfermedadesAEnviar)];
+    
+    enfermedadesUnicas.forEach(enfName => {
         const st = window.enfermedadStates[enfName] || {};
         const inpE = document.createElement('input');
         inpE.type = 'hidden';

@@ -617,6 +617,7 @@ $result = $conexion->query($query);
 
                                             <input type="hidden" id="action" name="action" value="create">
                                             <input type="hidden" id="tipo_ave_hidden" name="tipo_ave">
+                                            <input type="hidden" id="codRef_completo" name="codRef_completo">
                                             <input type="hidden" id="codRef_granja" name="codigo_granja">
                                             <input type="hidden" id="codRef_campana" name="codigo_campana">
                                             <input type="hidden" id="codRef_galpon" name="numero_galpon">

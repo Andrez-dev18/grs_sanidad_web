@@ -492,18 +492,58 @@ elseif ($action == 'get_resultados_guardados') {
             
             $enfermedadesGuardadas = 0;
             
+            // ✅ LOG: Ver qué enfermedades se reciben
+            $enfermedadesRecibidas = $_POST['enfermedades'] ?? [];
+            error_log("📋 [CREATE] Enfermedades recibidas: " . json_encode($enfermedadesRecibidas));
+            error_log("📋 [CREATE] Total enfermedades: " . count($enfermedadesRecibidas));
+            error_log("📋 [CREATE] codEnvio=$cod, posSolicitud=$posSolicitud");
+            
+            // ✅ Eliminar duplicados del array antes de procesar
+            $enfermedadesRecibidas = array_unique($enfermedadesRecibidas);
+            error_log("📋 [CREATE] Enfermedades únicas después de filtrar: " . count($enfermedadesRecibidas));
+            
+            // ✅ Control de procesadas en este request
+            $enfermedadesProcesadas = [];
+            
             // INSERTAR CADA ENFERMEDAD
-            foreach ($_POST['enfermedades'] as $enf) {
+            foreach ($enfermedadesRecibidas as $enf) {
                 $enf = trim($enf);
                 if(empty($enf)) continue;
+                
+                // ✅ Verificar si ya procesamos esta enfermedad en este request
+                if (in_array($enf, $enfermedadesProcesadas)) {
+                    error_log("⚠️ [CREATE] Enfermedad '$enf' ya procesada en este request. Omitiendo...");
+                    continue;
+                }
+                
+                // ✅ VERIFICAR SI YA EXISTE EN BD (PARA EVITAR DUPLICADOS)
+                $qCheckDuplicado = "SELECT id FROM san_analisis_pollo_bb_adulto 
+                                    WHERE codigo_envio = ? AND posSolicitud = ? AND enfermedad = ?";
+                $stmtCheckDuplicado = $conexion->prepare($qCheckDuplicado);
+                $yaExiste = false;
+                
+                if ($stmtCheckDuplicado) {
+                    $stmtCheckDuplicado->bind_param("sis", $cod, $posSolicitud, $enf);
+                    $stmtCheckDuplicado->execute();
+                    $resCheckDuplicado = $stmtCheckDuplicado->get_result();
+                    $yaExiste = ($resCheckDuplicado->num_rows > 0);
+                    $stmtCheckDuplicado->close();
+                }
+                
+                if ($yaExiste) {
+                    error_log("⚠️ [CREATE] Enfermedad '$enf' ya existe para codEnvio=$cod, posSolicitud=$posSolicitud. Omitiendo...");
+                    continue; // ⛔ SALTAR si ya existe
+                }
                 
                 $g = isset($_POST[$enf.'_gmean']) && $_POST[$enf.'_gmean'] !== '' ? (float)$_POST[$enf.'_gmean'] : NULL;
                 $c = isset($_POST[$enf.'_cv']) && $_POST[$enf.'_cv'] !== '' ? (float)$_POST[$enf.'_cv'] : NULL;
                 $s = isset($_POST[$enf.'_sd']) && $_POST[$enf.'_sd'] !== '' ? (float)$_POST[$enf.'_sd'] : NULL;
                 $cnt = isset($_POST[$enf.'_count']) ? (int)$_POST[$enf.'_count'] : 20;
                 
-                // ✅ Construir codRef completo
-                $codRefCompleto = str_pad($granja ?? '', 3, '0', STR_PAD_LEFT) 
+                // ✅ Usar codRef completo del formulario (si está disponible), si no, construirlo
+                $codRefCompleto = isset($_POST['codRef_completo']) && !empty($_POST['codRef_completo']) 
+                                ? $_POST['codRef_completo']
+                                : str_pad($granja ?? '', 3, '0', STR_PAD_LEFT) 
                                 . str_pad($camp ?? '', 3, '0', STR_PAD_LEFT) 
                                 . str_pad($galp ?? '', 2, '0', STR_PAD_LEFT) 
                                 . str_pad($edad ?? '', 2, '0', STR_PAD_LEFT);
@@ -624,6 +664,8 @@ elseif ($action == 'get_resultados_guardados') {
                     throw new Exception('Error guardando ' . $enf . ': ' . $stmtEnf->error);
                 }
 
+                error_log("✅ [CREATE] Enfermedad '$enf' guardada exitosamente para codEnvio=$cod, posSolicitud=$posSolicitud");
+                $enfermedadesProcesadas[] = $enf; // ✅ Marcar como procesada
                 $enfermedadesGuardadas++;
             }
             
@@ -854,17 +896,38 @@ elseif ($action == 'update') {
         
         $enfermedadesActualizadas = 0;
         
-        foreach ($_POST['enfermedades'] as $enf) {
+        // ✅ LOG: Ver qué enfermedades se reciben en UPDATE
+        $enfermedadesRecibidas = $_POST['enfermedades'] ?? [];
+        error_log("📋 [UPDATE] Enfermedades recibidas: " . json_encode($enfermedadesRecibidas));
+        error_log("📋 [UPDATE] Total enfermedades: " . count($enfermedadesRecibidas));
+        error_log("📋 [UPDATE] codEnvio=$cod, posSolicitud=$posSolicitud");
+        
+        // ✅ Eliminar duplicados del array antes de procesar
+        $enfermedadesRecibidas = array_unique($enfermedadesRecibidas);
+        error_log("📋 [UPDATE] Enfermedades únicas después de filtrar: " . count($enfermedadesRecibidas));
+        
+        // ✅ Control de procesadas en este request
+        $enfermedadesProcesadas = [];
+        
+        foreach ($enfermedadesRecibidas as $enf) {
             $enf = trim($enf);
             if(empty($enf)) continue;
+            
+            // ✅ Verificar si ya procesamos esta enfermedad en este request
+            if (in_array($enf, $enfermedadesProcesadas)) {
+                error_log("⚠️ [UPDATE] Enfermedad '$enf' ya procesada en este request. Omitiendo...");
+                continue;
+            }
             
             $g = isset($_POST[$enf.'_gmean']) && $_POST[$enf.'_gmean'] !== '' ? (float)$_POST[$enf.'_gmean'] : NULL;
             $c = isset($_POST[$enf.'_cv']) && $_POST[$enf.'_cv'] !== '' ? (float)$_POST[$enf.'_cv'] : NULL;
             $s = isset($_POST[$enf.'_sd']) && $_POST[$enf.'_sd'] !== '' ? (float)$_POST[$enf.'_sd'] : NULL;
             $cnt = isset($_POST[$enf.'_count']) ? (int)$_POST[$enf.'_count'] : 20;
             
-            // ✅ Construir codRef completo
-            $codRefCompleto = str_pad($granja ?? '', 3, '0', STR_PAD_LEFT) 
+            // ✅ Usar codRef completo del formulario (si está disponible), si no, construirlo
+            $codRefCompleto = isset($_POST['codRef_completo']) && !empty($_POST['codRef_completo']) 
+                            ? $_POST['codRef_completo']
+                            : str_pad($granja ?? '', 3, '0', STR_PAD_LEFT) 
                             . str_pad($camp ?? '', 3, '0', STR_PAD_LEFT) 
                             . str_pad($galp ?? '', 2, '0', STR_PAD_LEFT) 
                             . str_pad($edad ?? '', 2, '0', STR_PAD_LEFT);
@@ -996,6 +1059,8 @@ elseif ($action == 'update') {
                 if (!$stmtUpdate->execute()) {
                     throw new Exception('Error actualizando: ' . $stmtUpdate->error);
                 }
+                
+                error_log("✅ [UPDATE] Enfermedad '$enf' actualizada exitosamente para codEnvio=$cod, posSolicitud=$posSolicitud");
             } else {
                 // ✅ INSERTAR
                 $placeholders = array_fill(0, count($filteredCols), '?');
@@ -1021,8 +1086,11 @@ elseif ($action == 'update') {
                 if (!$stmtInsert->execute()) {
                     throw new Exception('Error insertando: ' . $stmtInsert->error);
                 }
+                
+                error_log("✅ [UPDATE] Enfermedad '$enf' creada (nueva) exitosamente para codEnvio=$cod, posSolicitud=$posSolicitud");
             }
             
+            $enfermedadesProcesadas[] = $enf; // ✅ Marcar como procesada
             $enfermedadesActualizadas++;
         }
         
