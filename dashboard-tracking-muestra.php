@@ -99,23 +99,43 @@ if (!$conexion) {
                 </button>
             </div>
 
-            <!-- MODO DE RECEPCIÓN -->
-
             <!-- Contenido de tabs -->
             <div id="panel-codigo" class="">
-                <label for="codigoPase" class="block text-sm font-medium text-gray-700 mb-1">
-                    Ingrese el numero de orden
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Ingrese el número de orden
                 </label>
-                <div class="flex mb-3">
-                    <input type="text" id="codigoPase" placeholder="Código"
-                        class="flex-1 border border-gray-300 rounded-l-md px-3 py-2 focus:ring focus:ring-blue-300 focus:outline-none">
-                    <button id="btnValidar" class="bg-blue-600 text-white px-4 rounded-r-md hover:bg-blue-700 transition">
+
+                <div class="flex flex-col sm:flex-row items-stretch mb-3 gap-2 sm:gap-0">
+                    <!-- Prefijo fijo: SAN- -->
+                    <div class="bg-gray-100 border border-gray-300 px-4 py-2 flex items-center text-gray-700 font-medium whitespace-nowrap rounded-t-md sm:rounded-l-md sm:rounded-tr-none sm:border-r-0">
+                        SAN-
+                    </div>
+
+                    <!-- Select para el año -->
+                    <select id="anioCodigo"
+                        class="w-full sm:w-24 text-center border border-gray-300 px-2 py-2 focus:ring focus:ring-blue-300 focus:outline-none bg-white">
+                        <option value="025" selected>025</option>
+                        <option value="024">024</option>
+                        <option value="023">023</option>
+                        <!-- Agrega más años si necesitas -->
+                    </select>
+
+                    <!-- Campo para los últimos 4 dígitos -->
+                    <input type="text"
+                        id="secuenciaCodigo"
+                        maxlength="4"
+                        placeholder="0001"
+                        class="flex-1 border border-gray-300 px-3 py-2 focus:ring focus:ring-blue-300 focus:outline-none"
+                        required>
+
+                    <!-- Botón buscar -->
+                    <button id="btnValidar"
+                        class="bg-blue-600 text-white px-6 py-2 rounded-b-md sm:rounded-r-md sm:rounded-bl-none hover:bg-blue-700 transition flex items-center justify-center">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
                 </div>
 
-                <div id="mensajeValidacion" class="text-center text-sm text-gray-600 mt-4"></div>
-
+                <div id="mensajeValidacion" class="text-center text-sm mt-4"></div>
             </div>
 
             <div id="panel-camara" class="hidden">
@@ -149,22 +169,85 @@ if (!$conexion) {
 
         <!-- TRACKING -->
         <div id="trackingContainer" class="hidden bg-white rounded-lg shadow-md p-6 relative">
-            <!-- Botón "Realizar otra consulta" -->
-            <button
-                onclick="limpiarTracking()"
-                class="absolute top-4 right-4 bg-gray-800 text-white text-sm font-semibold py-2 px-5 rounded-lg hover:bg-gray-700 transition shadow-md hover:shadow-lg">
-                Realizar otra consulta
-            </button>
-            <!-- INFO CAB -->
-            <h3 class="text-lg font-semibold mb-6">Seguimiento del envío</h3>
+            <!-- Botón "Realizar otra consulta" - Responsivo -->
+            <div class="mb-4 flex justify-end">
+                <button
+                    onclick="limpiarTracking()"
+                    class="inline-block bg-gray-800 text-white text-sm font-semibold py-2 px-5 rounded-lg hover:bg-gray-700 transition shadow-md hover:shadow-lg">
+                    Realizar otra consulta
+                </button>
+            </div>
+           
+            <!-- CABECERA DEL ENVÍO - DISEÑO PROFESIONAL -->
+            <div class=" p-6 mb-8 ">
+                <div class="flex items-center justify-between mb-5">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        Información del envío
+                    </h3>
+                    <span class="px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider
+                     ${document.getElementById('t_estado').textContent.toLowerCase().includes('pendiente') ? 'bg-yellow-100 text-yellow-800' : 
+                       document.getElementById('t_estado').textContent.toLowerCase().includes('finalizado') ? 'bg-green-100 text-green-800' : 
+                       'bg-blue-100 text-blue-800'}">
+                        <span id="t_estado"></span>
+                    </span>
+                </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-8">
-                <div><b>Código:</b> <span id="t_codEnvio"></span></div>
-                <div><b>Estado:</b> <span id="t_estado"></span></div>
-                <div><b>Laboratorio:</b> <span id="t_lab"></span></div>
-                <div><b>Transporte:</b> <span id="t_trans"></span></div>
-                <div><b>Fecha:</b> <span id="t_fecha"></span></div>
-                <div><b>Análisis:</b> <span id="t_analisis"></span></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Código -->
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-blue-600 text-white rounded-lg p-3 shadow-md">
+                            <i class="fa-solid fa-barcode text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 uppercase font-medium">Código de envío</p>
+                            <p class="text-lg font-bold text-gray-800" id="t_codEnvio"></p>
+                        </div>
+                    </div>
+
+                    <!-- Fecha y hora -->
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-indigo-600 text-white rounded-lg p-3 shadow-md">
+                            <i class="fa-solid fa-calendar-alt text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 uppercase font-medium">Fecha de envío</p>
+                            <p class="text-lg font-bold text-gray-800" id="t_fecha"></p>
+                        </div>
+                    </div>
+
+                    <!-- Laboratorio -->
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-purple-600 text-white rounded-lg p-3 shadow-md">
+                            <i class="fa-solid fa-flask text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 uppercase font-medium">Laboratorio</p>
+                            <p class="text-base font-semibold text-gray-800" id="t_lab"></p>
+                        </div>
+                    </div>
+
+                    <!-- Transporte -->
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-orange-600 text-white rounded-lg p-3 shadow-md">
+                            <i class="fa-solid fa-truck text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 uppercase font-medium">Transporte</p>
+                            <p class="text-base font-semibold text-gray-800" id="t_trans"></p>
+                        </div>
+                    </div>
+
+                    <!-- Análisis -->
+                    <div class="flex items-center space-x-3 sm:col-span-2 lg:col-span-1">
+                        <div class="bg-green-600 text-white rounded-lg p-3 shadow-md">
+                            <i class="fa-solid fa-vials text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-600 uppercase font-medium">Análisis registrados</p>
+                            <p class="text-lg font-bold text-gray-800" id="t_analisis"></p>
+                        </div>
+                    </div>
+                </div>
             </div>
             <hr class="mb-4">
             <!-- PROGRESO HORIZONTAL (DESKTOP) / VERTICAL (MOBILE) -->
@@ -258,6 +341,20 @@ if (!$conexion) {
 
         </div>
 
+        <!-- MODAL PARA VER EVIDENCIA -->
+        <div id="modalEvidencia" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center z-50 px-4">
+            <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center px-6 py-4 border-b">
+                    <h3 class="text-lg font-semibold">Evidencia fotográfica</h3>
+                    <button onclick="cerrarModalEvidencia()" class="text-gray-500 hover:text-gray-700 text-2xl">
+                        ×
+                    </button>
+                </div>
+                <div class="p-4 flex-1 overflow-auto bg-gray-50">
+                    <img id="imgEvidencia" src="" alt="Evidencia" class="w-full rounded-lg shadow-md object-contain max-h-[70vh]">
+                </div>
+            </div>
+        </div>
 
         <!-- Footer -->
         <div class="text-center mt-12">
@@ -404,8 +501,16 @@ if (!$conexion) {
 
 
         document.getElementById('btnValidar').addEventListener('click', function() {
-            const codigo = document.getElementById('codigoPase').value.trim();
-            validarOrden(codigo);
+            const anio = document.getElementById('anioCodigo').value;
+            const secuencia = document.getElementById('secuenciaCodigo').value.trim().padStart(4, '0');
+
+            if (secuencia.length !== 4 || !/^\d{4}$/.test(secuencia)) {
+                mostrarMensaje('Ingrese los 4 últimos dígitos', true);
+                return;
+            }
+
+            const codigoCompleto = `SAN-${anio}${secuencia}`;
+            validarOrden(codigoCompleto);
         });
 
 
@@ -550,31 +655,36 @@ if (!$conexion) {
 
                 if (paso === null) return;
 
-                // Convertir acción técnica a texto legible
+                // Título legible
                 let tituloAccion = h.accion || 'Acción registrada';
-
-                if (tituloAccion === 'ENVIO_REGISTRADO') {
-                    tituloAccion = 'Envío Registrado';
-                } else if (tituloAccion === 'Recepción de muestra') {
-                    tituloAccion = 'Recepción por transportista';
-                } else if (tituloAccion === 'Recepción de muestra por laboratorio') {
-                    tituloAccion = 'Recepcionado por laboratorio';
-                } else if (tituloAccion.toLowerCase().includes('registro_resultados_cualitativos')) {
-                    tituloAccion = 'Resultados cualitativos registrados';
-                } else if (tituloAccion.toLowerCase().includes('registro_resultados_cuantitativos')) {
-                    tituloAccion = 'Resultados cuantitativos registrados';
-                }
+                if (tituloAccion === 'ENVIO_REGISTRADO') tituloAccion = 'Envío Registrado';
+                else if (tituloAccion === 'Recepción de muestra') tituloAccion = 'Recepción por transportista';
+                else if (tituloAccion === 'Recepción de muestra por laboratorio') tituloAccion = 'Recepcionado por laboratorio';
+                else if (tituloAccion.toLowerCase().includes('registro_resultados_cualitativos')) tituloAccion = 'Resultados cualitativos registrados';
+                else if (tituloAccion.toLowerCase().includes('registro_resultados_cuantitativos')) tituloAccion = 'Resultados cuantitativos registrados';
 
                 const div = document.createElement('div');
-                div.className = 'relative pl-8 text-sm';
+                div.className = 'relative pl-8 text-sm bg-white rounded-lg shadow-sm p-4 mb-4 border border-gray-100';
+
+                let botonEvidencia = '';
+                if (h.evidencia && h.evidencia.trim() !== '') {
+                    botonEvidencia = `
+                <button onclick="abrirModalEvidencia('${h.evidencia}')" 
+                        class="absolute top-4 right-4 text-blue-600 hover:text-blue-800 transition">
+                    <i class="fa-solid fa-eye text-xl"></i>
+                </button>
+            `;
+                }
+
                 div.innerHTML = `
-                    <span class="absolute left-0 top-1 w-3 h-3 bg-blue-600 rounded-full"></span>
-                    <p class="font-semibold text-blue-900">${tituloAccion}</p>
-                    <p class="text-xs text-blue-800 mt-1">${h.comentario || ''}</p>
-                    <p class="text-xs text-gray-600 mt-2">
-                        ${h.fechaHoraRegistro} · ${h.ubicacion || 'Sin ubicación'} · ${h.usuario}
-                    </p>
-                `;
+            ${botonEvidencia}
+            <span class="absolute left-0 top-6 w-3 h-3 bg-blue-600 rounded-full -translate-x-1/2"></span>
+            <p class="font-semibold text-blue-900 pr-10">${tituloAccion}</p>
+            <p class="text-xs text-blue-800 mt-1">${h.comentario || ''}</p>
+            <p class="text-xs text-gray-600 mt-2">
+                ${h.fechaHoraRegistro} · ${h.ubicacion || 'Sin ubicación'} · ${h.usuario}
+            </p>
+        `;
                 document.getElementById(`timeline-${paso}`).appendChild(div);
             });
         }
@@ -590,6 +700,16 @@ if (!$conexion) {
                 details.classList.add('hidden');
                 button.textContent = 'VER DETALLE';
             }
+        }
+
+        function abrirModalEvidencia(rutaImagen) {
+            document.getElementById('imgEvidencia').src = rutaImagen;
+            document.getElementById('modalEvidencia').classList.remove('hidden');
+        }
+
+        function cerrarModalEvidencia() {
+            document.getElementById('modalEvidencia').classList.add('hidden');
+            document.getElementById('imgEvidencia').src = '';
         }
 
         // Asignar el evento al botón
@@ -697,13 +817,11 @@ if (!$conexion) {
             document.getElementById('progressLineMobile').style.height = '0%';
 
             // Limpiar el input del código
-            document.getElementById('codigoPase').value = '';
+
 
             // Limpiar mensaje de validación
             mostrarMensaje('');
 
-            // Opcional: enfocar el input para nueva consulta
-            document.getElementById('codigoPase').focus();
         }
 
         function htmlCardSweet(d, estado) {

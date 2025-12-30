@@ -308,6 +308,7 @@ if ($codigoUsuario) {
             <div class="mb-4">
                 <p class="text-blue-300 text-xs uppercase font-semibold mb-2 px-3">Dashboards</p>
             </div>
+            <?php if (!$isTransportista): ?>
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                     onclick="activateAndLoad(this, 'dashboard-dashboard.php', '📊 Dashboard',  'Resumen visual de los datos registrados en el sistema')">
@@ -319,7 +320,6 @@ if ($codigoUsuario) {
 
             </div>
 
-            <?php if (!$isTransportista): ?>
                 <div class="menu-group">
                     <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                         onclick="activateAndLoad(this, 'dashboard-registro-muestras.php', '📋 Registro de Muestras', 'Registro del pedido de muestra')">
@@ -445,7 +445,7 @@ if ($codigoUsuario) {
                             onclick="selectMenuItem(this); loadDashboardAndData('dashboard-tracking-muestra.php','Seguimiento de envios', 'Visualice el seguimiento de muestra')"
                             class="menu-link block text-gray-400 hover:text-white">7.2 .- Seguimiento de envios</a>
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-tipo-muestra.php','🧪 Tipo muestra', 'Administre los tipos de muestra registrados en el sistema')"
+                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-reporte-tracking.php','🧪 Pendientes de entregas', 'Administre los pendientes y demas.')"
                             class="menu-link block text-gray-400 hover:text-white">7.3 .- Reporte</a>
                     </div>
                 </div>

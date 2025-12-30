@@ -95,7 +95,6 @@ if (!$conexion) {
                     N° de orden
                 </button>
             </div>
-            <!-- MODO DE RECEPCIÓN -->
 
             <!-- Contenido de tabs -->
             <div id="panel-camara">
@@ -126,79 +125,78 @@ if (!$conexion) {
             </div>
 
             <div id="panel-codigo" class="hidden">
-                <label for="codigoPase" class="block text-sm font-medium text-gray-700 mb-1">
-                    Ingrese el numero de orden
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Ingrese el número de orden
                 </label>
-                <div class="flex mb-3">
-                    <input type="text" id="codigoPase" placeholder="Código"
-                        class="flex-1 border border-gray-300 rounded-l-md px-3 py-2 focus:ring focus:ring-blue-300 focus:outline-none">
-                    <button id="btnValidar" class="bg-blue-600 text-white px-4 rounded-r-md hover:bg-blue-700 transition">
+
+                <div class="flex flex-col sm:flex-row items-stretch mb-3 gap-2 sm:gap-0">
+                    <!-- Prefijo fijo: SAN- -->
+                    <div class="bg-gray-100 border border-gray-300 px-4 py-2 flex items-center text-gray-700 font-medium whitespace-nowrap rounded-t-md sm:rounded-l-md sm:rounded-tr-none sm:border-r-0">
+                        SAN-
+                    </div>
+
+                    <!-- Select para el año -->
+                    <select id="anioCodigo"
+                        class="w-full sm:w-24 text-center border border-gray-300 px-2 py-2 focus:ring focus:ring-blue-300 focus:outline-none bg-white">
+                        <option value="025" selected>025</option>
+                        <option value="024">024</option>
+                        <option value="023">023</option>
+                        <!-- Agrega más años si necesitas -->
+                    </select>
+
+                    <!-- Campo para los últimos 4 dígitos -->
+                    <input type="text"
+                        id="secuenciaCodigo"
+                        maxlength="4"
+                        placeholder="0001"
+                        class="flex-1 border border-gray-300 px-3 py-2 focus:ring focus:ring-blue-300 focus:outline-none"
+                        required>
+
+                    <!-- Botón buscar -->
+                    <button id="btnValidar"
+                        class="bg-blue-600 text-white px-6 py-2 rounded-b-md sm:rounded-r-md sm:rounded-bl-none hover:bg-blue-700 transition flex items-center justify-center">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
                 </div>
 
-                <div id="mensajeValidacion" class="text-center text-sm text-gray-600 mt-4"></div>
+                <div id="mensajeValidacion" class="text-center text-sm mt-4"></div>
 
             </div>
         </div>
 
 
         <!-- MODAL DETALLE ORDEN -->
-        <div id="modalOrden"
-            class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+        <div id="modalOrden" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-50 px-4">
+            <!-- Contenedor principal con altura máxima y scroll interno -->
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-fade-in mb-12">
 
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 animate-fade-in">
-
-                <!-- Header -->
-                <div class="flex justify-between items-center px-6 py-4 border-b">
+                <!-- Header fijo -->
+                <div class="flex justify-between items-center px-6 py-4 border-b flex-shrink-0">
                     <h3 class="text-lg font-semibold text-gray-800">
                         Detalle de la orden de envío
                     </h3>
-
-                    <button onclick="cerrarModalOrden()"
-                        class="text-gray-400 hover:text-gray-600 text-2xl leading-none">
+                    <button onclick="cerrarModalOrden()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">
                         ×
                     </button>
                 </div>
 
-                <!-- Body -->
-                <div class="px-6 py-4">
-
+                <!-- Body con scroll -->
+                <div class="px-6 py-4 overflow-y-auto flex-1">
+                    <!-- Todo el contenido que ya tenías -->
                     <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm text-gray-700 mb-4">
-
-                        <div>
-                            <span class="font-medium text-gray-600">Código de envío:</span>
-                            <span id="d_codEnvio" class="ml-1 font-semibold"></span>
-                        </div>
-
-                        <div>
-                            <span class="font-medium text-gray-600">Fecha de envío:</span>
-                            <span id="d_fechaEnvio" class="ml-1"></span>
-                        </div>
-
-                        <div>
-                            <span class="font-medium text-gray-600">Hora de envío:</span>
-                            <span id="d_horaEnvio" class="ml-1"></span>
-                        </div>
-
-                        <div>
-                            <span class="font-medium text-gray-600">Laboratorio:</span>
-                            <span id="d_laboratorio" class="ml-1"></span>
-                        </div>
-
-                        <div>
-                            <span class="font-medium text-gray-600">Análisis registrados:</span>
-                            <span id="d_totalAnalisis" class="ml-1 font-semibold"></span>
-                        </div>
-
+                        <div><span class="font-medium text-gray-600">Código de envío:</span> <span id="d_codEnvio" class="ml-1 font-semibold"></span></div>
+                        <div><span class="font-medium text-gray-600">Fecha de envío:</span> <span id="d_fechaEnvio" class="ml-1"></span></div>
+                        <div><span class="font-medium text-gray-600">Hora de envío:</span> <span id="d_horaEnvio" class="ml-1"></span></div>
+                        <div><span class="font-medium text-gray-600">Laboratorio:</span> <span id="d_laboratorio" class="ml-1"></span></div>
+                        <div><span class="font-medium text-gray-600">Análisis registrados:</span> <span id="d_totalAnalisis" class="ml-1 font-semibold"></span></div>
                     </div>
-                    <!-- SELECTOR: ¿Quién está recibiendo? -->
+
+                    <!-- SELECTOR RECEPTOR -->
                     <div class="mb-6">
                         <label for="tipoReceptor" class="block text-sm font-medium text-gray-700 mb-2">
                             ¿Quién está realizando la recepción?
                         </label>
-                        <select id="tipoReceptor"
-                            class="w-full border border-gray-300 rounded-md px-2 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-600 focus:outline-none transition">
+                        <select id="tipoReceptor" class="w-full border border-gray-300 rounded-md px-2 py-3 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-600 focus:outline-none transition">
                             <option value="">Seleccione una opción</option>
                             <option value="Transporte" selected>Transportista</option>
                             <option value="Laboratorio">Laboratorio</option>
@@ -207,38 +205,70 @@ if (!$conexion) {
                             Por favor, seleccione quién está realizando la recepción.
                         </p>
                     </div>
+
+                    <!-- EVIDENCIA FOTOGRÁFICA (OPCIONAL) -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Evidencia fotográfica <span class="text-gray-500 text-xs">(opcional)</span>
+                        </label>
+
+                        <!-- Área de vista previa de la imagen -->
+                        <div id="previewContainer" class="hidden mb-4">
+                            <img id="previewImagen" class="w-full rounded-lg border border-gray-300 shadow-sm object-cover max-h-64" alt="Vista previa">
+                            <button type="button" onclick="removerImagen()" class="mt-2 text-sm text-red-600 hover:text-red-800">
+                                ✕ Remover foto
+                            </button>
+                        </div>
+
+                        <!-- Botones responsivos: lado a lado en desktop, uno debajo del otro en móvil -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <label class="cursor-pointer block">
+                                <input type="file" id="inputFoto" accept="image/*" capture="environment" class="hidden">
+                                <div class="border-2 border-dashed border-gray-400 rounded-lg px-4 py-8 text-center hover:border-blue-500 transition h-full flex flex-col items-center justify-center">
+                                    <i class="fa-solid fa-camera text-4xl text-gray-400 mb-3"></i>
+                                    <p class="text-base font-medium text-gray-700">Tomar foto</p>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer block">
+                                <input type="file" id="inputGaleria" accept="image/*" class="hidden">
+                                <div class="border-2 border-dashed border-gray-400 rounded-lg px-4 py-8 text-center hover:border-blue-500 transition h-full flex flex-col items-center justify-center">
+                                    <i class="fa-solid fa-image text-4xl text-gray-400 mb-3"></i>
+                                    <p class="text-base font-medium text-gray-700">Desde galería</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
                     <!-- OBSERVACIONES -->
                     <div class="mb-4">
                         <label for="observaciones" class="block text-sm font-medium text-gray-700 mb-1">
                             Observaciones
                         </label>
-
-                        <textarea id="observaciones" rows="3"
-                            placeholder="Ingrese alguna observación (opcional)"
-                            class="w-full border border-gray-300 rounded-md px-3 py-2
-                            focus:ring focus:ring-blue-300 focus:outline-none resize-none"></textarea>
+                        <textarea id="observaciones" rows="3" placeholder="Ingrese alguna observación (opcional)"
+                            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring focus:ring-blue-300 focus:outline-none resize-none"></textarea>
                     </div>
                 </div>
 
-                <!-- Footer -->
-                <div class="flex justify-end gap-3 px-6 py-4 border-t bg-gray-50 rounded-b-xl">
-                    <button onclick="cerrarModalOrden()"
-                        class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
-                        Cancelar
-                    </button>
-
-                    <button id="btnRecepcionar"
-                        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-                        Recepcionar
-                    </button>
+                <!-- Footer fijo (siempre visible) -->
+                <div class="px-6 pt-4 pb-8 sm:pb-6 border-t bg-gray-50 rounded-b-xl flex-shrink-0">
+                    <div class="flex justify-end gap-3">
+                        <button onclick="cerrarModalOrden()"
+                            class="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium transition shadow">
+                            Cancelar
+                        </button>
+                        <button id="btnRecepcionar"
+                            class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition shadow-lg">
+                            Recepcionar
+                        </button>
+                    </div>
                 </div>
-
             </div>
         </div>
 
 
         <!-- Footer -->
-        <div class="text-center mt-12">
+        <div class="text-center mt-12 mb-5">
             <p class="text-gray-500 text-sm">
                 Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025
             </p>
@@ -248,6 +278,69 @@ if (!$conexion) {
 
     <script src="assets/js/scanapp.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        let fotoSeleccionada = null;
+
+        // Elementos del DOM
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImagen = document.getElementById('previewImagen');
+        const botonesContainer = previewContainer.parentElement.querySelector('.grid'); // el div con grid-cols
+
+        // Función para mostrar vista previa y ocultar botones
+        function mostrarPreview(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImagen.src = e.target.result;
+                previewContainer.classList.remove('hidden');
+
+                // OCULTAR los botones de selección
+                botonesContainer.classList.add('hidden');
+
+                // Scroll suave a la vista previa
+                previewContainer.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+            };
+            reader.readAsDataURL(file);
+
+            fotoSeleccionada = file;
+        }
+
+        // Función para remover la foto y mostrar botones de nuevo
+        function removerImagen() {
+            fotoSeleccionada = null;
+
+            previewImagen.src = '';
+            previewContainer.classList.add('hidden');
+
+            // MOSTRAR de nuevo los botones
+            botonesContainer.classList.remove('hidden');
+
+            // Resetear inputs
+            document.getElementById('inputFoto').value = '';
+            document.getElementById('inputGaleria').value = '';
+        }
+
+        // Event listeners
+        document.getElementById('inputFoto').addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                mostrarPreview(e.target.files[0]);
+            }
+        });
+
+        document.getElementById('inputGaleria').addEventListener('change', function(e) {
+            if (e.target.files && e.target.files[0]) {
+                mostrarPreview(e.target.files[0]);
+            }
+        });
+    </script>
+
     <script>
         let html5QrCode = null;
         let isScanning = false;
@@ -383,8 +476,34 @@ if (!$conexion) {
 
 
         document.getElementById('btnValidar').addEventListener('click', function() {
-            const codigo = document.getElementById('codigoPase').value.trim();
-            validarOrden(codigo);
+            const anio = document.getElementById('anioCodigo').value.trim();
+            const secuenciaInput = document.getElementById('secuenciaCodigo').value.trim();
+
+            // Validar que el campo no esté vacío
+            if (!secuenciaInput) {
+                mostrarAlerta('Por favor ingrese los 4 dígitos del código');
+                document.getElementById('secuenciaCodigo').focus();
+                return;
+            }
+
+            // Validar que tenga exactamente 4 caracteres
+            if (secuenciaInput.length !== 4) {
+                mostrarAlerta('El código debe tener exactamente 4 dígitos');
+                document.getElementById('secuenciaCodigo').focus();
+                return;
+            }
+
+            // Validar que sean solo números
+            if (!/^\d{4}$/.test(secuenciaInput)) {
+                mostrarAlerta('El código debe contener solo números (0-9)');
+                document.getElementById('secuenciaCodigo').focus();
+                return;
+            }
+
+            const codigoCompleto = `SAN-${anio}${secuenciaInput}`;
+
+            // Llamar a la búsqueda
+            validarOrden(codigoCompleto)
         });
 
         document.getElementById('btnRecepcionar').addEventListener('click', recepcionarOrden);
@@ -408,7 +527,7 @@ if (!$conexion) {
                 .then(data => {
 
                     if (!data.ok) {
-                        mostrarMensaje(data.mensaje, true);
+                        mostrarAlerta(data.mensaje, true);
                         return;
                     }
 
@@ -421,7 +540,7 @@ if (!$conexion) {
                     document.getElementById('d_totalAnalisis').textContent = data.totalAnalisis;
 
                     abrirModalOrden();
-                    mostrarMensaje('');
+                    //mostrarAlerta('');
                 });
         }
 
@@ -443,19 +562,26 @@ if (!$conexion) {
         function recepcionarOrden() {
             if (!ordenActual) return;
 
-            let observaciones = document.getElementById('observaciones').value;
-            let tipoReceptor = document.getElementById('tipoReceptor').value;
+            const observaciones = document.getElementById('observaciones').value.trim();
+            const tipoReceptor = document.getElementById('tipoReceptor').value;
+
+            if (!tipoReceptor) {
+                mostrarAlertaError('Seleccione quién realiza la recepción');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('codEnvio', ordenActual.codEnvio);
+            formData.append('obs', observaciones);
+            formData.append('tipoReceptor', tipoReceptor);
+
+            if (fotoSeleccionada) {
+                formData.append('evidencia', fotoSeleccionada, fotoSeleccionada.name);
+            }
 
             fetch('recepcionar_orden.php', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        codEnvio: ordenActual.codEnvio,
-                        obs: observaciones,
-                        tipoReceptor
-                    })
+                    body: formData
                 })
                 .then(r => r.json())
                 .then(data => {
@@ -464,14 +590,19 @@ if (!$conexion) {
                         mostrarAlertaRecepcion(ordenActual.codEnvio, tipoReceptor);
                         resetOrden();
                     } else {
-                        mostrarAlertaError(data.mensaje || 'Error al registrar la recepción');
+                        mostrarAlertaError(data.mensaje);
                     }
+                })
+                .catch(err => {
+                    console.error(err);
+                    mostrarAlertaError('Error de conexión');
                 });
         }
 
         function resetOrden() {
             ordenActual = null;
-            document.getElementById('codigoPase').value = '';
+           // document.getElementById('codigoPase').value = '';
+           removerImagen();
             document.getElementById('observaciones').value = '';
         }
 
@@ -513,6 +644,19 @@ if (!$conexion) {
                 confirmButtonText: 'Cerrar',
                 customClass: {
                     confirmButton: 'bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-2'
+                }
+            });
+        }
+
+        function mostrarAlerta(mensaje, esError = false) {
+            Swal.fire({
+                icon: esError ? 'error' : 'warning',
+                title: esError ? 'Error' : 'Atención',
+                text: mensaje,
+                confirmButtonText: 'Aceptar',
+                customClass: {
+                    popup: 'rounded-xl',
+                    confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg'
                 }
             });
         }

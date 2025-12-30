@@ -21,7 +21,8 @@ function insertarHistorial(
     $tipo_analisis = null,
     $comentario = null,
     $usuario = null,
-    $ubicacion = null
+    $ubicacion = null,
+    $evidencia = null
 ) {
     // Usuario por defecto
     if (!$usuario && isset($_SESSION['usuario'])) {
@@ -31,8 +32,8 @@ function insertarHistorial(
 
     $stmt = $conn->prepare("
         INSERT INTO san_dim_historial_resultados 
-        (codEnvio, posSolicitud, tipo_analisis, accion, comentario, usuario, ubicacion)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (codEnvio, posSolicitud, tipo_analisis, accion, comentario, evidencia, usuario, ubicacion)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
     if (!$stmt) {
@@ -40,7 +41,7 @@ function insertarHistorial(
         return false;
     }
 
-    $stmt->bind_param("sisssss", $codEnvio, $posSolicitud, $tipo_analisis, $accion, $comentario, $usuario, $ubicacion);
+    $stmt->bind_param("sissssss", $codEnvio, $posSolicitud, $tipo_analisis, $accion, $comentario, $evidencia, $usuario, $ubicacion);
 
     $exito = $stmt->execute();
 

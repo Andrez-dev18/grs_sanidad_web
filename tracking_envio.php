@@ -55,7 +55,8 @@ $sqlHist = "
         comentario,
         usuario,
         ubicacion,
-        fechaHoraRegistro
+        fechaHoraRegistro,
+        evidencia
     FROM san_dim_historial_resultados
     WHERE codEnvio = ?
     ORDER BY fechaHoraRegistro ASC
