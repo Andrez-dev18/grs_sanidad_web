@@ -13,6 +13,9 @@
  * @param string|null $ubicacion 'GRS', 'Transporte' o 'Laboratorio'
  * @return bool
  */
+
+date_default_timezone_set('America/Lima');  // Zona horaria de Perú
+
 function insertarHistorial(
     $conn,
     $codEnvio,
@@ -24,6 +27,10 @@ function insertarHistorial(
     $ubicacion = null,
     $evidencia = null
 ) {
+
+    // === OBTENER FECHA Y HORA ACTUAL ===
+    $fechaHoraActual = date('Y-m-d H:i:s');
+
     // Usuario por defecto
     if (!$usuario && isset($_SESSION['usuario'])) {
         $usuario = $_SESSION['usuario'];
@@ -32,8 +39,8 @@ function insertarHistorial(
 
     $stmt = $conn->prepare("
         INSERT INTO san_dim_historial_resultados 
-        (codEnvio, posSolicitud, tipo_analisis, accion, comentario, evidencia, usuario, ubicacion)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (codEnvio, posSolicitud, tipo_analisis, accion, comentario, evidencia, usuario, ubicacion, fechaHoraRegistro)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
     if (!$stmt) {
@@ -41,7 +48,7 @@ function insertarHistorial(
         return false;
     }
 
-    $stmt->bind_param("sissssss", $codEnvio, $posSolicitud, $tipo_analisis, $accion, $comentario, $evidencia, $usuario, $ubicacion);
+    $stmt->bind_param("sisssssss", $codEnvio, $posSolicitud, $tipo_analisis, $accion, $comentario, $evidencia, $usuario, $ubicacion, $fechaHoraActual);
 
     $exito = $stmt->execute();
 
@@ -52,4 +59,3 @@ function insertarHistorial(
     $stmt->close();
     return $exito;
 }
-?>

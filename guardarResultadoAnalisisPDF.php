@@ -1,6 +1,8 @@
 <?php
 include_once '../conexion_grs_joya/conexion.php';
 session_start();
+date_default_timezone_set('America/Lima');  // Zona horaria de Perú
+
 $conn = conectar_joya();
 
 if (!$conn) {
@@ -65,10 +67,13 @@ if (!move_uploaded_file($file["tmp_name"], $rutaFinal)) {
 
 $tipo = "cualitativo";
 
+// === OBTENER FECHA Y HORA ACTUAL ===
+$fechaHoraActual = date('Y-m-d H:i:s');
+
 //  Insertar registro
 $sql = "
-    INSERT INTO san_fact_resultado_archivo (codEnvio, posSolicitud, archRuta, tipo, usuarioRegistrador)
-    VALUES ('$codigoEnvio', '$pos', '$rutaFinal', '$tipo', '$user')
+    INSERT INTO san_fact_resultado_archivo (codEnvio, posSolicitud, archRuta, tipo, usuarioRegistrador, fechaRegistro)
+    VALUES ('$codigoEnvio', '$pos', '$rutaFinal', '$tipo', '$user', '$fechaHoraActual')
 ";
 
 if ($conn->query($sql)) {

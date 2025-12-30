@@ -2,6 +2,8 @@
 include_once '../conexion_grs_joya/conexion.php';
 include_once 'historial_resultados.php';
 session_start();
+date_default_timezone_set('America/Lima');  // Zona horaria de Perú
+
 $conn = conectar_joya();
 if (!$conn) {
     die("Error de conexión: " . mysqli_connect_error());
@@ -57,6 +59,9 @@ $cabeceraCompletada = false;
 $analisisInsertados = [];
 $analisisActualizados = [];
 
+// === OBTENER FECHA Y HORA ACTUAL ===
+$fechaHoraActual = date('Y-m-d H:i:s');
+
 foreach ($analisis as $a) {
     $cod = $a["analisisCodigo"];
     $nom = $conn->real_escape_string($a["analisisNombre"]);
@@ -72,13 +77,14 @@ foreach ($analisis as $a) {
     }
 
     if ($idResultado !== null) {
-        // 🔁 UPDATE
+        // UPDATE
         $sql = "
             UPDATE san_fact_resultado_analisis
             SET 
                 resultado = '$resul',
                 obs = " . ($obs === NULL ? "NULL" : "'$obs'") . ",
-                fechaLabRegistro = " . ($fechaLabRegistro === null ? "NULL" : "'$fechaLabRegistro'") . "
+                fechaLabRegistro = " . ($fechaLabRegistro === null ? "NULL" : "'$fechaLabRegistro'") . ",
+                fechaHoraRegistro = " . ($fechaHoraActual === null ? "NULL" : "'$fechaHoraActual'") . "
             WHERE id = '$idResultado'
         ";
 
@@ -88,10 +94,10 @@ foreach ($analisis as $a) {
         }
 
     } else {
-        // ➕ INSERT
+        // INSERT
         $sql = "
             INSERT INTO san_fact_resultado_analisis 
-            (codEnvio, posSolicitud, codRef, fecToma, analisis_codigo, analisis_nombre, resultado, obs, usuarioRegistrador, fechaLabRegistro)
+            (codEnvio, posSolicitud, codRef, fecToma, analisis_codigo, analisis_nombre, resultado, obs, usuarioRegistrador, fechaLabRegistro, fechaHoraRegistro)
             VALUES 
             (
                 '$codigoEnvio', 
@@ -103,7 +109,8 @@ foreach ($analisis as $a) {
                 '$resul', 
                 " . ($obs === NULL ? "NULL" : "'$obs'") . ",
                 " . ($user === null ? "NULL" : "'$user'") . ",
-                " . ($fechaLabRegistro === null ? "NULL" : "'$fechaLabRegistro'") . "
+                " . ($fechaLabRegistro === null ? "NULL" : "'$fechaLabRegistro'") . ",
+                " . ($fechaHoraActual === null ? "NULL" : "'$fechaHoraActual'") . "
             )
         ";
 
