@@ -1,11 +1,11 @@
 <?php return array(
     'root' => array(
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => null,
+        'reference' => 'ba3a2bf62a50a82735bc601fb468262dbee6e2f3',
         'name' => 'sistemaslap5/grs_sanidad_web_2',
         'dev' => true,
     ),
@@ -53,6 +53,15 @@
             'install_path' => __DIR__ . '/../mpdf/mpdf',
             'aliases' => array(),
             'reference' => 'c13ebc0fd5cc0613dfb1fd37d55a67859b92cf0c',
+            'dev_requirement' => false,
+        ),
+        'mpdf/qrcode' => array(
+            'pretty_version' => 'v1.2.2',
+            'version' => '1.2.2.0',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../mpdf/qrcode',
+            'aliases' => array(),
+            'reference' => 'd4fa19117a7241c30ac84902b6236a02c7a3f268',
             'dev_requirement' => false,
         ),
         'myclabs/deep-copy' => array(
@@ -155,12 +164,12 @@
             'dev_requirement' => false,
         ),
         'sistemaslap5/grs_sanidad_web_2' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => null,
+            'reference' => 'ba3a2bf62a50a82735bc601fb468262dbee6e2f3',
             'dev_requirement' => false,
         ),
         'symfony/polyfill-mbstring' => array(

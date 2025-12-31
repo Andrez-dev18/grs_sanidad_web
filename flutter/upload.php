@@ -12,12 +12,26 @@ date_default_timezone_set('America/Lima');
 
 // --- Autenticación ---
 include_once '../../conexion_grs_joya/conexion.php';
-$authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-if ($authHeader !== "Bearer " . API_TOKEN) {
-    echo json_encode(["success" => false, "message" => "Token inválido"]);
-    exit;
+/*$authHeader = '';
+
+if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+    $authHeader = $_SERVER['HTTP_AUTHORIZATION'];
+} elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+    $authHeader = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
+} else {
+    $headers = function_exists('getallheaders') ? getallheaders() : [];
+    if (isset($headers['Authorization'])) {
+        $authHeader = $headers['Authorization'];
+    } elseif (isset($headers['authorization'])) {
+        $authHeader = $headers['authorization'];
+    }
 }
 
+if ($authHeader !== "Bearer " . API_TOKEN) {
+    echo json_encode(["success" => false, "message" => "Token inválido"], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+*/
 $conexion = conectar_joya();
 if (!$conexion) {
     echo json_encode(["success" => false, "message" => "Error conexión"]);
@@ -35,66 +49,76 @@ if (!$data || !isset($data['envios_muestras']) || !is_array($data['envios_muestr
 
 $items = $data['envios_muestras'];
 $respuesta = procesarEnviosMuestras($conexion, $items);
+
+
 function procesarEnviosMuestras($conexion, $items)
 {
     $insertados = 0;
-    $duplicados = 0;
-
+    $duplicadosCab = 0;
+    $duplicadosDet = 0;
+    $codigosGenerados = [];
     mysqli_autocommit($conexion, FALSE);
 
+    // Preparar statements para verificar duplicados
+    $checkCab = $conexion->prepare("SELECT COUNT(*) FROM san_fact_solicitud_cab WHERE id = ?");
+    if (!$checkCab) {
+        return ["error" => "Error prepare check cabecera: " . $conexion->error];
+    }
+
+    $checkDet = $conexion->prepare("SELECT COUNT(*) FROM san_fact_solicitud_det WHERE id = ?");
+    if (!$checkDet) {
+        return ["error" => "Error prepare check detalle: " . $conexion->error];
+    }
+
     foreach ($items as $item) {
+        $id = $item['id'];
+        $existeCab = 0; // Inicializar variable para PHP 7.2
+
+        // Verificar si la cabecera ya existe
+        $checkCab->bind_param("s", $id);
+        $checkCab->execute();
+        $checkCab->bind_result($existeCab);
+        $checkCab->fetch();
+        $checkCab->free_result();
+
+        if ($existeCab > 0) {
+            $duplicadosCab++;
+            continue;
+        }
+
         try {
             // === Validar datos mínimos ===
-            if (empty($item['fechaEnvio']) || empty($item['horaEnvio']) || empty($item['laboratorio']) || empty($item['empresa_transporte']) || ($item['numeroSolicitudes'] ?? 0) <= 0) {
+            if (empty($item['fechaEnvio']) || empty($item['horaEnvio']) || empty($item['laboratorioCodigo']) || empty($item['empresaTransporteCodigo']) || ($item['numeroSolicitudes'] ?? 0) <= 0) {
                 continue; // O registrar error
             }
 
             // === Generar código de envío único ===
             $codigoEnvio = generarCodigoEnvioSanidad($conexion);
-
-            // === Datos de cabecera ===
             $fechaEnvio = $item['fechaEnvio'];
             $horaEnvio = $item['horaEnvio'];
-            $codLab = $item['laboratorio'];
-            $codEmpTrans = $item['empresa_transporte'];
-            $usuarioRegistrador = $item['usuario_registrador'] ?? 'app_movil';
-            $usuarioResponsable = $item['usuario_responsable'] ?? '';
-            $autorizadoPor = $item['autorizado_por'] ?? '';
-
-            // === Validar laboratorio y empresa ===
-            $stmtLab = mysqli_prepare($conexion, "SELECT nombre FROM san_dim_laboratorio WHERE codigo = ?");
-            mysqli_stmt_bind_param($stmtLab, "s", $codLab);
-            mysqli_stmt_execute($stmtLab);
-            $resultLab = mysqli_stmt_get_result($stmtLab);
-            $laboratorio = mysqli_fetch_assoc($resultLab);
-            mysqli_stmt_close($stmtLab);
-
-            if (!$laboratorio) continue;
-            $nomLab = $laboratorio['nombre'];
-
-            $stmtEmp = mysqli_prepare($conexion, "SELECT nombre FROM san_dim_emptrans WHERE codigo = ?");
-            mysqli_stmt_bind_param($stmtEmp, "s", $codEmpTrans);
-            mysqli_stmt_execute($stmtEmp);
-            $resultEmp = mysqli_stmt_get_result($stmtEmp);
-            $empTrans = mysqli_fetch_assoc($resultEmp);
-            mysqli_stmt_close($stmtEmp);
-
-            if (!$empTrans) continue;
-            $nomEmpTrans = $empTrans['nombre'];
+            $codLab = $item['laboratorioCodigo'];
+            $nomLab = $item['laboratorioNombre'];
+            $codEmpTrans = $item['empresaTransporteCodigo'];
+            $nomEmpTrans = $item['empresaTransporteNombre'];
+            $usuarioRegistrador = $item['usuarioRegistrador'] ?? 'app_movil';
+            $usuarioResponsable = $item['usuarioResponsable'] ?? '';
+            $autorizadoPor = $item['autorizadoPor'] ?? '';
+            $fechaHoraRegistro = $item['fechaHoraRegistro'] ?? date('Y-m-d H:i:s');
+            $usuarioTransferencia = $item['usuarioTransferencia'] ?? 'app_movil';
+            $fechaHoraTransferencia = $item['fechaHoraTransferencia'] ?? date('Y-m-d H:i:s');
 
             // === Insertar cabecera ===
             $queryCab = "INSERT INTO san_fact_solicitud_cab (
                 codEnvio, fecEnvio, horaEnvio, codLab, nomLab, codEmpTrans, nomEmpTrans,
                 usuarioRegistrador, usuarioResponsable, autorizadoPor, fechaHoraRegistro,
-                usuarioTransferencia, fechaHoraTransferencia
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, ?)";
+                usuarioTransferencia, fechaHoraTransferencia, id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmtCab = mysqli_prepare($conexion, $queryCab);
-            $usuarioTrans = $item['usuarioTransferencia'] ?? 'app_movil';
-            $fechaTrans = $item['fechaHoraTransferencia'] ?? date('Y-m-d H:i:s');
+
             mysqli_stmt_bind_param(
                 $stmtCab,
-                "sssssssssssss",
+                "ssssssssssssss",
                 $codigoEnvio,
                 $fechaEnvio,
                 $horaEnvio,
@@ -105,94 +129,132 @@ function procesarEnviosMuestras($conexion, $items)
                 $usuarioRegistrador,
                 $usuarioResponsable,
                 $autorizadoPor,
-                $usuarioTrans,
-                $fechaTrans
+                $fechaHoraRegistro,
+                $usuarioTransferencia,
+                $fechaHoraTransferencia,
+                $id
             );
 
             if (!mysqli_stmt_execute($stmtCab)) {
-                throw new Exception('Error cabecera');
+                throw new Exception('Error cabecera: ' . mysqli_error($conexion));
             }
             mysqli_stmt_close($stmtCab);
 
+            $codigosGenerados[] = [
+                'id' => $id,
+                'codigoEnvio' => $codigoEnvio
+            ];
+
             // === Insertar detalles ===
-            $numeroSolicitudes = (int)$item['numeroSolicitudes'];
+            $numeroSolicitudes = (int) $item['numeroSolicitudes'];
             for ($i = 0; $i < $numeroSolicitudes; $i++) {
+
+
+
                 $fechaToma = $item["fechaToma_{$i}"] ?? '';
-                $codTipoMuestra = $item["tipoMuestra_{$i}"] ?? null;
+                $codTipoMuestra = $item["tipoMuestraCodigo_{$i}"] ?? null;
+                $nomTipoMuestra = $item["tipoMuestraNombre_{$i}"] ?? null;
                 $codigoReferencia = $item["codigoReferenciaValue_{$i}"] ?? '';
                 $observaciones = $item["observaciones_{$i}"] ?? '';
                 $numeroMuestras = $item["numeroMuestras_{$i}"] ?? '';
-                $analisisSeleccionados = $item["analisis_{$i}"] ?? [];
+                $analisisArray = $item["analisisCompletos_{$i}"] ?? [];
 
-                if (empty($codTipoMuestra)) continue;
-
-                $stmtTipo = mysqli_prepare($conexion, "SELECT nombre FROM san_dim_tipo_muestra WHERE codigo = ?");
-                mysqli_stmt_bind_param($stmtTipo, "s", $codTipoMuestra);
-                mysqli_stmt_execute($stmtTipo);
-                $resTipo = mysqli_stmt_get_result($stmtTipo);
-                $tipoMuestra = mysqli_fetch_assoc($resTipo);
-                $nomTipoMuestra = $tipoMuestra['nombre'];
-                mysqli_stmt_close($stmtTipo);
-
-                if (!empty($analisisSeleccionados)) {
-                    $queryDet = "INSERT INTO san_fact_solicitud_det (
-                        codEnvio, posSolicitud, fecToma, numMuestras, codMuestra, nomMuestra,
-                        codAnalisis, nomAnalisis, codRef, obs, id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-                    $stmtDet = mysqli_prepare($conexion, $queryDet);
-                    $posSolicitud = $i + 1;
-
-                    foreach ($analisisSeleccionados as $idAnalisis) {
-                        $uuid = generar_uuid_v4();
-
-                        $stmtAnal = mysqli_prepare($conexion, "SELECT nombre FROM san_dim_analisis WHERE codigo = ?");
-                        mysqli_stmt_bind_param($stmtAnal, "s", $idAnalisis);
-                        mysqli_stmt_execute($stmtAnal);
-                        $resAnal = mysqli_stmt_get_result($stmtAnal);
-                        $analisis = mysqli_fetch_assoc($resAnal);
-                        $nomAnalisis = $analisis['nombre'];
-                        mysqli_stmt_close($stmtAnal);
-
-                        mysqli_stmt_bind_param(
-                            $stmtDet,
-                            "sssssssssss",
-                            $codigoEnvio,
-                            $posSolicitud,
-                            $fechaToma,
-                            $numeroMuestras,
-                            $codTipoMuestra,
-                            $nomTipoMuestra,
-                            $idAnalisis,
-                            $nomAnalisis,
-                            $codigoReferencia,
-                            $observaciones,
-                            $uuid
-                        );
-
-                        mysqli_stmt_execute($stmtDet);
-                    }
-                    mysqli_stmt_close($stmtDet);
+                if (empty($codTipoMuestra) || empty($analisisArray)) {
+                    continue;
                 }
+
+                // Preparar el statement para insertar detalles
+                $queryDet = "INSERT INTO san_fact_solicitud_det (
+                    codEnvio, posSolicitud, fecToma, numMuestras, codMuestra, nomMuestra, 
+                    codPaquete, nomPaquete, codAnalisis, nomAnalisis, codRef, obs, id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+                $stmtDet = mysqli_prepare($conexion, $queryDet);
+                if (!$stmtDet) {
+                    throw new Exception('Error preparando statement detalle: ' . mysqli_error($conexion));
+                }
+
+                $posSolicitud = $i + 1;
+
+                // Para cada análisis, insertar un registro
+                foreach ($analisisArray as $analisis) {
+                    $idSolicitud = $analisis['analisis_id'] ?? null;
+                    $existeDet = 0; // Inicializar variable para PHP 7.2
+
+                    if (!$idSolicitud) {
+                        continue; // Si no hay ID, no podemos verificar ni insertar
+                    }
+
+                    // Verificar si el detalle ya existe
+                    $checkDet->bind_param("s", $idSolicitud);
+                    $checkDet->execute();
+                    $checkDet->bind_result($existeDet);
+                    $checkDet->fetch();
+                    $checkDet->free_result();
+
+                    if ($existeDet > 0) {
+                        $duplicadosDet++;
+                        continue;
+                    }
+
+                    $codAnalisis = $analisis['analisis_codigo'] ?? null;
+                    $nomAnalisis = $analisis['analisis_nombre'] ?? null;
+                    $codPaquete = $analisis['paquete_codigo'] ?? null;
+                    $nomPaquete = $analisis['paquete_nombre'] ?? null;
+
+                    mysqli_stmt_bind_param(
+                        $stmtDet,
+                        "sssssssssssss",
+                        $codigoEnvio,
+                        $posSolicitud,
+                        $fechaToma,
+                        $numeroMuestras,
+                        $codTipoMuestra,
+                        $nomTipoMuestra,
+                        $codPaquete,
+                        $nomPaquete,
+                        $codAnalisis,
+                        $nomAnalisis,
+                        $codigoReferencia,
+                        $observaciones,
+                        $idSolicitud
+                    );
+
+                    if (!mysqli_stmt_execute($stmtDet)) {
+                        mysqli_stmt_close($stmtDet);
+                        throw new Exception('Error ejecutando detalle: ' . mysqli_error($conexion));
+                    }
+                }
+
+                mysqli_stmt_close($stmtDet);
             }
 
             $insertados++;
+
         } catch (Exception $e) {
-            // En producción, podrías loggear $e->getMessage()
+            // Si hay error, hacer rollback y continuar con el siguiente envío
             mysqli_rollback($conexion);
-            mysqli_autocommit($conexion, TRUE);
             mysqli_autocommit($conexion, FALSE);
-            continue; // o break
+            continue;
         }
     }
+
+    // Cerrar los statements de verificación
+    $checkCab->close();
+    $checkDet->close();
 
     mysqli_commit($conexion);
     mysqli_autocommit($conexion, TRUE);
 
-    return ["insertados" => $insertados, "duplicados" => $duplicados];
+    return [
+        "insertados" => $insertados,
+        "duplicadosCab" => $duplicadosCab,
+        "duplicadosDet" => $duplicadosDet,
+        "codigosGenerados" => $codigosGenerados
+    ];
 }
 
-// === Funciones auxiliares (si no están ya definidas) ===
+// === Funciones auxiliares ===
 
 function generarCodigoEnvioSanidad($conexion)
 {
@@ -212,19 +274,9 @@ function generarCodigoEnvioSanidad($conexion)
     return "SAN-0{$anio_actual}" . str_pad($nuevo_numero, 4, "0", STR_PAD_LEFT);
 }
 
-function generar_uuid_v4()
-{
-    return sprintf(
-        '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-        mt_rand(0, 0xffff),
-        mt_rand(0, 0x0fff) | 0x4000,
-        mt_rand(0, 0x3fff) | 0x8000,
-        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-    );
-}
 echo json_encode([
     "success" => true,
     "message" => "Registros procesados",
-    "detalle" => ["envios_muestras" => $respuesta]
+    "detalle" => ["envios_muestras" => $respuesta],
+
 ], JSON_UNESCAPED_UNICODE);

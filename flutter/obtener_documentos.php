@@ -26,27 +26,37 @@ if (!$codEnvio || !is_numeric($posSolicitud)) {
     exit;
 }
 
+// Obtener documentos separados por tipo
 $stmt = $conexion->prepare("
-    SELECT archRuta
+    SELECT archRuta, tipo
     FROM san_fact_resultado_archivo
     WHERE codEnvio = ? AND posSolicitud = ?
-    ORDER BY archRuta
+    ORDER BY tipo, archRuta
 ");
 $stmt->bind_param('si', $codEnvio, $posSolicitud);
 $stmt->execute();
 $result = $stmt->get_result();
 
-$documentos = [];
+$cualitativos = [];
+$cuantitativos = [];
+
 while ($row = $result->fetch_assoc()) {
-    $documentos[] = [
+    $doc = [
         'ruta' => $row['archRuta'],
         'nombre' => basename($row['archRuta']),
     ];
+    if ($row['tipo'] === 'cualitativo') {
+        $cualitativos[] = $doc;
+    } else {
+        $cuantitativos[] = $doc;
+    }
 }
 
 echo json_encode([
     'success' => true,
-    'data' => $documentos
+    'cualitativos' => $cualitativos,
+    'cuantitativos' => $cuantitativos
 ], JSON_UNESCAPED_UNICODE);
+
 $stmt->close();
 $conexion->close();

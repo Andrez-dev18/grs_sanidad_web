@@ -13,7 +13,6 @@ header('Content-Type: application/json; charset=utf-8');
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-//ruta relativa a la conexion
 include_once '../../conexion_grs_joya/conexion.php';
 date_default_timezone_set('America/Lima');
 
@@ -34,8 +33,7 @@ $emp_trans = mysqli_query($conexion, "SELECT codigo, nombre FROM san_dim_emptran
 $muestras = mysqli_query($conexion, "SELECT * FROM san_dim_tipo_muestra ORDER BY codigo ASC");
 $paquetes = mysqli_query($conexion, "SELECT * FROM san_dim_paquete ORDER BY codigo DESC");
 $analisis = mysqli_query($conexion, "SELECT * FROM san_dim_analisis ORDER BY codigo DESC");
-$solicitud_cab = mysqli_query($conexion, "SELECT * FROM san_fact_solicitud_cab ORDER BY codigo DESC");
-$solicitud_det = mysqli_query($conexion, "SELECT * FROM san_fact_solicitud_det ORDER BY codigo DESC");
+
 
 
 // --- Convertir a arrays ---
@@ -56,8 +54,7 @@ $data = [
     'muestras' => resultToArray($muestras),
     'paquetes' => resultToArray($paquetes),
     'analisis' => resultToArray($analisis),
-    'cabeceras' => resultToArray($solicitud_cab),
-    'detalles' => resultToArray($solicitud_det),
+    
 ];
 
 // --- Respuesta final ---
