@@ -400,6 +400,20 @@ if (!$conexion) {
     <script src="assets/js/scanapp.min.js"></script>
 
     <script>
+        function botonLoading(boton, activar = true) {
+            if (activar) {
+                boton.disabled = true;
+                boton.innerHTML = `
+            <svg class="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        `;
+            } else {
+                boton.disabled = false;
+                boton.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i>';
+            }
+        }
         // Generar años dinámicamente al cargar la página
         document.addEventListener('DOMContentLoaded', function() {
             const selectAnio = document.getElementById('anioCodigo');
@@ -635,6 +649,8 @@ if (!$conexion) {
 
 
         document.getElementById('btnValidar').addEventListener('click', function() {
+            const btn = this; // referencia al botón
+
             const anio = document.getElementById('anioCodigo').value;
             const secuencia = document.getElementById('secuenciaCodigo').value.trim().padStart(4, '0');
 
@@ -644,15 +660,21 @@ if (!$conexion) {
             }
 
             const codigoCompleto = `SAN-${anio}${secuencia}`;
-            validarOrden(codigoCompleto);
+
+            // === AQUÍ AGREGAMOS EL LOADING ===
+            botonLoading(btn, true);
+
+            validarOrden(codigoCompleto)
+                .finally(() => {
+                    botonLoading(btn, false); // siempre vuelve al icono de lupa
+                });
         });
 
 
         function validarOrden(codigo) {
+            if (!codigo) return Promise.resolve();
 
-            if (!codigo) return;
-
-            fetch('tracking_envio.php', {
+            return fetch('tracking_envio.php', { // ← agrega "return" aquí
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -667,7 +689,6 @@ if (!$conexion) {
                         mostrarMensaje(data.mensaje, true);
                         return;
                     }
-
                     renderTracking(data);
                     mostrarMensaje('');
                 });
