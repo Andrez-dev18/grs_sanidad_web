@@ -328,11 +328,7 @@ if ($codigoUsuario) {
 
                 <div class="menu-group">
                     <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-<<<<<<< HEAD
-                        onclick="activateAndLoad(this, 'dashboard-registro-muestras.php', '📋 Registro de Muestras', 'Registro del pedido de muestra')">
-=======
                         onclick="activateAndLoad(this, 'modules/registro_muestra/dashboard-registro-muestras.php', '📋 Registro de Muestras', 'Registro del pedido de muestra')">
->>>>>>> test-f
                         <span class="flex items-center gap-3">
                             <i class="fas fa-vial"></i>
                             <span class="font-medium">2.- Registro de Muestras</span>
@@ -343,11 +339,7 @@ if ($codigoUsuario) {
             
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-<<<<<<< HEAD
-                    onclick="activateAndLoad(this, 'dashboard-rpta-laboratorio.php', '📋 Registro Laboratorio', 'Registro de la respuesta  del laboratorio')">
-=======
                     onclick="activateAndLoad(this, 'modules/registro_laboratorio/dashboard-rpta-laboratorio.php', '📋 Registro Laboratorio', 'Registro de la respuesta  del laboratorio')">
->>>>>>> test-f
                     <span class="flex items-center gap-3">
                         <i class="fa-solid fa-atom"></i>
                         <span class="font-medium">3.- Registro Laboratorio</span>
@@ -438,15 +430,6 @@ if ($codigoUsuario) {
                     <div id="submenu-tracking" class="submenu hidden pl-10 mt-2 space-y-2">
 
                         <a href="#"
-<<<<<<< HEAD
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-escaneoQR.php','Escaneo QR', 'Escaneo tracking')"
-                            class="menu-link block text-gray-400 hover:text-white">7.1 .- Escaneo</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-tracking-muestra.php','Seguimiento de envios', 'Visualice el seguimiento de muestra')"
-                            class="menu-link block text-gray-400 hover:text-white">7.2 .- Seguimiento de envios</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-reporte-tracking.php','🧪 Pendientes de entregas', 'Administre los pendientes y demas.')"
-=======
                             onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/escaneo/dashboard-escaneoQR.php','Escaneo QR', 'Escaneo tracking')"
                             class="menu-link block text-gray-400 hover:text-white">7.1 .- Escaneo</a>
                         <a href="#"
@@ -454,7 +437,6 @@ if ($codigoUsuario) {
                             class="menu-link block text-gray-400 hover:text-white">7.2 .- Seguimiento de envios</a>
                         <a href="#"
                             onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/reporte/dashboard-reporte-tracking.php','🧪 Pendientes de entregas', 'Administre los pendientes y demas.')"
->>>>>>> test-f
                             class="menu-link block text-gray-400 hover:text-white">7.3 .- Reporte</a>
                     </div>
                 </div>
