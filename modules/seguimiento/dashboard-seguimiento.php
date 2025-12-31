@@ -929,19 +929,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             <table class="w-full border-collapse text-sm">
                                 <thead class="sticky top-0 bg-gray-100 border-b border-gray-300 z-10">
                                     <tr>
-<<<<<<< HEAD:dashboard-seguimiento.php
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Código</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Pos</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Referencia</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Fecha Toma</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">N° Muestras</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Muestra</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">Análisis</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Estado Cuali</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Estado Cuanti</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Observaciones</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Historial</th>
-=======
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
                                             Código</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
@@ -964,7 +951,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                             Observaciones</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">
                                             Historial</th>
->>>>>>> test-f:modules/seguimiento/dashboard-seguimiento.php
                                     </tr>
                                 </thead>
                                 <tbody id="detalleBody" class="divide-y divide-gray-200">
@@ -1156,18 +1142,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             <table class="w-full border-collapse text-sm">
                                 <thead class="sticky top-0 bg-gray-100 border-b border-gray-300 z-10">
                                     <tr>
-<<<<<<< HEAD:dashboard-seguimiento.php
-                                        <th class="px-4 py-3 text-centerfont-semibold text-gray-700 whitespace-nowrap">Código</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Pos</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Cod Ref</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Fecha</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">N° Muestras</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Muestra</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Tipo</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">User Registro</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Archivo</th>
-                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">Acciones</th>
-=======
                                         <th class="px-4 py-3 text-centerfont-semibold text-gray-700 whitespace-nowrap">
                                             Código</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">
@@ -1188,7 +1162,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                             Archivo</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">
                                             Acciones</th>
->>>>>>> test-f:modules/seguimiento/dashboard-seguimiento.php
                                     </tr>
                                 </thead>
                                 <tbody id="docsBody" class="divide-y divide-gray-200">
@@ -1281,25 +1254,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                     <!-- Título + Descargar -->
                     <div class="flex items-center gap-4">
-<<<<<<< HEAD:dashboard-seguimiento.php
-                        <button
-                            onclick="descargarArchivo()"
-=======
                         <button onclick="descargarArchivo()"
->>>>>>> test-f:modules/seguimiento/dashboard-seguimiento.php
                             class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center gap-1">
                             ⬇️ Descargar
                         </button>
                     </div>
 
                     <!-- Cerrar -->
-<<<<<<< HEAD:dashboard-seguimiento.php
-                    <button
-                        onclick="cerrarModalPDF()"
-                        class="text-gray-500 hover:text-gray-700 text-2xl leading-none">
-=======
                     <button onclick="cerrarModalPDF()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">
->>>>>>> test-f:modules/seguimiento/dashboard-seguimiento.php
                         ×
                     </button>
                 </div>
@@ -1313,12 +1275,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         </div>
 
         <!-- Modal Historial de Resultados -->
-<<<<<<< HEAD:dashboard-seguimiento.php
-        <div id="modalHistorial" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
-=======
         <div id="modalHistorial"
             class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
->>>>>>> test-f:modules/seguimiento/dashboard-seguimiento.php
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
                 <!-- Header -->
                 <div class="flex justify-between items-center px-6 py-4 border-b bg-gray-50 rounded-t-xl">
@@ -1331,13 +1289,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 <!-- Contenido scrollable -->
                 <div class="flex-1 overflow-y-auto p-6">
                     <div class="text-center mb-4">
-<<<<<<< HEAD:dashboard-seguimiento.php
-                        <p class="text-sm text-gray-600">Código: <strong id="historialCodEnvio"></strong> • Posición: <strong id="historialPos"></strong></p>
-=======
                         <p class="text-sm text-gray-600">Código: <strong id="historialCodEnvio"></strong> • Posición:
                             <strong id="historialPos"></strong>
                         </p>
->>>>>>> test-f:modules/seguimiento/dashboard-seguimiento.php
                     </div>
 
                     <div id="historialContainer" class="space-y-4">
@@ -1348,20 +1302,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                 <!-- Footer -->
                 <div class="px-6 py-4 border-t bg-gray-50 rounded-b-xl text-right">
-<<<<<<< HEAD:dashboard-seguimiento.php
-                    <button onclick="cerrarModalHistorial()" class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
-=======
                     <button onclick="cerrarModalHistorial()"
                         class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
->>>>>>> test-f:modules/seguimiento/dashboard-seguimiento.php
                         Cerrar
                     </button>
                 </div>
             </div>
         </div>
-<<<<<<< HEAD:dashboard-seguimiento.php
-
-=======
         <!-- Modal de Edición -->
         <div class="modal fade" id="modalEditarEnvio" tabindex="-1" aria-labelledby="modalEditarEnvioLabel"
             aria-hidden="true">
@@ -1508,7 +1455,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 </div>
             </div>
         </div>
->>>>>>> test-f:modules/seguimiento/dashboard-seguimiento.php
 
         <!-- Footer -->
         <div class="text-center mt-12">
@@ -1862,21 +1808,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             document.getElementById('modalHistorial').classList.remove('hidden');
 
             fetch('get_historial_resultados.php', {
-<<<<<<< HEAD:dashboard-seguimiento.php
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: `codEnvio=${encodeURIComponent(codEnvio)}&posSolicitud=${posSolicitud}`
-                })
-=======
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
                 body: `codEnvio=${encodeURIComponent(codEnvio)}&posSolicitud=${posSolicitud}`
             })
->>>>>>> test-f:modules/seguimiento/dashboard-seguimiento.php
                 .then(r => r.json())
                 .then(data => {
                     container.innerHTML = '';
