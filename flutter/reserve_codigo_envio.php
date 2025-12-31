@@ -20,8 +20,7 @@ date_default_timezone_set('America/Lima');
 $conexion = conectar_joya();
 
 
-// --- 3. Conexión a BD ---
-
+// --- Conexión a BD ---
 if (!$conexion) {
     echo json_encode([
         'status' => 500,
@@ -32,7 +31,7 @@ if (!$conexion) {
     exit;
 }
 
-// --- 4. Lógica de reserva de código ---
+// --- Lógica de reserva de código ---
 try {
    // BLOQUEAR TABLA
     mysqli_query($conexion, "LOCK TABLES san_fact_solicitud_cab WRITE");
@@ -65,8 +64,6 @@ try {
     // LIBERAR TABLAS
     mysqli_query($conexion, "UNLOCK TABLES");
 
-
-    // ✅ Respuesta exitosa
     echo json_encode([
         'status' => 200,
         'success' => true,

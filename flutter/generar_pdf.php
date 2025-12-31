@@ -22,7 +22,6 @@ if (!$codigoEnvio) {
     http_response_code(400);
     exit('{"error":"Código de envío no proporcionado"}');
 }
-
 // --- Cabecera ---
 $queryCab = "
     SELECT
@@ -85,10 +84,7 @@ foreach ($detalles_raw as $row) {
     if (!empty($row['codAnalisis'])) {
         $grupos[$posSolicitud]['analisis_codigos'][] = $row['codAnalisis'];
     }
-    // Si aún no tiene observación y esta no está vacía, tomarla
-    if (empty($grupos[$posSolicitud]['obs']) && !empty($row['obs'])) {
-        $grupos[$posSolicitud]['obs'] = $row['obs'];
-    }
+   
 }
 
 // === Procesar cada grupo: obtener análisis, paquetes y tipo de muestra ===
@@ -100,7 +96,7 @@ foreach ($grupos as $grupo) {
 
     if (!empty($analisisCodigos)) {
         $placeholders = str_repeat('?,', count($analisisCodigos) - 1) . '?';
-        $sql = "
+        /*$sql = "
             SELECT 
                 a.nombre AS analisis_nombre,
                 p.nombre AS paquete_nombre,
@@ -110,9 +106,27 @@ foreach ($grupos as $grupo) {
             JOIN san_dim_tipo_muestra tm ON p.tipoMuestra = tm.codigo
             WHERE a.codigo IN ($placeholders)
             ORDER BY p.nombre, a.nombre
-        ";
+        ";*/
+        $sql = "
+        SELECT
+        nomAnalisis AS analisis_nombre,
+        nomPaquete AS paquete_nombre,
+        nomMuestra AS tipo_muestra_nombre
+    FROM
+        san_fact_solicitud_det sd
+    WHERE
+        sd.codEnvio = ? AND sd.posSolicitud = ? AND sd.codAnalisis IN ($placeholders)
+    ORDER BY
+        paquete_nombre, analisis_nombre
+";
         $stmt = mysqli_prepare($conexion, $sql);
-        mysqli_stmt_bind_param($stmt, str_repeat('s', count($analisisCodigos)), ...$analisisCodigos);
+
+        // Tipos: 's' para codEnvio, 's' para posSolicitud, y luego N 's' para análisis
+        $tipos = 'ss' . str_repeat('s', count($analisisCodigos));
+
+        // Parámetros: codEnvio, posSolicitud, y luego los códigos de análisis
+        mysqli_stmt_bind_param($stmt, $tipos, $codigoEnvio, $grupo['posSolicitud'], ...$analisisCodigos);
+
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
 
@@ -147,6 +161,7 @@ foreach ($grupos as $grupo) {
 }
 
 mysqli_close($conexion);
+
 
 // === Generar PDF ===
 require_once __DIR__ . '/../vendor/autoload.php';

@@ -1,7 +1,7 @@
 <?php
 session_start();
 include_once '../conexion_grs_joya/conexion.php';
-include_once 'historial_acciones.php';
+include_once 'includes/historial_acciones.php';
 
 header('Content-Type: application/json; charset=utf-8');
 

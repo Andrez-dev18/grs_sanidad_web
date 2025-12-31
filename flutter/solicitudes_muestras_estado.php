@@ -45,18 +45,28 @@ if ($busqueda !== '') {
     $types .= 's';
 }
 
-// Filtro por estado: usaremos una subconsulta con GROUP BY + condición en HAVING
-// Primero, definimos el filtro lógico en la cláusula HAVING
 // Filtro por estado
 $havingCondition = '';
 if ($filtroEstado === 'completado') {
-    $havingCondition = "HAVING MIN(c.estado_cuali) = 'completado' AND MAX(c.estado_cuali) = 'completado'";
+    // Ambos deben estar 100% completados
+    $havingCondition = "
+        HAVING 
+            MIN(c.estado_cuali) = 'completado' AND MAX(c.estado_cuali) = 'completado'
+            AND
+            MIN(c.estado_cuanti) = 'completado' AND MAX(c.estado_cuanti) = 'completado'
+    ";
 } elseif ($filtroEstado === 'pendiente') {
-    $havingCondition = "HAVING NOT (MIN(c.estado_cuali) = 'completado' AND MAX(c.estado_cuali) = 'completado')";
+    // Al menos uno de los dos está incompleto
+    $havingCondition = "
+        HAVING 
+            NOT (
+                MIN(c.estado_cuali) = 'completado' AND MAX(c.estado_cuali) = 'completado'
+                AND
+                MIN(c.estado_cuanti) = 'completado' AND MAX(c.estado_cuanti) = 'completado'
+            )
+    ";
 }
-// Si 'todos', no hay HAVING
 
-// --- Contar total de grupos (codEnvio + posSolicitud) que cumplen el filtro ---
 $sqlTotal = "
     SELECT COUNT(*) AS total
     FROM (
@@ -97,11 +107,21 @@ $sql = "
             SEPARATOR '; '
         ) AS analisis,
         MAX(c.obs) AS observaciones,
+
+        -- Estado cualitativo
         CASE 
             WHEN MIN(c.estado_cuali) = 'completado' AND MAX(c.estado_cuali) = 'completado'
             THEN 'completado'
             ELSE 'pendiente'
-        END AS estado_general,
+        END AS estado_cualitativo,
+
+        -- Estado cuantitativo
+        CASE 
+            WHEN MIN(c.estado_cuanti) = 'completado' AND MAX(c.estado_cuanti) = 'completado'
+            THEN 'completado'
+            ELSE 'pendiente'
+        END AS estado_cuantitativo,
+
         COUNT(*) AS total_registros
     FROM san_fact_solicitud_det c
     WHERE 1=1 $condicion
@@ -135,17 +155,19 @@ while ($row = mysqli_fetch_assoc($result)) {
     }
 
     $solicitudes[] = [
-        'codigoEnvio' => $row['codEnvio'],
-        'posSolicitud' => (int) $row['posSolicitud'],
-        'fechaToma' => $row['fecToma'],
-        'numeroMuestras' => (int) $row['numMuestras'],
-        'codigoReferencia' => $row['codRef'],
-        'tipoMuestra' => $row['nomMuestra'],
-        'analisis' => $analisisList,
-        'observaciones' => $row['observaciones'],
-        'estado' => $row['estado_general'],
-        'totalItems' => (int) $row['total_registros']
-    ];
+    'codigoEnvio' => $row['codEnvio'],
+    'posSolicitud' => (int) $row['posSolicitud'],
+    'fechaToma' => $row['fecToma'],
+    'numeroMuestras' => (int) $row['numMuestras'],
+    'codigoReferencia' => $row['codRef'],
+    'tipoMuestra' => $row['nomMuestra'],
+    'analisis' => $analisisList,
+    'observaciones' => $row['observaciones'],
+    
+    'estadoCualitativo' => $row['estado_cualitativo'],
+    'estadoCuantitativo' => $row['estado_cuantitativo'],
+    'totalItems' => (int) $row['total_registros']
+];
 }
 
 mysqli_stmt_close($stmt);
