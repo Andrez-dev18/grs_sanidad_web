@@ -2,7 +2,13 @@
 
 session_start();
 if (empty($_SESSION['active'])) {
-    header('Location: login.php');
+    echo '<script>
+        if (window.top !== window.self) {
+            window.top.location.href = "login.php";
+        } else {
+            window.location.href = "login.php";
+        }
+    </script>';
     exit();
 }
 
@@ -311,7 +317,7 @@ if ($codigoUsuario) {
             <?php if (!$isTransportista): ?>
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'dashboard-dashboard.php', '📊 Dashboard',  'Resumen visual de los datos registrados en el sistema')">
+                    onclick="activateAndLoad(this, 'modules/dashboard/dashboard-dashboard.php', '📊 Dashboard',  'Resumen visual de los datos registrados en el sistema')">
                     <span class="flex items-center gap-3">
                         <i class="fas fa-chart-line"></i>
                         <span class="font-medium">1.- Dashboard</span>
@@ -322,7 +328,11 @@ if ($codigoUsuario) {
 
                 <div class="menu-group">
                     <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+<<<<<<< HEAD
                         onclick="activateAndLoad(this, 'dashboard-registro-muestras.php', '📋 Registro de Muestras', 'Registro del pedido de muestra')">
+=======
+                        onclick="activateAndLoad(this, 'modules/registro_muestra/dashboard-registro-muestras.php', '📋 Registro de Muestras', 'Registro del pedido de muestra')">
+>>>>>>> test-f
                         <span class="flex items-center gap-3">
                             <i class="fas fa-vial"></i>
                             <span class="font-medium">2.- Registro de Muestras</span>
@@ -333,7 +343,11 @@ if ($codigoUsuario) {
             
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+<<<<<<< HEAD
                     onclick="activateAndLoad(this, 'dashboard-rpta-laboratorio.php', '📋 Registro Laboratorio', 'Registro de la respuesta  del laboratorio')">
+=======
+                    onclick="activateAndLoad(this, 'modules/registro_laboratorio/dashboard-rpta-laboratorio.php', '📋 Registro Laboratorio', 'Registro de la respuesta  del laboratorio')">
+>>>>>>> test-f
                     <span class="flex items-center gap-3">
                         <i class="fa-solid fa-atom"></i>
                         <span class="font-medium">3.- Registro Laboratorio</span>
@@ -343,7 +357,7 @@ if ($codigoUsuario) {
             </div>
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'dashboard-planificacion.php', '📅 Planificación', 'Registro de la planificación')">
+                    onclick="activateAndLoad(this, 'modules/planificacion/dashboard-planificacion.php', '📅 Planificación', 'Registro de la planificación')">
                     <span class="flex items-center gap-3">
                         <i class="fas fa-calendar"></i>
                         <span class="font-medium">4.- Planificación</span>
@@ -363,26 +377,11 @@ if ($codigoUsuario) {
 
                 <div id="submenu-reporte" class="submenu hidden pl-10 mt-2 space-y-2">
                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-reportes.php', '📈 Formato de Muestras', 'Formato PDF y envío de correo de los pedidos de muestra')"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/reportes/dashboard-reportes.php', '📈 Formato de Muestras', 'Formato PDF y envío de correo de los pedidos de muestra')"
                         class="menu-link block text-gray-400 hover:text-white">Formato de Muestras</a>
-                    <!--a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-muestras-cabecera.php', '🗃️ Listado de Muestras', 'Listado de los pedidos de muestra registrados en el sistema')"
-                        class="menu-link block text-gray-400 hover:text-white">Listado de Muestras</a>
+                 
                     <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-detalle-muestras.php', '📁 Listado de Solicitudes', 'Listado de las solicitudes registradas en el sistema')"
-                        class="menu-link block text-gray-400 hover:text-white">Listado de Solicitudes</a>
-                    <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados.php', '🗒️ Resultados Cualitativos', 'Listado de los resultados cualitativos registrados en el sistema')"
-                        class="menu-link block text-gray-400 hover:text-white">Resultados Cualitativos</a>
-
-                    <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados-pollo-bb.php', '📊 Resultados Cuantitativos Pollo Bebe', 'Listado de los resultados cuantitativos de pollo bebe registrados en el sistema')"
-                        class="menu-link block text-gray-400 hover:text-white">Resultados Cuantitativos Pollo Bebe</a>
-                    <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-registro-resultados-pollo-adulto.php', '📊 Resultados Cuantitativos Pollo Adulto', 'Listado de los resultados cuantitativos de pollo adulto registrados en el sistema')"
-                        class="menu-link block text-gray-400 hover:text-white">Resultados cuantitativos pollo Adulto</a> -->
-                    <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('dashboard-seguimiento.php', '📊 Seguimiento', 'Seguimiento de los resultados cualitativo y cuantitativo registrados en el sistema')"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/seguimiento/dashboard-seguimiento.php', '📊 Seguimiento', 'Seguimiento de los resultados cualitativo y cuantitativo registrados en el sistema')"
                         class="menu-link block text-gray-400 hover:text-white">Seguimiento</a>
 
                 </div>
@@ -403,25 +402,25 @@ if ($codigoUsuario) {
                     <div id="submenu-maestros-sistema" class="submenu hidden pl-10 mt-2 space-y-2">
 
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-empresas-transporte.php','🚚 Empresas de transporte', 'Administre las empresas de transporte registradas en el sistema')"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/empTransporte/dashboard-empresas-transporte.php','🚚 Empresas de transporte', 'Administre las empresas de transporte registradas en el sistema')"
                             class="menu-link block text-gray-400 hover:text-white">Empresas de transporte</a>
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-laboratorio.php','🔬 Laboratorio', 'Administre los laboratorios registrados en el sistema')"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/laboratorio/dashboard-laboratorio.php','🔬 Laboratorio', 'Administre los laboratorios registrados en el sistema')"
                             class="menu-link block text-gray-400 hover:text-white">Laboratorios</a>
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-tipo-muestra.php','🧪 Tipo muestra', 'Administre los tipos de muestra registrados en el sistema')"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipo_muestra/dashboard-tipo-muestra.php','🧪 Tipo muestra', 'Administre los tipos de muestra registrados en el sistema')"
                             class="menu-link block text-gray-400 hover:text-white">Tipos de Muestra</a>
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-analisis.php','🔍 Analisis', 'Administre los analisis registrados en el sistema')"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipo_analisis/dashboard-analisis.php','🔍 Analisis', 'Administre los analisis registrados en el sistema')"
                             class="menu-link block text-gray-400 hover:text-white">Tipos de Analisis</a>
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-paquete-analisis.php','📦 Paquete analisis', 'Administre los paquetes de analisis registrados en el sistema')"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/paquete_analisis/dashboard-paquete-analisis.php','📦 Paquete analisis', 'Administre los paquetes de analisis registrados en el sistema')"
                             class="menu-link block text-gray-400 hover:text-white">Paquetes de Analisis</a>
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-respuesta.php','🛠️ Tipos de Respuesta', 'Administre los tipos de respuestas registrados de los analisis')"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipo_respuesta/dashboard-respuesta.php','🛠️ Tipos de Respuesta', 'Administre los tipos de respuestas registrados de los analisis')"
                             class="menu-link block text-gray-400 hover:text-white">Tipos de Respuesta</a>
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('dashboard-correo-contactos.php','📧 Correo y Contactos', 'Administre  tu cuenta de correo y tus contactos para envío de ')"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/correo_contacto/dashboard-correo-contactos.php','📧 Correo y Contactos', 'Administre  tu cuenta de correo y tus contactos para envío de ')"
                             class="menu-link block text-gray-400 hover:text-white">Correo contactos</a>
                     </div>
                 </div>
@@ -439,6 +438,7 @@ if ($codigoUsuario) {
                     <div id="submenu-tracking" class="submenu hidden pl-10 mt-2 space-y-2">
 
                         <a href="#"
+<<<<<<< HEAD
                             onclick="selectMenuItem(this); loadDashboardAndData('dashboard-escaneoQR.php','Escaneo QR', 'Escaneo tracking')"
                             class="menu-link block text-gray-400 hover:text-white">7.1 .- Escaneo</a>
                         <a href="#"
@@ -446,6 +446,15 @@ if ($codigoUsuario) {
                             class="menu-link block text-gray-400 hover:text-white">7.2 .- Seguimiento de envios</a>
                         <a href="#"
                             onclick="selectMenuItem(this); loadDashboardAndData('dashboard-reporte-tracking.php','🧪 Pendientes de entregas', 'Administre los pendientes y demas.')"
+=======
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/escaneo/dashboard-escaneoQR.php','Escaneo QR', 'Escaneo tracking')"
+                            class="menu-link block text-gray-400 hover:text-white">7.1 .- Escaneo</a>
+                        <a href="#"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/seguimiento_envios/dashboard-tracking-muestra.php','Seguimiento de envios', 'Visualice el seguimiento de muestra')"
+                            class="menu-link block text-gray-400 hover:text-white">7.2 .- Seguimiento de envios</a>
+                        <a href="#"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/reporte/dashboard-reporte-tracking.php','🧪 Pendientes de entregas', 'Administre los pendientes y demas.')"
+>>>>>>> test-f
                             class="menu-link block text-gray-400 hover:text-white">7.3 .- Reporte</a>
                     </div>
                 </div>
@@ -614,12 +623,12 @@ if ($codigoUsuario) {
             }
 
             // Cargar dashboard por defecto
-            const defaultMenuItem = document.querySelector('[onclick*="dashboard-dashboard.php"]');
+            const defaultMenuItem = document.querySelector('[onclick*="modules/dashboard/dashboard-dashboard.php"]');
             if (defaultMenuItem) {
-                activateAndLoad(defaultMenuItem, 'dashboard-dashboard.php', '📊 Dashboard de Reportes', 'Resumen visual de los datos registrados en el sistema');
+                activateAndLoad(defaultMenuItem, 'modules/dashboard/dashboard-dashboard.php', '📊 Dashboard de Reportes', 'Resumen visual de los datos registrados en el sistema');
             } else {
                 const frame = document.getElementById('dashboardFrame');
-                frame.src = 'dashboard-dashboard.php';
+                frame.src = 'modules/dashboard/dashboard-dashboard.php';
                 document.getElementById('dashboardTitle').textContent = '📊 Dashboard de Reportes';
                 document.getElementById('dashboardsubTitle').textContent = 'Resumen visual de los datos registrados en el sistema';
             }

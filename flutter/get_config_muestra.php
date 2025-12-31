@@ -28,7 +28,7 @@ if (!$conexion) {
 }
 
 // --- Obtener parámetro 'tipo_muestra_codigo' ---
-$tipoCodigo = $_POST['tipo_muestra_codigo'] ?? $_GET['tipo_muestra_codigo'] ?? null;
+$tipoCodigo = $_GET['tipo_muestra_codigo'] ?? null;
 
 if (!$tipoCodigo || !is_string($tipoCodigo) || trim($tipoCodigo) === '') {
     echo json_encode([
@@ -44,9 +44,9 @@ $tipoCodigo = mysqli_real_escape_string($conexion, trim($tipoCodigo));
 
 // --- 1. Consultar tipo de muestra ---
 $tmQuery = mysqli_query($conexion, "
-    SELECT codigo, nombre, lonCod
-    FROM san_dim_tipo_muestra 
-    WHERE codigo = '$tipoCodigo'
+    SELECT codigo, nombre, lonCod 
+        FROM san_dim_tipo_muestra 
+        WHERE codigo = " . (int) $tipoCodigo . "
     LIMIT 1
 ");
 $tipoMuestra = mysqli_fetch_assoc($tmQuery);
@@ -65,9 +65,9 @@ if (!$tipoMuestra) {
 $paquetes = [];
 $paqQuery = mysqli_query($conexion, "
     SELECT codigo, nombre 
-    FROM san_dim_paquete
-    WHERE tipoMuestra = '$tipoCodigo'
-    ORDER BY nombre
+        FROM san_dim_paquete 
+        WHERE tipoMuestra = " . (int) $tipoCodigo . " 
+        ORDER BY nombre
 ");
 while ($row = mysqli_fetch_assoc($paqQuery)) {
     $paquetes[] = $row;
@@ -76,17 +76,17 @@ while ($row = mysqli_fetch_assoc($paqQuery)) {
 // --- 3. Consultar análisis del tipo ---
 $analisis = [];
 $anaQuery = mysqli_query($conexion, "
-    SELECT A.codigo, A.nombre, A.paquete 
-            FROM san_dim_analisis A
-            JOIN san_dim_paquete P ON A.paquete = P.codigo
-            WHERE P.tipoMuestra = '$tipoCodigo' 
+    SELECT A.codigo, A.nombre, P.codigo AS paquete 
+            FROM san_dim_analisis_paquete AP
+            JOIN san_dim_paquete P ON AP.paquete = P.codigo
+            JOIN san_dim_analisis A ON AP.analisis = A.codigo
+            WHERE P.tipoMuestra = " . (int) $tipoCodigo . " 
             ORDER BY nombre
 ");
 while ($row = mysqli_fetch_assoc($anaQuery)) {
     $analisis[] = [
         'codigo' => $row['codigo'],
         'nombre' => $row['nombre'],
-        // ⚠️ Asegúrate de usar el nombre correcto del campo: 'PaqueteAnalisis'
         'paquete' => $row['paquete'] ?: null
     ];
 }
