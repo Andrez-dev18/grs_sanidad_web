@@ -762,10 +762,15 @@ if (!$conexion) {
                 } else if (ubicacion === 'Transporte') {
                     pasosActivos.add(2);
                 } else if (ubicacion === 'Laboratorio') {
-                    pasosActivos.add(3);
-
-                    // Paso 4: solo si es resultado cualitativo o cuantitativo
                     const accionLower = (h.accion || '').toLowerCase();
+
+                    // Paso 3: solo si hay recepción en laboratorio
+                    if (accionLower.includes('recepción de muestra por laboratorio') ||
+                        accionLower.includes('recepcionado por laboratorio')) {
+                        pasosActivos.add(3);
+                    }
+
+                    // Paso 4: solo si hay registro de resultados (cualitativo o cuantitativo)
                     if (accionLower.includes('registro_resultados_cualitativos') ||
                         accionLower.includes('registro_resultados_cuantitativos')) {
                         pasosActivos.add(4);
@@ -807,9 +812,13 @@ if (!$conexion) {
                     if (ubicacion === 'GRS') paso = 1;
                     else if (ubicacion === 'Transporte') paso = 2;
                     else if (ubicacion === 'Laboratorio') {
-                        paso = 3;
-
                         const accionLower = (h.accion || '').toLowerCase();
+
+                        if (accionLower.includes('recepción de muestra por laboratorio') ||
+                            accionLower.includes('recepcionado por laboratorio')) {
+                            paso = 3;
+                        }
+
                         if (accionLower.includes('registro_resultados_cualitativos') ||
                             accionLower.includes('registro_resultados_cuantitativos')) {
                             paso = 4;
