@@ -33,7 +33,7 @@ if ($codigoUsuario) {
         $stmt->execute();
         $result = $stmt->get_result();
         if ($row = $result->fetch_assoc()) {
-            $rol = strtolower(trim($row['rol_sanidad'] ?? 'user'));
+            $rol = (trim($row['rol_sanidad'] ?? 'user'));
             $isTransportista = ($rol === 'TRANSPORTE');
         }
         $stmt->close();
@@ -701,16 +701,24 @@ if ($codigoUsuario) {
                         orderable: false,
                         searchable: false,
                         render: function(data, type, row) {
+                            // Variable PHP inyectada en JS
+                            const esTransportista = <?php echo $isTransportista ? 'true' : 'false'; ?>;
+
+                            let botonEliminar = '';
+                            if (!esTransportista) {
+                                botonEliminar = `<button onclick="eliminarRegistro(${row.id})" class="text-red-600 hover:text-red-800" title="Eliminar">
+                                <i class="fa-solid fa-trash"></i>
+                             </button>`;
+                            }
+
                             return `
-                    <div class="flex justify-center gap-3">
-                        <button onclick="editarRegistro(${row.id})" class="text-green-600 hover:text-green-800">
-                            <i class="fa-solid fa-edit"></i>
-                        </button>
-                        <button onclick="eliminarRegistro(${row.id})" class="text-red-600 hover:text-red-800">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                    `;
+                            <div class="flex justify-center gap-3">
+                                <button onclick="editarRegistro(${row.id})" class="text-green-600 hover:text-green-800" title="Editar">
+                                    <i class="fa-solid fa-edit"></i>
+                                </button>
+                                ${botonEliminar}
+                            </div>
+                        `;
                         }
                     }
                 ]

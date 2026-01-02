@@ -31,7 +31,7 @@ if ($codigoUsuario) {
         $stmt->execute();
         $result = $stmt->get_result();
         if ($row = $result->fetch_assoc()) {
-            $rol = strtolower(trim($row['rol_sanidad'] ?? 'user'));
+            $rol = (trim($row['rol_sanidad'] ?? 'user'));
             $isTransportista = ($rol === 'TRANSPORTE');
         }
         $stmt->close();
@@ -422,7 +422,9 @@ if ($codigoUsuario) {
                         onclick="toggleSubmenu('submenu-tracking')">
                         <span class="flex items-center gap-3">
                             <i class="fa-solid fa-location-dot"></i>
-                            <span class="font-medium">7.- Tracking</span>
+                            <span class="font-medium">
+                                <?php echo $isTransportista ? '1.-' : '7.-'; ?> Tracking
+                            </span>
                         </span>
                         <i class="fas fa-chevron-down text-sm"></i>
                     </button>
@@ -431,13 +433,19 @@ if ($codigoUsuario) {
 
                         <a href="#"
                             onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/escaneo/dashboard-escaneoQR.php','Escaneo QR', 'Escaneo tracking')"
-                            class="menu-link block text-gray-400 hover:text-white">7.1 .- Escaneo</a>
+                            class="menu-link block text-gray-400 hover:text-white">
+                            <?php echo $isTransportista ? '1.1.-' : '7.1.-'; ?> Escaneo
+                        </a>
                         <a href="#"
                             onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/seguimiento_envios/dashboard-tracking-muestra.php','Seguimiento de envios', 'Visualice el seguimiento de muestra')"
-                            class="menu-link block text-gray-400 hover:text-white">7.2 .- Seguimiento de envios</a>
+                            class="menu-link block text-gray-400 hover:text-white">
+                            <?php echo $isTransportista ? '1.2.-' : '7.2.-'; ?> Seguimiento de envios
+                        </a>
                         <a href="#"
                             onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/reporte/dashboard-reporte-tracking.php','🧪 Pendientes de entregas', 'Administre los pendientes y demas.')"
-                            class="menu-link block text-gray-400 hover:text-white">7.3 .- Reporte</a>
+                            class="menu-link block text-gray-400 hover:text-white">
+                            <?php echo $isTransportista ? '1.3.-' : '7.3.-'; ?> Reporte
+                        </a>
                     </div>
                 </div>
 
