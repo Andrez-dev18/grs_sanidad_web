@@ -32,7 +32,7 @@ if ($codigoUsuario) {
         $result = $stmt->get_result();
         if ($row = $result->fetch_assoc()) {
             $rol = strtolower(trim($row['rol_sanidad'] ?? 'user'));
-            $isTransportista = ($rol === 'transport');
+            $isTransportista = ($rol === 'TRANSPORTE');
         }
         $stmt->close();
     }

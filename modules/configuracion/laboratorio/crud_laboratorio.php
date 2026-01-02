@@ -5,10 +5,10 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once '../conexion_grs_joya/conexion.php';
+include_once '../../../../conexion_grs_joya/conexion.php';
 $conexion = conectar_joya();
 if (!$conexion) {
-    echo json_encode(['success' => false, 'message' => 'Error de conexión']);
+    echo json_encode(['success' => false, 'message' => 'Error de conexión.']);
     exit();
 }
 

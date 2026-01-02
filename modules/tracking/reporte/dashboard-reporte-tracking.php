@@ -20,6 +20,26 @@ if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
 
+
+// === OBTENER ROL DEL USUARIO ===
+$codigoUsuario = $_SESSION['usuario'] ?? null;
+$isTransportista = false; // por defecto NO es transportista
+
+if ($codigoUsuario) {
+    $sql = "SELECT rol_sanidad FROM usuario WHERE codigo = ? AND estado = 'A'";
+    $stmt = $conexion->prepare($sql);
+    if ($stmt) {
+        $stmt->bind_param("s", $codigoUsuario);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $rol = strtolower(trim($row['rol_sanidad'] ?? 'user'));
+            $isTransportista = ($rol === 'TRANSPORTE');
+        }
+        $stmt->close();
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
