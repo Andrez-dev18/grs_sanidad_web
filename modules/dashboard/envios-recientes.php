@@ -1,11 +1,6 @@
 <?php
-session_start();
-if (empty($_SESSION['active'])) {
-    http_response_code(403);
-    echo json_encode([]);
-    exit();
-}
-
+header("Access-Control-Allow-Origin: *");
+header("Content-Type: application/json; charset=utf-8");
 include_once '../../../conexion_grs_joya/conexion.php';
 $conexion = conectar_joya();
 if (!$conexion) {

@@ -73,11 +73,7 @@ $fechaHoraActual = date('Y-m-d H:i:s');
 //  Insertar registro
 $sql = "
     INSERT INTO san_fact_resultado_archivo (codEnvio, posSolicitud, archRuta, tipo, usuarioRegistrador, fechaRegistro)
-<<<<<<< HEAD:guardarResultadoAnalisisPDF.php
-    VALUES ('$codigoEnvio', '$pos', '$rutaFinal', '$tipo', '$user', '$fechaHoraActual')
-=======
     VALUES ('$codigoEnvio', '$pos', '$rutaRelativa', '$tipo', '$user', '$fechaHoraActual')
->>>>>>> test-f:modules/registro_laboratorio/guardarResultadoAnalisisPDF.php
 ";
 
 if ($conn->query($sql)) {

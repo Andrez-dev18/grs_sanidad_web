@@ -7,13 +7,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-<<<<<<< HEAD:guardar_muestra.php
-include_once '../conexion_grs_joya/conexion.php';
-include_once 'historial_resultados.php';
-=======
 include_once '../../../conexion_grs_joya/conexion.php';
 include_once '../../includes/historial_resultados.php';
->>>>>>> test-f:modules/registro_muestra/guardar_muestra.php
 $conexion = conectar_joya();
 if (!$conexion) {
     http_response_code(500);
@@ -25,12 +20,13 @@ if (!$conexion) {
 mysqli_autocommit($conexion, FALSE);
 
 try {
-
+    $id =  $_POST['id'] ?? '';
     $fechaEnvio = $_POST['fechaEnvio'] ?? '';
     $horaEnvio = $_POST['horaEnvio'] ?? '';
     $codLab = $_POST['laboratorio'] ?? '';
     $codEmpTrans = $_POST['empresa_transporte'] ?? '';
-    $usuarioRegistrador = $_POST['usuario_registrador'] ?? $_SESSION['usuario'] ?? 'Desconocido';
+    $usuarioRegistrador = $_POST['usuario_registrador'] ?? $_SESSION['usuario'];
+    $usuarioTransferencia = $_SESSION['usuario'];
     $usuarioResponsable = $_POST['usuario_responsable'] ?? '';
     $autorizadoPor = $_POST['autorizado_por'] ?? '';
 
@@ -85,10 +81,6 @@ try {
             throw new Exception("Error generando código: " . $e->getMessage());
         }
     }
-
-
-
-
     function generar_uuid_v4()
     {
         return sprintf(
@@ -110,8 +102,6 @@ try {
     }
 
     $codigoRecibido = $_POST['codigoEnvio'] ?? '';
-
-
 
     $codigoEnvio = generarCodigoEnvio($conexion);
 
@@ -141,14 +131,15 @@ try {
     $nomEmpTrans = $empTrans['nombre'];
 
     $queryCabecera = "INSERT INTO san_fact_solicitud_cab (
-            codEnvio, fecEnvio, horaEnvio, codLab, nomLab, codEmpTrans, nomEmpTrans, 
-            usuarioResponsable, autorizadoPor, fechaHoraRegistro
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+            id, codEnvio, fecEnvio, horaEnvio, codLab, nomLab, codEmpTrans, nomEmpTrans, 
+            usuarioResponsable, autorizadoPor, fechaHoraRegistro, usuarioRegistrador, usuarioTransferencia, fechaHoraTransferencia
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?,  ?, NOW())";
 
     $stmtCabecera = mysqli_prepare($conexion, $queryCabecera);
     mysqli_stmt_bind_param(
         $stmtCabecera,
-        "ssssssssss",
+        "ssssssssssss",
+        $id,
         $codigoEnvio,
         $fechaEnvio,
         $horaEnvio,
@@ -158,7 +149,9 @@ try {
         $nomEmpTrans,
        
         $usuarioResponsable,
-        $autorizadoPor
+        $autorizadoPor,
+        $usuarioRegistrador,
+        $usuarioTransferencia
     );
 
     if (!mysqli_stmt_execute($stmtCabecera)) {
@@ -254,20 +247,7 @@ try {
         throw new Exception('Error al registrar historial del envío');
     }
 
-    $historialOk = insertarHistorial(
-        $conexion,
-        $codigoEnvio,        // codEnvio
-        0,                   // posSolicitud (0 = acción general)
-        'ENVIO_EDITADO',  // acción
-        null,                // tipo_analisis
-        'Se edito el envio de muestra',
-        $usuarioRegistrador,
-        'GRS'
-    );
-
-    if (!$historialOk) {
-        throw new Exception('Error al registrar historial del envío');
-    }
+    
     mysqli_commit($conexion);
     // mysqli_stmt_close($stmtDetalle);
 

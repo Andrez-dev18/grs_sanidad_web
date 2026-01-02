@@ -1,7 +1,7 @@
 <?php
 session_start();
 include_once '../../../conexion_grs_joya/conexion.php';
-include_once './../includes/historial_acciones.php'; // Tu archivo con las funciones
+include_once '../../includes/historial_acciones.php'; // Tu archivo con las funciones
 
 $conn = conectar_joya();
 
@@ -56,6 +56,13 @@ while ($row = $res->fetch_assoc()) {
     $datosPrevios['cuantitativos'][] = $row;
 }
 
+//historial acciones
+$res = $conn->query("SELECT * FROM san_dim_historial_resultados WHERE codEnvio = '$codEnvio'");
+$datosPrevios['historial_resultados'] = [];
+while ($row = $res->fetch_assoc()) {
+    $datosPrevios['historial_resultados'][] = $row;
+}
+
 // Convertir a JSON bonito para historial
 $datosPreviosJson = json_encode($datosPrevios, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
@@ -72,7 +79,8 @@ $tablas = [
     'san_fact_resultado_analisis' => "codEnvio = '$codEnvio'",
     'san_analisis_pollo_bb_adulto' => "codigo_envio = '$codEnvio'",
     'san_fact_solicitud_det' => "codEnvio = '$codEnvio'",
-    'san_fact_solicitud_cab' => "codEnvio = '$codEnvio'"
+    'san_fact_solicitud_cab' => "codEnvio = '$codEnvio'",
+    'san_dim_historial_resultados' => "codEnvio = '$codEnvio'"
 ];
 
 $borrados = 0;

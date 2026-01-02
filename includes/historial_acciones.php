@@ -1,8 +1,4 @@
 <?php
-// ---- CONFIGURACIÓN ----
-
-// Ruta a tu archivo de conexión
-include_once '../conexion_grs_joya/conexion.php';
 
 // Crear conexión global
 function obtenerConexion()
@@ -180,4 +176,41 @@ function registrarAccionCRUD(
     );
 }
 
+function registrarAccion(
+    $cod_usuario,
+    $nom_usuario,
+    $accion,
+    $tabla_afectada = null,
+    $registro_id = null,
+    $datos_previos = null,
+    $datos_nuevos = null,
+    $descripcion = null,    
+    $ubicacion = null   
+)
+{
+
+    $ip = obtenerIP();
+    $user_agent = obtenerUserAgent();
+    list($navegador, $os) = obtenerNavegadorOS();
+
+    // El dispositivo se estima
+    $dispositivo = preg_match('/mobile/i', $user_agent) ? 'Móvil' : 'Desktop';
+
+    insertarHistorial(
+        $cod_usuario,
+        $nom_usuario,
+        $accion,
+        $tabla_afectada,        // tabla_afectada
+        $registro_id,        // registro_id
+        $datos_previos,        // datos_previos
+        $datos_nuevos,        // datos_nuevos
+        $descripcion,
+        $ip,
+        $ubicacion,        // ubicacion GPS (si quieres, lo agregas luego)
+        $dispositivo,
+        $os,
+        $navegador,
+        $user_agent
+    );
+}
 ?>

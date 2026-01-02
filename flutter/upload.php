@@ -148,9 +148,6 @@ function procesarEnviosMuestras($conexion, $items)
             // === Insertar detalles ===
             $numeroSolicitudes = (int) $item['numeroSolicitudes'];
             for ($i = 0; $i < $numeroSolicitudes; $i++) {
-
-
-
                 $fechaToma = $item["fechaToma_{$i}"] ?? '';
                 $codTipoMuestra = $item["tipoMuestraCodigo_{$i}"] ?? null;
                 $nomTipoMuestra = $item["tipoMuestraNombre_{$i}"] ?? null;

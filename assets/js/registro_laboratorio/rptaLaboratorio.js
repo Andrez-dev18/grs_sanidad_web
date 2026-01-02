@@ -1474,7 +1474,7 @@ async function cargarArchivosCompletados(codigoEnvio, pos) {
 async function descargarArchivo(ruta, nombre) {
     try {
         // Validar existencia (HEAD es liviano)
-        const res = await fetch(ruta, { method: "HEAD" });
+        const res = await fetch("../../" + ruta, { method: "HEAD" });
 
         if (!res.ok) {
             alert("❌ El archivo no existe o fue movido del servidor.");
@@ -1483,7 +1483,7 @@ async function descargarArchivo(ruta, nombre) {
 
         // Forzar descarga solo si existe
         const a = document.createElement("a");
-        a.href = ruta;
+        a.href = ".././" + ruta;
         a.download = nombre;
         document.body.appendChild(a);
         a.click();

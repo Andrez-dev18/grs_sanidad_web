@@ -6,6 +6,7 @@ if (empty($_SESSION['active'])) {
 }
 
 include_once '../../conexion_grs_joya/conexion.php';
+include_once '../../includes/historial_acciones.php';
 $conexion = conectar_joya();
 
 // Leer datos del remitente
@@ -25,7 +26,7 @@ if (!$sender) {
 $subject = $_POST['subject'] ?? '';
 $body = $_POST['body'] ?? '';
 $codigo = $_POST['codigo'] ?? '';
-$para = $_POST['para'] ?? []; // ← ¡Ahora usamos "para"!
+$para = $_POST['para'] ?? [];
 
 // Validación
 if (!$subject || !$body || !$codigo || empty($para) || !is_array($para)) {
@@ -56,16 +57,16 @@ $mail = new PHPMailer(true);
 try {
     // Configuración SMTP
     $mail->isSMTP();
-    $mail->Host       = 'mail.rinconadadelsur.com.pe'; 
-    $mail->SMTPAuth   = true;
-    $mail->Username   = $sender['correo'];
-    $mail->Password   = base64_decode($sender['password']);
+    $mail->Host = 'mail.rinconadadelsur.com.pe';
+    $mail->SMTPAuth = true;
+    $mail->Username = $sender['correo'];
+    $mail->Password = base64_decode($sender['password']);
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-    $mail->Port       = 587;
+    $mail->Port = 587;
 
     $mail->setFrom($sender['correo'], 'Sistema Reportes - Granja Rinconada');
     $mail->Subject = $subject;
-    $mail->Body    = $body;
+    $mail->Body = $body;
     $mail->isHTML(false);
 
     // Añadir destinatarios en "Para"
@@ -96,6 +97,32 @@ try {
     }
 
     $mail->send();
+    $nom_usuario = $_SESSION['nombre'];
+   $datos_nuevos = [
+    'asunto' => $subject,
+    'cuerpo' => substr($body, 0, 200) . (strlen($body) > 200 ? '...' : ''), // Limitar tamaño
+    'codigo_reporte' => $codigo,
+    'destinatarios' => $para,
+    'num_adjuntos' => !empty($_FILES['archivos_adjuntos']['name'][0]) 
+        ? count($_FILES['archivos_adjuntos']['name']) 
+        : 0,
+    
+    'fecha_hora' => date('Y-m-d H:i:s')
+];
+
+// Convertir a JSON
+$datos_nuevos_json = json_encode($datos_nuevos, JSON_UNESCAPED_UNICODE);
+    registrarAccion(
+        $usuario,
+        $nom_usuario,
+        'ENVIO_DE_CORREO',
+        null,
+        $codigo,
+        null,
+        $datos_nuevos,
+        'Se realizo el envio de correo al laboratorio',
+        null
+    );
     echo json_encode(['success' => true, 'message' => 'Correo enviado correctamente a todos los destinatarios.']);
 
 } catch (Exception $e) {

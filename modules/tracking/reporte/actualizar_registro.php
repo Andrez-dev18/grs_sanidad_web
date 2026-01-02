@@ -1,5 +1,5 @@
 <?php
-include_once '../../../conexion_grs_joya/conexion.php';
+include_once '../../../../conexion_grs_joya/conexion.php';
 $conn = conectar_joya();
 
 $idArchivo = $_POST["idArchivo"] ?? "";

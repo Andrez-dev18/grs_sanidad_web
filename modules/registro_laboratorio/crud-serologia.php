@@ -777,8 +777,6 @@ elseif ($action == 'get_resultados_guardados') {
             $stmtUpdate = $conexion->prepare($updateQuery);
             $stmtUpdate->bind_param("ssi", $estadoCuanti, $cod, $posSolicitud);
             $stmtUpdate->execute();
-<<<<<<< HEAD:crud-serologia.php
-=======
             
             // ✅ REGISTRAR EN HISTORIAL
             $enfermedadesLista = implode(', ', $_POST['enfermedades']);
@@ -793,7 +791,6 @@ elseif ($action == 'get_resultados_guardados') {
                 $user,
                 'Laboratorio'
             );
->>>>>>> test-f:modules/registro_laboratorio/crud-serologia.php
             
             // ✅ REGISTRAR EN HISTORIAL
             $enfermedadesLista = implode(', ', $_POST['enfermedades']);

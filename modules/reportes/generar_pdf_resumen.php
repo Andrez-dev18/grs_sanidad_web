@@ -5,6 +5,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 include_once '../../../conexion_grs_joya/conexion.php';
+include_once '../../includes/funciones.php';
+
 $conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión.");
@@ -68,7 +70,7 @@ foreach ($detalles_raw as $row) {
         $grupos[$posSolicitud] = [
             'posSolicitud' => $posSolicitud,
             'codRef' => $row['codRef'],
-            'fecToma' => $row['fecToma'],
+            'fecToma' => formatearFecha($row['fecToma']),
             'numMuestras' => $row['numMuestras'],
             'obs' => $row['obs'] ?? '',
             'analisis_codigos' => [],
@@ -249,7 +251,7 @@ $html = '<h3 style="text-align:center; margin:10px 0;">Resumen del Envío</h3>';
 $html .= '<div style="margin-bottom:20px;">';
 
 $camposCabecera = [
-    'Fecha de Envío' => $cab['fechaEnvio'],
+    'Fecha de Envío' => formatearFecha($cab['fechaEnvio']),
     'Hora de Envío' => substr($cab['horaEnvio'], 0, 5),
     'Código de Envío' => $cab['codigoEnvio'],
     'Laboratorio' => $cab['laboratorio'],
