@@ -476,7 +476,7 @@ if (!$conexion) {
                 div.innerHTML = `
             <img src="../../../${ruta}" alt="Evidencia ${index + 1}" 
                  class="max-w-full max-h-full object-contain rounded-lg shadow-xl">
-        `;
+            `;
                 carrusel.appendChild(div);
             });
 

@@ -1433,7 +1433,7 @@ async function cargarArchivosCompletados(codigoEnvio, pos) {
                     <button
                         type="button"
                         title="Previsualizar PDF"
-                        onclick="abrirModalPdf('${f.ruta}', '${escapeHtml(f.nombre)}')"
+                        onclick="abrirModalPdf('../../${f.ruta}', '${escapeHtml(f.nombre)}')"
                         class="text-blue-600 hover:text-blue-800 text-xl">
                         👁️
                     </button>
@@ -1443,7 +1443,7 @@ async function cargarArchivosCompletados(codigoEnvio, pos) {
                 <button
                     type="button"
                     title="Descargar archivo"
-                    onclick="descargarArchivo('${f.ruta}', '${escapeHtml(f.nombre)}')"
+                    onclick="descargarArchivo('../../${f.ruta}', '${escapeHtml(f.nombre)}')"
                     class="text-green-600 hover:text-green-800 text-xl">
                     ⬇️
                 </button>
@@ -1585,7 +1585,7 @@ async function cargarArchivosCompletadosCuanti(codigoEnvio, pos) {
                     <button
                         type="button"
                         title="Previsualizar PDF"
-                        onclick="abrirModalPdf('${f.ruta}', '${escapeHtml(f.nombre)}')"
+                        onclick="abrirModalPdf('../../${f.ruta}', '${escapeHtml(f.nombre)}')"
                         class="text-blue-600 hover:text-blue-800 text-xl">
                         👁️
                     </button>
@@ -1595,7 +1595,7 @@ async function cargarArchivosCompletadosCuanti(codigoEnvio, pos) {
                 <button
                     type="button"
                     title="Descargar archivo"
-                    onclick="descargarArchivo('${f.ruta}', '${escapeHtml(f.nombre)}')"
+                    onclick="descargarArchivo('../../${f.ruta}', '${escapeHtml(f.nombre)}')"
                     class="text-green-600 hover:text-green-800 text-xl">
                     ⬇️
                 </button>

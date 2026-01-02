@@ -7,13 +7,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-<<<<<<< HEAD:guardar_muestra.php
-include_once '../conexion_grs_joya/conexion.php';
-include_once 'historial_resultados.php';
-=======
 include_once '../../../conexion_grs_joya/conexion.php';
 include_once '../../includes/historial_resultados.php';
->>>>>>> test-f:modules/registro_muestra/guardar_muestra.php
 $conexion = conectar_joya();
 if (!$conexion) {
     http_response_code(500);
