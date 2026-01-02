@@ -30,54 +30,227 @@ if (!$conexion) {
     <title>Dashboard - Laboratorios</title>
 
     <!-- Tailwind CSS -->
-    <link rel="stylesheet" href="../../../css/output.css">
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
 
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+
     <style>
+        /* Tus estilos existentes */
         body {
             background: #f8f9fa;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
 
-        .card {
-            transition: all 0.3s ease;
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
             cursor: pointer;
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(59, 130, 246, 0.4);
         }
 
-        .icon-box {
-            width: 80px;
-            height: 80px;
-            display: flex;
+        .btn-export {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            border-radius: 16px;
-            margin: 0 auto 1rem;
-            font-size: 2.5rem;
+            gap: 0.5rem;
         }
 
-        .logo-container {
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 2rem;
+        .btn-export:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-outline {
             background: white;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
         }
 
-        .logo-container img {
-            width: 90%;
-            height: 90%;
-            object-fit: contain;
+        .btn-outline:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.625rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            overflow-y: visible;
+            width: 100%;
+            border-radius: 1rem;
+        }
+
+        .table-wrapper::-webkit-scrollbar {
+            height: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        .data-table {
+            width: 100% !important;
+            border-collapse: collapse;
+            min-width: 1200px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.875rem;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        .data-table th {
+            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
+            font-weight: 600;
+            color: #ffffff !important;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #eff6ff !important;
+        }
+
+        .dataTables_wrapper .dataTables_length,
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_info,
+        .dataTables_wrapper .dataTables_paginate {
+            padding: 1rem;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            margin: 0 0.5rem;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            margin-left: 0.5rem;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.5rem 1rem !important;
+            margin: 0 0.25rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
+            color: white !important;
+            border: 1px solid #1e40af !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+        }
+
+        table.dataTable thead .sorting:before,
+        table.dataTable thead .sorting_asc:before,
+        table.dataTable thead .sorting_desc:before,
+        table.dataTable thead .sorting:after,
+        table.dataTable thead .sorting_asc:after,
+        table.dataTable thead .sorting_desc:after {
+            color: white !important;
+        }
+
+        .dataTables_wrapper {
+            overflow-x: visible !important;
         }
     </style>
 </head>
@@ -87,7 +260,7 @@ if (!$conexion) {
 
         <!-- VISTA LABORATORIOS -->
         <div id="viewLaboratorio" class="content-view">
-            
+
 
             <div class="form-container max-w-7xl mx-auto">
                 <!-- Botones de acción -->
@@ -109,7 +282,7 @@ if (!$conexion) {
 
                 <!-- Tabla de laboratorios -->
                 <div class="table-container border border-gray-300 rounded-2xl bg-white overflow-x-auto">
-                    <table class="data-table w-full">
+                    <table id="tabla" class="data-table w-full">
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Código</th>
@@ -204,6 +377,29 @@ if (!$conexion) {
     </div>
 
     <script src="../../../assets/js/configuracion/laboratorio.js"></script>
+    
+    <!-- DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('#tabla').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+                },
+                pageLength: 10,
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "Todos"]
+                ],
+                order: [
+                    [0, 'asc']
+                ]
+            });
+        });
+    </script>
+
 </body>
 
 </html>
