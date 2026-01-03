@@ -315,16 +315,26 @@ if ($codigoUsuario) {
                 <p class="text-blue-300 text-xs uppercase font-semibold mb-2 px-3">Dashboards</p>
             </div>
             <?php if (!$isTransportista): ?>
-            <div class="menu-group">
-                <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'modules/dashboard/dashboard-dashboard.php', '📊 Dashboard',  'Resumen visual de los datos registrados en el sistema')">
-                    <span class="flex items-center gap-3">
-                        <i class="fas fa-chart-line"></i>
-                        <span class="font-medium">1.- Dashboard</span>
-                    </span>
-                </button>
+                <div class="menu-group">
+                    <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                        onclick="toggleSubmenu('submenu-dashboard')">
+                        <span class="flex items-center gap-3">
+                            <i class="fas fa-chart-line"></i>
+                            <span class="font-medium">1.- Dasbhboard</span>
+                        </span>
+                        <i class="fas fa-chevron-down text-sm"></i>
+                    </button>
+                    <div id="submenu-dashboard" class="submenu hidden pl-10 mt-2 space-y-2">
+                        <a href="#"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/dashboard/dashboard-dashboard.php', '📊 Dashboard',  'Resumen visual de los datos registrados en el sistema')"
+                            class="menu-link block text-gray-400 hover:text-white">Dashboard de Reportes</a>
 
-            </div>
+                        <a href="#"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/dashboard-indicadores/dashboard-indicadores.php', '📊 Dashboard Indicadores', 'Resumen visual de los datos registrados en el sistema')"
+                            class="menu-link block text-gray-400 hover:text-white">Dashboard Indicadores</a>
+
+                    </div>
+                </div>
 
                 <div class="menu-group">
                     <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
@@ -334,50 +344,50 @@ if ($codigoUsuario) {
                             <span class="font-medium">2.- Registro de Muestras</span>
                         </span>
                     </button>
-
                 </div>
-            
-            <div class="menu-group">
-                <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'modules/registro_laboratorio/dashboard-rpta-laboratorio.php', '📋 Registro Laboratorio', 'Registro de la respuesta  del laboratorio')">
-                    <span class="flex items-center gap-3">
-                        <i class="fa-solid fa-atom"></i>
-                        <span class="font-medium">3.- Registro Laboratorio</span>
-                    </span>
-                </button>
 
-            </div>
-            <div class="menu-group">
-                <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="activateAndLoad(this, 'modules/planificacion/dashboard-planificacion.php', '📅 Planificación', 'Registro de la planificación')">
-                    <span class="flex items-center gap-3">
-                        <i class="fas fa-calendar"></i>
-                        <span class="font-medium">4.- Planificación</span>
-                    </span>
-                </button>
-
-            </div>
-            <div class="menu-group">
-                <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                    onclick="toggleSubmenu('submenu-reporte')">
-                    <span class="flex items-center gap-3">
-                        <i class="fa-solid fa-file"></i>
-                        <span class="font-medium">5.- Reportes</span>
-                    </span>
-                    <i class="fas fa-chevron-down text-sm"></i>
-                </button>
-
-                <div id="submenu-reporte" class="submenu hidden pl-10 mt-2 space-y-2">
-                    <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('modules/reportes/dashboard-reportes.php', '📈 Formato de Muestras', 'Formato PDF y envío de correo de los pedidos de muestra')"
-                        class="menu-link block text-gray-400 hover:text-white">Formato de Muestras</a>
-                 
-                    <a href="#"
-                        onclick="selectMenuItem(this); loadDashboardAndData('modules/seguimiento/dashboard-seguimiento.php', '📊 Seguimiento', 'Seguimiento de los resultados cualitativo y cuantitativo registrados en el sistema')"
-                        class="menu-link block text-gray-400 hover:text-white">Seguimiento</a>
+                <div class="menu-group">
+                    <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                        onclick="activateAndLoad(this, 'modules/registro_laboratorio/dashboard-rpta-laboratorio.php', '📋 Registro Laboratorio', 'Registro de la respuesta  del laboratorio')">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-atom"></i>
+                            <span class="font-medium">3.- Registro Laboratorio</span>
+                        </span>
+                    </button>
 
                 </div>
 
+                <div class="menu-group">
+                    <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                        onclick="activateAndLoad(this, 'modules/planificacion/dashboard-planificacion.php', '📅 Planificación', 'Registro de la planificación')">
+                        <span class="flex items-center gap-3">
+                            <i class="fas fa-calendar"></i>
+                            <span class="font-medium">4.- Planificación</span>
+                        </span>
+                    </button>
+                </div>
+
+                <div class="menu-group">
+                    <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                        onclick="toggleSubmenu('submenu-reporte')">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-file"></i>
+                            <span class="font-medium">5.- Reportes</span>
+                        </span>
+                        <i class="fas fa-chevron-down text-sm"></i>
+                    </button>
+
+                    <div id="submenu-reporte" class="submenu hidden pl-10 mt-2 space-y-2">
+                        <a href="#"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/reportes/dashboard-reportes.php', '📈 Formato de Muestras', 'Formato PDF y envío de correo de los pedidos de muestra')"
+                            class="menu-link block text-gray-400 hover:text-white">Formato de Muestras</a>
+
+                        <a href="#"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/seguimiento/dashboard-seguimiento.php', '📊 Seguimiento', 'Seguimiento de los resultados cualitativo y cuantitativo registrados en el sistema')"
+                            class="menu-link block text-gray-400 hover:text-white">Seguimiento</a>
+
+                    </div>
+                </div>
 
 
                 <!-- MANTENIMIENTOS -->
@@ -417,37 +427,44 @@ if ($codigoUsuario) {
                     </div>
                 </div>
             <?php endif; ?>
-                <div class="menu-group">
-                    <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                        onclick="toggleSubmenu('submenu-tracking')">
-                        <span class="flex items-center gap-3">
-                            <i class="fa-solid fa-location-dot"></i>
-                            <span class="font-medium">
-                                <?php echo $isTransportista ? '1.-' : '7.-'; ?> Tracking
-                            </span>
+
+            <!-- TRACKING -->
+            <div class="menu-group">
+                <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                    onclick="toggleSubmenu('submenu-tracking')">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span class="font-medium">
+                            <?php echo $isTransportista ? '1.-' : '7.-'; ?> Tracking
                         </span>
-                        <i class="fas fa-chevron-down text-sm"></i>
-                    </button>
+                    </span>
+                    <i class="fas fa-chevron-down text-sm"></i>
+                </button>
 
-                    <div id="submenu-tracking" class="submenu hidden pl-10 mt-2 space-y-2">
+                <div id="submenu-tracking" class="submenu hidden pl-10 mt-2 space-y-2">
 
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/escaneo/dashboard-escaneoQR.php','Escaneo QR', 'Escaneo tracking')"
-                            class="menu-link block text-gray-400 hover:text-white">
-                            <?php echo $isTransportista ? '1.1.-' : '7.1.-'; ?> Escaneo
-                        </a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/seguimiento_envios/dashboard-tracking-muestra.php','Seguimiento de envios', 'Visualice el seguimiento de muestra')"
-                            class="menu-link block text-gray-400 hover:text-white">
-                            <?php echo $isTransportista ? '1.2.-' : '7.2.-'; ?> Seguimiento de envios
-                        </a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/reporte/dashboard-reporte-tracking.php','🧪 Pendientes de entregas', 'Administre los pendientes y demas.')"
-                            class="menu-link block text-gray-400 hover:text-white">
-                            <?php echo $isTransportista ? '1.3.-' : '7.3.-'; ?> Reporte
-                        </a>
-                    </div>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/escaneo/dashboard-escaneoQR.php','Escaneo QR', 'Escaneo tracking')"
+                        class="menu-link block text-gray-400 hover:text-white">
+                        <?php echo $isTransportista ? '1.1.-' : '7.1.-'; ?> Escaneo
+                    </a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/seguimiento_envios/dashboard-tracking-muestra.php','Seguimiento de envios', 'Visualice el seguimiento de muestra')"
+                        class="menu-link block text-gray-400 hover:text-white">
+                        <?php echo $isTransportista ? '1.2.-' : '7.2.-'; ?> Seguimiento de envios
+                    </a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/reporte/dashboard-reporte-tracking.php','🧪 Pendientes de entregas', 'Administre los pendientes y demas.')"
+                        class="menu-link block text-gray-400 hover:text-white">
+                        <?php echo $isTransportista ? '1.3.-' : '7.3.-'; ?> Reporte
+                    </a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/dashboard/dashboard-tracking.php','🧪 Dashboard Tracking', 'Resumen visual de los estados de entrega y pedidos.')"
+                        class="menu-link block text-gray-400 hover:text-white">
+                        <?php echo $isTransportista ? '1.4.-' : '7.4.-'; ?> Dashboard
+                    </a>
                 </div>
+            </div>
 
 
         </nav>
