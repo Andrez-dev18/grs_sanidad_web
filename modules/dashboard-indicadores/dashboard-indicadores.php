@@ -79,6 +79,131 @@ if (!$conexion) {
 <body class="bg-gray-50">
     <div class="container mx-auto px-6 py-12">
 
+        <!-- CARD FILTROS PLEGABLE -->
+        <div class="mb-4 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+
+            <!-- HEADER -->
+            <button type="button" onclick="toggleFiltros()"
+                class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">
+
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">🔎</span>
+                    <h3 class="text-base font-semibold text-gray-800">
+                        Filtros
+                    </h3>
+                </div>
+
+                <!-- ICONO -->
+                <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
+                    fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            <!-- CONTENIDO PLEGABLE -->
+            <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
+
+                <!-- GRID DE FILTROS -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+                    <!-- Granja -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Granja(s)</label>
+
+                        <div class="relative">
+                            <button type="button" id="dropdownGranjaBtn"
+                                class="w-full px-3 py-2 text-sm text-left bg-white border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center">
+                                <span id="dropdownGranjaText" class="text-gray-500">Seleccionar
+                                    granjas...</span>
+                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            <!-- Dropdown con checkboxes -->
+                            <div id="dropdownGranjaMenu"
+                                class="fixed z-50 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto hidden">
+                                <div class="p-2">
+                                    <?php
+                                    $sql = "
+                                            SELECT codigo, nombre
+                                            FROM ccos
+                                            WHERE LENGTH(codigo)=3
+                                            AND swac='A'
+                                            AND LEFT(codigo,1)='6'
+                                            AND codigo NOT IN ('650','668','669','600')
+                                            ORDER BY nombre
+                                            ";
+
+                                    $res = mysqli_query($conexion, $sql);
+
+                                    if ($res && mysqli_num_rows($res) > 0) {
+                                        while ($row = mysqli_fetch_assoc($res)) {
+                                            echo '
+                                                <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                                                    <input type="checkbox" 
+                                                        name="filtroGranja[]" 
+                                                        value="' . htmlspecialchars($row['codigo']) . '" 
+                                                        class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                                        <span class="ml-3 text-sm text-gray-700">' . htmlspecialchars($row['nombre']) . '</span>
+                                                </label>';
+                                        }
+                                    }
+                                    ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Galpón -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Galpón</label>
+                        <select id="filtroGalpon"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            <option value="">Seleccionar</option>
+                            <?php
+                            for ($i = 1; $i <= 13; $i++) {
+                                $valor = str_pad($i, 2, '0', STR_PAD_LEFT); // 01, 02, ...
+                                echo "<option value=\"$valor\">$valor</option>";
+                            }
+                            ?>
+                        </select>
+                    </div>
+
+                    <!-- Edad -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Edad</label>
+
+                        <div class="flex gap-2">
+                            <input type="number" id="filtroEdadDesde" placeholder="Desde" min="0"
+                                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+
+                            <input type="number" id="filtroEdadHasta" placeholder="Hasta" min="0"
+                                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ACCIONES -->
+                <div class="mt-6 flex flex-wrap justify-end gap-4">
+
+                    <button type="button" id="btnAplicarFiltros"
+                        class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                        Filtrar
+                    </button>
+
+                    <button type="button" id="btnLimpiarFiltros"
+                        class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200">
+                        Limpiar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
         <!-- GRÁFICOS ESTADÍSTICOS -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
@@ -114,29 +239,49 @@ if (!$conexion) {
                 <!-- Contenedor del gráfico -->
                 <canvas id="graficoEnfermedades" class="w-full h-80"></canvas>
             </div>
-        </div>
 
-        <!-- Gráfico 3: Resultados completados (cualitativo vs cuantitativo) -->
-        <div class="bg-white rounded-xl shadow-md p-6 mt-8">
-            <h3 class="text-xl font-semibold text-gray-800 mb-4">
-                Resultados completados
-            </h3>
+            <!-- Gráfico 3: Resultados completados (cualitativo vs cuantitativo) -->
+            <div class="bg-white rounded-xl shadow-md p-6 mt-8">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                    Resultados completados
+                </h3>
 
-            <!-- Botones para cambiar período -->
-            <div class="flex gap-3 mb-6">
-                <button id="btnResultDia" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium transition">
-                    Por día
-                </button>
-                <button id="btnResultSemana" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium transition">
-                    Por semana
-                </button>
-                <button id="btnResultMes" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition">
-                    Por mes
-                </button>
+                <!-- Botones para cambiar período -->
+                <div class="flex gap-3 mb-6">
+                    <button id="btnResultDia" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium transition">
+                        Por día
+                    </button>
+                    <button id="btnResultSemana" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium transition">
+                        Por semana
+                    </button>
+                    <button id="btnResultMes" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition">
+                        Por mes
+                    </button>
+                </div>
+
+                <!-- Contenedor del gráfico -->
+                <canvas id="graficoResultados" class="w-full h-80"></canvas>
             </div>
 
-            <!-- Contenedor del gráfico -->
-            <canvas id="graficoResultados" class="w-full h-80"></canvas>
+            <!-- 4. Análisis con más/menos resultados -->
+            <div class="bg-white rounded-xl shadow-md p-6 mt-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold text-gray-800">
+                        Análisis con resultados registrados
+                    </h3>
+
+                    <button id="btnToggleAnalisis" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition">
+                        Mostrar menos frecuentes
+                    </button>
+                </div>
+
+                <canvas id="graficoAnalisisResultados" class="w-full h-64"></canvas>
+
+                <p class="text-sm text-gray-500 mt-4 text-center" id="descripcionAnalisis">
+                    Top 10 análisis con más resultados registrados
+                </p>
+            </div>
+
         </div>
 
         <!-- Footer -->
@@ -151,6 +296,96 @@ if (!$conexion) {
     <!-- Librería Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <script>
+        function toggleFiltros() {
+            const contenido = document.getElementById('contenidoFiltros');
+            const icono = document.getElementById('iconoFiltros');
+
+            contenido.classList.toggle('hidden');
+            icono.classList.toggle('rotate-180');
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdownBtn = document.getElementById('dropdownGranjaBtn');
+            const dropdownMenu = document.getElementById('dropdownGranjaMenu');
+            const dropdownText = document.getElementById('dropdownGranjaText');
+            const checkboxes = dropdownMenu.querySelectorAll('input[type="checkbox"]');
+
+            // Abrir/cerrar dropdown al hacer clic en el botón
+            dropdownBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('hidden');
+            });
+
+            // Cerrar dropdown si se hace clic fuera
+            document.addEventListener('click', function() {
+                dropdownMenu.classList.add('hidden');
+            });
+
+            // Evitar que al hacer clic dentro del dropdown se cierre
+            dropdownMenu.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+
+            // Actualizar texto cuando cambia algún checkbox
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateSelectedText);
+            });
+
+            // Función para actualizar el texto del botón
+            function updateSelectedText() {
+                const selectedCheckboxes = dropdownMenu.querySelectorAll('input[type="checkbox"]:checked');
+                const selectedLabels = Array.from(selectedCheckboxes).map(cb => {
+                    return cb.closest('label').querySelector('span').textContent.trim();
+                });
+
+                if (selectedLabels.length === 0) {
+                    dropdownText.textContent = 'Seleccionar granjas...';
+                    dropdownText.classList.add('text-gray-500');
+                    dropdownText.classList.remove('text-gray-900');
+                } else {
+                    dropdownText.classList.remove('text-gray-500');
+                    dropdownText.classList.add('text-gray-900');
+
+                    if (selectedLabels.length <= 3) {
+                        dropdownText.textContent = selectedLabels.join(', ');
+                    } else {
+                        dropdownText.textContent = `${selectedLabels.length} granjas seleccionadas`;
+                    }
+                }
+            }
+
+            // Inicializar texto al cargar la página (por si hay valores preseleccionados)
+            updateSelectedText();
+        });
+
+        document.getElementById('btnLimpiarFiltros').addEventListener('click', limpiarFiltros);
+
+        function limpiarFiltros() {
+            // === NUEVO: Limpiar dropdown de granjas múltiples ===
+            const checkboxesGranja = document.querySelectorAll('input[name="filtroGranja[]"]');
+            checkboxesGranja.forEach(cb => {
+                cb.checked = false;
+            });
+
+            // Restaurar texto del botón dropdown
+            const dropdownText = document.getElementById('dropdownGranjaText');
+            if (dropdownText) {
+                dropdownText.textContent = "Seleccionar granjas...";
+                dropdownText.classList.add('text-gray-500');
+            }
+
+            // Cerrar el dropdown si está abierto
+            const dropdownMenu = document.getElementById('dropdownGranjaMenu');
+            if (dropdownMenu) {
+                dropdownMenu.classList.add('hidden');
+            }
+
+            document.getElementById('filtroGalpon').value = '';
+            document.getElementById('filtroEdadDesde').value = '';
+            document.getElementById('filtroEdadHasta').value = '';
+
+        }
+    </script>
 
     <script>
         // Función para obtener datos de muestras por período
@@ -310,6 +545,78 @@ if (!$conexion) {
             btnActivo.classList.remove('bg-gray-300', 'text-gray-700');
             btnActivo.classList.add('bg-blue-600', 'text-white');
         }
+
+
+    // === GRÁFICO 4: ANÁLISIS CON MÁS/MENOS RESULTADOS ===
+        let graficoAnalisisResultados = null;
+        let modoAnalisis = 'mas'; // 'mas' o 'menos'
+
+        async function cargarGraficoAnalisisResultados(modo = 'mas') {
+            const response = await fetch(`get_analisis_resultados.php?modo=${modo}`);
+            const datos = await response.json();
+
+            if (graficoAnalisisResultados) graficoAnalisisResultados.destroy();
+
+            graficoAnalisisResultados = new Chart(document.getElementById('graficoAnalisisResultados'), {
+                type: 'bar',
+                data: {
+                    labels: datos.labels,
+                    datasets: [{
+                        label: 'Resultados registrados',
+                        data: datos.data,
+                        backgroundColor: modo === 'mas' ? 'rgba(34, 197, 94, 0.8)' : 'rgba(239, 68, 68, 0.8)',
+                        borderColor: modo === 'mas' ? 'rgba(34, 197, 94, 1)' : 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // barras horizontales
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Resultados: ' + context.parsed.x;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        },
+                        y: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Actualizar descripción y botón
+            document.getElementById('descripcionAnalisis').textContent =
+                modo === 'mas' ?
+                'Top 10 análisis con más resultados registrados' :
+                'Top 10 análisis con menos resultados registrados';
+
+            document.getElementById('btnToggleAnalisis').textContent =
+                modo === 'mas' ? 'Mostrar menos frecuentes' : 'Mostrar más frecuentes';
+
+            modoAnalisis = modo;
+        }
+
+        // Botón toggle
+        document.getElementById('btnToggleAnalisis').onclick = () => {
+            const nuevoModo = modoAnalisis === 'mas' ? 'menos' : 'mas';
+            cargarGraficoAnalisisResultados(nuevoModo);
+        };
+
+        // Carga inicial
+        cargarGraficoAnalisisResultados('mas');
     </script>
 
     </div>

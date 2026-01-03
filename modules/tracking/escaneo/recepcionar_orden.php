@@ -63,7 +63,7 @@ $accion = ($tipoReceptor === 'Transporte')
     : 'Recepción de muestra por laboratorio';
 
 // === VERIFICAR DUPLICADO ===
-$sqlCheck = "SELECT id FROM san_dim_historial_resultados WHERE codEnvio = ? AND ubicacion = ? LIMIT 1";
+$sqlCheck = "SELECT id FROM san_dim_historial_resultados WHERE codEnvio = ? AND ubicacion = ? AND accion = 'Recepción de muestra por laboratorio' LIMIT 1";
 $stmtCheck = $conn->prepare($sqlCheck);
 $stmtCheck->bind_param("ss", $codEnvio, $ubicacion);
 $stmtCheck->execute();
