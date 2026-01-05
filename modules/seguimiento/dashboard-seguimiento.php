@@ -1310,53 +1310,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             </div>
         </div>
         <!-- Modal de Advertencia - No se puede editar -->
-        <div class="modal fade" id="modalAdvertenciaEdicion" tabindex="-1" aria-labelledby="modalAdvertenciaEdicionLabel"
-            aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header bg-red-50 border-b border-red-200">
-                        <h5 class="modal-title text-red-700" id="modalAdvertenciaEdicionLabel">
+        <div id="modalAdvertenciaEdicion" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div class="bg-red-50 border-b border-red-200 px-6 py-4 rounded-t-lg">
+                    <div class="flex items-center justify-between">
+                        <h5 class="text-lg font-semibold text-red-700" id="modalAdvertenciaEdicionLabel">
                             <i class="fas fa-exclamation-triangle mr-2"></i>
                             No se puede editar este envío
                         </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" onclick="cerrarModalAdvertencia()" class="text-red-500 hover:text-red-700 text-2xl leading-none transition">
+                            ×
+                        </button>
                     </div>
-                    <div class="modal-body">
-                        <div class="flex items-start gap-4">
-                            <div class="flex-shrink-0">
-                                <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
-                                    <i class="fas fa-ban text-red-600 text-xl"></i>
-                                </div>
-                            </div>
-                            <div class="flex-1">
-                                <p class="text-gray-700 mb-3">
-                                    Este envío no puede ser editado por las siguientes razones:
-                                </p>
-                                <ul id="listaRazones" class="list-disc list-inside space-y-2 text-gray-600">
-                                    <!-- Las razones se cargarán aquí -->
-                                </ul>
+                </div>
+                <div class="px-6 py-4">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                                <i class="fas fa-ban text-red-600 text-xl"></i>
                             </div>
                         </div>
+                        <div class="flex-1">
+                            <p class="text-gray-700 mb-3">
+                                Este envío no puede ser editado por las siguientes razones:
+                            </p>
+                            <ul id="listaRazones" class="list-disc list-inside space-y-2 text-gray-600">
+                                <!-- Las razones se cargarán aquí -->
+                            </ul>
+                        </div>
                     </div>
-                    <div class="modal-footer bg-gray-50">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Entendido</button>
-                    </div>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 rounded-b-lg flex justify-end">
+                    <button type="button" onclick="cerrarModalAdvertencia()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200">
+                        Entendido
+                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Modal de Edición -->
-        <div class="modal fade" id="modalEditarEnvio" tabindex="-1" aria-labelledby="modalEditarEnvioLabel"
-            aria-hidden="true">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header bg-blue-50">
-                        <h5 class="modal-title" id="modalEditarEnvioLabel">Editar Envío</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <div id="modalEditarEnvio" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                <div class="bg-blue-50 px-6 py-4 border-b border-blue-200">
+                    <div class="flex items-center justify-between">
+                        <h5 class="text-lg font-semibold text-gray-800" id="modalEditarEnvioLabel">Editar Envío</h5>
+                        <button type="button" onclick="cerrarModalEditar()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition">
+                            ×
+                        </button>
                     </div>
-                    <div class="modal-body">
-                        <!-- Aquí irá el formulario -->
-                        <form id="formEditarEnvio">
+                </div>
+                <div class="flex-1 overflow-y-auto px-6 py-4">
+                    <!-- Aquí irá el formulario -->
+                    <form id="formEditarEnvio">
                             <!-- INFORMACIÓN DE REGISTRO Y ENVÍO -->
                             <div class="form-section mb-6">
                                 <div class="dual-group-container grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
@@ -1483,28 +1488,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                 </div>
                             </div>
                         </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" id="btnGuardarEdicion">Guardar Cambios</button>
-                    </div>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+                    <button type="button" onclick="cerrarModalEditar()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200">
+                        Cancelar
+                    </button>
+                    <button type="button" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-200" id="btnGuardarEdicion">Guardar Cambios</button>
                 </div>
             </div>
         </div>
 
-        <!-- Footer -->
+        <!-- Footer dinámico -->
         <div class="text-center mt-12">
             <p class="text-gray-500 text-sm">
-                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025
+                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
+                © <span id="currentYear"></span>
             </p>
         </div>
 
-    </div>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <script>
+            // Actualizar el año dinámicamente
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+        </script>
 
-    <!-- Bootstrap 5 JS (requiere Popper) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    </div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -1901,6 +1908,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         function cerrarModalHistorial() {
             document.getElementById('modalHistorial').classList.add('hidden');
         }
+
+        // Funciones para manejar modales con Tailwind
+        function abrirModalAdvertencia() {
+            const modal = document.getElementById('modalAdvertenciaEdicion');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+        }
+
+        function cerrarModalAdvertencia() {
+            const modal = document.getElementById('modalAdvertenciaEdicion');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = ''; // Restaurar scroll del body
+        }
+
+        function abrirModalEditar() {
+            const modal = document.getElementById('modalEditarEnvio');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+        }
+
+        function cerrarModalEditar() {
+            const modal = document.getElementById('modalEditarEnvio');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = ''; // Restaurar scroll del body
+        }
+
+        // Cerrar modales al hacer clic fuera de ellos
+        document.addEventListener('click', function(e) {
+            const modalAdvertencia = document.getElementById('modalAdvertenciaEdicion');
+            const modalEditar = document.getElementById('modalEditarEnvio');
+            
+            if (e.target === modalAdvertencia) {
+                cerrarModalAdvertencia();
+            }
+            if (e.target === modalEditar) {
+                cerrarModalEditar();
+            }
+        });
+
+        // Cerrar modales con ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                cerrarModalAdvertencia();
+                cerrarModalEditar();
+            }
+        });
     </script>
 
     <script>
@@ -2408,8 +2465,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         listaRazones.appendChild(li);
                     });
                     
-                    const modalAdvertencia = new bootstrap.Modal(document.getElementById('modalAdvertenciaEdicion'));
-                    modalAdvertencia.show();
+                    abrirModalAdvertencia();
                     return;
                 }
 
@@ -2422,7 +2478,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         }
 
         function editarRegistro(codEnvio) {
-            $('#modalEditarEnvio').modal('show');
+            abrirModalEditar();
             $('#tablaSolicitudes').empty();
             datosOriginales = { cabecera: null, detalles: {} };
 
@@ -2560,7 +2616,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         <label class="text-xs text-gray-600">Observaciones</label>
         <textarea class="w-full text-sm px-2 py-1 border rounded obs" data-pos="${pos}" rows="2">${primerItem.obs || ''}</textarea>
       </div>
-      <button type="button" class="btn btn-sm btn-outline-primary ver-analisis-toggle" data-pos="${pos}">
+      <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border-2 border-sky-400 bg-white text-sky-500 hover:bg-sky-500 hover:text-white transition duration-200 ver-analisis-toggle" data-pos="${pos}">
         <span class="toggle-text">Ver Análisis</span>
       </button>
       <div class="mt-3 analisis-container hidden" id="analisis-container-${pos}"></div>
@@ -2661,21 +2717,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     const analisisDelPaquete = analisisPorPaquete[p.codigo] || [];
                     const todosSel = analisisDelPaquete.length > 0 && analisisDelPaquete.every(a => codigosSeleccionados.has(String(a.codigo)));
                     html += `
-            <div class="mb-2">
-              <div class="form-check">
-                <input class="form-check-input paquete-check" type="checkbox"
+            <div class="mb-4">
+              <div class="flex items-center mb-2">
+                <input class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 paquete-check" type="checkbox"
                   data-pos="${pos}" data-paquete="${p.codigo}" ${todosSel ? 'checked' : ''}>
-                <label class="form-check-label fw-bold">${p.nombre}</label>
+                <label class="ml-2 text-sm font-bold text-gray-700">${p.nombre}</label>
               </div>
-              <div class="ms-3 mt-1">
+              <div class="ml-6 mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                 ${analisisDelPaquete.map(a => `
-                  <div class="form-check form-check-inline me-2">
-                    <input class="form-check-input analisis-check" type="checkbox"
+                  <div class="flex items-center">
+                    <input class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 analisis-check" type="checkbox"
                       data-pos="${pos}" data-paquete="${p.codigo}" value="${a.codigo}"
                       data-nombre="${a.nombre}"
                       data-paquete-nombre="${p.nombre}"
                       ${codigosSeleccionados.has(String(a.codigo)) ? 'checked' : ''}>
-                    <label class="form-check-label">${a.nombre}</label>
+                    <label class="ml-2 text-sm text-gray-700">${a.nombre}</label>
                   </div>
                 `).join('')}
               </div>
@@ -2685,17 +2741,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                 // Sin paquete
                 if (sinPaquete.length > 0) {
-                    html += `<div class="mt-2 pt-2 border-t"><strong>Otros análisis:</strong> `;
+                    html += `<div class="mt-4 pt-4 border-t border-gray-300">
+                      <strong class="text-sm font-bold text-gray-700 mb-2 block">Otros análisis:</strong>
+                      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                    `;
                     html += sinPaquete.map(a => `
-            <div class="form-check form-check-inline me-2">
-              <input class="form-check-input analisis-check" type="checkbox"
-                data-pos="${pos}" value="${a.codigo}"
-                data-nombre="${a.nombre}"
-                ${codigosSeleccionados.has(String(a.codigo)) ? 'checked' : ''}>
-              <label class="form-check-label">${a.nombre}</label>
-            </div>
-          `).join('');
-                    html += '</div>';
+                      <div class="flex items-center">
+                        <input class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 analisis-check" type="checkbox"
+                          data-pos="${pos}" value="${a.codigo}"
+                          data-nombre="${a.nombre}"
+                          ${codigosSeleccionados.has(String(a.codigo)) ? 'checked' : ''}>
+                        <label class="ml-2 text-sm text-gray-700">${a.nombre}</label>
+                      </div>
+                    `).join('');
+                    html += '</div></div>';
                 }
 
                 container.innerHTML = html;
@@ -3126,7 +3185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
       <label class="text-xs text-gray-600">Observaciones</label>
       <textarea class="w-full text-sm px-2 py-1 border rounded obs" data-pos="${pos}" rows="2"></textarea>
     </div>
-    <button type="button" class="btn btn-sm btn-outline-primary ver-analisis-toggle" data-pos="${pos}">
+    <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border-2 border-sky-400 bg-white text-sky-500 hover:bg-sky-500 hover:text-white transition duration-200 ver-analisis-toggle" data-pos="${pos}">
       <span class="toggle-text">Ver Análisis</span>
     </button>
     <div class="mt-3 analisis-container hidden" id="analisis-container-${pos}"></div>

@@ -1,5 +1,5 @@
 <?php
-include_once '../../conexion_grs_joya/conexion.php';
+include_once '../../../../conexion_grs_joya/conexion.php';
 $conexion = conectar_joya();
 $analisis = $_POST['analisis'] ?? null;
 if (!$analisis) exit('[]');
