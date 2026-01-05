@@ -90,5 +90,5 @@ function exportarEmpresasTransporte() {
     // Obtener la ruta base del módulo actual
     const currentPath = window.location.pathname;
     const modulePath = currentPath.substring(0, currentPath.lastIndexOf('/'));
-    window.location.href = modulePath + '/exportar_empresas_transporte.php';
+    window.location.href = 'exportar_empresas_transporte.php';
 }

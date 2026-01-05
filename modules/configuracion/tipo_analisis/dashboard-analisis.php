@@ -313,42 +313,12 @@ if (!$conexion) {
             </div>
         </div>
 
-    </div>
-
-    <!-- Modal -->
-    <div id="analisisModal" style="display: none;"
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div
-            class="bg-white rounded-2xl shadow-lg w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
-            <div class="flex items-center justify-between p-6 border-b border-gray-200">
-                <h2 id="analisisModalTitle" class="text-xl font-bold text-gray-800">➕ Nuevo Análisis</h2>
-                <button onclick="closeAnalisisModal()" class="text-2xl text-gray-500 hover:text-gray-700">×</button>
-            </div>
-            <div class="flex-1 overflow-y-auto p-6" style="max-height: 60vh;">
-                <form id="analisisForm">
-                    <input type="hidden" id="analisisModalAction" name="action" value="create">
-                    <input type="hidden" id="analisisEditCodigo" name="codigo" value="">
-
-                    <div class="mb-5">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del Análisis <span
-                                class="text-red-500">*</span></label>
-                        <input type="text" id="analisisModalNombre" name="nombre" maxlength="100" required
-                            class="form-control">
-                    </div>
-
-                    <div class="mb-5">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Enfermedad</label>
-                        <input type="text" id="analisisModalEnfermedad" name="enfermedad" maxlength="100"
-                            class="form-control">
-                    </div>
-                </form>
-            </div>
-            <div class="border-t border-gray-200 p-6 bg-gray-50">
-                <div class="flex flex-col-reverse sm:flex-row gap-3 justify-end">
-                    <button type="button" onclick="closeAnalisisModal()" class="btn-outline">Cancelar</button>
-                    <button type="submit" form="analisisForm" class="btn-primary">💾 Guardar Análisis</button>
-                </div>
-            </div>
+        <!-- Footer dinámico -->
+        <div class="text-center mt-12">
+            <p class="text-gray-500 text-sm">
+                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
+                © <span id="currentYear"></span>
+            </p>
         </div>
     </div>
 
@@ -356,6 +326,11 @@ if (!$conexion) {
         <p class="text-gray-500 text-sm">Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
             © 2025</p>
     </div>
+
+        <script>
+            // Actualizar el año dinámicamente
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+        </script>
 
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

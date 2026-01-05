@@ -42,16 +42,18 @@ $sheet->mergeCells('A1:B1');
 $sheet->setCellValue('A1', 'LISTADO DE LABORATORIOS');
 $sheet->getStyle('A1:B1')->applyFromArray([
     'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => 'FFFFFF']],
-    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E40AF']]
+    'alignment' => [
+        'horizontal' => Alignment::HORIZONTAL_CENTER,
+        'vertical' => Alignment::VERTICAL_CENTER
+    ],
+    'fill' => [
+        'fillType' => Fill::FILL_SOLID,
+        'startColor' => ['rgb' => '1E40AF']
+    ]
 ]);
 
 /* ================= CABECERAS DE COLUMNAS ================= */
-$headers = [
-    'Código',
-    'Nombre del Laboratorio'
-];
-
+$headers = ['Código', 'Nombre del Laboratorio'];
 $sheet->fromArray($headers, null, 'A2');
 $sheet->getStyle('A2:B2')->applyFromArray([
     'font' => ['bold' => true, 'color' => ['rgb' => '1E40AF']],
@@ -61,13 +63,10 @@ $sheet->getStyle('A2:B2')->applyFromArray([
 
 /* ================= DATOS ================= */
 $row = 3;
-
 while ($data = mysqli_fetch_assoc($result)) {
-    // Escribir fila
     $sheet->setCellValue('A' . $row, $data['codigo']);
     $sheet->setCellValue('B' . $row, $data['nombre']);
 
-    // Aplicar bordes y alineación
     $sheet->getStyle("A{$row}:B{$row}")->applyFromArray([
         'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]

@@ -579,6 +579,12 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
     <div class="card">
       <div class="card-body p-0">
         <div class="table-wrapper">
+          <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+            <h5 class="mb-0">Planificación de Muestreo</h5>
+            <button class="btn-secondary" id="btnVerHorario" data-bs-toggle="modal" data-bs-target="#modalCalendario">
+              <i class="fas fa-calendar-alt"></i> Ver en Calendario
+            </button>
+          </div>
           <table id="tablaPlanificacion" class="data-table">
             <thead>
               <tr>
@@ -601,36 +607,48 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
     </div>
 
   </div>
-  <!--div class="d-flex gap-3 mb-4"-->
-    <!-- Tus otros botones -->
-    <button class="btn-secondary" id="btnVerHorario">
-      <i class="fas fa-calendar-alt"></i> Ver Horario
-    </button>
-    <!-- CALENDARIO (sin modal) -->
-    <div id="seccionCalendario" class="card mt-5" style="display:none;">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Horario de Planificación</h5>
-        <button class="btn btn-sm btn-outline-secondary" id="btnCerrarCalendario">Cerrar</button>
-      </div>
-      <div class="card-body p-0">
-        <div class="calendar-container">
-          <div class="month-nav">
-            <button class="btn-icon" id="calPrev">&lt;</button>
-            <div class="current-month-title" id="calTitle">Junio 2025</div>
-            <button class="btn-icon" id="calNext">&gt;</button>
-          </div>
-          <div class="calendar-grid" id="calGrid"></div>
-        </div>
 
-        <!-- CONTENEDOR DE DETALLES -->
-        <div id="contenedorDetalles" class="p-4"
-          style="display:none; border-top: 1px solid #e9ecef; background: #f8fafc;">
-          <h6 class="mb-3">Detalles del Evento</h6>
-          <div id="detallesContenido"></div>
+  <!-- MODAL CALENDARIO -->
+  <div class="modal fade" id="modalCalendario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Horario de Planificación</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-0">
+          <div class="calendar-container">
+            <div class="month-nav">
+              <button class="btn-icon" id="calPrev">&lt;</button>
+              <div class="current-month-title" id="calTitle">Junio 2025</div>
+              <button class="btn-icon" id="calNext">&gt;</button>
+            </div>
+            <div class="calendar-grid" id="calGrid"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-outline" data-bs-dismiss="modal">Cerrar</button>
         </div>
       </div>
     </div>
-  <!-- /div->
+  </div>
+
+  <!-- MODAL DE DETALLES -->
+  <div class="modal fade" id="modalDetallesEvento" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Detalles del Evento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="detallesContenido">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-outline" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
 
 
@@ -992,7 +1010,19 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
           }
         },
         "columns": [
-          { "data": "fecha" },
+          { 
+            "data": "fecha",
+            "render": function(data, type, row) {
+              if (data) {
+                const fecha = new Date(data);
+                const dia = String(fecha.getDate()).padStart(2, '0');
+                const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                const anio = fecha.getFullYear();
+                return `${dia}/${mes}/${anio}`;
+              }
+              return data;
+            }
+          },
           { "data": "granja" },
           { "data": "nombreGranja" },
           { "data": "campania" },
@@ -1044,7 +1074,7 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
       let primerMesConRegistros = null;
 
       // === ABRIR CALENDARIO ===
-      $('#btnVerHorario').on('click', async function () {
+      $('#modalCalendario').on('shown.bs.modal', async function () {
         const filtros = obtenerFiltrosActuales();
 
         // Determinar mes inicial
@@ -1053,18 +1083,22 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
         if (filtros.fecha_desde) {
           // Usar el mes del filtro de fecha inicio
           mesInicial = new Date(filtros.fecha_desde);
-        } else if (primerMesConRegistros) {
-          // Usar el primer mes con registros
-          mesInicial = new Date(primerMesConRegistros);
+        } else {
+          // Obtener la fecha más antigua del registro
+          try {
+            const res = await fetch('listar_planificacion.php?start=0&length=1&order[0][column]=0&order[0][dir]=asc');
+            const data = await res.json();
+            if (data.data && data.data.length > 0) {
+              const fechaMasAntigua = data.data[data.data.length - 1].fecha;
+              mesInicial = new Date(fechaMasAntigua);
+              primerMesConRegistros = fechaMasAntigua;
+            }
+          } catch (err) {
+            console.error("Error al obtener fecha más antigua:", err);
+          }
         }
 
-        $('#seccionCalendario').show();
         await cargarCalendario(mesInicial, filtros);
-      });
-
-      $('#btnCerrarCalendario').on('click', function () {
-        $('#seccionCalendario').hide();
-        $('#contenedorDetalles').hide();
       });
 
       // === OBTENER FILTROS ACTUALES ===
@@ -1104,10 +1138,13 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
           const res = await fetch(`listar_planificacion.php?${params.toString()}`);
           const data = await res.json();
 
-          // Guardar el primer mes si no lo tenemos
+          // Guardar el primer mes si no lo tenemos (obtener la fecha más antigua)
           if (!primerMesConRegistros && data.data.length > 0) {
-            const primeraFecha = data.data[data.data.length - 1].fecha; // más antigua
-            primerMesConRegistros = primeraFecha;
+            // Ordenar por fecha para obtener la más antigua
+            const fechas = data.data.map(item => item.fecha).sort();
+            if (fechas.length > 0) {
+              primerMesConRegistros = fechas[0];
+            }
           }
 
           // Agrupar por fecha
@@ -1197,14 +1234,15 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
           cargarCalendario(fechaCalendario, obtenerFiltrosActuales());
         });
 
-        // Evento para mostrar detalles
-        $('.cal-event').off('click').on('click', function () {
-          const fecha = $(this).data('fecha');
-          const index = $(this).data('index');
+        // Evento para mostrar detalles - solo cuando se hace clic en el '+'
+        $('.cal-event .btn-plus').off('click').on('click', function (e) {
+          e.stopPropagation(); // Evitar que se active el evento del padre
+          const fecha = $(this).closest('.cal-event').data('fecha');
+          const index = $(this).closest('.cal-event').data('index');
           const eventos = eventosPorFecha[fecha];
           const evento = eventos[index];
 
-          // Mostrar detalles
+          // Mostrar detalles en modal
           $('#detallesContenido').html(`
       <div class="row">
         <div class="col-md-6">
@@ -1219,7 +1257,8 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
         </div>
       </div>
     `);
-          $('#contenedorDetalles').show();
+          const modal = new bootstrap.Modal(document.getElementById('modalDetallesEvento'));
+          modal.show();
         });
       }
 

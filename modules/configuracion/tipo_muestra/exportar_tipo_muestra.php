@@ -44,18 +44,18 @@ $sheet->mergeCells('A1:D1');
 $sheet->setCellValue('A1', 'LISTADO DE TIPOS DE MUESTRA');
 $sheet->getStyle('A1:D1')->applyFromArray([
     'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => 'FFFFFF']],
-    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1E40AF']]
+    'alignment' => [
+        'horizontal' => Alignment::HORIZONTAL_CENTER,
+        'vertical' => Alignment::VERTICAL_CENTER
+    ],
+    'fill' => [
+        'fillType' => Fill::FILL_SOLID,
+        'startColor' => ['rgb' => '1E40AF']
+    ]
 ]);
 
 /* ================= CABECERAS DE COLUMNAS ================= */
-$headers = [
-    'Código',
-    'Nombre',
-    'Descripción',
-    'Long. Código'
-];
-
+$headers = ['Código', 'Nombre', 'Descripción', 'Long. Código'];
 $sheet->fromArray($headers, null, 'A2');
 $sheet->getStyle('A2:D2')->applyFromArray([
     'font' => ['bold' => true, 'color' => ['rgb' => '1E40AF']],
@@ -65,15 +65,12 @@ $sheet->getStyle('A2:D2')->applyFromArray([
 
 /* ================= DATOS ================= */
 $row = 3;
-
 while ($data = mysqli_fetch_assoc($result)) {
-    // Escribir fila
-    $sheet->setCellValue('A' . $row, $data['codigo']);
-    $sheet->setCellValue('B' . $row, $data['nombre']);
+    $sheet->setCellValue('A' . $row, $data['codigo'] ?? '');
+    $sheet->setCellValue('B' . $row, $data['nombre'] ?? '');
     $sheet->setCellValue('C' . $row, $data['descripcion'] ?? '');
-    $sheet->setCellValue('D' . $row, $data['lonCod']);
+    $sheet->setCellValue('D' . $row, $data['lonCod'] ?? '');
 
-    // Aplicar bordes y alineación
     $sheet->getStyle("A{$row}:D{$row}")->applyFromArray([
         'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
         'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]

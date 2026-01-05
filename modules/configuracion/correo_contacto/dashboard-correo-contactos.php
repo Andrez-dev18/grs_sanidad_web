@@ -114,13 +114,17 @@ if (empty($_SESSION['active'])) {
             </div>
 
         </div>
-
-        <!-- FOOTER -->
-        <div class="text-center mt-12">
-            <p class="text-gray-500 text-sm">
-                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025
+        <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-3 z-10">
+            <p class="text-gray-500 text-sm text-center">
+                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
+                © <span id="currentYear"></span>
             </p>
-        </div>
+        </footer>
+
+        <script>
+            // Actualizar el año dinámicamente
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+        </script>
 
     </div>
 
@@ -180,10 +184,12 @@ if (empty($_SESSION['active'])) {
             const pass = document.getElementById('correoPass').value;
 
             fetch('correo_config.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `correo=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`
-            })
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `correo=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`
+                })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
@@ -245,10 +251,12 @@ if (empty($_SESSION['active'])) {
             const email = document.getElementById('contactoEmail').value;
 
             fetch('contactos_crud.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=${action}&id=${id}&contacto=${encodeURIComponent(nombre)}&correo=${encodeURIComponent(email)}`
-            })
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `action=${action}&id=${id}&contacto=${encodeURIComponent(nombre)}&correo=${encodeURIComponent(email)}`
+                })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
@@ -264,7 +272,9 @@ if (empty($_SESSION['active'])) {
             if (!confirm('¿Estás seguro de eliminar este contacto?')) return;
             fetch('contactos_crud.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
                 body: `action=delete&id=${id}`
             }).then(() => cargarContactos());
         }
