@@ -6,6 +6,7 @@ if (empty($_SESSION['active'])) {
 }
 
 include_once '../../../../conexion_grs_joya/conexion.php';
+include_once '../../../includes/historial_acciones.php';
 $conexion = conectar_joya();
 if (!$conexion) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
@@ -113,6 +114,68 @@ try {
     mysqli_stmt_close($stmt);
 
     mysqli_commit($conexion);
+
+    // Registrar en historial de acciones
+    $usuario = $_SESSION['usuario'] ?? 'sistema';
+    $nom_usuario = $_SESSION['nombre'] ?? $usuario;
+    
+    try {
+        if ($action === 'create') {
+            $codigoGenerado = mysqli_insert_id($conexion);
+            $datos_nuevos = json_encode([
+                'codigo' => $codigoGenerado,
+                'nombre' => $nombre,
+                'descripcion' => $descripcion,
+                'lonCod' => $longitud_codigo
+            ], JSON_UNESCAPED_UNICODE);
+            registrarAccion(
+                $usuario,
+                $nom_usuario,
+                'INSERT',
+                'san_dim_tipo_muestra',
+                $codigoGenerado,
+                null,
+                $datos_nuevos,
+                'Se creo un nuevo tipo de muestra',
+                null
+            );
+        } elseif ($action === 'update') {
+            $datos_nuevos = json_encode([
+                'codigo' => $codigo,
+                'nombre' => $nombre,
+                'descripcion' => $descripcion,
+                'lonCod' => $longitud_codigo
+            ], JSON_UNESCAPED_UNICODE);
+            registrarAccion(
+                $usuario,
+                $nom_usuario,
+                'UPDATE',
+                'san_dim_tipo_muestra',
+                $codigo,
+                null, // Podríamos obtener datos previos si es necesario
+                $datos_nuevos,
+                'Se actualizo un tipo de muestra',
+                null
+            );
+        } elseif ($action === 'delete') {
+            $datos_previos = json_encode([
+                'codigo' => $codigo
+            ], JSON_UNESCAPED_UNICODE);
+            registrarAccion(
+                $usuario,
+                $nom_usuario,
+                'DELETE',
+                'san_dim_tipo_muestra',
+                $codigo,
+                $datos_previos,
+                null,
+                'Se elimino un tipo de muestra',
+                null
+            );
+        }
+    } catch (Exception $e) {
+        error_log("Error al registrar historial de acciones: " . $e->getMessage());
+    }
 
     $mensaje = '';
     switch ($action) {

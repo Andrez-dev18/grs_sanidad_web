@@ -6,6 +6,7 @@ if (empty($_SESSION['active'])) {
 }
 
 include_once '../../../../conexion_grs_joya/conexion.php';
+include_once '../../../includes/historial_acciones.php';
 $conexion = conectar_joya();
 if (!$conexion) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
@@ -84,6 +85,31 @@ try {
         }
         mysqli_stmt_close($stmt2);
         mysqli_commit($conexion);
+
+        // Registrar en historial de acciones
+        $usuario = $_SESSION['usuario'] ?? 'sistema';
+        $nom_usuario = $_SESSION['nombre'] ?? $usuario;
+        $datos_nuevos = json_encode([
+            'codigo' => $paquete_id,
+            'nombre' => $nombre,
+            'tipoMuestra' => $tipoMuestra,
+            'analisis' => $analisis_lista
+        ], JSON_UNESCAPED_UNICODE);
+        try {
+            registrarAccion(
+                $usuario,
+                $nom_usuario,
+                'INSERT',
+                'san_dim_paquete',
+                $paquete_id,
+                null,
+                $datos_nuevos,
+                'Se creo un nuevo paquete de analisis',
+                null
+            );
+        } catch (Exception $e) {
+            error_log("Error al registrar historial de acciones: " . $e->getMessage());
+        }
 
         echo json_encode(['success' => true, 'message' => 'Paquete creado exitosamente']);
         exit();
@@ -164,6 +190,31 @@ try {
         mysqli_stmt_close($stmt3);
         mysqli_commit($conexion);
 
+        // Registrar en historial de acciones
+        $usuario = $_SESSION['usuario'] ?? 'sistema';
+        $nom_usuario = $_SESSION['nombre'] ?? $usuario;
+        $datos_nuevos = json_encode([
+            'codigo' => $codigo,
+            'nombre' => $nombre,
+            'tipoMuestra' => $tipoMuestra,
+            'analisis' => $analisis_lista
+        ], JSON_UNESCAPED_UNICODE);
+        try {
+            registrarAccion(
+                $usuario,
+                $nom_usuario,
+                'UPDATE',
+                'san_dim_paquete',
+                $codigo,
+                null, // Podríamos obtener datos previos si es necesario
+                $datos_nuevos,
+                'Se actualizo un paquete de analisis',
+                null
+            );
+        } catch (Exception $e) {
+            error_log("Error al registrar historial de acciones: " . $e->getMessage());
+        }
+
         echo json_encode(['success' => true, 'message' => 'Paquete actualizado exitosamente']);
         exit();
     }
@@ -192,6 +243,26 @@ try {
         mysqli_stmt_close($stmt2);
 
         mysqli_commit($conexion);
+
+        // Registrar en historial de acciones
+        $usuario = $_SESSION['usuario'] ?? 'sistema';
+        $nom_usuario = $_SESSION['nombre'] ?? $usuario;
+        $datos_previos = json_encode(['codigo' => $codigo], JSON_UNESCAPED_UNICODE);
+        try {
+            registrarAccion(
+                $usuario,
+                $nom_usuario,
+                'DELETE',
+                'san_dim_paquete',
+                $codigo,
+                $datos_previos,
+                null,
+                'Se elimino un paquete de analisis',
+                null
+            );
+        } catch (Exception $e) {
+            error_log("Error al registrar historial de acciones: " . $e->getMessage());
+        }
 
         echo json_encode(['success' => true, 'message' => 'Paquete eliminado exitosamente']);
         exit();

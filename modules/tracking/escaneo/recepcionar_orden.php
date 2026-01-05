@@ -110,7 +110,7 @@ if (isset($_FILES['evidencias']) && !empty($_FILES['evidencias']['name'][0])) {
 }
 
 // === INSERTAR EN LA BASE DE DATOS ===
-$usuario = $_SESSION['usuario'] ?? ($tipoReceptor === 'Transporte' ? 'transportista' : 'laboratorio');
+$usuario = $_SESSION['usuario'] ?? $_POST['usuario'] ?? ($tipoReceptor === 'Transporte' ? 'transportista' : 'laboratorio');
 
 $ok = insertarHistorial(
     $conn,

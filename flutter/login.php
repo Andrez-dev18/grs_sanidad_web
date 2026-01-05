@@ -169,7 +169,7 @@ try {
     }
 
     // 2. Verificar contraseña
-    $sql2 = "SELECT u.codigo, u.nombre
+    $sql2 = "SELECT u.codigo, u.nombre, u.rol_sanidad
              FROM usuario u
              JOIN conempre c ON c.epre='RS'
              WHERE u.codigo=? 

@@ -310,5 +310,19 @@ $html .= '</table>';
 $html .= '</div>';
 
 $mpdf->WriteHTML($html);
+$qrSize = '20mm';
+$qrHtml = '
+        <div style="
+            position: absolute;
+            bottom: 10mm;
+            right: 12mm;
+            width: ' . $qrSize . ';
+            height: ' . $qrSize . ';
+            z-index: 10;
+        ">
+            <barcode code="' . htmlspecialchars($codigoEnvio) . '" type="QR" size="0.7" error="M" />
+        </div>
+        ';
+$mpdf->WriteHTML($qrHtml);
 $mpdf->Output("registro_{$codigoEnvio}.pdf", 'I');
 ?>
