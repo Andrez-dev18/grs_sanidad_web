@@ -152,7 +152,46 @@ if (!$conexion) {
 
         </div>
 
-        <!-- Footer dinámico -->
+
+        <!-- CALENDARIO VISUAL -->
+        <div class="bg-white rounded-xl shadow-md p-6 mt-8">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                Calendario de Ubicaciones de Envíos
+            </h3>
+
+            <p class="text-sm text-gray-500 mb-6">
+                Representa las fechas de registro por ubicación (GRS, Transporte, Laboratorio). Colores: Azul (GRS), Naranja (Transporte), Verde (Laboratorio).
+            </p>
+            <!-- BUSCADOR POR CÓDIGO DE ENVÍO -->
+            <div class="mb-6 flex flex-col sm:flex-row gap-4 items-end">
+                <div class="flex-1">
+                    <label for="buscadorCodEnvio" class="block text-sm font-medium text-gray-700 mb-1">
+                        Buscar por Código de Envío
+                    </label>
+                    <input
+                        type="text"
+                        id="buscadorCodEnvio"
+                        placeholder="Ej: san-025-0065"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition" />
+                </div>
+                <div>
+                    <button
+                        id="btnBuscar"
+                        class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-md">
+                        Buscar
+                    </button>
+                    <button
+                        id="btnLimpiar"
+                        class="ml-3 px-6 py-2 bg-gray-500 text-white font-medium rounded-lg hover:bg-gray-600 transition shadow-md">
+                        Limpiar
+                    </button>
+                </div>
+            </div>
+            <!-- Contenedor del calendario -->
+            <div id="calendarioTracking" class="w-full"></div>
+        </div>
+
+        <!-- Footer -->
         <div class="text-center mt-12">
             <p class="text-gray-500 text-sm">
                 Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
@@ -169,6 +208,11 @@ if (!$conexion) {
 
     <!-- Librería Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Librería FullCalendar -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+
 
     <script>
         // === GRÁFICO ENVÍOS REALIZADOS ===
@@ -353,6 +397,93 @@ if (!$conexion) {
 
         // Carga inicial (por horas)
         cargarGraficoDemoras('horas');
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('calendarioTracking');
+            let calendar = null;
+            let codEnvioFiltro = ''; // Variable global para el filtro actual
+
+            // Función para cargar eventos (con o sin filtro por codEnvio)
+            function cargarEventos(fetchInfo, successCallback, failureCallback) {
+                let url = 'get_eventos_calendario.php?start=' + fetchInfo.startStr + '&end=' + fetchInfo.endStr;
+
+                // Si hay filtro activo, lo agregamos al URL
+                if (codEnvioFiltro.trim() !== '') {
+                    url += '&codEnvio=' + encodeURIComponent(codEnvioFiltro.trim());
+                }
+
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        successCallback(data);
+                    })
+                    .catch(err => {
+                        console.error('Error cargando eventos:', err);
+                        failureCallback(err);
+                    });
+            }
+
+            // Inicializar el calendario
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+                },
+                height: 'auto',
+                editable: false,
+                navLinks: true,
+                dayMaxEvents: 4, // Recomendado: evita sobrecarga visual en month
+                events: cargarEventos,
+                eventClick: function(info) {
+                    alert('Envío: ' + info.event.title +
+                        '\nUbicación: ' + info.event.extendedProps.ubicacion +
+                        '\nFecha/Hora: ' + info.event.start);
+                    // Aquí puedes abrir un modal más completo después
+                },
+                loading: function(isLoading) {
+                    // Opcional: mostrar un spinner mientras carga
+                    if (isLoading) {
+                        calendarEl.style.opacity = '0.6';
+                    } else {
+                        calendarEl.style.opacity = '1';
+                    }
+                }
+            });
+
+            calendar.render();
+
+            // === LÓGICA DEL BUSCADOR ===
+            const inputBuscador = document.getElementById('buscadorCodEnvio');
+            const btnBuscar = document.getElementById('btnBuscar');
+            const btnLimpiar = document.getElementById('btnLimpiar');
+
+            // Función para aplicar el filtro
+            function aplicarFiltro() {
+                codEnvioFiltro = inputBuscador.value.trim();
+                calendar.refetchEvents(); // Recarga los eventos con el nuevo filtro
+            }
+
+            // Buscar al hacer clic en el botón
+            btnBuscar.addEventListener('click', aplicarFiltro);
+
+            // Buscar al presionar Enter en el input
+            inputBuscador.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    aplicarFiltro();
+                }
+            });
+
+            // Limpiar filtro y mostrar todo
+            btnLimpiar.addEventListener('click', function() {
+                inputBuscador.value = '';
+                codEnvioFiltro = '';
+                calendar.refetchEvents();
+            });
+        });
     </script>
 
 </body>
