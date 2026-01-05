@@ -777,21 +777,7 @@ elseif ($action == 'get_resultados_guardados') {
             $stmtUpdate = $conexion->prepare($updateQuery);
             $stmtUpdate->bind_param("ssi", $estadoCuanti, $cod, $posSolicitud);
             $stmtUpdate->execute();
-            
-            // ✅ REGISTRAR EN HISTORIAL
-            $enfermedadesLista = implode(', ', $_POST['enfermedades']);
-            $comentarioHistorial = "Enfermedades: $enfermedadesLista. Archivos: $archivos_guardados";
-            insertarHistorial(
-                $conexion,
-                $cod,
-                $posSolicitud,
-                'registro_resultados_cuantitativos',
-                'cuantitativo',
-                $comentarioHistorial,
-                $user,
-                'Laboratorio'
-            );
-            
+        
             // ✅ REGISTRAR EN HISTORIAL
             $enfermedadesLista = implode(', ', $_POST['enfermedades']);
             $comentarioHistorial = "Enfermedades: $enfermedadesLista. Archivos: $archivos_guardados";

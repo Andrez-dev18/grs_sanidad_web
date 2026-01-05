@@ -5,7 +5,7 @@ if (empty($_SESSION['active'])) {
     exit(json_encode(['success' => false, 'message' => 'No autorizado']));
 }
 
-include_once '../../conexion_grs_joya/conexion.php';
+include_once '../../../conexion_grs_joya/conexion.php';
 include_once '../../includes/historial_acciones.php';
 $conexion = conectar_joya();
 
@@ -51,7 +51,7 @@ file_put_contents($tmpPdf, $pdfContent);
 // Enviar correo
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
-require_once '../vendor/autoload.php';
+require_once '../../vendor/autoload.php';
 
 $mail = new PHPMailer(true);
 try {
@@ -116,12 +116,12 @@ $datos_nuevos_json = json_encode($datos_nuevos, JSON_UNESCAPED_UNICODE);
         $usuario,
         $nom_usuario,
         'ENVIO_DE_CORREO',
-        null,
+        'san_fact_solicitud_cab',
         $codigo,
         null,
-        $datos_nuevos,
+        $datos_nuevos_json,
         'Se realizo el envio de correo al laboratorio',
-        null
+        'GRS'
     );
     echo json_encode(['success' => true, 'message' => 'Correo enviado correctamente a todos los destinatarios.']);
 

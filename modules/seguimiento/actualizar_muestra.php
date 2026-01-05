@@ -7,6 +7,7 @@ if (empty($_SESSION['active'])) {
 }
 
 include_once '../../../conexion_grs_joya/conexion.php';
+include_once '../../includes/historial_acciones.php';
 $conexion = conectar_joya();
 if (!$conexion) {
     http_response_code(500);
@@ -48,6 +49,25 @@ try {
     $empTrans = mysqli_fetch_assoc($result);
     if (!$empTrans) throw new Exception("Empresa de transporte inválida: $codEmpTrans");
     $nomEmpTrans = $empTrans['nombre'];
+
+    // Obtener datos anteriores de la cabecera para el historial
+    $stmtAnterior = mysqli_prepare($conexion, "SELECT * FROM san_fact_solicitud_cab WHERE codEnvio = ?");
+    mysqli_stmt_bind_param($stmtAnterior, "s", $codEnvio);
+    mysqli_stmt_execute($stmtAnterior);
+    $resultAnterior = mysqli_stmt_get_result($stmtAnterior);
+    $datosAnterioresCab = mysqli_fetch_assoc($resultAnterior);
+    $datosPreviosCabecera = $datosAnterioresCab ? json_encode($datosAnterioresCab, JSON_UNESCAPED_UNICODE) : null;
+
+    // Obtener datos anteriores de los detalles para el historial
+    $stmtDetAnterior = mysqli_prepare($conexion, "SELECT * FROM san_fact_solicitud_det WHERE codEnvio = ? ORDER BY posSolicitud");
+    mysqli_stmt_bind_param($stmtDetAnterior, "s", $codEnvio);
+    mysqli_stmt_execute($stmtDetAnterior);
+    $resultDetAnterior = mysqli_stmt_get_result($stmtDetAnterior);
+    $detallesAnteriores = [];
+    while ($row = mysqli_fetch_assoc($resultDetAnterior)) {
+        $detallesAnteriores[] = $row;
+    }
+    $datosPreviosDetalles = !empty($detallesAnteriores) ? json_encode($detallesAnteriores, JSON_UNESCAPED_UNICODE) : null;
 
     $queryUpdate = "UPDATE san_fact_solicitud_cab SET 
         fecEnvio = ?, horaEnvio = ?, codLab = ?, nomLab = ?, 
@@ -116,44 +136,163 @@ try {
         $observacionesMuestra = $_POST["observaciones_{$i}"] ?? '';
         $numeroMuestras = $_POST["numeroMuestras_{$i}"] ?? '1';
 
+        // Validar campos requeridos de la solicitud
+        if (empty($fechaToma) || empty($codTipoMuestra) || empty($codigoReferencia)) {
+            throw new Exception("Solicitud #{$i}: Faltan datos requeridos (fecha de toma, tipo de muestra o código de referencia).");
+        }
+
         $analisisJson = $_POST["analisis_completos_{$i}"] ?? '[]';
         $analisisArray = json_decode($analisisJson, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             $analisisArray = [];
         }
 
-        if (!empty($analisisArray)) {
-            foreach ($analisisArray as $analisis) {
-                $uuid = generar_uuid_v4();
-                $codAnalisis = $analisis['codigo'] ?? null;
-                $nomAnalisis = $analisis['nombre'] ?? null;
-                $codPaquete = $analisis['paquete_codigo'] ?? null;
-                $nomPaquete = $analisis['paquete_nombre'] ?? null;
+        // Validar que haya al menos un análisis
+        if (empty($analisisArray) || count($analisisArray) === 0) {
+            throw new Exception("Solicitud #{$i}: Debe tener al menos un análisis seleccionado.");
+        }
 
-                mysqli_stmt_bind_param(
-                    $stmtInsert,
-                    "sssssssssssss",
-                    $codEnvio,
-                    $i,
-                    $fechaToma,
-                    $numeroMuestras,
-                    $codTipoMuestra,
-                    $nomTipoMuestra,
-                    $codPaquete,
-                    $nomPaquete,
-                    $codAnalisis,
-                    $nomAnalisis,
-                    $codigoReferencia,
-                    $observacionesMuestra,
-                    $uuid
-                );
+        // Validar que cada análisis tenga los datos necesarios
+        foreach ($analisisArray as $idx => $analisis) {
+            if (empty($analisis['codigo']) || empty($analisis['nombre'])) {
+                throw new Exception("Solicitud #{$i}, Análisis #" . ($idx + 1) . ": Faltan código o nombre del análisis.");
+            }
+        }
 
-                mysqli_stmt_execute($stmtInsert);
+        // Insertar cada análisis de la solicitud
+        foreach ($analisisArray as $analisis) {
+            $uuid = generar_uuid_v4(); 
+            $codAnalisis = $analisis['codigo'] ?? null;
+            $nomAnalisis = $analisis['nombre'] ?? null;
+            $codPaquete = $analisis['paquete_codigo'] ?? null;
+            $nomPaquete = $analisis['paquete_nombre'] ?? null;
+
+            if (empty($codAnalisis) || empty($nomAnalisis)) {
+                throw new Exception("Solicitud #{$i}: Análisis con datos incompletos.");
+            }
+
+            mysqli_stmt_bind_param(
+                $stmtInsert,
+                "sssssssssssss",
+                $codEnvio,
+                $i,
+                $fechaToma,
+                $numeroMuestras,
+                $codTipoMuestra,
+                $nomTipoMuestra,
+                $codPaquete,
+                $nomPaquete,
+                $codAnalisis,
+                $nomAnalisis,
+                $codigoReferencia,
+                $observacionesMuestra,
+                $uuid
+            );
+
+            if (!mysqli_stmt_execute($stmtInsert)) {
+                throw new Exception('Error al insertar detalle de solicitud: ' . mysqli_error($conexion));
             }
         }
     }
 
     mysqli_commit($conexion);
+
+    // Registrar en historial de acciones
+    $nom_usuario = $_SESSION['nombre'] ?? $usuarioRegistrador;
+
+    // Datos nuevos de la cabecera
+    $datosNuevosCabecera = json_encode([
+        'codEnvio' => $codEnvio,
+        'fechaEnvio' => $fechaEnvio,
+        'horaEnvio' => $horaEnvio,
+        'laboratorio' => $nomLab,
+        'empresaTransporte' => $nomEmpTrans,
+        'usuarioResponsable' => $usuarioResponsable,
+        'autorizadoPor' => $autorizadoPor
+    ], JSON_UNESCAPED_UNICODE);
+
+    // Registrar actualización de cabecera
+    try {
+        registrarAccion(
+            $usuarioRegistrador,
+            $nom_usuario,
+            'UPDATE',
+            'san_fact_solicitud_cab',
+            $codEnvio,
+            $datosPreviosCabecera,
+            $datosNuevosCabecera,
+            'Se actualizó la cabecera del envío',
+            'GRS'
+        );
+    } catch (Exception $e) {
+        error_log("Error al registrar historial de acciones (cabecera): " . $e->getMessage());
+    }
+
+    // Registrar eliminación de detalles anteriores
+    if ($datosPreviosDetalles) {
+        try {
+            registrarAccion(
+                $usuarioRegistrador,
+                $nom_usuario,
+                'DELETE',
+                'san_fact_solicitud_det',
+                $codEnvio,
+                $datosPreviosDetalles,
+                null,
+                'Se eliminaron los detalles anteriores del envío',
+                'GRS'
+            );
+        } catch (Exception $e) {
+            error_log("Error al registrar historial de acciones (eliminación detalles): " . $e->getMessage());
+        }
+    }
+
+    // Registrar inserción de nuevos detalles
+    for ($i = 1; $i <= $numeroSolicitudes; $i++) {
+        $fechaToma = $_POST["fechaToma_{$i}"] ?? '';
+        $codTipoMuestra = $_POST["tipoMuestra_{$i}"] ?? '';
+        $nomTipoMuestra = $_POST["tipoMuestraNombre_{$i}"] ?? '';
+        $codigoReferencia = $_POST["codigoReferenciaValue_{$i}"] ?? '';
+        $observacionesMuestra = $_POST["observaciones_{$i}"] ?? '';
+        $numeroMuestras = $_POST["numeroMuestras_{$i}"] ?? '1';
+        $analisisJson = $_POST["analisis_completos_{$i}"] ?? '[]';
+        $analisisArray = json_decode($analisisJson, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE || empty($analisisArray)) {
+            continue;
+        }
+
+        $posicionSolicitud = $i;
+        
+        // Datos del detalle
+        $datosDetalle = json_encode([
+            'codEnvio' => $codEnvio,
+            'posSolicitud' => $posicionSolicitud,
+            'fechaToma' => $fechaToma,
+            'tipoMuestra' => $nomTipoMuestra,
+            'codigoReferencia' => $codigoReferencia,
+            'numeroMuestras' => $numeroMuestras,
+            'observaciones' => $observacionesMuestra,
+            'analisis' => $analisisArray
+        ], JSON_UNESCAPED_UNICODE);
+
+        try {
+            registrarAccion(
+                $usuarioRegistrador,
+                $nom_usuario,
+                'INSERT',
+                'san_fact_solicitud_det',
+                $codEnvio . '-' . $posicionSolicitud,
+                null,
+                $datosDetalle,
+                "Se insertó detalle de solicitud #{$posicionSolicitud}",
+                'GRS'
+            );
+        } catch (Exception $e) {
+            error_log("Error al registrar historial de acciones (detalle {$posicionSolicitud}): " . $e->getMessage());
+        }
+    }
+
     echo json_encode(['status' => 'success', 'message' => 'Envío actualizado correctamente.']);
 
 } catch (Exception $e) {

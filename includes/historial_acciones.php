@@ -16,7 +16,45 @@ function obtenerConexion()
 
 function obtenerIP()
 {
-    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    // Prioridad: headers de proxy primero (si el servidor está detrás de un proxy)
+    $ip = null;
+    
+    // Intentar obtener IP real del cliente (si está detrás de proxy/load balancer)
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ips = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+        $ip = trim($ips[0]);
+    } elseif (!empty($_SERVER['HTTP_X_REAL_IP'])) {
+        $ip = $_SERVER['HTTP_X_REAL_IP'];
+    } elseif (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED'])) {
+        $ip = $_SERVER['HTTP_X_FORWARDED'];
+    } elseif (!empty($_SERVER['HTTP_FORWARDED_FOR'])) {
+        $ip = $_SERVER['HTTP_FORWARDED_FOR'];
+    } elseif (!empty($_SERVER['HTTP_FORWARDED'])) {
+        $ip = $_SERVER['HTTP_FORWARDED'];
+    }
+    
+    // Si no hay IP en headers, usar REMOTE_ADDR
+    if (empty($ip)) {
+        $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    }
+    
+    // Limpiar y validar IP
+    $ip = trim($ip);
+    
+    // Si es localhost IPv6, convertir a IPv4 para consistencia
+    if ($ip === '::1' || $ip === '::ffff:127.0.0.1') {
+        $ip = '127.0.0.1';
+    }
+    
+    // Validar que sea una IP válida
+    if (filter_var($ip, FILTER_VALIDATE_IP)) {
+        return $ip;
+    }
+    
+    // Si no es válida, devolver la original o 0.0.0.0
+    return $ip ?: '0.0.0.0';
 }
 
 function obtenerUserAgent()
@@ -63,7 +101,7 @@ function obtenerNavegadorOS()
 //  FUNCIÓN GENÉRICA INSERT
 // -------------------------
 
-function insertarHistorial(
+function insertarHistorialAcciones(
     $cod_usuario,
     $nom_usuario,
     $accion,
@@ -126,7 +164,7 @@ function registrarAccionLoginLogout($accion, $cod_usuario, $nom_usuario, $ubicac
     // El dispositivo se estima
     $dispositivo = preg_match('/mobile/i', $user_agent) ? 'Móvil' : 'Desktop';
 
-    insertarHistorial(
+    insertarHistorialAcciones(
         $cod_usuario,
         $nom_usuario,
         $accion,
@@ -158,7 +196,7 @@ function registrarAccionCRUD(
     $datos_nuevos = null,
     $descripcion = null
 ) {
-    insertarHistorial(
+    insertarHistorialAcciones(
         $cod_usuario,
         $nom_usuario,
         $accion,
@@ -196,7 +234,7 @@ function registrarAccion(
     // El dispositivo se estima
     $dispositivo = preg_match('/mobile/i', $user_agent) ? 'Móvil' : 'Desktop';
 
-    insertarHistorial(
+    insertarHistorialAcciones(
         $cod_usuario,
         $nom_usuario,
         $accion,

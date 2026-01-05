@@ -85,91 +85,10 @@ function confirmLaboratorioDelete(codigo) {
     }
 }
 
-// Función para exportar a Excel/CSV
+// Función para exportar a Excel
 function exportarLaboratorios() {
-    console.log('Iniciando exportación...');
-    
-    // Obtener los datos de la tabla
-    const tbody = document.getElementById('laboratorioTableBody');
-    
-    if (!tbody) {
-        alert('⚠️ No se encontró la tabla de laboratorios.');
-        console.error('No se encontró el elemento laboratorioTableBody');
-        return;
-    }
-    
-    const rows = tbody.querySelectorAll('tr');
-    console.log('Filas encontradas:', rows.length);
-    
-    // Verificar si hay datos válidos
-    let hasData = false;
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 2) {
-            const nombre = cells[1].textContent.trim();
-            if (nombre && nombre !== 'No hay laboratorios registrados') {
-                hasData = true;
-            }
-        }
-    });
-    
-    if (!hasData) {
-        alert('⚠️ No hay datos para exportar.');
-        return;
-    }
-
-    // Crear el contenido CSV con formato mejorado
-    let csv = '\uFEFF'; // BOM para UTF-8
-    
-    // Encabezado del documento
-    csv += 'SISTEMA DE SANIDAD GRS,,\n';
-    csv += 'LISTADO DE LABORATORIOS,,\n';
-    csv += 'Fecha de Exportación:,' + new Date().toLocaleDateString('es-PE') + ',\n';
-    csv += ',,\n';
-    
-    // Encabezados de columnas
-    csv += 'Código,Nombre del Laboratorio,\n';
-
-    let count = 0;
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 2) {
-            const codigo = cells[0].textContent.trim();
-            const nombre = cells[1].textContent.trim();
-            
-            // Evitar la fila de "No hay laboratorios registrados"
-            if (nombre && nombre !== 'No hay laboratorios registrados') {
-                csv += `${codigo},"${nombre}",\n`;
-                count++;
-            }
-        }
-    });
-
-    // Pie de página
-    csv += ',,\n';
-    csv += `Total de Laboratorios:,${count},\n`;
-
-    console.log('Registros exportados:', count);
-
-    if (count === 0) {
-        alert('⚠️ No hay datos válidos para exportar.');
-        return;
-    }
-
-    // Crear el archivo y descargarlo
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    const fecha = new Date().toISOString().split('T')[0];
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Laboratorios_${fecha}.csv`);
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    console.log('Exportación completada');
-    alert(`✅ Se exportaron ${count} laboratorio(s) correctamente.`);
+    // Obtener la ruta base del módulo actual
+    const currentPath = window.location.pathname;
+    const modulePath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+    window.location.href = modulePath + '/exportar_laboratorios.php';
 }

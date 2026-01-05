@@ -9,6 +9,7 @@ if (empty($_SESSION['active'])) {
 //ruta relativa a la conexion
 include_once '../../../conexion_grs_joya/conexion.php';
 include_once '../../includes/historial_resultados.php';
+include_once '../../includes/historial_acciones.php';
 $conexion = conectar_joya();
 if (!$conexion) {
     http_response_code(500);
@@ -245,6 +246,83 @@ try {
 
     if (!$historialOk) {
         throw new Exception('Error al registrar historial del envío');
+    }
+
+    // Registrar en historial de acciones
+    $nom_usuario = $_SESSION['nombre'] ?? $usuarioRegistrador;
+
+    // Registrar cabecera
+    $datosCabecera = json_encode([
+        'codEnvio' => $codigoEnvio,
+        'fechaEnvio' => $fechaEnvio,
+        'horaEnvio' => $horaEnvio,
+        'laboratorio' => $nomLab,
+        'empresaTransporte' => $nomEmpTrans,
+        'usuarioResponsable' => $usuarioResponsable,
+        'autorizadoPor' => $autorizadoPor,
+        'numeroSolicitudes' => $numeroSolicitudes
+    ], JSON_UNESCAPED_UNICODE);
+
+    try {
+        registrarAccion(
+            $usuarioRegistrador,
+            $nom_usuario,
+            'INSERT',
+            'san_fact_solicitud_cab',
+            $codigoEnvio,
+            null,
+            $datosCabecera,
+            'Se registro un nuevo envío de muestra',
+            'GRS'
+        );
+    } catch (Exception $e) {
+        error_log("Error al registrar historial de acciones (cabecera): " . $e->getMessage());
+    }
+
+    // Registrar detalles - recorrer las solicitudes nuevamente
+    for ($i = 0; $i < $numeroSolicitudes; $i++) {
+        $fechaToma = $_POST["fechaToma_{$i}"] ?? '';
+        $codTipoMuestra = $_POST["tipoMuestra_{$i}"] ?? null;
+        $nomTipoMuestra = $_POST["tipoMuestraNombre_{$i}"] ?? null;
+        $codigoReferencia = $_POST["codigoReferenciaValue_{$i}"] ?? '';
+        $observacionesMuestra = $_POST["observaciones_{$i}"] ?? '';
+        $numeroMuestras = $_POST["numeroMuestras_{$i}"] ?? '';
+        $analisisArray = $_POST["analisis_completos_{$i}"] ?? [];
+        $analisisArray = json_decode($analisisArray, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            continue;
+        }
+
+        $posicionSolicitud = $i + 1;
+        
+        // Datos del detalle
+        $datosDetalle = json_encode([
+            'codEnvio' => $codigoEnvio,
+            'posSolicitud' => $posicionSolicitud,
+            'fechaToma' => $fechaToma,
+            'tipoMuestra' => $nomTipoMuestra,
+            'codigoReferencia' => $codigoReferencia,
+            'numeroMuestras' => $numeroMuestras,
+            'observaciones' => $observacionesMuestra,
+            'analisis' => $analisisArray
+        ], JSON_UNESCAPED_UNICODE);
+
+        try {
+            registrarAccion(
+                $usuarioRegistrador,
+                $nom_usuario,
+                'INSERT',
+                'san_fact_solicitud_det',
+                $codigoEnvio . '-' . $posicionSolicitud,
+                null,
+                $datosDetalle,
+                "Se registro detalle de solicitud #{$posicionSolicitud}",
+                'GRS'
+            );
+        } catch (Exception $e) {
+            error_log("Error al registrar historial de acciones (detalle {$posicionSolicitud}): " . $e->getMessage());
+        }
     }
 
     

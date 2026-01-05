@@ -9,6 +9,7 @@ if (empty($_SESSION['active'])) {
 }
 
 include_once '../../conexion_grs_joya/conexion.php';
+include_once '../../../includes/historial_acciones.php';
 $conexion = conectar_joya();
 
 if (!$conexion) {
@@ -47,6 +48,29 @@ try {
 
         if ($stmt->affected_rows > 0) {
             $conexion->commit();
+            // Registrar en historial de acciones
+            $usuario = $_SESSION['usuario'] ?? 'sistema';
+            $nom_usuario = $_SESSION['nombre'] ?? $usuario;
+            $datos_nuevos = json_encode([
+                'codigo' => $codigo,
+                'analisis' => $analisis,
+                'tipo' => $tipo
+            ], JSON_UNESCAPED_UNICODE);
+            try {
+                registrarAccion(
+                    $usuario,
+                    $nom_usuario,
+                    'UPDATE',
+                    'san_dim_tiporesultado',
+                    $codigo,
+                    null,
+                    $datos_nuevos,
+                    'Se actualizo un tipo de resultado',
+                    null
+                );
+            } catch (Exception $e) {
+                error_log("Error al registrar historial de acciones: " . $e->getMessage());
+            }
             echo json_encode(['success' => true, 'message' => 'Respuesta actualizada correctamente']);
         } else {
             throw new Exception('No se encontró la respuesta o no se modificó nada');
@@ -65,7 +89,33 @@ try {
         $stmt->bind_param("is", $analisis, $tipo);
         $stmt->execute();
 
+        $codigoGenerado = $conexion->insert_id;
         $conexion->commit();
+        
+        // Registrar en historial de acciones
+        $usuario = $_SESSION['usuario'] ?? 'sistema';
+        $nom_usuario = $_SESSION['nombre'] ?? $usuario;
+        $datos_nuevos = json_encode([
+            'codigo' => $codigoGenerado,
+            'analisis' => $analisis,
+            'tipo' => $tipo
+        ], JSON_UNESCAPED_UNICODE);
+        try {
+            registrarAccion(
+                $usuario,
+                $nom_usuario,
+                'INSERT',
+                'san_dim_tiporesultado',
+                $codigoGenerado,
+                null,
+                $datos_nuevos,
+                'Se creo un nuevo tipo de resultado',
+                null
+            );
+        } catch (Exception $e) {
+            error_log("Error al registrar historial de acciones: " . $e->getMessage());
+        }
+        
         echo json_encode(['success' => true, 'message' => 'Respuesta creada correctamente']);
     }
 } catch (Exception $e) {

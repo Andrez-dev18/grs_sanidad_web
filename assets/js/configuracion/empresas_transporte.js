@@ -85,69 +85,10 @@ function confirmDelete(codigo) {
     }
 }
 
-// Función para exportar a CSV
+// Función para exportar a Excel
 function exportarEmpresasTransporte() {
-    const tbody = document.getElementById('empTransTableBody');
-    if (!tbody) {
-        alert('⚠️ No se encontró la tabla de empresas.');
-        return;
-    }
-
-    const rows = tbody.querySelectorAll('tr');
-    let hasData = false;
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 2) {
-            const nombre = cells[1].textContent.trim();
-            if (nombre && nombre !== 'No hay empresas de transporte registradas') {
-                hasData = true;
-            }
-        }
-    });
-
-    if (!hasData) {
-        alert('⚠️ No hay datos para exportar.');
-        return;
-    }
-
-    let csv = '\uFEFF';
-    csv += 'SISTEMA DE SANIDAD GRS,,\n';
-    csv += 'LISTADO DE EMPRESAS DE TRANSPORTE,,\n';
-    csv += 'Fecha de Exportación:,' + new Date().toLocaleDateString('es-PE') + ',\n';
-    csv += ',,\n';
-    csv += 'Código,Nombre de la Empresa,\n';
-
-    let count = 0;
-    rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 2) {
-            const codigo = cells[0].textContent.trim();
-            const nombre = cells[1].textContent.trim();
-            if (nombre && nombre !== 'No hay empresas de transporte registradas') {
-                csv += `${codigo},"${nombre}",\n`;
-                count++;
-            }
-        }
-    });
-
-    csv += ',,\n';
-    csv += `Total de Empresas:,${count},\n`;
-
-    if (count === 0) {
-        alert('⚠️ No hay datos válidos para exportar.');
-        return;
-    }
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    const fecha = new Date().toISOString().split('T')[0];
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Empresas_Transporte_${fecha}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    alert(`✅ Se exportaron ${count} empresa(s) correctamente.`);
+    // Obtener la ruta base del módulo actual
+    const currentPath = window.location.pathname;
+    const modulePath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+    window.location.href = modulePath + '/exportar_empresas_transporte.php';
 }

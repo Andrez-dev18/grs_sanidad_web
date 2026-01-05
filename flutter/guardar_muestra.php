@@ -15,6 +15,8 @@ date_default_timezone_set('America/Lima');
 
 // --- Token de autorización (igual que en tu otro endpoint funcional) ---
 include_once '../../conexion_grs_joya/conexion.php';
+include_once '../includes/historial_resultados.php';
+include_once '../includes/historial_acciones.php';
 
 // --- Conexión ---
 $conexion = conectar_joya();
@@ -191,6 +193,97 @@ try {
 
     }
 
+    // Registrar en historial de resultados
+    $historialOk = insertarHistorial(
+        $conexion,
+        $codigoEnvio,
+        0,                   // posSolicitud (0 = acción general)
+        'ENVIO_REGISTRADO',  // acción
+        null,                // tipo_analisis
+        'Se registro el envio de muestra desde app móvil',
+        $usuarioRegistrador,
+        'Flutter'
+    );
+
+    if (!$historialOk) {
+        throw new Exception('Error al registrar historial del envío');
+    }
+
+    // Registrar en historial de acciones
+    $nom_usuario = $data['usuarioNombre'] ?? $usuarioRegistrador ?? 'Usuario Móvil';
+
+    // Registrar cabecera
+    $datosCabecera = json_encode([
+        'codEnvio' => $codigoEnvio,
+        'fechaEnvio' => $fechaEnvio,
+        'horaEnvio' => $horaEnvio,
+        'laboratorio' => $nomLab,
+        'empresaTransporte' => $nomEmpTrans,
+        'usuarioResponsable' => $usuarioResponsable,
+        'autorizadoPor' => $autorizadoPor,
+        'numeroSolicitudes' => $numeroSolicitudes
+    ], JSON_UNESCAPED_UNICODE);
+
+    try {
+        registrarAccion(
+            $usuarioRegistrador,
+            $nom_usuario,
+            'INSERT',
+            'san_fact_solicitud_cab',
+            $codigoEnvio,
+            null,
+            $datosCabecera,
+            'Se registro un nuevo envío de muestra desde app móvil',
+            'Flutter'
+        );
+    } catch (Exception $e) {
+        error_log("Error al registrar historial de acciones (cabecera): " . $e->getMessage());
+    }
+
+    // Registrar detalles
+    for ($i = 0; $i < $numeroSolicitudes; $i++) {
+        $fechaToma = $data["fechaToma_{$i}"] ?? '';
+        $codTipoMuestra = $data["tipoMuestraCodigo_{$i}"] ?? null;
+        $nomTipoMuestra = $data["tipoMuestraNombre_{$i}"] ?? null;
+        $codigoReferencia = $data["codigoReferenciaValue_{$i}"] ?? '';
+        $observacionesMuestra = $data["observaciones_{$i}"] ?? '';
+        $numeroMuestras = $data["numeroMuestras_{$i}"] ?? '';
+        $analisisArray = $data["analisisCompletos_{$i}"] ?? [];
+        
+        if (empty($analisisArray)) {
+            continue;
+        }
+
+        $posicionSolicitud = $i + 1;
+        
+        // Datos del detalle
+        $datosDetalle = json_encode([
+            'codEnvio' => $codigoEnvio,
+            'posSolicitud' => $posicionSolicitud,
+            'fechaToma' => $fechaToma,
+            'tipoMuestra' => $nomTipoMuestra,
+            'codigoReferencia' => $codigoReferencia,
+            'numeroMuestras' => $numeroMuestras,
+            'observaciones' => $observacionesMuestra,
+            'analisis' => $analisisArray
+        ], JSON_UNESCAPED_UNICODE);
+
+        try {
+            registrarAccion(
+                $usuarioRegistrador,
+                $nom_usuario,
+                'INSERT',
+                'san_fact_solicitud_det',
+                $codigoEnvio . '-' . $posicionSolicitud,
+                null,
+                $datosDetalle,
+                "Se registro detalle de solicitud #{$posicionSolicitud} desde app móvil",
+                'Flutter'
+            );
+        } catch (Exception $e) {
+            error_log("Error al registrar historial de acciones (detalle {$posicionSolicitud}): " . $e->getMessage());
+        }
+    }
 
     mysqli_commit($conexion);
     // mysqli_stmt_close($stmtDetalle);
