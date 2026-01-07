@@ -369,10 +369,20 @@ if ($codigoUsuario) {
 
                 <div class="menu-group">
                     <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                        onclick="activateAndLoad(this, 'modules/necropsias/dashboard-necropsias.php', '📅 Necropsias', 'Registro de Necropsias')">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-feather-pointed"></i>
+                            <span class="font-medium">5.- Registro de Necropsias</span>
+                        </span>
+                    </button>
+                </div>
+
+                <div class="menu-group">
+                    <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                         onclick="toggleSubmenu('submenu-reporte')">
                         <span class="flex items-center gap-3">
                             <i class="fa-solid fa-file"></i>
-                            <span class="font-medium">5.- Reportes</span>
+                            <span class="font-medium">6.- Reportes</span>
                         </span>
                         <i class="fas fa-chevron-down text-sm"></i>
                     </button>
@@ -396,7 +406,7 @@ if ($codigoUsuario) {
                         onclick="toggleSubmenu('submenu-maestros-sistema')">
                         <span class="flex items-center gap-3">
                             <i class="fas fa-cogs w-5"></i>
-                            <span class="font-medium">6.- Configuracion</span>
+                            <span class="font-medium">7.- Configuracion</span>
                         </span>
                         <i class="fas fa-chevron-down text-sm"></i>
                     </button>
@@ -435,7 +445,7 @@ if ($codigoUsuario) {
                     <span class="flex items-center gap-3">
                         <i class="fa-solid fa-location-dot"></i>
                         <span class="font-medium">
-                            <?php echo $isTransportista ? '1.-' : '7.-'; ?> Tracking
+                            <?php echo $isTransportista ? '1.-' : '8.-'; ?> Tracking
                         </span>
                     </span>
                     <i class="fas fa-chevron-down text-sm"></i>
@@ -446,22 +456,22 @@ if ($codigoUsuario) {
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/escaneo/dashboard-escaneoQR.php','Escaneo QR', 'Escaneo tracking')"
                         class="menu-link block text-gray-400 hover:text-white">
-                        <?php echo $isTransportista ? '1.1.-' : '7.1.-'; ?> Escaneo
+                        <?php echo $isTransportista ? '1.1.-' : '8.1.-'; ?> Escaneo
                     </a>
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/seguimiento_envios/dashboard-tracking-muestra.php','Seguimiento de envios', 'Visualice el seguimiento de muestra')"
                         class="menu-link block text-gray-400 hover:text-white">
-                        <?php echo $isTransportista ? '1.2.-' : '7.2.-'; ?> Seguimiento de envios
+                        <?php echo $isTransportista ? '1.2.-' : '8.2.-'; ?> Seguimiento de envios
                     </a>
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/reporte/dashboard-reporte-tracking.php','🧪 Pendientes de entregas', 'Administre los pendientes y demas.')"
                         class="menu-link block text-gray-400 hover:text-white">
-                        <?php echo $isTransportista ? '1.3.-' : '7.3.-'; ?> Reporte
+                        <?php echo $isTransportista ? '1.3.-' : '8.3.-'; ?> Reporte
                     </a>
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/dashboard/dashboard-tracking.php','🧪 Dashboard Tracking', 'Resumen visual de los estados de entrega y pedidos.')"
                         class="menu-link block text-gray-400 hover:text-white">
-                        <?php echo $isTransportista ? '1.4.-' : '7.4.-'; ?> Dashboard
+                        <?php echo $isTransportista ? '1.4.-' : '8.4.-'; ?> Dashboard
                     </a>
                 </div>
             </div>
