@@ -180,7 +180,7 @@ if (!$conexion) {
                         class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-md">
                         Buscar
                     </button>
-                    <button
+            <div id="calendarioTracking" class="w-full"></div>          <button
                         id="btnLimpiar"
                         class="ml-3 px-6 py-2 bg-gray-500 text-white font-medium rounded-lg hover:bg-gray-600 transition shadow-md">
                         Limpiar
@@ -188,7 +188,7 @@ if (!$conexion) {
                 </div>
             </div>
             <!-- Contenedor del calendario -->
-            <div id="calendarioTracking" class="w-full"></div>
+          
         </div>
 
         <!-- Footer -->
