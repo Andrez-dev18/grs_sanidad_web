@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
+date_default_timezone_set('America/Lima');
 
-// Conexión
 include_once '../../../conexion_grs_joya/conexion.php';
 $conn = conectar_joya();
 
@@ -10,42 +10,52 @@ if (!$conn) {
     exit;
 }
 
-// Leer JSON
-$input = json_decode(file_get_contents('php://input'), true);
+// === RUTAS CORRECTAS DENTRO DEL PROYECTO ===
+$basePath = __DIR__ . '/';                                      // carpeta actual del PHP
+$carpetaUploads = $basePath . '/../../uploads/';              // gc_sanidad_web/uploads/
+$carpetaNecropsias = $carpetaUploads . 'necropsias/';           // gc_sanidad_web/uploads/necropsias/
+$rutaRelativaBD = 'uploads/necropsias/';                        // ruta que se guarda en BD
+
+if (!is_dir($carpetaNecropsias)) {
+    mkdir($carpetaNecropsias, 0755, true);
+}
+
+// === LEER DATOS ===
+$dataJson = $_POST['data'] ?? null;
+$input = json_decode($dataJson, true);
 
 if (!$input || !isset($input['granja']) || !isset($input['registros']) || empty($input['registros'])) {
     echo json_encode(['success' => false, 'message' => 'Datos inválidos o incompletos']);
     exit;
 }
 
-// Cabecera
+// === CABECERA ===
 $granja     = $input['granja'];
 $campania   = $input['campania'];
 $galpon     = $input['galpon'];
 $edad       = $input['edad'];
 $fectra     = $input['fectra'];
 $numreg     = (int)$input['numreg'];
+$tcencos    = $input['tcencos'] ?? '';
 
-// Automáticos
+// === AUTOMÁTICOS ===
 session_start();
-$tuser = $_SESSION['usuario'] ?? 'WEB';
-$tdate = date('Y-m-d');
-$ttime = date('H:i:s');
+$tuser  = $_SESSION['usuario'] ?? 'WEB';
+$tdate  = date('Y-m-d');
+$ttime  = date('H:i:s');
 $diareg = date('Y-m-d');
-$tcencos = '';
-$tcodsistema = 0;
 
-// SQL con 23 ?
+// === INSERTAR REGISTROS ===
 $sql = "INSERT INTO t_regnecropsia (
     tuser, tdate, ttime, tcencos, tgranja, tcampania, tedad, tgalpon, tnumreg, tfectra, diareg,
     tcodsistema, tsistema, tnivel, tparametro,
     tporcentaje1, tporcentaje2, tporcentaje3, tporcentaje4, tporcentaje5, tporcentajetotal,
-    tobservacion, tobs
+    tobservacion, evidencia, tobs
 ) VALUES (
     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?,
-    ?, ?
+    ?, ?, ?
 )";
 
 $stmt = $conn->prepare($sql);
@@ -60,10 +70,19 @@ $insertadas = 0;
 foreach ($input['registros'] as $reg) {
     $obs = $reg['tobservacion'] ?? '';
 
-    // 23 VARIABLES
-    // 23 TIPOS: 16 's' + 1 'i' + 6 'd'
+    switch ($reg['tsistema']) {
+        case 'SISTEMA INMUNOLOGICO': $tcodsistema = 1; break;
+        case 'SISTEMA DIGESTIVO': $tcodsistema = 2; break;
+        case 'SISTEMA RESPIRATORIO': $tcodsistema = 3; break;
+        case 'EVALUACION FISICA': $tcodsistema = 4; break;
+        default: $tcodsistema = 0;
+    }
+
+    // evidencia vacía por ahora (se actualizará después)
+    $evidencia = '';
+
     $stmt->bind_param(
-        "ssssssssissssssddddddss",  // EXACTAMENTE 23 caracteres
+        "ssssssssississsddddddsss",
         $tuser,
         $tdate,
         $ttime,
@@ -72,20 +91,21 @@ foreach ($input['registros'] as $reg) {
         $campania,
         $edad,
         $galpon,
-        $numreg,                  // i (int)
+        $numreg,
         $fectra,
         $diareg,
-        $tcodsistema,             // s (aunque sea int)
+        $tcodsistema,
         $reg['tsistema'],
         $reg['tnivel'],
         $reg['tparametro'],
-        $reg['tporcentaje1'],     // d
-        $reg['tporcentaje2'],     // d
-        $reg['tporcentaje3'],     // d
-        $reg['tporcentaje4'],     // d
-        $reg['tporcentaje5'],     // d
-        $reg['tporcentajetotal'], // d
+        $reg['tporcentaje1'],
+        $reg['tporcentaje2'],
+        $reg['tporcentaje3'],
+        $reg['tporcentaje4'],
+        $reg['tporcentaje5'],
+        $reg['tporcentajetotal'],
         $obs,
+        $evidencia,
         $obs
     );
 
@@ -95,12 +115,68 @@ foreach ($input['registros'] as $reg) {
 }
 
 $stmt->close();
+
+// === PROCESAR Y GUARDAR IMÁGENES POR NIVEL ===
+$imagenesGuardadas = 0;
+
+foreach ($_FILES as $key => $file) {
+    if (strpos($key, 'evidencia_') === 0 && $file['error'] === 0) {
+        $obsId = str_replace('evidencia_', '', $key);  // ej: indice_bursal
+        $nivelNombre = '';
+
+        // Mapeo obsId → tnivel real
+        $mapeoNivel = [
+            'indice_bursal'     => 'INDICE BURSAL',
+            'mucosa_bursa'      => 'MUCOSA DE LA BURSA',
+            'timos'             => 'TIMOS',
+            'higados'           => 'HIGADO',
+            'vesicula'          => 'VESICULA BILIAR',
+            'erosion'           => 'EROSION DE LA MOLLEJA',
+            'pancreas'          => 'RETRACCION DEL PANCREAS',
+            'saco'              => 'ABSORCION DEL SACO VITELINO',
+            'enteritis'         => 'ENTERITIS',
+            'cecal'             => 'CONTENIDO CECAL',
+            'alimento'          => 'ALIMENTO SIN DIGERIR',
+            'heces'             => 'HECES ANARANJADAS',
+            'lesion'            => 'LESION ORAL',
+            'tonicidad'         => 'TONICIDAD INTESTINAL',
+            'traquea'           => 'TRAQUEA',
+            'pulmon'            => 'PULMON',
+            'sacos'             => 'SACOS AEREOS',
+            'pododermatitis'    => 'PODODERMATITIS',
+            'tarsos'            => 'COLOR TARSOS'
+        ];
+
+        if (isset($mapeoNivel[$obsId])) {
+            $nivelNombre = $mapeoNivel[$obsId];
+
+            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $nombreArchivo = $granja . '_' . $galpon . '_' . $numreg . '_' . str_replace('-', '', $fectra) . '_' . $obsId . '_' . uniqid() . '.' . $extension;
+            $rutaFisica = $carpetaNecropsias . $nombreArchivo;
+            $rutaBD = $rutaRelativaBD . $nombreArchivo;
+
+            if (move_uploaded_file($file['tmp_name'], $rutaFisica)) {
+                // Actualizar TODOS los registros del mismo nivel con la ruta de la imagen
+                $updateSql = "UPDATE t_regnecropsia 
+                              SET evidencia = ? 
+                              WHERE tgranja = ? AND tgalpon = ? AND tnumreg = ? AND tfectra = ? AND tnivel = ?";
+                $stmtUpdate = $conn->prepare($updateSql);
+                $stmtUpdate->bind_param("ssssss", $rutaBD, $granja, $galpon, $numreg, $fectra, $nivelNombre);
+                $stmtUpdate->execute();
+                $stmtUpdate->close();
+
+                $imagenesGuardadas++;
+            }
+        }
+    }
+}
+
 $conn->close();
 
 echo json_encode([
     'success' => $insertadas > 0,
     'message' => $insertadas > 0 
-        ? "¡Necropsia guardada correctamente! ($insertadas filas insertadas)"
-        : "No se insertó ningún registro"
+        ? "¡Necropsia guardada exitosamente! ($insertadas registros + $imagenesGuardadas imágenes)"
+        : "Error al guardar los registros"
 ]);
 ?>
