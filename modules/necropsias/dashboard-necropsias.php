@@ -358,7 +358,7 @@ if (!$conexion) {
                                         <textarea id="obs_indice_bursal" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_indice_bursal" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_indice_bursal" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_indice_bursal"></div>
                                         </div>
                                     </td>
@@ -396,7 +396,7 @@ if (!$conexion) {
                                         <textarea id="obs_mucosa_bursa" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="4"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_mucosa_bursa" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_mucosa_bursa" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_mucosa_bursa"></div>
                                         </div>
                                     </td>
@@ -434,7 +434,7 @@ if (!$conexion) {
                                         <textarea id="obs_timos" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_timos" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_timos" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_timos"></div>
                                         </div>
                                     </td>
@@ -503,7 +503,7 @@ if (!$conexion) {
                                         <textarea id="obs_higados" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="4"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_higados" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_higados" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_higados"></div>
                                         </div>
                                     </td>
@@ -550,7 +550,7 @@ if (!$conexion) {
                                         <textarea id="obs_vesicula" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="5"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_vesicula" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_vesicula" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_vesicula"></div>
                                         </div>
                                     </td>
@@ -606,7 +606,7 @@ if (!$conexion) {
                                         <textarea id="obs_erosion" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="5"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_erosion" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_erosion" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_erosion"></div>
                                         </div>
                                     </td>
@@ -662,7 +662,7 @@ if (!$conexion) {
                                         <textarea id="obs_pancreas" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" id="evidencia_pancreas">
+                                            <input type="file" accept="image/*" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" id="evidencia_pancreas">
                                             <div class="mt-2" id="preview_pancreas"></div>
                                         </div>
                                     </td>
@@ -691,7 +691,7 @@ if (!$conexion) {
                                         <textarea id="obs_saco" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" id="evidencia_saco">
+                                            <input type="file" accept="image/*" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" id="evidencia_saco">
                                             <div class="mt-2" id="preview_saco"></div>
                                         </div>
                                     </td>
@@ -720,7 +720,7 @@ if (!$conexion) {
                                         <textarea id="obs_enteritis" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="5"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" id="evidencia_enteritis">
+                                            <input type="file" accept="image/*" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" id="evidencia_enteritis">
                                             <div class="mt-2" id="preview_enteritis"></div>
                                         </div>
                                     </td>
@@ -767,7 +767,7 @@ if (!$conexion) {
                                         <textarea id="obs_cecal" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="4"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_cecal" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_cecal" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_cecal"></div>
                                         </div>
                                     </td>
@@ -805,7 +805,7 @@ if (!$conexion) {
                                         <textarea id="obs_alimento" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_alimento" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_alimento" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_alimento"></div>
                                         </div>
                                     </td>
@@ -834,7 +834,7 @@ if (!$conexion) {
                                         <textarea id="obs_heces" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_heces" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_heces" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_heces"></div>
                                         </div>
                                     </td>
@@ -863,7 +863,7 @@ if (!$conexion) {
                                         <textarea id="obs_lesion" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_lesion" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_lesion" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_lesion"></div>
                                         </div>
                                     </td>
@@ -892,7 +892,7 @@ if (!$conexion) {
                                         <textarea id="obs_tonicidad" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="4"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_tonicidad" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_tonicidad" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_tonicidad"></div>
                                         </div>
                                     </td>
@@ -951,7 +951,7 @@ if (!$conexion) {
                                         <textarea id="obs_traquea" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="5"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_traquea" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_traquea" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_traquea"></div>
                                         </div>
                                     </td>
@@ -998,7 +998,7 @@ if (!$conexion) {
                                         <textarea id="obs_pulmon" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_pulmon" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_pulmon" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_pulmon"></div>
                                         </div>
                                     </td>
@@ -1027,7 +1027,7 @@ if (!$conexion) {
                                         <textarea id="obs_sacos" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="4"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_sacos" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_sacos" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_sacos"></div>
                                         </div>
                                     </td>
@@ -1087,7 +1087,7 @@ if (!$conexion) {
                                         <textarea id="obs_pododermatitis" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="6"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_pododermatitis" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_pododermatitis" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_pododermatitis"></div>
                                         </div>
                                     </td>
@@ -1143,7 +1143,7 @@ if (!$conexion) {
                                         <textarea id="obs_tarsos" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="7"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" id="evidencia_tarsos" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_tarsos" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
                                             <div class="mt-2" id="preview_tarsos"></div>
                                         </div>
                                     </td>
@@ -1211,26 +1211,94 @@ if (!$conexion) {
             </div>
         </div>
 
+        <!-- Modal de Carga con Pollo -->
+        <div id="modalCarga" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-2xl p-8 text-center max-w-sm w-full">
+                <img src="../../assets/img/gallina.gif" alt="Cargando..." class="w-32 h-32 mx-auto mb-4">
+                <p class="text-lg font-semibold text-gray-800">Guardando necropsia...</p>
+                <p class="text-sm text-gray-600 mt-2">Por favor espera, estamos procesando los registros y las imágenes</p>
+                <div class="mt-6">
+                    <div class="inline-block w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            </div>
+        </div>
+
         <div class="card-body p-0 mt-5">
             <div class="table-wrapper overflow-x-auto">
                 <table id="tabla" class="data-table w-full text-sm border-collapse">
                     <thead class="bg-gray-100 sticky top-0 z-10">
                         <tr>
-                            <th class="px-4 py-3 text-left">Fecha</th>
-                            <th class="px-4 py-3 text-left">Granja</th>
-                            <th class="px-4 py-3 text-left">Camp.</th>
-                            <th class="px-4 py-3 text-left">Galpón</th>
-                            <th class="px-4 py-3 text-left">Edad</th>
-                            <th class="px-4 py-3 text-left">Núm. Reg.</th>
-                            <th class="px-4 py-3 text-left">Usuario</th>
-                            <th class="px-4 py-3 text-left">Registrado</th>
-                            <th class="px-4 py-3 text-center">Acciones</th>
+                            <th class="px-3 py-2 text-left">#</th>
+                            <th class="px-3 py-2 text-left">Granja</th>
+                            <th class="px-3 py-2 text-center">Edad</th>
+                            <th class="px-3 py-2 text-center">Galpón</th>
+                            <th class="px-3 py-2 text-center">N° Reg</th>
+                            <th class="px-3 py-2 text-center">Fecha Necropsia</th>
+                            <th class="px-3 py-2 text-left">Sistema</th>
+                            <th class="px-3 py-2 text-left">Nivel</th>
+                            <th class="px-3 py-2 text-left">Parámetro</th>
+                            <th class="px-3 py-2 text-center">Aves 1-5</th>
+                            <th class="px-3 py-2 text-center">Total %</th>
+                            <th class="px-3 py-2 text-left">Observación</th>
+                            <th class="px-3 py-2 text-center">Evidencia</th>
+                            <th class="px-3 py-2 text-left">Usuario</th>
+                            <th class="px-3 py-2 text-left">Registrado</th>
                         </tr>
                     </thead>
                     <tbody>
 
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- MODAL PARA VER MÚLTIPLES EVIDENCIAS -->
+        <div id="modalEvidencia" class="fixed inset-0 bg-black/80 hidden z-50">
+            <!-- Fondo oscuro sin padding lateral para maximizar espacio -->
+            <div class="flex min-h-full items-start justify-center pt-4 px-4 sm:pt-0 sm:items-center">
+
+                <div class="bg-white rounded-t-3xl sm:rounded-xl shadow-2xl w-full max-w-4xl max-h-[92vh] flex flex-col">
+
+                    <!-- Header -->
+                    <div class="flex justify-between items-center px-6 py-4 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800">
+                            Evidencia fotográfica
+                        </h3>
+                        <div class="flex items-center gap-3">
+                            <!-- Botón abrir en nueva pestaña (solo ícono) -->
+                            <button onclick="abrirFotoActualEnPestana()"
+                                class="text-blue-600 hover:text-blue-800 transition bg-blue-100 hover:bg-blue-200 rounded-full p-2">
+                                <i class="fa-solid fa-external-link-alt text-lg"></i>
+                            </button>
+
+                            <!-- Botón cerrar -->
+                            <button onclick="cerrarModalEvidencia()" class="text-gray-500 hover:text-gray-700 text-2xl">
+                                ×
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Carrusel de imágenes -->
+                    <div class="flex-1 overflow-hidden relative bg-gray-50">
+                        <div id="carruselFotos" class="flex transition-transform duration-300 ease-in-out h-full">
+                            <!-- Imágenes dinámicas -->
+                        </div>
+
+                        <!-- Flechas -->
+                        <button id="prevFoto" class="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-3 shadow-lg transition z-10">
+                            <i class="fa-solid fa-chevron-left text-2xl text-gray-800"></i>
+                        </button>
+                        <button id="nextFoto" class="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white rounded-full p-3 shadow-lg transition z-10">
+                            <i class="fa-solid fa-chevron-right text-2xl text-gray-800"></i>
+                        </button>
+
+                        <!-- Contador -->
+                        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 text-white px-4 py-2 rounded-full text-sm font-medium z-10">
+                            <span id="contadorFotos">1 / 1</span>
+                        </div>
+
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1264,48 +1332,72 @@ if (!$conexion) {
                 pageLength: 10,
                 lengthMenu: [10, 25, 50, 100],
                 order: [
-                    [0, 'desc']
-                ], // Ordenar por fecha necropsia descendente
+                    [4, 'desc']
+                ], // Ordenar por fecha necropsia
                 columns: [{
-                        data: 'tfectra',
-                        render: function(data) {
-                            if (!data || data === '1000-01-01') return '-';
-                            const date = new Date(data);
-                            return date.toLocaleDateString('es-PE');
-                        }
-                    },
-                    {
-                        data: 'tgranja'
-                    },
-                    {
-                        data: 'tcampania'
-                    },
-                    {
-                        data: 'tgalpon',
-                        className: 'text-center font-medium'
+                        data: 'tnumreg'
+                    }, {
+                        data: 'tcencos'
                     },
                     {
                         data: 'tedad',
-                        className: 'text-center'
+                        className: 'text-center font-medium'
+                    },
+                    {
+                        data: 'tgalpon',
+                        className: 'text-center font-bold'
                     },
                     {
                         data: 'tnumreg',
                         className: 'text-center font-medium'
                     },
                     {
-                        data: 'tuser'
+                        data: 'tfectra',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'tsistema'
+                    },
+                    {
+                        data: 'tnivel'
+                    },
+                    {
+                        data: 'tparametro'
                     },
                     {
                         data: null,
+                        className: 'text-center',
                         render: function(data, type, row) {
-                            if (!row.tdate || row.tdate === '1000-01-01') return '-';
-                            const date = new Date(row.tdate);
-                            return date.toLocaleDateString('es-PE') + ' ' +
-                                date.toLocaleTimeString('es-PE', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                });
+                            return `${row.tporcentaje1}-${row.tporcentaje2}-${row.tporcentaje3}-${row.tporcentaje4}-${row.tporcentaje5}`;
                         }
+                    },
+                    {
+                        data: 'tporcentajetotal',
+                        className: 'text-center font-bold text-green-600',
+                        render: function(data) {
+                            return data + '%';
+                        }
+                    },
+                    {
+                        data: 'tobservacion',
+                        render: function(data) {
+                            if (!data) return '-';
+                            return data.length > 50 ? data.substr(0, 50) + '...' : data;
+                        }
+                    },
+                    {
+                        data: 'evidencia',
+                        orderable: false,
+                        searchable: false,
+                        render: function(data) {
+                            return data ? `<button onclick="abrirModalEvidencia('${data}')" class="text-blue-600 hover:underline"><i class="fas fa-image text-xl"></i></button>` : '-';
+                        }
+                    },
+                    {
+                        data: 'tuser'
+                    },
+                    {
+                        data: 'fecha_registro'
                     }
                 ]
             });
@@ -1320,10 +1412,12 @@ if (!$conexion) {
 
         document.getElementById('closeModal').addEventListener('click', () => {
             document.getElementById('modalNecropsia').classList.add('hidden');
+            limpiarFormularioNecropsia();
         });
 
         document.getElementById('closeModalBtn').addEventListener('click', () => {
             document.getElementById('modalNecropsia').classList.add('hidden');
+            limpiarFormularioNecropsia();
         });
 
         // Tabs (igual que antes)
@@ -1422,13 +1516,13 @@ if (!$conexion) {
                 {
                     sistema: 'SISTEMA DIGESTIVO',
                     nivel: 'VESICULA BILIAR',
-                    opciones: ['Color Claro', 'Tam. Normal', 'Tam. Agrandado', 'Normal'],
+                    opciones: ['Color Normal', 'Color Claro', 'Tam. Normal', 'Atrofiado', 'Hipertrofiado'],
                     obsId: 'obs_vesicula'
                 },
                 {
                     sistema: 'SISTEMA DIGESTIVO',
                     nivel: 'EROSION DE LA MOLLEJA',
-                    opciones: ['Grado 1', 'Grado 2', 'Grado 3', 'Normal'],
+                    opciones: ['Normal', 'Grado 1', 'Grado 2', 'Grado 3', 'Grado 4'],
                     obsId: 'obs_erosion'
                 },
                 {
@@ -1644,31 +1738,18 @@ if (!$conexion) {
                 });
             });
 
-            // Obtener las imágenes subidas por nivel (obsId)
-            const evidencias = {};
-            document.querySelectorAll('input[type="file"][id^="evidencia_"]').forEach(input => {
-                if (input.files && input.files[0]) {
-                    const obsId = input.id.replace('evidencia_', '');
-                    evidencias[obsId] = input.files[0];
-                }
-            });
-
-            // Asignar la imagen a todos los registros del nivel
-            data.registros.forEach(reg => {
-                const obsId = reg.tnivel.toLowerCase().replace(/ /g, '_').replace(/[^a-z0-9_]/g, '');
-                if (evidencias[obsId]) {
-                    reg.evidencia = obsId; // Solo el key, el file se envía aparte
-                }
-            });
-
-            // === ENVÍO AJAX ===
             try {
+                // Mostrar modal de carga
+                document.getElementById('modalCarga').classList.remove('hidden');
+
                 const formData = new FormData();
                 formData.append('data', JSON.stringify(data)); // Cabecera + registros
 
-                // Agregar los archivos
+                // Enviar las imágenes (múltiples por nivel)
                 Object.keys(evidencias).forEach(obsId => {
-                    formData.append('evidencia_' + obsId, evidencias[obsId]);
+                    evidencias[obsId].forEach(file => {
+                        formData.append(`evidencia_${obsId}[]`, file);
+                    });
                 });
 
                 const response = await fetch('guardar_necropsia.php', {
@@ -1677,17 +1758,22 @@ if (!$conexion) {
                 });
 
                 const result = await response.json();
+
+                // Ocultar modal
+                document.getElementById('modalCarga').classList.add('hidden');
+
                 if (result.success) {
                     alert('¡Necropsia registrada con éxito!');
                     document.getElementById('modalNecropsia').classList.add('hidden');
-                    // Opcional: recargar tabla
+                    limpiarFormularioNecropsia();
                     $('#tabla').DataTable().ajax.reload();
                 } else {
                     alert('Error: ' + result.message);
                 }
             } catch (err) {
+                document.getElementById('modalCarga').classList.add('hidden');
                 console.error(err);
-                alert('Error de conexión');
+                alert('Error de conexión. Intenta nuevamente.');
             }
         });
     </script>
@@ -1777,43 +1863,166 @@ if (!$conexion) {
             }
         });
 
-        // Preview de imágenes y quitar
+        // Objeto para guardar las imágenes por nivel (máx 3)
+        const evidencias = {}; // { 'higados': [File1, File2, File3], ... }
+
         document.querySelectorAll('input[type="file"][id^="evidencia_"]').forEach(input => {
+            const obsId = input.id.replace('evidencia_', '');
+            const preview = document.getElementById('preview_' + obsId);
+
             input.addEventListener('change', function(e) {
-                const previewId = this.id.replace('evidencia_', 'preview_');
-                const preview = document.getElementById(previewId);
-                preview.innerHTML = '';
+                if (!evidencias[obsId]) evidencias[obsId] = [];
 
-                if (this.files && this.files[0]) {
-                    const file = this.files[0];
+                const newFiles = Array.from(this.files);
+                const total = evidencias[obsId].length + newFiles.length;
+
+                if (total > 3) {
+                    alert('Máximo 3 imágenes por nivel. Se agregarán solo hasta completar 3.');
+                    newFiles.splice(3 - evidencias[obsId].length);
+                }
+
+                newFiles.forEach(file => {
+                    evidencias[obsId].push(file);
+
                     const reader = new FileReader();
-
                     reader.onload = function(e) {
                         const container = document.createElement('div');
                         container.classList.add('relative', 'inline-block');
 
                         const img = document.createElement('img');
                         img.src = e.target.result;
-                        img.classList.add('mt-2', 'max-h-64', 'rounded-lg', 'shadow-md', 'object-cover');
+                        img.classList.add('h-32', 'w-full', 'object-cover', 'rounded-lg');
 
                         const removeBtn = document.createElement('button');
                         removeBtn.innerHTML = '×';
-                        removeBtn.classList.add('absolute', 'top-0', 'right-0', 'bg-red-600', 'text-white', 'text-xs', 'font-bold', 'rounded-full', 'w-5', 'h-5', 'flex', 'items-center', 'justify-center', 'cursor-pointer', 'hover:bg-red-700');
-                        removeBtn.style.transform = 'translate(50%, -50%)'; // Posición en esquina
+                        removeBtn.classList.add('absolute', 'top-0', 'right-0', 'bg-red-600', 'text-white', 'text-xs', 'font-bold', 'rounded-full', 'w-6', 'h-6', 'flex', 'items-center', 'justify-center', 'cursor-pointer', 'hover:bg-red-700');
+                        removeBtn.style.transform = 'translate(50%, -50%)';
                         removeBtn.onclick = function() {
-                            preview.innerHTML = '';
-                            input.value = ''; // Limpiar el input file
+                            const index = Array.from(preview.children).indexOf(container);
+                            evidencias[obsId].splice(index, 1);
+                            container.remove();
                         };
 
                         container.appendChild(img);
                         container.appendChild(removeBtn);
                         preview.appendChild(container);
                     };
-
                     reader.readAsDataURL(file);
-                }
+                });
+
+                // Limpiar el input para permitir nueva selección
+                this.value = '';
             });
         });
+
+        // === FUNCIÓN PARA LIMPIAR TODO EL FORMULARIO DE NECROPSIA ===
+        function limpiarFormularioNecropsia() {
+            // 1. Desmarcar todos los checkboxes
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+
+            // 2. Limpiar todos los textareas de observaciones
+            document.querySelectorAll('textarea[id^="obs_"]').forEach(textarea => {
+                textarea.value = '';
+            });
+
+            // 3. Limpiar previews de imágenes y inputs file
+            document.querySelectorAll('input[type="file"][id^="evidencia_"]').forEach(input => {
+                input.value = ''; // Limpia el input file
+            });
+
+            document.querySelectorAll('div[id^="preview_"]').forEach(preview => {
+                preview.innerHTML = '';
+            });
+
+            // 4. Resetear los porcentajes a 0%
+            document.querySelectorAll('td[id^="porc_"]').forEach(td => {
+                td.textContent = '0%';
+            });
+
+            document.getElementById('granja').value = '';
+            document.getElementById('campania').value = '';
+            document.getElementById('edad').value = '';
+            document.getElementById('galpon').value = '';
+            document.getElementById('fectra').value = '';
+
+        }
+
+        let evidenciasActuales = []; // Array de rutas
+        let indiceFotoActual = 0;
+
+        function abrirModalEvidencia(rutasEvidencia) {
+            if (!rutasEvidencia || rutasEvidencia.trim() === '') return;
+
+            evidenciasActuales = rutasEvidencia.split(',').map(r => r.trim()).filter(r => r);
+
+            if (evidenciasActuales.length === 0) return;
+
+            indiceFotoActual = 0;
+            renderizarCarrusel();
+            document.getElementById('modalEvidencia').classList.remove('hidden');
+        }
+
+        function cerrarModalEvidencia() {
+            document.getElementById('modalEvidencia').classList.add('hidden');
+            document.getElementById('carruselFotos').innerHTML = '';
+            evidenciasActuales = [];
+        }
+
+        function renderizarCarrusel() {
+            const carrusel = document.getElementById('carruselFotos');
+            carrusel.innerHTML = '';
+
+            evidenciasActuales.forEach((ruta, index) => {
+                const div = document.createElement('div');
+                div.className = 'min-w-full h-full flex items-center justify-center px-4';
+                div.innerHTML = `
+            <img src="../../${ruta}" alt="Evidencia ${index + 1}" 
+                 class="max-w-full max-h-full object-contain rounded-lg shadow-xl">
+            `;
+                carrusel.appendChild(div);
+            });
+
+            // Posicionar en la foto actual
+            carrusel.style.transform = `translateX(-${indiceFotoActual * 100}%)`;
+
+            // Actualizar contador
+            document.getElementById('contadorFotos').textContent = `${indiceFotoActual + 1} / ${evidenciasActuales.length}`;
+
+            // Ocultar flechas si solo hay una foto
+            const prev = document.getElementById('prevFoto');
+            const next = document.getElementById('nextFoto');
+            if (evidenciasActuales.length <= 1) {
+                prev.classList.add('hidden');
+                next.classList.add('hidden');
+            } else {
+                prev.classList.remove('hidden');
+                next.classList.remove('hidden');
+            }
+        }
+
+        // Navegación
+        document.getElementById('prevFoto').addEventListener('click', () => {
+            if (indiceFotoActual > 0) {
+                indiceFotoActual--;
+                renderizarCarrusel();
+            }
+        });
+
+        document.getElementById('nextFoto').addEventListener('click', () => {
+            if (indiceFotoActual < evidenciasActuales.length - 1) {
+                indiceFotoActual++;
+                renderizarCarrusel();
+            }
+        });
+
+        // Abrir foto actual en nueva pestaña
+        function abrirFotoActualEnPestana() {
+            if (evidenciasActuales.length > 0) {
+                window.open("../../" + evidenciasActuales[indiceFotoActual], '_blank');
+            }
+        }
     </script>
 
 </body>

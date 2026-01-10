@@ -8,15 +8,23 @@ $start = intval($_POST['start']);
 $length = intval($_POST['length']);
 $search = $_POST['search']['value'] ?? '';
 
-// Columnas para ordenar
-$columns = ['tfectra', 'tgranja', 'tcampania', 'tgalpon', 'tedad', 'tnumreg', 'tuser', 'tdate'];
+// Columnas visibles en la tabla (para ordenar)
+$columns = [
+    'tcencos', 'tedad', 'tgalpon', 'tnumreg', 'tfectra',
+    'tsistema', 'tnivel', 'tparametro',
+    'tporcentaje1', 'tporcentajetotal', 'tobservacion'
+];
+
 $order_column_index = $_POST['order'][0]['column'] ?? 0;
 $order_dir = $_POST['order'][0]['dir'] ?? 'desc';
 $order_column = $columns[$order_column_index] ?? 'tfectra';
 
-// Consulta base: una fila por necropsia (usando DISTINCT por clave primaria parcial)
-$sql = "SELECT DISTINCT 
-            tfectra, tgranja, tcampania, tgalpon, tedad, tnumreg, tuser, tdate
+// Consulta principal: TODOS los registros detallados
+$sql = "SELECT 
+            tid, tcencos, tedad, tgalpon, tnumreg, tfectra,
+            tsistema, tnivel, tparametro,
+            tporcentaje1, tporcentaje2, tporcentaje3, tporcentaje4, tporcentaje5,
+            tporcentajetotal, tobservacion, evidencia, tuser, tdate, ttime
         FROM t_regnecropsia";
 
 $where = [];
@@ -24,33 +32,32 @@ $params = [];
 $types = '';
 
 if (!empty($search)) {
-    $where[] = "(tgranja LIKE ? OR tcampania LIKE ? OR tgalpon LIKE ? OR tnumreg LIKE ? OR tfectra LIKE ? OR tuser LIKE ?)";
+    $where[] = "(tcencos LIKE ? OR tgranja LIKE ? OR tgalpon LIKE ? OR tnumreg LIKE ? OR tfectra LIKE ? OR tsistema LIKE ? OR tnivel LIKE ? OR tparametro LIKE ?)";
     $like = "%$search%";
-    array_push($params, $like, $like, $like, $like, $like, $like);
-    $types .= 'ssssss';
+    $params = array_fill(0, 8, $like);
+    $types = str_repeat('s', 8);
 }
 
 if (!empty($where)) {
     $sql .= " WHERE " . implode(' AND ', $where);
 }
 
-// Total registros sin filtro
-$total_query = $conn->query("SELECT COUNT(DISTINCT tgranja, tgalpon, tnumreg, tfectra) AS total FROM t_regnecropsia");
-$total = $total_query->fetch_assoc()['total'];
+// Total registros (sin filtro)
+$total = $conn->query("SELECT COUNT(*) AS total FROM t_regnecropsia")->fetch_assoc()['total'];
 
 // Total filtrados
 $filtered = $total;
 if (!empty($where)) {
-    $count_sql = "SELECT COUNT(DISTINCT tgranja, tgalpon, tnumreg, tfectra) AS total FROM t_regnecropsia WHERE " . implode(' AND ', $where);
+    $count_sql = "SELECT COUNT(*) AS total FROM t_regnecropsia WHERE " . implode(' AND ', $where);
     $stmt_count = $conn->prepare($count_sql);
-    if ($types) $stmt_count->bind_param($types, ...$params);
+    $stmt_count->bind_param($types, ...$params);
     $stmt_count->execute();
     $filtered = $stmt_count->get_result()->fetch_assoc()['total'];
     $stmt_count->close();
 }
 
 // Ordenar y paginar
-$sql .= " ORDER BY $order_column $order_dir LIMIT ? OFFSET ?";
+$sql .= " ORDER BY tdate DESC, tnumreg DESC, tgranja ASC, tid ASC LIMIT ? OFFSET ?";
 $params[] = $length;
 $params[] = $start;
 $types .= 'ii';
@@ -62,7 +69,31 @@ $result = $stmt->get_result();
 
 $data = [];
 while ($row = $result->fetch_assoc()) {
-    $data[] = $row;
+    // Formatear fecha
+    $fechaRegistro = $row['tdate'] === '1000-01-01' ? '-' : 
+        date('d/m/Y H:i', strtotime($row['tdate'] . ' ' . $row['ttime']));
+
+    $data[] = [
+        'tid' => $row['tid'],
+        'tcencos' => $row['tcencos'],
+        'tedad' => $row['tedad'],
+        'tgalpon' => $row['tgalpon'],
+        'tnumreg' => $row['tnumreg'],
+        'tfectra' => date('d/m/Y', strtotime($row['tfectra'])),
+        'tsistema' => $row['tsistema'],
+        'tnivel' => $row['tnivel'],
+        'tparametro' => $row['tparametro'],
+        'tporcentaje1' => $row['tporcentaje1'],
+        'tporcentaje2' => $row['tporcentaje2'],
+        'tporcentaje3' => $row['tporcentaje3'],
+        'tporcentaje4' => $row['tporcentaje4'],
+        'tporcentaje5' => $row['tporcentaje5'],
+        'tporcentajetotal' => $row['tporcentajetotal'],
+        'tobservacion' => $row['tobservacion'],
+        'evidencia' => $row['evidencia'],
+        'tuser' => $row['tuser'],
+        'fecha_registro' => $fechaRegistro
+    ];
 }
 
 echo json_encode([

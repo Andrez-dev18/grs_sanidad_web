@@ -10,17 +10,26 @@ if (!$conn) {
     exit;
 }
 
-// === RUTAS CORRECTAS DENTRO DEL PROYECTO ===
-$basePath = __DIR__ . '/';                                      // carpeta actual del PHP
-$carpetaUploads = $basePath . '/../../uploads/';              // gc_sanidad_web/uploads/
-$carpetaNecropsias = $carpetaUploads . 'necropsias/';           // gc_sanidad_web/uploads/necropsias/
-$rutaRelativaBD = 'uploads/necropsias/';                        // ruta que se guarda en BD
+function generar_uuid_v4() {
+    return sprintf(
+        '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0x0fff) | 0x4000,
+        mt_rand(0, 0x3fff) | 0x8000,
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+    );
+}
+
+$basePath = __DIR__;
+$carpetaUploads = $basePath . '/../../uploads/';
+$carpetaNecropsias = $carpetaUploads . 'necropsias/';
+$rutaRelativaBD = 'uploads/necropsias/';
 
 if (!is_dir($carpetaNecropsias)) {
     mkdir($carpetaNecropsias, 0755, true);
 }
 
-// === LEER DATOS ===
 $dataJson = $_POST['data'] ?? null;
 $input = json_decode($dataJson, true);
 
@@ -29,7 +38,6 @@ if (!$input || !isset($input['granja']) || !isset($input['registros']) || empty(
     exit;
 }
 
-// === CABECERA ===
 $granja     = $input['granja'];
 $campania   = $input['campania'];
 $galpon     = $input['galpon'];
@@ -38,24 +46,24 @@ $fectra     = $input['fectra'];
 $numreg     = (int)$input['numreg'];
 $tcencos    = $input['tcencos'] ?? '';
 
-// === AUTOMÁTICOS ===
 session_start();
 $tuser  = $_SESSION['usuario'] ?? 'WEB';
 $tdate  = date('Y-m-d');
 $ttime  = date('H:i:s');
 $diareg = date('Y-m-d');
 
-// === INSERTAR REGISTROS ===
+$tid_contador = 1; 
+
 $sql = "INSERT INTO t_regnecropsia (
-    tuser, tdate, ttime, tcencos, tgranja, tcampania, tedad, tgalpon, tnumreg, tfectra, diareg,
+    tid, tuser, tdate, ttime, tcencos, tgranja, tcampania, tedad, tgalpon, tnumreg, tfectra, diareg,
     tcodsistema, tsistema, tnivel, tparametro,
     tporcentaje1, tporcentaje2, tporcentaje3, tporcentaje4, tporcentaje5, tporcentajetotal,
-    tobservacion, evidencia, tobs
+    tobservacion, evidencia, tobs, tuuid
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?,
-    ?, ?, ?
+    ?, ?, ?, ?
 )";
 
 $stmt = $conn->prepare($sql);
@@ -78,11 +86,13 @@ foreach ($input['registros'] as $reg) {
         default: $tcodsistema = 0;
     }
 
-    // evidencia vacía por ahora (se actualizará después)
+    $current_tid = $tid_contador++;
+    $tuuid = generar_uuid_v4();
     $evidencia = '';
 
     $stmt->bind_param(
-        "ssssssssississsddddddsss",
+        "issssssssississsddddddssss",
+        $current_tid,
         $tuser,
         $tdate,
         $ttime,
@@ -106,7 +116,8 @@ foreach ($input['registros'] as $reg) {
         $reg['tporcentajetotal'],
         $obs,
         $evidencia,
-        $obs
+        $obs,
+        $tuuid
     );
 
     if ($stmt->execute()) {
@@ -116,15 +127,15 @@ foreach ($input['registros'] as $reg) {
 
 $stmt->close();
 
-// === PROCESAR Y GUARDAR IMÁGENES POR NIVEL ===
+// === PROCESAR IMÁGENES (hasta 3 por nivel) ===
 $imagenesGuardadas = 0;
 
-foreach ($_FILES as $key => $file) {
-    if (strpos($key, 'evidencia_') === 0 && $file['error'] === 0) {
-        $obsId = str_replace('evidencia_', '', $key);  // ej: indice_bursal
-        $nivelNombre = '';
+foreach ($_FILES as $key => $files) {
+    // Solo procesar inputs que terminan en [] (múltiples)
+    if (strpos($key, 'evidencia_') === 0 && is_array($files['tmp_name'])) {
+        $obsId = str_replace('evidencia_', '', $key);
+        $rutas = []; // Array para guardar las URLs de este nivel
 
-        // Mapeo obsId → tnivel real
         $mapeoNivel = [
             'indice_bursal'     => 'INDICE BURSAL',
             'mucosa_bursa'      => 'MUCOSA DE LA BURSA',
@@ -150,22 +161,32 @@ foreach ($_FILES as $key => $file) {
         if (isset($mapeoNivel[$obsId])) {
             $nivelNombre = $mapeoNivel[$obsId];
 
-            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            $nombreArchivo = $granja . '_' . $galpon . '_' . $numreg . '_' . str_replace('-', '', $fectra) . '_' . $obsId . '_' . uniqid() . '.' . $extension;
-            $rutaFisica = $carpetaNecropsias . $nombreArchivo;
-            $rutaBD = $rutaRelativaBD . $nombreArchivo;
+            // Procesar cada archivo del array
+            foreach ($files['tmp_name'] as $i => $tmp_name) {
+                if ($files['error'][$i] === 0 && count($rutas) < 3) { // límite 3
+                    $extension = strtolower(pathinfo($files['name'][$i], PATHINFO_EXTENSION));
+                    $nombreArchivo = $granja . '_' . $galpon . '_' . $numreg . '_' . str_replace('-', '', $fectra) . '_' . $obsId . '_' . uniqid() . '.' . $extension;
+                    $rutaFisica = $carpetaNecropsias . $nombreArchivo;
+                    $rutaBD = $rutaRelativaBD . $nombreArchivo;
 
-            if (move_uploaded_file($file['tmp_name'], $rutaFisica)) {
-                // Actualizar TODOS los registros del mismo nivel con la ruta de la imagen
+                    if (move_uploaded_file($tmp_name, $rutaFisica)) {
+                        $rutas[] = $rutaBD;
+                        $imagenesGuardadas++;
+                    }
+                }
+            }
+
+            // Si hay rutas, guardarlas separadas por coma
+            if (!empty($rutas)) {
+                $rutaFinal = implode(',', $rutas); // ej: ruta1.jpg,ruta2.jpg,ruta3.jpg
+
                 $updateSql = "UPDATE t_regnecropsia 
                               SET evidencia = ? 
                               WHERE tgranja = ? AND tgalpon = ? AND tnumreg = ? AND tfectra = ? AND tnivel = ?";
                 $stmtUpdate = $conn->prepare($updateSql);
-                $stmtUpdate->bind_param("ssssss", $rutaBD, $granja, $galpon, $numreg, $fectra, $nivelNombre);
+                $stmtUpdate->bind_param("ssssss", $rutaFinal, $granja, $galpon, $numreg, $fectra, $nivelNombre);
                 $stmtUpdate->execute();
                 $stmtUpdate->close();
-
-                $imagenesGuardadas++;
             }
         }
     }
