@@ -1243,6 +1243,7 @@ if (!$conexion) {
                             <th class="px-3 py-2 text-center">Evidencia</th>
                             <th class="px-3 py-2 text-left">Usuario</th>
                             <th class="px-3 py-2 text-left">Registrado</th>
+                            <th class="px-3 py-2 text-left">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1398,6 +1399,20 @@ if (!$conexion) {
                     },
                     {
                         data: 'fecha_registro'
+                    },
+                    {
+                        data: null,
+                        className: 'text-center',
+                        orderable: false,
+                        render: function(data, type, row) {
+                            return `
+                                    <a href="generar_reporte_necropsia.php?granja=${encodeURIComponent(row.tgranja)}&numreg=${row.tnumreg}&fectra=${row.tfectra}" 
+                                    target="_blank" 
+                                    class="inline-block bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-xs font-medium transition-colors">
+                                        <i class="fas fa-file-pdf mr-1"></i> PDF
+                                    </a>
+                                `;
+                        }
                     }
                 ]
             });

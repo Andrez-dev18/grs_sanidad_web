@@ -21,7 +21,7 @@ $order_column = $columns[$order_column_index] ?? 'tfectra';
 
 // Consulta principal: TODOS los registros detallados
 $sql = "SELECT 
-            tid, tcencos, tedad, tgalpon, tnumreg, tfectra,
+            tid, tgranja, tcencos, tedad, tgalpon, tnumreg, tfectra,
             tsistema, tnivel, tparametro,
             tporcentaje1, tporcentaje2, tporcentaje3, tporcentaje4, tporcentaje5,
             tporcentajetotal, tobservacion, evidencia, tuser, tdate, ttime
@@ -75,6 +75,7 @@ while ($row = $result->fetch_assoc()) {
 
     $data[] = [
         'tid' => $row['tid'],
+        'tgranja' => $row['tgranja'],
         'tcencos' => $row['tcencos'],
         'tedad' => $row['tedad'],
         'tgalpon' => $row['tgalpon'],

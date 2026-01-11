@@ -5,7 +5,7 @@
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => 'ba3a2bf62a50a82735bc601fb468262dbee6e2f3',
+        'reference' => 'e04d6b21c0a0fdecbb15a146c2a9494bb0b074e6',
         'name' => 'sistemaslap5/grs_sanidad_web_2',
         'dev' => true,
     ),
@@ -169,7 +169,7 @@
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => 'ba3a2bf62a50a82735bc601fb468262dbee6e2f3',
+            'reference' => 'e04d6b21c0a0fdecbb15a146c2a9494bb0b074e6',
             'dev_requirement' => false,
         ),
         'symfony/polyfill-mbstring' => array(
