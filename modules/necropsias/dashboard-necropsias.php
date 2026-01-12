@@ -1408,8 +1408,8 @@ if (!$conexion) {
                             return `
                                     <a href="generar_reporte_necropsia.php?granja=${encodeURIComponent(row.tgranja)}&numreg=${row.tnumreg}&fectra=${row.tfectra}" 
                                     target="_blank" 
-                                    class="inline-block bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-xs font-medium transition-colors">
-                                        <i class="fas fa-file-pdf mr-1"></i> PDF
+                                    class="hidden inline-block bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 text-xs font-medium transition-colors">
+                                        <i class="fa-solid fa-pen-to-square"></i>
                                     </a>
                                 `;
                         }
@@ -1879,7 +1879,7 @@ if (!$conexion) {
         });
 
         // Objeto para guardar las imágenes por nivel (máx 3)
-        const evidencias = {}; // { 'higados': [File1, File2, File3], ... }
+            const evidencias = {};
 
         document.querySelectorAll('input[type="file"][id^="evidencia_"]').forEach(input => {
             const obsId = input.id.replace('evidencia_', '');
@@ -1887,7 +1887,7 @@ if (!$conexion) {
 
             input.addEventListener('change', function(e) {
                 if (!evidencias[obsId]) evidencias[obsId] = [];
-
+                     
                 const newFiles = Array.from(this.files);
                 const total = evidencias[obsId].length + newFiles.length;
 

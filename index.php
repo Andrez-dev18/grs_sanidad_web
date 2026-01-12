@@ -369,12 +369,23 @@ if ($codigoUsuario) {
 
                 <div class="menu-group">
                     <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                        onclick="activateAndLoad(this, 'modules/necropsias/dashboard-necropsias.php', '📅 Necropsias', 'Registro de Necropsias')">
+                        onclick="toggleSubmenu('submenu-necropsia')">
                         <span class="flex items-center gap-3">
                             <i class="fa-solid fa-feather-pointed"></i>
-                            <span class="font-medium">5.- Registro de Necropsias</span>
+                            <span class="font-medium">5.- Necropsias</span>
                         </span>
+                        <i class="fas fa-chevron-down text-sm"></i>
                     </button>
+                    <div id="submenu-necropsia" class="submenu hidden pl-10 mt-2 space-y-2">
+                        <a href="#"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/necropsias/dashboard-necropsias.php', '📅 Necropsias', 'Registro de Necropsias')"
+                            class="menu-link block text-gray-400 hover:text-white">Registro de Necropsias</a>
+
+                        <a href="#"
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/necropsias/dashboard-necropsias-reporte.php', '📊 Necropsias Reporte', 'Reporte de las necropsias')"
+                            class="menu-link block text-gray-400 hover:text-white">Reporte</a>
+
+                    </div>
                 </div>
 
                 <div class="menu-group">
