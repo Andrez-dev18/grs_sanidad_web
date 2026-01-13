@@ -369,65 +369,26 @@ if ($codigoUsuario) {
 
                 <div class="menu-group">
                     <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                        onclick="toggleSubmenu('submenu-reporte')">
+                        onclick="toggleSubmenu('submenu-necropsia')">
                         <span class="flex items-center gap-3">
-                            <i class="fa-solid fa-file"></i>
-                            <span class="font-medium">5.- Reportes</span>
+                            <i class="fa-solid fa-feather-pointed"></i>
+                            <span class="font-medium">5.- Necropsias</span>
                         </span>
                         <i class="fas fa-chevron-down text-sm"></i>
                     </button>
-
-                    <div id="submenu-reporte" class="submenu hidden pl-10 mt-2 space-y-2">
+                    <div id="submenu-necropsia" class="submenu hidden pl-10 mt-2 space-y-2">
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('modules/reportes/dashboard-reportes.php', '📈 Formato de Muestras', 'Formato PDF y envío de correo de los pedidos de muestra')"
-                            class="menu-link block text-gray-400 hover:text-white">Formato de Muestras</a>
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/necropsias/dashboard-necropsias.php', '📅 Necropsias', 'Registro de Necropsias')"
+                            class="menu-link block text-gray-400 hover:text-white">Registro de Necropsias</a>
 
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('modules/seguimiento/dashboard-seguimiento.php', '📊 Seguimiento', 'Seguimiento de los resultados cualitativo y cuantitativo registrados en el sistema')"
-                            class="menu-link block text-gray-400 hover:text-white">Seguimiento</a>
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/necropsias/dashboard-reportes-necropsias.php', '📊 Necropsias Reportes', 'Reportes Individual y Comparativo de Necropsias')"
+                            class="menu-link block text-gray-400 hover:text-white">Reportes</a>
 
                     </div>
                 </div>
 
-
-                <!-- MANTENIMIENTOS -->
-                <div class="menu-group">
-                    <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
-                        onclick="toggleSubmenu('submenu-maestros-sistema')">
-                        <span class="flex items-center gap-3">
-                            <i class="fas fa-cogs w-5"></i>
-                            <span class="font-medium">6.- Configuracion</span>
-                        </span>
-                        <i class="fas fa-chevron-down text-sm"></i>
-                    </button>
-
-                    <div id="submenu-maestros-sistema" class="submenu hidden pl-10 mt-2 space-y-2">
-
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/empTransporte/dashboard-empresas-transporte.php','🚚 Empresas de transporte', 'Administre las empresas de transporte registradas en el sistema')"
-                            class="menu-link block text-gray-400 hover:text-white">Empresas de transporte</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/laboratorio/dashboard-laboratorio.php','🔬 Laboratorio', 'Administre los laboratorios registrados en el sistema')"
-                            class="menu-link block text-gray-400 hover:text-white">Laboratorios</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipo_muestra/dashboard-tipo-muestra.php','🧪 Tipo muestra', 'Administre los tipos de muestra registrados en el sistema')"
-                            class="menu-link block text-gray-400 hover:text-white">Tipos de Muestra</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipo_analisis/dashboard-analisis.php','🔍 Analisis', 'Administre los analisis registrados en el sistema')"
-                            class="menu-link block text-gray-400 hover:text-white">Tipos de Analisis</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/paquete_analisis/dashboard-paquete-analisis.php','📦 Paquete analisis', 'Administre los paquetes de analisis registrados en el sistema')"
-                            class="menu-link block text-gray-400 hover:text-white">Paquetes de Analisis</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipo_respuesta/dashboard-respuesta.php','🛠️ Tipos de Respuesta', 'Administre los tipos de respuestas registrados de los analisis')"
-                            class="menu-link block text-gray-400 hover:text-white">Tipos de Respuesta</a>
-                        <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/correo_contacto/dashboard-correo-contactos.php','📧 Correo y Contactos', 'Administre  tu cuenta de correo y tus contactos para envío de ')"
-                            class="menu-link block text-gray-400 hover:text-white">Correo contactos</a>
-                    </div>
-                </div>
             <?php endif; ?>
-
             <!-- TRACKING -->
             <div class="menu-group">
                 <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
@@ -435,7 +396,7 @@ if ($codigoUsuario) {
                     <span class="flex items-center gap-3">
                         <i class="fa-solid fa-location-dot"></i>
                         <span class="font-medium">
-                            <?php echo $isTransportista ? '1.-' : '7.-'; ?> Tracking
+                            <?php echo $isTransportista ? '1.-' : '6.-'; ?> Tracking
                         </span>
                     </span>
                     <i class="fas fa-chevron-down text-sm"></i>
@@ -446,27 +407,85 @@ if ($codigoUsuario) {
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/escaneo/dashboard-escaneoQR.php','Escaneo QR', 'Escaneo tracking')"
                         class="menu-link block text-gray-400 hover:text-white">
-                        <?php echo $isTransportista ? '1.1.-' : '7.1.-'; ?> Escaneo
+                        <?php echo $isTransportista ? '1.1.-' : '6.1.-'; ?> Escaneo
                     </a>
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/seguimiento_envios/dashboard-tracking-muestra.php','Seguimiento de envios', 'Visualice el seguimiento de muestra')"
                         class="menu-link block text-gray-400 hover:text-white">
-                        <?php echo $isTransportista ? '1.2.-' : '7.2.-'; ?> Seguimiento de envios
+                        <?php echo $isTransportista ? '1.2.-' : '6.2.-'; ?> Seguimiento de envios
                     </a>
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/reporte/dashboard-reporte-tracking.php','🧪 Pendientes de entregas', 'Administre los pendientes y demas.')"
                         class="menu-link block text-gray-400 hover:text-white">
-                        <?php echo $isTransportista ? '1.3.-' : '7.3.-'; ?> Reporte
+                        <?php echo $isTransportista ? '1.3.-' : '6.3.-'; ?> Reporte
                     </a>
                     <a href="#"
                         onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/dashboard/dashboard-tracking.php','🧪 Dashboard Tracking', 'Resumen visual de los estados de entrega y pedidos.')"
                         class="menu-link block text-gray-400 hover:text-white">
-                        <?php echo $isTransportista ? '1.4.-' : '7.4.-'; ?> Dashboard
+                        <?php echo $isTransportista ? '1.4.-' : '6.4.-'; ?> Dashboard
                     </a>
                 </div>
             </div>
+            <?php if (!$isTransportista): ?>
+            <!-- REPORTE -->
+            <div class="menu-group">
+                <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                    onclick="toggleSubmenu('submenu-reporte')">
+                    <span class="flex items-center gap-3">
+                        <i class="fa-solid fa-file"></i>
+                        <span class="font-medium">7.- Reportes</span>
+                    </span>
+                    <i class="fas fa-chevron-down text-sm"></i>
+                </button>
 
+                <div id="submenu-reporte" class="submenu hidden pl-10 mt-2 space-y-2">
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/reportes/dashboard-reportes.php', '📈 Formato de Muestras', 'Formato PDF y envío de correo de los pedidos de muestra')"
+                        class="menu-link block text-gray-400 hover:text-white">Formato de Muestras</a>
 
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/seguimiento/dashboard-seguimiento.php', '📊 Seguimiento', 'Seguimiento de los resultados cualitativo y cuantitativo registrados en el sistema')"
+                        class="menu-link block text-gray-400 hover:text-white">Seguimiento</a>
+
+                </div>
+            </div>
+            <!-- MANTENIMIENTOS -->
+            <div class="menu-group">
+                <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
+                    onclick="toggleSubmenu('submenu-maestros-sistema')">
+                    <span class="flex items-center gap-3">
+                        <i class="fas fa-cogs w-5"></i>
+                        <span class="font-medium">8.- Configuracion</span>
+                    </span>
+                    <i class="fas fa-chevron-down text-sm"></i>
+                </button>
+
+                <div id="submenu-maestros-sistema" class="submenu hidden pl-10 mt-2 space-y-2">
+
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/empTransporte/dashboard-empresas-transporte.php','🚚 Empresas de transporte', 'Administre las empresas de transporte registradas en el sistema')"
+                        class="menu-link block text-gray-400 hover:text-white">Empresas de transporte</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/laboratorio/dashboard-laboratorio.php','🔬 Laboratorio', 'Administre los laboratorios registrados en el sistema')"
+                        class="menu-link block text-gray-400 hover:text-white">Laboratorios</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipo_muestra/dashboard-tipo-muestra.php','🧪 Tipo muestra', 'Administre los tipos de muestra registrados en el sistema')"
+                        class="menu-link block text-gray-400 hover:text-white">Tipos de Muestra</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipo_analisis/dashboard-analisis.php','🔍 Analisis', 'Administre los analisis registrados en el sistema')"
+                        class="menu-link block text-gray-400 hover:text-white">Tipos de Analisis</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/paquete_analisis/dashboard-paquete-analisis.php','📦 Paquete analisis', 'Administre los paquetes de analisis registrados en el sistema')"
+                        class="menu-link block text-gray-400 hover:text-white">Paquetes de Analisis</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipo_respuesta/dashboard-respuesta.php','🛠️ Tipos de Respuesta', 'Administre los tipos de respuestas registrados de los analisis')"
+                        class="menu-link block text-gray-400 hover:text-white">Tipos de Respuesta</a>
+                    <a href="#"
+                        onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/correo_contacto/dashboard-correo-contactos.php','📧 Correo y Contactos', 'Administre  tu cuenta de correo y tus contactos para envío de ')"
+                        class="menu-link block text-gray-400 hover:text-white">Correo contactos</a>
+                </div>
+            </div>
+            <?php endif; ?>
         </nav>
 
 
