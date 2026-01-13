@@ -1406,17 +1406,307 @@ if (!$conexion) {
                         orderable: false,
                         render: function(data, type, row) {
                             return `
-                                    <a href="generar_reporte_necropsia.php?granja=${encodeURIComponent(row.tgranja)}&numreg=${row.tnumreg}&fectra=${row.tfectra}" 
-                                    target="_blank" 
-                                    class="hidden inline-block bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 text-xs font-medium transition-colors">
+                                    <button onclick="editarNecropsia('${row.tgranja}', ${row.tnumreg}, '${row.tfectra}')" 
+                                            class="inline-block bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 text-xs font-medium transition-colors"">
                                         <i class="fa-solid fa-pen-to-square"></i>
-                                    </a>
+                                    </button>
                                 `;
                         }
                     }
                 ]
             });
         });
+    </script>
+
+    <script>
+        let isEditMode = false;
+        let loteEditando = {};
+
+        async function editarNecropsia(granja, numreg, fectra) {
+            isEditMode = true;
+            loteEditando = {
+                granja,
+                numreg,
+                fectra
+            };
+
+            // Cambiar botón a "Actualizar"
+            const btnGuardar = document.getElementById('btnGuardarNecropsia');
+            if (btnGuardar) btnGuardar.textContent = 'Actualizar Necropsia';
+
+            // Abrir modal
+            document.getElementById('modalNecropsia').classList.remove('hidden');
+
+            try {
+                const response = await fetch(`cargar_necropsia_editar.php?granja=${encodeURIComponent(granja)}&numreg=${numreg}&fectra=${fectra}`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    alert('Error al cargar datos: ' + result.message);
+                    return;
+                }
+
+                // Limpiar formulario primero
+                limpiarFormularioNecropsia();
+
+                // === CABECERA ===
+                // Granja (select) - cargar opciones primero si es necesario
+                const granjaSelect = document.getElementById('granja');
+                if (granjaSelect) {
+                    // Asegurarse de que las opciones estén cargadas
+                    await cargarGranjasParaEdicion();
+                    granjaSelect.value = result.granja || granja;
+                    // Trigger change para cargar galpones
+                    granjaSelect.dispatchEvent(new Event('change'));
+                }
+
+                // Esperar un poco para que se carguen los galpones
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                // Galpón (select)
+                const galponSelect = document.getElementById('galpon');
+                if (galponSelect) galponSelect.value = result.galpon || '';
+
+                // Campaña (input readonly)
+                const campaniaInput = document.getElementById('campania');
+                if (campaniaInput) campaniaInput.value = result.campania || '';
+
+                // Edad (input readonly)
+                const edadInput = document.getElementById('edad');
+                if (edadInput) edadInput.value = result.edad || '';
+
+                // Fecha necropsia
+                document.getElementById('fectra').value = result.fectra || fectra;
+
+                // === PROCESAR REGISTROS ===
+                const registros = result.registros;
+
+                // Agrupar por nivel para evitar duplicados
+                const registrosPorNivel = {};
+                registros.forEach(reg => {
+                    const nivel = reg.tnivel.trim().toUpperCase();
+                    if (!registrosPorNivel[nivel]) {
+                        registrosPorNivel[nivel] = {
+                            parametros: {},
+                            observacion: reg.tobservacion || '',
+                            evidencia: reg.evidencia || ''
+                        };
+                    }
+
+                    // Agregar parámetro con sus checkboxes
+                    const parametro = reg.tparametro.trim();
+                    registrosPorNivel[nivel].parametros[parametro] = {
+                        p1: reg.tporcentaje1 || 0,
+                        p2: reg.tporcentaje2 || 0,
+                        p3: reg.tporcentaje3 || 0,
+                        p4: reg.tporcentaje4 || 0,
+                        p5: reg.tporcentaje5 || 0,
+                        total: reg.tporcentajetotal || 0
+                    };
+                });
+
+                // Mapeo de nivel a obsId base (debe coincidir EXACTAMENTE con los IDs en el HTML)
+                const mapeoObsId = {
+                    'INDICE BURSAL': 'indice_bursal', // ← CORREGIDO
+                    'MUCOSA DE LA BURSA': 'mucosa_bursa', // ← CORREGIDO
+                    'TIMOS': 'timos',
+                    'HIGADO': 'higados',
+                    'VESICULA BILIAR': 'vesicula',
+                    'EROSION DE LA MOLLEJA': 'erosion',
+                    'RETRACCION DEL PANCREAS': 'pancreas',
+                    'ABSORCION DEL SACO VITELINO': 'saco',
+                    'ENTERITIS': 'enteritis',
+                    'CONTENIDO CECAL': 'cecal',
+                    'ALIMENTO SIN DIGERIR': 'alimento',
+                    'HECES ANARANJADAS': 'heces',
+                    'LESION ORAL': 'lesion',
+                    'TONICIDAD INTESTINAL': 'tonicidad',
+                    'TRAQUEA': 'traquea',
+                    'PULMON': 'pulmon',
+                    'SACOS AEREOS': 'sacos',
+                    'PODODERMATITIS': 'pododermatitis',
+                    'COLOR TARSOS': 'tarsos'
+                };
+
+                // Mapeo de parámetro a sufijo de idGrupo (para niveles que NO son ÍNDICE BURSAL ni MUCOSA)
+                const mapeoParametroASufijo = {
+                    // TIMOS
+                    'Normal': '_normal',
+                    'Atrofiado': '_atrofiado',
+                    'Aspecto Normal': '_aspecto_normal',
+                    'Congestionado': '_congestionado',
+                    // TIMOS
+                    'Atrofiado': '_atrofiado',
+                    'Aspecto Normal': '_aspecto_normal',
+                    'Congestionado': '_congestionado',
+                    // HÍGADO
+                    'Esteatosico': '_esteatosico',
+                    'Tmn. Normal': '_tmnnormal',
+                    'Hipertrofiado': '_hipertrofiado',
+                    // VESÍCULA
+                    'Color Normal': '_color_normal',
+                    'Color Claro': '_color_claro',
+                    'Tam. Normal': '_tam_normal',
+                    'Atrofiado': '_atrofiado',
+                    // EROSIÓN
+                    'Grado 1': '_grado1',
+                    'Grado 2': '_grado2',
+                    'Grado 3': '_grado3',
+                    'Grado 4': '_grado4',
+                    // PÁNCREAS
+                    'Normal': '_normal',
+                    'Retraido': '_retraido',
+                    // SACO/ALIMENTO/HECES/LESIÓN
+                    'Sí': '_si',
+                    'No': '_no',
+                    // ENTERITIS
+                    'Leve': '_leve',
+                    'Moderado': '_moderado',
+                    'Severo': '_severo',
+                    // CECAL
+                    'Gas': '_gas',
+                    'Espuma': '_espuma',
+                    // TONICIDAD
+                    'Buena': '_buena',
+                    'Regular': '_regular',
+                    'Mala': '_mala',
+                    // TRÁQUEA
+                    'Moderada': '_moderada',
+                    'Severa': '_severa',
+                    // PULMÓN
+                    'Neumonico': '_neumonico',
+                    // SACOS
+                    'Turbio': '_turbio',
+                    'Material Caseoso': '_caseoso',
+                    // PODODERMATITIS
+                    'Grado 0': '_grado0',
+                    // TARSOS
+                    '3.5': '_35',
+                    '4.0': '_40',
+                    '4.5': '_45',
+                    '5.0': '_50',
+                    '5.5': '_55',
+                    '6.0': '_60'
+                };
+
+                // Llenar datos por nivel
+                Object.keys(registrosPorNivel).forEach(nivelKey => {
+                    const datos = registrosPorNivel[nivelKey];
+                    const obsIdBase = mapeoObsId[nivelKey];
+
+                    if (!obsIdBase) {
+                        console.warn('Nivel no mapeado:', nivelKey);
+                        return;
+                    }
+
+                    // Observación
+                    const textarea = document.getElementById('obs_' + obsIdBase);
+                    if (textarea) textarea.value = datos.observacion;
+
+                    // Procesar cada parámetro
+                    Object.keys(datos.parametros).forEach(parametro => {
+                        const valores = datos.parametros[parametro];
+
+                        // Construir idGrupo - casos especiales para ÍNDICE BURSAL y MUCOSA DE LA BURSA
+                        let idGrupo;
+
+                        if (nivelKey === 'INDICE BURSAL') {
+                            // Los IDs son: indice_normal, indice_atrofia, indice_severa_atrofia
+                            if (parametro === 'Normal') idGrupo = 'indice_normal';
+                            else if (parametro === 'Atrofia') idGrupo = 'indice_atrofia';
+                            else if (parametro === 'Severa Atrofia') idGrupo = 'indice_severa_atrofia';
+                        } else if (nivelKey === 'MUCOSA DE LA BURSA') {
+                            // Los IDs son: mucosa_normal, mucosa_petequias, mucosa_hemorragia
+                            if (parametro === 'Normal') idGrupo = 'mucosa_normal';
+                            else if (parametro === 'Petequias') idGrupo = 'mucosa_petequias';
+                            else if (parametro === 'Hemorragia') idGrupo = 'mucosa_hemorragia';
+                        } else {
+                            // Para el resto, usar el mapeo normal
+                            let sufijo = mapeoParametroASufijo[parametro];
+                            if (!sufijo && parametro === 'Normal') sufijo = '_normal'; // Fallback
+
+                            if (!sufijo) {
+                                console.warn('Parámetro sin mapeo:', parametro, 'en nivel', nivelKey);
+                                return;
+                            }
+
+                            idGrupo = obsIdBase + sufijo;
+                        }
+
+                        if (!idGrupo) {
+                            console.warn('No se pudo construir idGrupo para:', nivelKey, parametro);
+                            return;
+                        }
+
+                        // Marcar checkboxes (5 aves)
+                        const checkboxes = document.querySelectorAll(`input[onchange*="('${idGrupo}')"]`);
+                        checkboxes.forEach((cb, index) => {
+                            const porcentaje = [valores.p1, valores.p2, valores.p3, valores.p4, valores.p5][index] || 0;
+                            cb.checked = porcentaje > 0;
+                        });
+
+                        // Actualizar porcentaje visual
+                        const porcElement = document.getElementById('porc_' + idGrupo);
+                        if (porcElement) porcElement.textContent = valores.total + '%';
+                    });
+
+                    // Imágenes (solo una vez por nivel)
+                    if (datos.evidencia) {
+                        const preview = document.getElementById('preview_' + obsIdBase);
+                        if (preview) {
+                            preview.innerHTML = ''; // Limpiar primero
+
+                            const rutas = datos.evidencia.split(',').map(r => r.trim()).filter(r => r);
+
+                            rutas.forEach(ruta => {
+                                const container = document.createElement('div');
+                                container.classList.add('relative', 'inline-block', 'mr-2', 'mb-2');
+
+                                const img = document.createElement('img');
+                                img.src = '../../' + ruta;
+                                img.classList.add('h-32', 'w-32', 'object-cover', 'rounded-lg');
+
+                                const removeBtn = document.createElement('button');
+                                removeBtn.innerHTML = '×';
+                                removeBtn.classList.add('absolute', 'top-0', 'right-0', 'bg-red-600', 'text-white', 'text-xs', 'font-bold', 'rounded-full', 'w-6', 'h-6', 'flex', 'items-center', 'justify-center', 'cursor-pointer', 'hover:bg-red-700');
+                                removeBtn.style.transform = 'translate(50%, -50%)';
+                                removeBtn.onclick = () => container.remove();
+
+                                container.appendChild(img);
+                                container.appendChild(removeBtn);
+                                preview.appendChild(container);
+                            });
+                        }
+                    }
+                });
+
+            } catch (err) {
+                console.error('Error en editarNecropsia:', err);
+                alert('Error al cargar datos para edición: ' + err.message);
+            }
+        }
+
+        // Función auxiliar para cargar granjas si no están cargadas
+        async function cargarGranjasParaEdicion() {
+            const select = document.getElementById('granja');
+            if (select.options.length <= 1) { // Solo tiene placeholder
+                try {
+                    const response = await fetch('get_granjas.php');
+                    const granjas = await response.json();
+
+                    select.innerHTML = '<option value="">Seleccione granja...</option>';
+                    granjas.forEach(g => {
+                        const opt = document.createElement('option');
+                        opt.value = g.codigo;
+                        opt.textContent = `${g.codigo} - ${g.nombre}`;
+                        opt.dataset.edad = g.edad;
+                        select.appendChild(opt);
+                    });
+                } catch (err) {
+                    console.error('Error cargando granjas:', err);
+                }
+            }
+        }
     </script>
 
     <script>
@@ -1463,16 +1753,27 @@ if (!$conexion) {
 
         // GUARDAR CON AJAX
         document.getElementById('btnGuardarNecropsia').addEventListener('click', async () => {
+            if (isEditMode) {
+                // Lógica separada para actualizar
+                actualizarNecropsia();
+            } else {
+                // Lógica original para guardar (Debes asegurarte de que tu función anterior de guardar
+                // esté envuelta en una función llamada guardarNecropsia() o pegar aquí el código de guardar)
+                guardarNecropsia();
+            }
+        });
+
+        async function guardarNecropsia() {
             // === CABECERA ===
             const granjaSelect = document.getElementById('granja');
             const galponSelect = document.getElementById('galpon');
 
-            const codigoGranja = granjaSelect.value; // ej: "635141"
-            const nombreGranja = granjaSelect.options[granjaSelect.selectedIndex]?.textContent.trim() || ''; // ej: "635141 - GJA.GUADALUPE II C=141"
-            const tcencos = nombreGranja.replace(/^\d+ - /, ''); // Quita código → "GJA.GUADALUPE II C=141"
-            const campania = codigoGranja.slice(-3); // Últimos 3 dígitos → "141"
+            const codigoGranja = granjaSelect.value;
+            const nombreGranja = granjaSelect.options[granjaSelect.selectedIndex]?.textContent.trim() || '';
+            const tcencos = nombreGranja.replace(/^\d+ - /, '');
+            const campania = codigoGranja.slice(-3);
             const edad = document.getElementById('edad').value;
-            const galpon = galponSelect.value; // Ya autoseleccionado el mayor
+            const galpon = galponSelect.value;
             const fectra = document.getElementById('fectra').value;
 
             // Validación básica
@@ -1486,7 +1787,7 @@ if (!$conexion) {
             const horas = String(now.getHours()).padStart(2, '0');
             const minutos = String(now.getMinutes()).padStart(2, '0');
             const segundos = String(now.getSeconds()).padStart(2, '0');
-            const numreg = horas + minutos + segundos; // ej: "124505"
+            const numreg = horas + minutos + segundos;
 
             const data = {
                 granja: codigoGranja, // → tgranja
@@ -1790,7 +2091,7 @@ if (!$conexion) {
                 console.error(err);
                 alert('Error de conexión. Intenta nuevamente.');
             }
-        });
+        }
     </script>
 
     <script>
@@ -1879,7 +2180,7 @@ if (!$conexion) {
         });
 
         // Objeto para guardar las imágenes por nivel (máx 3)
-            const evidencias = {};
+        const evidencias = {};
 
         document.querySelectorAll('input[type="file"][id^="evidencia_"]').forEach(input => {
             const obsId = input.id.replace('evidencia_', '');
@@ -1887,7 +2188,7 @@ if (!$conexion) {
 
             input.addEventListener('change', function(e) {
                 if (!evidencias[obsId]) evidencias[obsId] = [];
-                     
+
                 const newFiles = Array.from(this.files);
                 const total = evidencias[obsId].length + newFiles.length;
 
@@ -2039,6 +2340,385 @@ if (!$conexion) {
             }
         }
     </script>
+
+    <script>
+        // === FUNCIÓN EXCLUSIVA PARA ACTUALIZAR ===
+        async function actualizarNecropsia() {
+            // 1. Recolección de Datos de Cabecera (Igual que guardar, pero usamos datos fijos de edición)
+            const granjaSelect = document.getElementById('granja');
+            const galponSelect = document.getElementById('galpon');
+
+            const codigoGranja = granjaSelect.value;
+            // Recuperamos el nombre para cencos
+            const nombreGranja = granjaSelect.options[granjaSelect.selectedIndex]?.textContent.trim() || '';
+            const tcencos = nombreGranja.replace(/^\d+ - /, '');
+            const campania = document.getElementById('campania').value;
+            const edad = document.getElementById('edad').value;
+            const galpon = galponSelect.value;
+            const fectra = document.getElementById('fectra').value;
+
+            // VALIDACIÓN IMPORTANTE: Usamos los datos globales de edición para asegurar integridad
+            if (!loteEditando.granja || !loteEditando.numreg) {
+                alert("Error de estado: No se identificó la necropsia a editar.");
+                return;
+            }
+
+            // 2. RECOPILAR IMÁGENES ANTIGUAS (SCRAPING DEL DOM)
+            // Buscamos qué imágenes siguen vivas en los divs 'preview_'
+            const imagenesExistentes = {};
+
+            // Mapeo ID HTML -> Nombre BD (Mismo que usa tu PHP)
+            const mapIdToBdName = {
+                'indice_bursal': 'INDICE BURSAL',
+                'mucosa_bursa': 'MUCOSA DE LA BURSA',
+                'timos': 'TIMOS',
+                'higados': 'HIGADO',
+                'vesicula': 'VESICULA BILIAR',
+                'erosion': 'EROSION DE LA MOLLEJA',
+                'pancreas': 'RETRACCION DEL PANCREAS',
+                'saco': 'ABSORCION DEL SACO VITELINO',
+                'enteritis': 'ENTERITIS',
+                'cecal': 'CONTENIDO CECAL',
+                'alimento': 'ALIMENTO SIN DIGERIR',
+                'heces': 'HECES ANARANJADAS',
+                'lesion': 'LESION ORAL',
+                'tonicidad': 'TONICIDAD INTESTINAL',
+                'traquea': 'TRAQUEA',
+                'pulmon': 'PULMON',
+                'sacos': 'SACOS AEREOS',
+                'pododermatitis': 'PODODERMATITIS',
+                'tarsos': 'COLOR TARSOS'
+            };
+
+            Object.keys(mapIdToBdName).forEach(obsId => {
+                const previewDiv = document.getElementById('preview_' + obsId);
+                if (previewDiv) {
+                    const imgs = previewDiv.querySelectorAll('img');
+                    const rutasLimpias = [];
+                    imgs.forEach(img => {
+                        let src = img.getAttribute('src');
+                        // El src vendrá como "../../uploads/...", necesitamos limpiar los "../"
+                        // Buscamos la posición de 'uploads/'
+                        if (src.includes('uploads/')) {
+                            // Cortamos desde 'uploads/' en adelante
+                            const cleanPath = src.substring(src.indexOf('uploads/'));
+                            rutasLimpias.push(cleanPath);
+                        }
+                    });
+                    if (rutasLimpias.length > 0) {
+                        imagenesExistentes[mapIdToBdName[obsId]] = rutasLimpias.join(',');
+                    }
+                }
+            });
+
+            // 3. Preparar Objeto Data
+            const data = {
+                granja: loteEditando.granja, // Usamos la original por seguridad
+                galpon: galpon, // El galpón podría haber cambiado (raro pero posible)
+                numreg: loteEditando.numreg, // EL ID CRÍTICO
+                fectra: fectra, // Fecha crítica
+                campania: campania,
+                edad: edad,
+                tcencos: tcencos,
+                registros: [],
+                imagenes_existentes: imagenesExistentes // Enviamos las rutas viejas
+            };
+
+            const parametros = [
+                // SISTEMA INMUNOLÓGICO
+                {
+                    sistema: 'SISTEMA INMUNOLOGICO',
+                    nivel: 'INDICE BURSAL',
+                    opciones: ['Normal', 'Atrofia', 'Severa Atrofia'],
+                    obsId: 'obs_indice_bursal'
+                },
+                {
+                    sistema: 'SISTEMA INMUNOLOGICO',
+                    nivel: 'MUCOSA DE LA BURSA',
+                    opciones: ['Normal', 'Petequias', 'Hemorragia'],
+                    obsId: 'obs_mucosa_bursa'
+                },
+                {
+                    sistema: 'SISTEMA INMUNOLOGICO',
+                    nivel: 'TIMOS',
+                    opciones: ['Normal', 'Atrofiado', 'Aspecto Normal', 'Congestionado'],
+                    obsId: 'obs_timos'
+                },
+
+                // SISTEMA DIGESTIVO
+                {
+                    sistema: 'SISTEMA DIGESTIVO',
+                    nivel: 'HIGADO',
+                    opciones: ['Normal', 'Esteatosico', 'Tmn. Normal', 'Hipertrofiado'],
+                    obsId: 'obs_higados'
+                },
+                {
+                    sistema: 'SISTEMA DIGESTIVO',
+                    nivel: 'VESICULA BILIAR',
+                    opciones: ['Color Normal', 'Color Claro', 'Tam. Normal', 'Atrofiado', 'Hipertrofiado'],
+                    obsId: 'obs_vesicula'
+                },
+                {
+                    sistema: 'SISTEMA DIGESTIVO',
+                    nivel: 'EROSION DE LA MOLLEJA',
+                    opciones: ['Normal', 'Grado 1', 'Grado 2', 'Grado 3', 'Grado 4'],
+                    obsId: 'obs_erosion'
+                },
+                {
+                    sistema: 'SISTEMA DIGESTIVO',
+                    nivel: 'RETRACCION DEL PANCREAS',
+                    opciones: ['Sí', 'No'],
+                    obsId: 'obs_pancreas'
+                },
+                {
+                    sistema: 'SISTEMA DIGESTIVO',
+                    nivel: 'ABSORCION DEL SACO VITELINO',
+                    opciones: ['Sí', 'No'],
+                    obsId: 'obs_saco'
+                },
+                {
+                    sistema: 'SISTEMA DIGESTIVO',
+                    nivel: 'ENTERITIS',
+                    opciones: ['Normal', 'Leve', 'Moderado', 'Severo'],
+                    obsId: 'obs_enteritis'
+                },
+                {
+                    sistema: 'SISTEMA DIGESTIVO',
+                    nivel: 'CONTENIDO CECAL',
+                    opciones: ['Normal', 'Gas', 'Espuma'],
+                    obsId: 'obs_cecal'
+                },
+                {
+                    sistema: 'SISTEMA DIGESTIVO',
+                    nivel: 'ALIMENTO SIN DIGERIR',
+                    opciones: ['Sí', 'No'],
+                    obsId: 'obs_alimento'
+                },
+                {
+                    sistema: 'SISTEMA DIGESTIVO',
+                    nivel: 'HECES ANARANJADAS',
+                    opciones: ['Sí', 'No'],
+                    obsId: 'obs_heces'
+                },
+                {
+                    sistema: 'SISTEMA DIGESTIVO',
+                    nivel: 'LESION ORAL',
+                    opciones: ['Sí', 'No'],
+                    obsId: 'obs_lesion'
+                },
+                {
+                    sistema: 'SISTEMA DIGESTIVO',
+                    nivel: 'TONICIDAD INTESTINAL',
+                    opciones: ['Buena', 'Regular', 'Mala'],
+                    obsId: 'obs_tonicidad'
+                },
+
+                // SISTEMA RESPIRATORIO
+                {
+                    sistema: 'SISTEMA RESPIRATORIO',
+                    nivel: 'TRAQUEA',
+                    opciones: ['Normal', 'Leve', 'Moderada', 'Severa'],
+                    obsId: 'obs_traquea'
+                },
+                {
+                    sistema: 'SISTEMA RESPIRATORIO',
+                    nivel: 'PULMON',
+                    opciones: ['Normal', 'Neumonico'],
+                    obsId: 'obs_pulmon'
+                },
+                {
+                    sistema: 'SISTEMA RESPIRATORIO',
+                    nivel: 'SACOS AEREOS',
+                    opciones: ['Normal', 'Turbio', 'Material Caseoso'],
+                    obsId: 'obs_sacos'
+                },
+
+                // EVALUACIÓN FÍSICA
+                {
+                    sistema: 'EVALUACION FISICA',
+                    nivel: 'PODODERMATITIS',
+                    opciones: ['Grado 0', 'Grado 1', 'Grado 2', 'Grado 3', 'Grado 4'],
+                    obsId: 'obs_pododermatitis'
+                },
+                {
+                    sistema: 'EVALUACION FISICA',
+                    nivel: 'COLOR TARSOS',
+                    opciones: ['3.5', '4.0', '4.5', '5.0', '5.5', '6.0'],
+                    obsId: 'obs_tarsos'
+                }
+            ];
+
+            // 4. Recolección de Filas (Tu misma lógica de barrido de parámetros)
+            // NOTA: Asegúrate que la variable 'parametros' (el array grande) es accesible aquí.
+            parametros.forEach(param => {
+                param.opciones.forEach(opcion => {
+                    let idGrupo = '';
+
+                    // --- COPIA AQUÍ TU BLOQUE GIGANTE DE IF/ELSE IF PARA idGrupo ---
+                    // (El mismo que usas en el guardar, para no hacer la respuesta infinita no lo pego todo)
+                    // Ejemplo:
+                    if (param.nivel === 'INDICE BURSAL') {
+                        if (opcion === 'Normal') idGrupo = 'indice_normal';
+                        else if (opcion === 'Atrofia') idGrupo = 'indice_atrofia';
+                        else if (opcion === 'Severa Atrofia') idGrupo = 'indice_severa_atrofia';
+                    }
+                    // ... resto de ifs ...
+                    else if (param.nivel === 'COLOR TARSOS') {
+                        if (opcion === '3.5') idGrupo = 'tarsos_35';
+                        else if (opcion === '4.0') idGrupo = 'tarsos_40';
+                        else if (opcion === '4.5') idGrupo = 'tarsos_45';
+                        else if (opcion === '5.0') idGrupo = 'tarsos_50';
+                        else if (opcion === '5.5') idGrupo = 'tarsos_55';
+                        else if (opcion === '6.0') idGrupo = 'tarsos_60';
+                    } else if (param.nivel === 'MUCOSA DE LA BURSA') {
+                        if (opcion === 'Normal') idGrupo = 'mucosa_normal';
+                        else if (opcion === 'Petequias') idGrupo = 'mucosa_petequias';
+                        else if (opcion === 'Hemorragia') idGrupo = 'mucosa_hemorragia';
+                    } else if (param.nivel === 'TIMOS') {
+                        if (opcion === 'Normal') idGrupo = 'timos_normal';
+                        else if (opcion === 'Atrofiado') idGrupo = 'timos_atrofiado';
+                        else if (opcion === 'Aspecto Normal') idGrupo = 'timos_aspecto_normal';
+                        else if (opcion === 'Congestionado') idGrupo = 'timos_congestionado';
+                    } else if (param.nivel === 'HIGADO') {
+                        if (opcion === 'Normal') idGrupo = 'higados_normal';
+                        else if (opcion === 'Esteatosico') idGrupo = 'higados_esteatosico';
+                        else if (opcion === 'Tmn. Normal') idGrupo = 'higados_tmnnormal';
+                        else if (opcion === 'Hipertrofiado') idGrupo = 'higados_hipertrofiado';
+                    } else if (param.nivel === 'VESICULA BILIAR') {
+                        if (opcion === 'Color Normal') idGrupo = 'vesicula_color_normal';
+                        else if (opcion === 'Color Claro') idGrupo = 'vesicula_color_claro';
+                        else if (opcion === 'Tam. Normal') idGrupo = 'vesicula_tam_normal';
+                        else if (opcion === 'Atrofiado') idGrupo = 'vesicula_atrofiado';
+                        else if (opcion === 'Hipertrofiado') idGrupo = 'vesicula_hipertrofiado';
+                    } else if (param.nivel === 'EROSION DE LA MOLLEJA') {
+                        if (opcion === 'Normal') idGrupo = 'erosion_normal';
+                        else if (opcion === 'Grado 1') idGrupo = 'erosion_grado1';
+                        else if (opcion === 'Grado 2') idGrupo = 'erosion_grado2';
+                        else if (opcion === 'Grado 3') idGrupo = 'erosion_grado3';
+                        else if (opcion === 'Grado 4') idGrupo = 'erosion_grado4';
+                    } else if (param.nivel === 'RETRACCION DEL PANCREAS') {
+                        if (opcion === 'Normal') idGrupo = 'pancreas_normal';
+                        else if (opcion === 'Retraído') idGrupo = 'pancreas_retraido';
+                    } else if (param.nivel === 'ABSORCION DEL SACO VITELINO') {
+                        if (opcion === 'Sí') idGrupo = 'saco_si';
+                        else if (opcion === 'No') idGrupo = 'saco_no';
+                    } else if (param.nivel === 'ENTERITIS') {
+                        if (opcion === 'Normal') idGrupo = 'enteritis_normal';
+                        else if (opcion === 'Leve') idGrupo = 'enteritis_leve';
+                        else if (opcion === 'Moderado') idGrupo = 'enteritis_moderado';
+                        else if (opcion === 'Severo') idGrupo = 'enteritis_severo';
+                    } else if (param.nivel === 'CONTENIDO CECAL') {
+                        if (opcion === 'Normal') idGrupo = 'cecal_normal';
+                        else if (opcion === 'Gas') idGrupo = 'cecal_gas';
+                        else if (opcion === 'Espuma') idGrupo = 'cecal_espuma';
+                    } else if (param.nivel === 'ALIMENTO SIN DIGERIR') {
+                        if (opcion === 'Sí') idGrupo = 'alimento_si';
+                        else if (opcion === 'No') idGrupo = 'alimento_no';
+                    } else if (param.nivel === 'HECES ANARANJADAS') {
+                        if (opcion === 'Sí') idGrupo = 'heces_si';
+                        else if (opcion === 'No') idGrupo = 'heces_no';
+                    } else if (param.nivel === 'LESION ORAL') {
+                        if (opcion === 'Sí') idGrupo = 'lesion_si';
+                        else if (opcion === 'No') idGrupo = 'lesion_no';
+                    } else if (param.nivel === 'TONICIDAD INTESTINAL') {
+                        if (opcion === 'Buena') idGrupo = 'tonicidad_buena';
+                        else if (opcion === 'Regular') idGrupo = 'tonicidad_regular';
+                        else if (opcion === 'Mala') idGrupo = 'tonicidad_mala';
+                    } else if (param.nivel === 'TRAQUEA') {
+                        if (opcion === 'Normal') idGrupo = 'traquea_normal';
+                        else if (opcion === 'Leve') idGrupo = 'traquea_leve';
+                        else if (opcion === 'Moderada') idGrupo = 'traquea_moderada';
+                        else if (opcion === 'Severa') idGrupo = 'traquea_severa';
+                    } else if (param.nivel === 'PULMON') {
+                        if (opcion === 'Normal') idGrupo = 'pulmon_normal';
+                        else if (opcion === 'Neumonico') idGrupo = 'pulmon_neumonico';
+                    } else if (param.nivel === 'SACOS AEREOS') {
+                        if (opcion === 'Normal') idGrupo = 'sacos_normal';
+                        else if (opcion === 'Turbio') idGrupo = 'sacos_turbio';
+                        else if (opcion === 'Material Caseoso') idGrupo = 'sacos_caseoso';
+                    } else if (param.nivel === 'PODODERMATITIS') {
+                        if (opcion === 'Grado 0') idGrupo = 'pododermatitis_grado0';
+                        else if (opcion === 'Grado 1') idGrupo = 'pododermatitis_grado1';
+                        else if (opcion === 'Grado 2') idGrupo = 'pododermatitis_grado2';
+                        else if (opcion === 'Grado 3') idGrupo = 'pododermatitis_grado3';
+                        else if (opcion === 'Grado 4') idGrupo = 'pododermatitis_grado4';
+                    }
+
+                    // --- FIN BLOQUE MAPEO ---
+
+                    if (idGrupo) {
+                        const checkboxes = document.querySelectorAll(`input[onchange*="('${idGrupo}')"]`);
+                        const porcElement = document.getElementById('porc_' + idGrupo);
+                        const porcentajeTotal = porcElement ? parseFloat(porcElement.textContent.replace('%', '')) : 0;
+
+                        const aves = [0, 0, 0, 0, 0];
+                        checkboxes.forEach((cb, i) => {
+                            if (cb.checked) aves[i] = 20;
+                        });
+
+                        data.registros.push({
+                            tsistema: param.sistema,
+                            tnivel: param.nivel,
+                            tparametro: opcion,
+                            tporcentaje1: aves[0],
+                            tporcentaje2: aves[1],
+                            tporcentaje3: aves[2],
+                            tporcentaje4: aves[3],
+                            tporcentaje5: aves[4],
+                            tporcentajetotal: porcentajeTotal,
+                            tobservacion: document.getElementById(param.obsId)?.value.trim() || ''
+                        });
+                    }
+                });
+            });
+
+            // 5. ENVIAR DATOS
+            try {
+                document.getElementById('modalCarga').classList.remove('hidden');
+                document.querySelector('#modalCarga p.font-semibold').textContent = 'Actualizando registros...';
+
+                const formData = new FormData();
+                formData.append('data', JSON.stringify(data));
+
+                // Adjuntar SOLO las imágenes NUEVAS que están en los inputs file
+                Object.keys(evidencias).forEach(obsId => {
+                    evidencias[obsId].forEach(file => {
+                        formData.append(`evidencia_${obsId}[]`, file);
+                    });
+                });
+
+                const response = await fetch('actualizar_necropsia.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                document.getElementById('modalCarga').classList.add('hidden');
+
+                if (result.success) {
+                    alert(result.message);
+                    document.getElementById('modalNecropsia').classList.add('hidden');
+                    limpiarFormularioNecropsia();
+
+                    // Resetear variables globales de edición
+                    isEditMode = false;
+                    loteEditando = {};
+                    document.getElementById('btnGuardarNecropsia').textContent = 'Registrar Necropsia';
+                    document.getElementById('galpon').disabled = false;
+
+                    $('#tabla').DataTable().ajax.reload();
+                } else {
+                    alert('Error: ' + result.message);
+                }
+
+            } catch (err) {
+                document.getElementById('modalCarga').classList.add('hidden');
+                console.error(err);
+                alert('Error de conexión al actualizar.');
+            }
+        }
+    </script>
+
 
 </body>
 
