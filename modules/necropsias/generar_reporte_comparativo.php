@@ -1,5 +1,4 @@
 <?php
-// Evitar mostrar warnings/errors
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
@@ -23,7 +22,6 @@ $fecha_inicio = isset($_POST['fecha_inicio']) ? $_POST['fecha_inicio'] : (isset(
 $fecha_fin = isset($_POST['fecha_fin']) ? $_POST['fecha_fin'] : (isset($_GET['fecha_fin']) ? $_GET['fecha_fin'] : '');
 $formato = isset($_POST['formato']) ? $_POST['formato'] : (isset($_GET['formato']) ? $_GET['formato'] : 'pdf');
 
-// Si viene como JSON
 $dataJson = file_get_contents('php://input');
 if (!empty($dataJson)) {
     $input = json_decode($dataJson, true);
@@ -36,12 +34,12 @@ if (!empty($dataJson)) {
     }
 }
 
-// Validar fechas
+
 if (empty($fecha_inicio) || empty($fecha_fin)) {
     die('Debe especificar fecha de inicio y fecha de fin');
 }
 
-// Convertir cencos y galpones a arrays si vienen como string
+
 if (is_string($cencos) && $cencos !== 'todos') {
     $cencos = explode(',', $cencos);
 }
@@ -49,7 +47,7 @@ if (is_string($galpones) && $galpones !== 'todos') {
     $galpones = explode(',', $galpones);
 }
 
-// Construir consulta SQL
+
 $sql = "SELECT DISTINCT
     tcencos, tgranja, tgalpon, tedad, tsistema, tnivel, tparametro, 
     tporcentajetotal, tobservacion, tdate, tfectra
@@ -89,7 +87,6 @@ if (!$stmt) {
     die('Error preparando consulta: ' . $conn->error);
 }
 
-// Bind parameters
 $bindParams = array_merge(array($types), $params);
 $refs = array();
 foreach ($bindParams as $key => $value) {
@@ -107,7 +104,6 @@ while ($row = $result->fetch_assoc()) {
 
 $stmt->close();
 
-// Obtener TODAS las combinaciones únicas de sistema/nivel/parámetro (sin filtrar por fechas)
 $sqlTodosNiveles = "
     SELECT DISTINCT tsistema, tnivel, tparametro 
     FROM t_regnecropsia 
@@ -182,7 +178,6 @@ if ($formato === 'excel') {
 function _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles) {
     require_once '../../vendor/autoload.php';
     
-    // Obtener lista de galpones con información completa (agrupados por CENCO)
     $galponesUnicos = [];
     $galponesPorCenco = [];
     foreach ($datosAgrupados as $key => $grupo) {
@@ -212,45 +207,19 @@ function _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, 
     $numColumnas = 3 + (2 * count($galponesUnicos));
     $anchoMM = max(297, 60 + ($numColumnas * 28));
 
-    // === Logo ===
-    $logoPath = __DIR__ . '/../../logo.png';
-    $logo = '';
-    if (file_exists($logoPath)) {
-        $logoData = file_get_contents($logoPath);
-        $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
-        $logo = '<img src="' . htmlspecialchars($logoBase64) . '" style="height: 20px; vertical-align: top;">';
-    }
 
     try {
         $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8',
-            'format' => [$anchoMM, 210], // [ancho, alto] → landscape si ancho > 210
+            'format' => [$anchoMM, 210], 
             'orientation' => 'L',
             'margin_left' => 8,
             'margin_right' => 8,
-            'margin_top' => 30,
+            'margin_top' => 15,
             'margin_bottom' => 10,
             'tempDir' => __DIR__ . '/../../pdf_tmp',
         ]);
 
-        // === Cabecera conjunta ===
-        $headerHTML = '<table width="100%" style="border-collapse: collapse; border: 1px solid #000; margin-top: 20px; page-break-after: avoid;">';
-        $headerHTML .= '<tr>';
-        if (!empty($logo)) {
-            $headerHTML .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap;">';
-            $headerHTML .= $logo . ' GRANJA RINCONADA DEL SUR S.A.';
-            $headerHTML .= '</td>';
-        } else {
-            $headerHTML .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff;"></td>';
-        }
-        $headerHTML .= '<td style="width: 60%; text-align: center; padding: 5px; background-color: #e6f2ff; color: #000; font-weight: bold; font-size: 14px;">';
-        $headerHTML .= 'REPORTE COMPARATIVO DE NECROPSIA';
-        $headerHTML .= '</td>';
-        $headerHTML .= '<td style="width: 20%; background-color: #fff;"></td>';
-        $headerHTML .= '</tr>';
-        $headerHTML .= '</table>';
-        
-        $mpdf->SetHTMLHeader($headerHTML, 'O');
 
         $html = _generarHTMLReporte(
             $datosAgrupados, 
@@ -260,7 +229,7 @@ function _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, 
             $esComparativoCencos, 
             $todosNiveles,
             $galponesUnicos,
-            $galponesPorCenco  // pasamos la agrupación por CENCO
+            $galponesPorCenco 
         );
 
         $mpdf->WriteHTML($html);
@@ -290,18 +259,18 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
         }
     }
     
-    // Estilos
+ 
     $headerStyle = [
-        'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+        'font' => ['bold' => true, 'color' => ['rgb' => '0C4A6E']], // Color del texto igual al PDF
         'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-            'startColor' => ['rgb' => '4FC3F7'] // Celeste
+            'startColor' => ['rgb' => 'F0F9FF'] 
         ],
         'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
         'borders' => [
             'allBorders' => [
                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                'color' => ['rgb' => '000000']
+                'color' => ['rgb' => 'CBD5E1'] 
             ]
         ]
     ];
@@ -311,7 +280,7 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
         'borders' => [
             'allBorders' => [
                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                'color' => ['rgb' => '000000']
+                'color' => ['rgb' => 'CBD5E1'] 
             ]
         ]
     ];
@@ -319,7 +288,7 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
     $row = 1;
     
     // Título
-    $numCols = count($galponesUnicos) * 2 + 3; // 3 columnas base + 2 por cada galpón
+    $numCols = count($galponesUnicos) * 2 + 3; 
     $lastCol = $sheet->getCellByColumnAndRow($numCols, 1)->getColumn();
     $sheet->setCellValue('A' . $row, 'REPORTE COMPARATIVO DE NECROPSIA');
     $sheet->mergeCells('A' . $row . ':' . $lastCol . $row);
@@ -334,6 +303,180 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
     $sheet->mergeCells('A' . $row . ':' . $lastCol . $row);
     $row++;
     
+    $coloresBaseCenco = [
+        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+        '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#84cc16',
+        '#6366f1', '#22c55e', '#fbbf24', '#f87171', '#a78bfa',
+        '#34d399', '#fb923c', '#60a5fa', '#c084fc', '#f472b6',
+        '#38bdf8', '#4ade80', '#fbbf24', '#fb7185', '#a5b4fc'
+    ];
+    
+    $coloresPorCenco = [];
+    $idxColor = 0;
+   
+    $hslToHex = function($h, $s, $l) {
+        $h /= 360;
+        $s /= 100;
+        $l /= 100;
+        $r = $l;
+        $g = $l;
+        $b = $l;
+        $v = ($l <= 0.5) ? ($l * (1.0 + $s)) : ($l + $s - $l * $s);
+        if ($v > 0) {
+            $m = $l + $l - $v;
+            $sv = ($v - $m) / $v;
+            $h *= 6.0;
+            $sextant = floor($h);
+            $fract = $h - $sextant;
+            $vsf = $v * $sv * $fract;
+            $mid1 = $m + $vsf;
+            $mid2 = $v - $vsf;
+            switch ($sextant) {
+                case 0: $r = $v; $g = $mid1; $b = $m; break;
+                case 1: $r = $mid2; $g = $v; $b = $m; break;
+                case 2: $r = $m; $g = $v; $b = $mid1; break;
+                case 3: $r = $m; $g = $mid2; $b = $v; break;
+                case 4: $r = $mid1; $g = $m; $b = $v; break;
+                case 5: $r = $v; $g = $m; $b = $mid2; break;
+            }
+        }
+        $r = round($r * 255);
+        $g = round($g * 255);
+        $b = round($b * 255);
+        return sprintf("%02x%02x%02x", $r, $g, $b);
+    };
+    
+
+    foreach (array_keys($galponesPorCenco) as $cenco) {
+        if ($idxColor < count($coloresBaseCenco)) {
+            $coloresPorCenco[$cenco] = strtoupper(ltrim($coloresBaseCenco[$idxColor], '#'));
+        } else {
+            // Generar color dinámicamente usando HSL (convertido a hex)
+            $hue = ($idxColor * 137.508) % 360;
+            $saturation = 55 + (($idxColor % 4) * 5);
+            $lightness = 48 + (($idxColor % 3) * 2);
+            $coloresPorCenco[$cenco] = $hslToHex($hue, $saturation, $lightness);
+        }
+        $idxColor++;
+    }
+    
+    
+    if (!empty($galponesPorCenco)) {
+        $row++; 
+        
+       
+        $sheet->setCellValue('A' . $row, 'LEYENDA');
+        $sheet->mergeCells('A' . $row . ':' . $lastCol . $row);
+        $sheet->getStyle('A' . $row)->applyFromArray([
+            'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '1E40AF']],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'F8FAFC']
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'CBD5E1']
+                ]
+            ]
+        ]);
+        $row++;
+        
+        // Cabeceras de la tabla de leyenda
+        $sheet->setCellValue('A' . $row, 'Color');
+        $sheet->setCellValue('B' . $row, 'CENCO');
+        $sheet->setCellValue('C' . $row, 'Galpones (Edad en días)');
+        $sheet->getStyle('A' . $row . ':C' . $row)->applyFromArray([
+            'font' => ['bold' => true, 'color' => ['rgb' => '1E40AF']],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => ['rgb' => 'E6F2FF']
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'CBD5E1']
+                ]
+            ],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER]
+        ]);
+        $row++;
+        
+        // Filas de la leyenda
+        foreach ($galponesPorCenco as $cenco => $info) {
+            $colorHex = $coloresPorCenco[$cenco];
+            
+            // Construir lista de galpones con sus edades
+            $galponesList = [];
+            foreach ($info['galpones'] as $galpon) {
+                $edad = $galponesUnicos[$galpon]['tedad'] ?? '0';
+                $galponesList[] = 'Galpón ' . $galpon . ' (' . $edad . ' días)';
+            }
+            $galponesStr = implode(', ', $galponesList);
+            
+            // Color (celda con fondo de color)
+            $sheet->setCellValue('A' . $row, '');
+            $sheet->getStyle('A' . $row)->applyFromArray([
+                'fill' => [
+                    'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                    'startColor' => ['rgb' => $colorHex]
+                ],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color' => ['rgb' => '000000']
+                    ]
+                ]
+            ]);
+            
+            // CENCO
+            $sheet->setCellValue('B' . $row, 'CENCO ' . $cenco);
+            $sheet->getStyle('B' . $row)->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => '1E293B']],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color' => ['rgb' => 'CBD5E1']
+                    ]
+                ],
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER]
+            ]);
+            
+            // Galpones
+            $sheet->setCellValue('C' . $row, $galponesStr);
+            $sheet->getStyle('C' . $row)->applyFromArray([
+                'font' => ['color' => ['rgb' => '475569']],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color' => ['rgb' => 'CBD5E1']
+                    ]
+                ],
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+                'wrapText' => true
+            ]);
+            
+            // Aplicar fondo alternado
+            if ($row % 2 == 0) {
+                $sheet->getStyle('B' . $row . ':C' . $row)->applyFromArray([
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => 'F8FAFC']
+                    ]
+                ]);
+            }
+            
+            $row++;
+        }
+        
+        // Ajustar ancho de columnas de la leyenda
+        $sheet->getColumnDimension('A')->setWidth(12);
+        $sheet->getColumnDimension('B')->setWidth(20);
+        $sheet->getColumnDimension('C')->setWidth(50);
+        
+        $row++; // Espacio después de la leyenda
+    }
+    
     // Cabecera de CENCOS si es comparativo entre cencos
     if ($esComparativoCencos) {
         $sheet->setCellValue('A' . $row, 'CENCOS COMPARADOS:');
@@ -342,7 +485,13 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
             'font' => ['bold' => true, 'size' => 12],
             'fill' => [
                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '4FC3F7']
+                'startColor' => ['rgb' => 'E6F2FF'] // Mismo color que cabecera en PDF
+            ],
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                    'color' => ['rgb' => 'CBD5E1']
+                ]
             ]
         ]);
         $row++;
@@ -359,19 +508,6 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
     
     // Usar todos los niveles (sin filtrar por datos existentes)
     $sistemas = $todosNiveles;
-    
-    // Obtener lista de galpones únicos para las columnas
-    $galponesUnicos = [];
-    foreach ($datosAgrupados as $key => $grupo) {
-        $galponKey = $grupo['tgalpon'];
-        if (!isset($galponesUnicos[$galponKey])) {
-            $galponesUnicos[$galponKey] = [
-                'tcencos' => $grupo['tcencos'],
-                'tgranja' => $grupo['tgranja'],
-                'tedad' => $grupo['tedad']
-            ];
-        }
-    }
     
     // Generar cabecera - REORGANIZADA: Cenco/Granja/Edad en primera fila
     $col = 1;
@@ -451,15 +587,15 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
                     );
                     $sheet->getStyle($sheet->getCellByColumnAndRow(1, $row)->getCoordinate())->applyFromArray([
                         'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
-                        'font' => ['bold' => true],
+                        'font' => ['bold' => true, 'color' => ['rgb' => '1E40AF']], // Mismo color de texto que sistema-header en PDF
                         'fill' => [
                             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                            'startColor' => ['rgb' => 'E3F2FD']
+                            'startColor' => ['rgb' => 'DBEAFE'] // Mismo color de fondo que sistema-header en PDF
                         ],
                         'borders' => [
                             'allBorders' => [
                                 'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                                'color' => ['rgb' => '000000']
+                                'color' => ['rgb' => 'CBD5E1'] // Mismo color de borde que PDF
                             ]
                         ]
                     ]);
@@ -472,7 +608,7 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
                 
                 // Buscar datos para cada galpón
                 foreach ($galponesUnicos as $galpon => $info) {
-                    $porcentaje = '';
+                    $porcentaje = 0;
                     $observacion = '';
                     
                     // Buscar en los datos agrupados
@@ -482,7 +618,7 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
                                 if (($reg['tsistema'] ?? '') == $sistema &&
                                     ($reg['tnivel'] ?? '') == $nivel &&
                                     ($reg['tparametro'] ?? '') == $parametro) {
-                                    $porcentaje = $reg['tporcentajetotal'] ?? '';
+                                    $porcentaje = $reg['tporcentajetotal'] ?? 0;
                                     $observacion = $reg['tobservacion'] ?? '';
                                     break 2;
                                 }
@@ -505,7 +641,8 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
     $dataRange = 'A' . $dataStartRow . ':' . $sheet->getCellByColumnAndRow(count($galponesUnicos) * 2 + 3, $row - 1)->getCoordinate();
     $sheet->getStyle($dataRange)->applyFromArray($cellStyle);
     
-    // Ajustar ancho de columnas
+    // Ajustar ancho de columnas (las columnas de la leyenda ya se ajustaron antes, aquí ajustamos las de la tabla principal)
+    // Nota: Las columnas A, B, C ya tienen ancho asignado para la leyenda, pero aquí las reajustamos para la tabla principal
     $sheet->getColumnDimension('A')->setWidth(20);
     $sheet->getColumnDimension('B')->setWidth(20);
     $sheet->getColumnDimension('C')->setWidth(25);
@@ -526,11 +663,12 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
 
 function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco = []) {
     // === Logo ===
-    $logoPath = __DIR__ . '/../../logo.png';
-    $logoBase64 = '';
+    $logoPath = __DIR__ . '/logo.png';
+    $logo = '';
     if (file_exists($logoPath)) {
         $logoData = file_get_contents($logoPath);
         $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
+        $logo = '<img src="' . htmlspecialchars($logoBase64) . '" style="height: 20px; vertical-align: top;">';
     }
 
     // === Estilos ===
@@ -686,11 +824,30 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
         }
     </style></head><body>';
 
-    // === Período (la cabecera ya está en SetHTMLHeader) ===
+    // === Cabecera conjunta ===
+    $html .= '<table width="100%" style="border-collapse: collapse; border: 1px solid #cbd5e1; margin-top: 10px; margin-bottom: 0;">';
+    $html .= '<tr>';
+    if (!empty($logo)) {
+        $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap; border: 1px solid #cbd5e1;">';
+        $html .= $logo . ' GRANJA RINCONADA DEL SUR S.A.';
+        $html .= '</td>';
+    } else {
+        $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap; border: 1px solid #cbd5e1;">';
+        $html .= 'GRANJA RINCONADA DEL SUR S.A.';
+        $html .= '</td>';
+    }
+    $html .= '<td style="width: 60%; text-align: center; padding: 5px; background-color: #e6f2ff; color: #000; font-weight: bold; font-size: 14px; border: 1px solid #cbd5e1;">';
+    $html .= 'REPORTE COMPARATIVO DE NECROPSIA';
+    $html .= '</td>';
+    $html .= '<td style="width: 20%; background-color: #fff; border: 1px solid #cbd5e1;"></td>';
+    $html .= '</tr>';
+    $html .= '</table>';
+    
+    // === Período ===
     $html .= '<div class="periodo">Período: ' . htmlspecialchars($fecha_inicio) . ' - ' . htmlspecialchars($fecha_fin) . '</div>';
 
-    // === Colores por CENCO (generación dinámica) ===
-    // Paleta base de colores distintivos (hex para compatibilidad)
+    // === Colores por CENCO  ===
+
     $coloresBaseCenco = [
         '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
         '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#84cc16',
@@ -850,7 +1007,7 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
         $html .= '<table class="data-table">';
         $html .= '<thead>';
 
-        // === Fila 1: Agrupación por CENCO (solo si hay >1 CENCO) ===
+        // === Fila 1: Agrupación por CENCO ===
         if (count($galponesPorCenco) > 1) {
             $html .= '<tr>';
             $html .= '<th rowspan="2">Nivel</th>';
@@ -865,7 +1022,7 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
             $html .= '</tr>';
         }
 
-        // === Fila 2: Encabezados individuales (% y Obs) con fondo suave ===
+        // === Fila 2: Encabezados individuales (% y Obs)===
         $html .= '<tr>';
         if (count($galponesPorCenco) <= 1) {
             $html .= '<th>Nivel</th><th>Parámetro</th>';

@@ -129,7 +129,7 @@ body {
             .header-title {
                 width: 100%;
                 border-collapse: collapse;
-                border: 1px solid #000;
+                border: 1px solid #cbd5e1;
                 margin-top: 20px;
             }
             .header-title td {
@@ -140,13 +140,13 @@ body {
                 border-collapse: collapse;
                 margin: 0;
                 font-size: 9pt;
-                border: 1px solid #000;
+                border: 1px solid #cbd5e1;
                 border-top: none;
             }
             .info-table th,
             .info-table td {
                 padding: 5px;
-                border: 1px solid #000;
+                border: 1px solid #cbd5e1;
                 text-align: center;
                 font-weight: normal;
             }
@@ -160,7 +160,7 @@ body {
                 border-collapse: collapse;
                 margin: 8px 0;
                 font-size: 9pt;
-                border-top: 1px solid #000;
+                border-top: 1px solid #cbd5e1;
                 page-break-inside: auto;
             }
             tr {
@@ -170,12 +170,12 @@ body {
                 background-color: #e6f2ff;
                 padding: 5px;
                 text-align: center;
-                border: 1px solid #000;
+                border: 1px solid #cbd5e1;
                 font-weight: bold;
             }
             td {
                 padding: 5px;
-                border: 1px solid #000;
+                border: 1px solid #cbd5e1;
                 vertical-align: top;
             }
             .nivel-cell {
@@ -183,7 +183,7 @@ body {
                 font-weight: bold;
                 text-align: center;
                 padding: 5px;
-                border: 1px solid #000;
+                border: 1px solid #cbd5e1;
                 vertical-align: middle;
                 width: 15%; /* ← ¡Ancho reducido! */
             }
@@ -200,21 +200,21 @@ body {
         </style></head><body>';
     
         // === Cabecera conjunta ===
-        $html .= '<table width="100%" style="border-collapse: collapse; border: 1px solid #000; margin-top: 10px; margin-bottom: 0;">';
+        $html .= '<table width="100%" style="border-collapse: collapse; border: 1px solid #cbd5e1; margin-top: 10px; margin-bottom: 8px;">';
         $html .= '<tr>';
         if (!empty($logo)) {
-            $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap;">';
+            $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap; border: 1px solid #cbd5e1;">';
             $html .= $logo . ' GRANJA RINCONADA DEL SUR S.A.';
             $html .= '</td>';
         } else {
-            $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap;">';
+            $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap; border: 1px solid #cbd5e1;">';
             $html .= 'GRANJA RINCONADA DEL SUR S.A.';
             $html .= '</td>';
         }
-        $html .= '<td style="width: 60%; text-align: center; padding: 5px; background-color: #e6f2ff; color: #000; font-weight: bold; font-size: 14px;">';
+        $html .= '<td style="width: 60%; text-align: center; padding: 5px; background-color: #e6f2ff; color: #000; font-weight: bold; font-size: 14px; border: 1px solid #cbd5e1;">';
         $html .= 'REPORTE DE NECROPSIA';
         $html .= '</td>';
-        $html .= '<td style="width: 20%; background-color: #fff;"></td>';
+        $html .= '<td style="width: 20%; background-color: #fff; border: 1px solid #cbd5e1;"></td>';
         $html .= '</tr>';
         $html .= '</table>';
     
