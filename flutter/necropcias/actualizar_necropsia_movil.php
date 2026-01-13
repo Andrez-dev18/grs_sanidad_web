@@ -1,23 +1,8 @@
 <?php
-/**
- * Endpoint específico para actualizar registros de necropsia existentes
- * Este endpoint se usa cuando se edita un registro que ya fue sincronizado
- * 
- * IMPORTANTE: Para manejar imágenes grandes en PHP 7.2, configure estos valores:
- * 
- * OPCIÓN 1 - En php.ini (recomendado, funciona siempre):
- *   post_max_size = 50M
- *   upload_max_filesize = 50M
- *   max_execution_time = 300
- *   max_input_time = 300
- *   memory_limit = 256M
- */
 
-error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-// Intentar aumentar límites (puede no funcionar si están deshabilitados en php.ini)
 @ini_set('upload_max_filesize', '50M');
 @ini_set('post_max_size', '50M');
 @ini_set('max_execution_time', '300');
@@ -47,7 +32,6 @@ if (!is_dir($carpetaNecropsias)) {
     mkdir($carpetaNecropsias, 0755, true);
 }
 
-// Verificar tamaño del POST
 $postMaxSize = ini_get('post_max_size');
 $postMaxSizeBytes = return_bytes($postMaxSize);
 $contentLength = isset($_SERVER['CONTENT_LENGTH']) ? (int)$_SERVER['CONTENT_LENGTH'] : 0;
@@ -183,20 +167,14 @@ foreach ($items as $itemIndex => $item) {
     $ttime_trans = $item['ttime_trans'] ?? date('H:i:s');
     
     // Validar y formatear fecha de transacción
-    if (empty($tdate_trans) || $tdate_trans == '1000-01-01') {
+    if (empty($tdate_trans)) {
         $tdate_trans = date('Y-m-d');
     }
-    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tdate_trans)) {
-        $tdate_trans = date('Y-m-d');
-    }
-    
+   
     // Validar y formatear tiempo de transacción
-    if (empty($ttime_trans) || $ttime_trans == '00:00:00') {
+    if (empty($ttime_trans)) {
         $ttime_trans = date('H:i:s');
-    } elseif (strlen($ttime_trans) == 6 && is_numeric($ttime_trans)) {
-        $ttime_trans = substr($ttime_trans, 0, 2) . ':' . substr($ttime_trans, 2, 2) . ':' . substr($ttime_trans, 4, 2);
-    }
-    
+    } 
     // Formatear fectra
     if (!empty($fectra)) {
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fectra)) {
