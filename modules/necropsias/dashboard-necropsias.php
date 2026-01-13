@@ -2188,7 +2188,6 @@ if (!$conexion) {
 
             input.addEventListener('change', function(e) {
                 if (!evidencias[obsId]) evidencias[obsId] = [];
-
                 const newFiles = Array.from(this.files);
                 const total = evidencias[obsId].length + newFiles.length;
 

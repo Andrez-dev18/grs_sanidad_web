@@ -382,8 +382,8 @@ if ($codigoUsuario) {
                             class="menu-link block text-gray-400 hover:text-white">Registro de Necropsias</a>
 
                         <a href="#"
-                            onclick="selectMenuItem(this); loadDashboardAndData('modules/necropsias/dashboard-necropsias-reporte.php', '📊 Necropsias Reporte', 'Reporte de las necropsias')"
-                            class="menu-link block text-gray-400 hover:text-white">Reporte</a>
+                            onclick="selectMenuItem(this); loadDashboardAndData('modules/necropsias/dashboard-reportes-necropsias.php', '📊 Necropsias Reportes', 'Reportes Individual y Comparativo de Necropsias')"
+                            class="menu-link block text-gray-400 hover:text-white">Reportes</a>
 
                     </div>
                 </div>

@@ -2973,7 +2973,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 const data = await res.json();
                 if (data.status === 'success') {
                     alert('¡Cambios guardados exitosamente!');
-                    $('#modalEditarEnvio').modal('hide');
+                    cerrarModalEditar();
                     if (table) table.ajax.reload();
                 } else {
                     alert('Error: ' + (data.error || 'No se pudo guardar'));
