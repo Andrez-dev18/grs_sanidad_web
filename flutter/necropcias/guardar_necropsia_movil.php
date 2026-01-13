@@ -446,63 +446,11 @@ foreach ($items as $itemIndex => $item) {
             $tdate_trans = date('Y-m-d');
         }
         
-        // Convertir a tipos explícitos para asegurar compatibilidad
-        //$tuuidRegistro = (string)($tuuidRegistro ?? '');
-        //$tuser = substr((string)($tuser ?? 'app_movil'), 0, 10);
-        //$tdate = (string)$tdate;
-        //$ttime = substr((string)($ttime ?? date('H:i:s')), 0, 8);
-        //$tcencos = (string)($tcencos ?? '');
-        //$granja = (string)($granja ?? '');
-        //$campania = (string)($campania ?? '');
-        //$edad = (string)($edad ?? '');
-        //$galpon = substr((string)($galpon ?? ''), 0, 2);
-        //$numreg = (int)($numreg ?? 0);
-        //$fectra = (string)$fectra;
-        //$diareg = (string)$diareg; // Asegurar que es string
-        //$tcodsistema = (int)($tcodsistema ?? 0);
+       
         $tsistema = (string)($reg['tsistema'] ?? '');
         $tnivel = (string)($reg['tnivel'] ?? '');
         $tparametro = (string)($reg['tparametro'] ?? '');
-        //$porcentaje1 = (double)($porcentaje1 ?? 0.0);
-        //$porcentaje2 = (double)($porcentaje2 ?? 0.0);
-        //$porcentaje3 = (double)($porcentaje3 ?? 0.0);
-        //$porcentaje4 = (double)($porcentaje4 ?? 0.0);
-        //$porcentaje5 = (double)($porcentaje5 ?? 0.0);
-        //$porcentajeTotal = (double)($porcentajeTotal ?? 0.0);
-        ////$obs = (string)($obs ?? '');
-        //$evidencia = (string)($evidencia ?? '');
-        //$tobs = substr((string)($obs ?? ''), 0, 255);
-        //$tuser_trans = substr((string)($tuser_trans ?? $tuser), 0, 6);
-        //$tdate_trans = (string)$tdate_trans;
-        //$ttime_trans = substr((string)($ttime_trans ?? date('H:i:s')), 0, 8);
-        //$tidandroid = substr((string)($tidandroid ?? 'app_movil'), 0, 50);
-        //$tid = (int)($tid ?? $tidContador);
-        
-        // Validación final de formato de fechas
-        /*if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $diareg)) {
-            error_log("ERROR CRÍTICO: diareg tiene formato inválido después de conversión: '$diareg'. Corrigiendo...");
-            $diareg = date('Y-m-d');
-        }
-        
-        error_log("DEBUG bind_param - diareg='$diareg' (longitud: " . strlen($diareg) . ")");
-        */
-        // Formato correcto del bind_param: 
-        // 9s + 1i + 2s + 1i + 3s + 6d + 3s + 3s + 1s + 1i = 17s + 2i + 6d = 25 caracteres
-        // Pero espera, hay 30 parámetros en total. Déjame contar de nuevo:
-        // 1-9: 9 strings (tuuid a tgalpon)
-        // 10: 1 int (tnumreg)
-        // 11-12: 2 strings (tfectra, diareg)
-        // 13: 1 int (tcodsistema)
-        // 14-16: 3 strings (tsistema, tnivel, tparametro)
-        // 17-22: 6 doubles (porcentajes)
-        // 23-25: 3 strings (tobservacion, evidencia, tobs)
-        // 26-28: 3 strings (tuser_trans, tdate_trans, ttime_trans)
-        // 29: 1 string (tidandroid)
-        // 30: 1 int (tid)
-        // Total: 17 strings + 2 ints + 6 doubles = 25 caracteres en el formato
-        // Pero el formato actual tiene 28 caracteres, lo que está mal!
-        
-        // Si el registro existe y necesita actualización, usar UPDATE
+      
         if ($existeRegistro > 0 && $needsUpdate) {
             // Formato UPDATE: 29 parámetros (8s+1i+2s+1i+3s+6d+3s+3s+1s+1s = 8+1+2+1+3+6+3+3+1+1 = 29)
             $stmtUpdate->bind_param(
@@ -584,22 +532,7 @@ foreach ($items as $itemIndex => $item) {
 
             if ($stmtInsert->execute()) {
                 $insertados++;
-                error_log("✓ Registro insertado exitosamente: UUID=$tuuidRegistro, Sistema={$reg['tsistema']}, Nivel={$reg['tnivel']}");
-            } else {
-                // Log error detallado pero continuar
-                $errorMsg = "✗ Error al insertar registro con UUID $tuuidRegistro: " . $stmtInsert->error;
-                error_log($errorMsg);
-                // También loggear los datos del registro para debugging
-                error_log("Datos del registro: " . json_encode([
-                    'tuuid' => $tuuidRegistro,
-                    'tsistema' => $reg['tsistema'] ?? 'N/A',
-                    'tnivel' => $reg['tnivel'] ?? 'N/A',
-                    'tparametro' => $reg['tparametro'] ?? 'N/A',
-                    'granja' => $granja,
-                    'galpon' => $galpon,
-                    'numreg' => $numreg,
-                    'fectra' => $fectra,
-                ]));
+                
             }
         }
     }

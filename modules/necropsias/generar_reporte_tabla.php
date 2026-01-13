@@ -273,16 +273,30 @@ body {
     
             foreach ($porNivel as $nivel => $items) {
                 $rowspan = count($items);
-                $primero = true;
-                foreach ($items as $item) {
+                
+                // Obtener la observación del nivel (usamos la primera)
+                $observacionNivel = '';
+                if (!empty($items)) {
+                    $observacionNivel = $items[0]['tobservacion'] ?? '';
+                }
+            
+                for ($i = 0; $i < $rowspan; $i++) {
+                    $item = $items[$i];
                     $html .= '<tr>';
-                    if ($primero) {
+            
+                    if ($i === 0) {
+                        // Primera fila: Nivel + Parámetro + % + Observaciones (con rowspan)
                         $html .= '<td class="nivel-cell" rowspan="' . $rowspan . '">' . htmlspecialchars(strtoupper($nivel)) . '</td>';
-                        $primero = false;
+                        $html .= '<td class="param-cell">' . htmlspecialchars($item['tparametro'] ?? '') . '</td>';
+                        $html .= '<td class="porc-cell">' . htmlspecialchars($item['tporcentajetotal'] ?? '0') . '%</td>';
+                        $html .= '<td class="obs-cell" rowspan="' . $rowspan . '">' . nl2br(htmlspecialchars($observacionNivel)) . '</td>';
+                    } else {
+                        // Filas siguientes: solo Parámetro + %
+                        $html .= '<td class="param-cell">' . htmlspecialchars($item['tparametro'] ?? '') . '</td>';
+                        $html .= '<td class="porc-cell">' . htmlspecialchars($item['tporcentajetotal'] ?? '0') . '%</td>';
+                        // ¡NO se agrega la celda de observaciones aquí!
                     }
-                    $html .= '<td class="param-cell">' . htmlspecialchars($item['tparametro'] ?? '') . '</td>';
-                    $html .= '<td class="porc-cell">' . htmlspecialchars($item['tporcentajetotal'] ?? '0') . '%</td>';
-                    $html .= '<td class="obs-cell">' . nl2br(htmlspecialchars($item['tobservacion'] ?? '')) . '</td>';
+            
                     $html .= '</tr>';
                 }
             }

@@ -126,6 +126,11 @@ while ($row = $resultTodosNiveles->fetch_assoc()) {
     $nivel = $row['tnivel'] ?? '';
     $parametro = $row['tparametro'] ?? '';
     
+    // Filtrar parámetros vacíos o que sean "0"
+    if (empty(trim($parametro)) || trim($parametro) === '0') {
+        continue;
+    }
+    
     if (!isset($todosNiveles[$sistema])) {
         $todosNiveles[$sistema] = [];
     }
@@ -1041,30 +1046,38 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
 
         foreach ($niveles as $nivel => $parametros) {
             $totalFilas = count($parametros);
+            
             foreach ($parametros as $i => $parametro) {
                 $html .= '<tr>';
-                if ($i === 0 && count($galponesPorCenco) <= 1) {
+            
+                // Celda de Nivel (con rowspan)
+                if ($i === 0) {
                     $html .= '<td rowspan="' . $totalFilas . '">' . htmlspecialchars($nivel) . '</td>';
                 }
-                if (count($galponesPorCenco) <= 1) {
-                    $html .= '<td>' . htmlspecialchars($parametro) . '</td>';
-                } else {
-                    if ($i === 0) {
-                        $html .= '<td rowspan="' . $totalFilas . '">' . htmlspecialchars($nivel) . '</td>';
-                    }
-                    $html .= '<td>' . htmlspecialchars($parametro) . '</td>';
-                }
-
+            
+                // Celda de Parámetro
+                $html .= '<td>' . htmlspecialchars($parametro) . '</td>';
+            
                 // Datos por galpón
                 foreach ($galponesPorCenco as $cenco => $info) {
                     foreach ($info['galpones'] as $galpon) {
                         $porc = $mapaCompleto[$sistema][$nivel][$parametro][$galpon]['porc'] ?? '0';
-                        $obs = $mapaCompleto[$sistema][$nivel][$parametro][$galpon]['obs'] ?? '';
-                        $html .= '<td>' . htmlspecialchars($porc) . '</td>';
-                        $html .= '<td>' . nl2br(htmlspecialchars($obs)) . '</td>';
+            
+                        
+                        $obsPrimero = $mapaCompleto[$sistema][$nivel][$parametros[0]][$galpon]['obs'] ?? '';
+            
+                        
+                        if ($i === 0) {
+                            $html .= '<td>' . htmlspecialchars($porc) . '</td>';
+                            $html .= '<td rowspan="' . $totalFilas . '">' . nl2br(htmlspecialchars($obsPrimero)) . '</td>';
+                        } else {
+                         
+                            $html .= '<td>' . htmlspecialchars($porc) . '</td>';
+                           
+                        }
                     }
                 }
-
+            
                 $html .= '</tr>';
             }
         }
