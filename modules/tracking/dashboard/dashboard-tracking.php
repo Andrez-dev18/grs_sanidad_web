@@ -432,10 +432,17 @@ if (!$conexion) {
                     left: 'prev,next today',
                     center: 'title',
                     right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
-                },
+                },buttonText: {  // Opcional: personalizar nombres de vistas si quieres
+            today: 'Hoy',
+            month: 'Mes',
+            week: 'Semana',
+            day: 'Día',
+            list: 'Lista'
+        },
                 height: 'auto',
                 editable: false,
                 navLinks: true,
+                locale: 'es',
                 dayMaxEvents: 4, // Recomendado: evita sobrecarga visual en month
                 events: cargarEventos,
                 eventClick: function(info) {
