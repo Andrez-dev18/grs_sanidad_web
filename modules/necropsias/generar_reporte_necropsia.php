@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '../../../vendor/autoload.php';
-
+date_default_timezone_set('America/Lima');  // Zona horaria de Perú
 use Mpdf\Mpdf;
 
 include_once '../../../conexion_grs_joya/conexion.php';
@@ -71,7 +71,7 @@ $mpdf = new Mpdf([
     'format' => 'A4-L',
     'margin_left' => 10,
     'margin_right' => 10,
-    'margin_top' => 15,
+    'margin_top' => 10,
     'margin_bottom' => 15,
     'simpleTables' => true,
     'useSubstitutions' => false,
@@ -84,7 +84,7 @@ $mpdf = new Mpdf([
 ================================ */
 $granjaRaw = $registros[0]['tcencos'];
 $granjaTxt = trim(explode('C=', $granjaRaw)[0]);
-
+$fechaGeneracion = date('d/m/Y h:i A:'); // Fecha y hora actual simple
 /* ===============================
    PORCENTAJES
 ================================ */
@@ -103,7 +103,7 @@ $html = '
 <meta charset="UTF-8">
 <style>
     body { font-family: Arial; font-size: 11pt; }
-    h1 { text-align:center; color:#002060; font-size:26pt; }
+    h1 { text-align:center; color:#002060; font-size:26pt; margin-top: 0px; } /* margin-top 0 para pegarlo si es necesario */
     h2 {
         text-align:center;
         color:#002060;
@@ -168,6 +168,14 @@ $html = '
 </style>
 </head>
 <body>
+
+<table width="100%" style="border: none; margin-bottom: 10px;">
+    <tr>
+        <td align="right" style="border: none; font-size: 9pt; color: #777777;">
+            Fecha de Generación : ' . $fechaGeneracion . '
+        </td>
+    </tr>
+</table>
 
 <div class="header">
     <h1>REPORTE DE NECROPSIA</h1>
