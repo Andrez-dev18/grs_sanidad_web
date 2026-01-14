@@ -32,9 +32,35 @@ $stmt->bind_param("sis", $granja, $numreg, $fectra);
 $stmt->execute();
 $registros = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
-$conn->close();
 
 if (!$registros) die('Sin registros');
+
+// Verificar si hay imágenes (evidencia)
+$tieneImagenes = false;
+foreach ($registros as $reg) {
+    if (!empty($reg['evidencia']) && trim($reg['evidencia']) !== '') {
+        $tieneImagenes = true;
+        break;
+    }
+}
+
+// Si se solicita solo verificación (parámetro check)
+if (isset($_GET['check']) && $_GET['check'] == '1') {
+    header('Content-Type: application/json');
+    echo json_encode(['tiene_imagenes' => $tieneImagenes]);
+    $conn->close();
+    exit;
+}
+
+// Si no hay imágenes, no generar PDF (debe ser manejado por el frontend)
+if (!$tieneImagenes) {
+    header('Content-Type: application/json');
+    echo json_encode(['tiene_imagenes' => false, 'mensaje' => 'No se registró imágenes']);
+    $conn->close();
+    exit;
+}
+
+$conn->close();
 
 /* ===============================
    MPDF CONFIG

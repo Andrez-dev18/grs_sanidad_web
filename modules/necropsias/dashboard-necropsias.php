@@ -1228,22 +1228,15 @@ if (!$conexion) {
                 <table id="tabla" class="data-table w-full text-sm border-collapse">
                     <thead class="bg-gray-100 sticky top-0 z-10">
                         <tr>
-                            <th class="px-3 py-2 text-left">#</th>
+                            <th class="px-3 py-2 text-left">N°</th>
+                            <th class="px-3 py-2 text-center">N°Reg</th>
+                            <th class="px-3 py-2 text-left">Fecha Registro</th>
                             <th class="px-3 py-2 text-left">Granja</th>
-                            <th class="px-3 py-2 text-center">Edad</th>
                             <th class="px-3 py-2 text-center">Galpón</th>
-                            <th class="px-3 py-2 text-center">N° Reg</th>
-                            <th class="px-3 py-2 text-center">Fecha Necropsia</th>
-                            <th class="px-3 py-2 text-left">Sistema</th>
-                            <th class="px-3 py-2 text-left">Nivel</th>
-                            <th class="px-3 py-2 text-left">Parámetro</th>
-                            <th class="px-3 py-2 text-center">Aves 1-5</th>
-                            <th class="px-3 py-2 text-center">Total %</th>
-                            <th class="px-3 py-2 text-left">Observación</th>
-                            <th class="px-3 py-2 text-center">Evidencia</th>
+                            <th class="px-3 py-2 text-center">Edad</th>
                             <th class="px-3 py-2 text-left">Usuario</th>
-                            <th class="px-3 py-2 text-left">Registrado</th>
-                            <th class="px-3 py-2 text-left">Acciones</th>
+                            <th class="px-3 py-2 text-center">Fecha</th>
+                            <th class="px-3 py-2 text-center">Opciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1333,72 +1326,45 @@ if (!$conexion) {
                 pageLength: 10,
                 lengthMenu: [10, 25, 50, 100],
                 order: [
-                    [4, 'desc']
-                ], // Ordenar por fecha necropsia
-                columns: [{
-                        data: 'tnumreg'
-                    }, {
-                        data: 'tcencos'
-                    },
+                    [2, 'desc']
+                ], // Ordenar por fecha de registro
+                columns: [
                     {
-                        data: 'tedad',
-                        className: 'text-center font-medium'
-                    },
-                    {
-                        data: 'tgalpon',
-                        className: 'text-center font-bold'
+                        data: 'counter',
+                        className: 'text-center',
+                        orderable: false
                     },
                     {
                         data: 'tnumreg',
                         className: 'text-center font-medium'
                     },
                     {
-                        data: 'tfectra',
-                        className: 'text-center'
+                        data: 'fecha_registro'
                     },
                     {
-                        data: 'tsistema'
-                    },
-                    {
-                        data: 'tnivel'
-                    },
-                    {
-                        data: 'tparametro'
-                    },
-                    {
-                        data: null,
-                        className: 'text-center',
+                        data: 'tcencos',
                         render: function(data, type, row) {
-                            return `${row.tporcentaje1}-${row.tporcentaje2}-${row.tporcentaje3}-${row.tporcentaje4}-${row.tporcentaje5}`;
+                            // Extraer solo el nombre de la granja (sin el código)
+                            if (data && data.includes('C=')) {
+                                return data.split('C=')[0].trim();
+                            }
+                            return data || row.tgranja || '';
                         }
                     },
                     {
-                        data: 'tporcentajetotal',
-                        className: 'text-center font-bold text-green-600',
-                        render: function(data) {
-                            return data + '%';
-                        }
+                        data: 'tgalpon',
+                        className: 'text-center font-bold'
                     },
                     {
-                        data: 'tobservacion',
-                        render: function(data) {
-                            if (!data) return '-';
-                            return data.length > 50 ? data.substr(0, 50) + '...' : data;
-                        }
-                    },
-                    {
-                        data: 'evidencia',
-                        orderable: false,
-                        searchable: false,
-                        render: function(data) {
-                            return data ? `<button onclick="abrirModalEvidencia('${data}')" class="text-blue-600 hover:underline"><i class="fas fa-image text-xl"></i></button>` : '-';
-                        }
+                        data: 'tedad',
+                        className: 'text-center font-medium'
                     },
                     {
                         data: 'tuser'
                     },
                     {
-                        data: 'fecha_registro'
+                        data: 'tfectra',
+                        className: 'text-center'
                     },
                     {
                         data: null,
@@ -1406,11 +1372,13 @@ if (!$conexion) {
                         orderable: false,
                         render: function(data, type, row) {
                             return `
-                                    <button onclick="editarNecropsia('${row.tgranja}', ${row.tnumreg}, '${row.tfectra}')" 
-                                            class="inline-block bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 text-xs font-medium transition-colors"">
-                                        <i class="fa-solid fa-pen-to-square"></i>
-                                    </button>
-                                `;
+                                <button onclick="editarNecropsia('${row.tgranja}', ${row.tnumreg}, '${row.tfectra}')" 
+                                        class="inline-flex items-center gap-1 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs font-medium transition-colors">
+                                    
+                                  
+                                    <span>Ver/Editar</span>
+                                </button>
+                            `;
                         }
                     }
                 ]

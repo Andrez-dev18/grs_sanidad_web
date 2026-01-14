@@ -1,188 +1,152 @@
+<?php
+session_start();
+if (empty($_SESSION['active'])) {
+    header('Location: ../../login.php');
+    exit();
+}
+
+//ruta relativa a la conexion
+include_once '../../../conexion_grs_joya/conexion.php';
+$conexion = conectar_joya();
+if (!$conexion) {
+    die("Error de conexión: " . mysqli_connect_error());
+}
+?>
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reportes de Necropsia</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reportes de Necropsias</title>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             background: #f8f9fa;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
         }
 
-        .report-item {
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 1rem;
+        .container-fluid {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .tab-button {
+            transition: all 0.2s ease;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .tab-button.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        .tab-button:not(.active) {
+            color: #6b7280;
+        }
+
+        .tab-button:not(.active):hover {
+            color: #374151;
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tabs-container {
             background: white;
-            transition: background 0.2s;
+            border-bottom: 1px solid #e5e7eb;
         }
 
-        .report-item:hover {
-            background-color: #f9fafb;
-        }
-
-        @media (min-width: 640px) {
-            .report-item {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 1rem 1.5rem;
-            }
+        .tabs-nav {
+            display: flex;
+            justify-content: center;
         }
     </style>
 </head>
 
-<body class="bg-gray-50">
-    <div class="container mx-auto px-6 py-12">
-        <div class="max-w-7xl mx-auto">
-            <div class="bg-white rounded-2xl shadow-sm p-6 border border-gray-200 mb-8">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h3 class="text-lg font-semibold text-gray-800">Registros de Necropsia</h3>
-                    <input type="text" id="searchReportes" placeholder="Buscar por código de lote..." class="w-full sm:w-72 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
+<body class="bg-light">
+    <div class="container-fluid py-4">
+        <!-- TABS -->
+        <div class="mx-5 mb-6">
+            <div class="tabs-container">
+                <nav class="tabs-nav" role="tablist">
+                    <button id="tabIndividual"
+                        class="tab-button active"
+                        aria-selected="true" onclick="cambiarTab('tabIndividual', 'tabComparativo', 'contenidoIndividual', 'contenidoComparativo')">
+                        Reporte Individual
+                    </button>
+                    <button id="tabComparativo"
+                        class="tab-button"
+                        aria-selected="false" onclick="cambiarTab('tabComparativo', 'tabIndividual', 'contenidoComparativo', 'contenidoIndividual')">
+                        Reporte Comparativo
+                    </button>
+                </nav>
             </div>
-
-            <div id="reportes-lista" class="space-y-3 mb-10">
-                <div class="text-center py-10 text-gray-600">Cargando lotes...</div>
-            </div>
-
-            <div id="paginacion-controles" class="flex flex-wrap justify-center gap-1"></div>
         </div>
 
-        <div class="text-center mt-12">
-            <p class="text-gray-500 text-sm">
-                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © <span id="currentYear"></span>
-            </p>
+        <!-- CONTENIDO DE TABS -->
+        <div id="contenidoIndividual" class="tab-content active">
+            <iframe id="iframeIndividual" src="dashboard-reporte-individual.php" 
+                    style="width: 100%; height: 100%; border: none; background: transparent;"></iframe>
+        </div>
+
+        <div id="contenidoComparativo" class="tab-content">
+            <iframe id="iframeComparativo" src="dashboard-reporte-comparativo.php" 
+                    style="width: 100%; height: 100%; border: none; background: transparent;"></iframe>
         </div>
     </div>
 
     <script>
-        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        function cambiarTab(tabActivoId, tabInactivoId, contenidoActivoId, contenidoInactivoId) {
+            // Cambiar clases de los botones
+            const tabActivo = document.getElementById(tabActivoId);
+            const tabInactivo = document.getElementById(tabInactivoId);
 
-        let paginaActual = 1;
-        let totalPaginas = 1;
+            tabActivo.classList.add('active');
+            tabActivo.classList.remove('border-transparent', 'text-gray-600');
+            tabInactivo.classList.remove('active');
+            tabInactivo.classList.add('border-transparent', 'text-gray-600');
 
-        function cargarLotes(page = 1, query = "") {
-            const contenedor = document.getElementById("reportes-lista");
-            contenedor.innerHTML = '<div class="text-center py-10 text-gray-600">Cargando lotes...</div>';
+            // Cambiar contenido visible
+            document.getElementById(contenidoActivoId).classList.add('active');
+            document.getElementById(contenidoActivoId).classList.remove('hidden');
+            document.getElementById(contenidoInactivoId).classList.remove('active');
+            document.getElementById(contenidoInactivoId).classList.add('hidden');
 
-            const formData = new FormData();
-            formData.append('draw', 1);
-            formData.append('start', (page - 1) * 10);
-            formData.append('length', 10);
-            if (query) formData.append('search[value]', query);
+            // Actualizar aria-selected para accesibilidad
+            tabActivo.setAttribute('aria-selected', 'true');
+            tabInactivo.setAttribute('aria-selected', 'false');
 
-            fetch('cargar_lotes_necropsias.php', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(result => {
-                    let html = '';
-                    if (result.data.length === 0) {
-                        html = '<div class="text-center py-10 text-gray-600">No se encontraron lotes</div>';
-                    } else {
-                        result.data.forEach(lote => {
-                            const codigoLote = String(lote.tnumreg).padStart(6, '0');
-                            const fechaNecropsia = new Date(lote.tfectra).toLocaleDateString('es-PE');
-                            const horaRegistro = lote.ttime.substring(0, 5);
-
-                            const fectraParts = lote.tfectra.split('/');
-                            const fectraUrl = `${fectraParts[2]}-${fectraParts[1].padStart(2, '0')}-${fectraParts[0].padStart(2, '0')}`; // Convierte "09/01/2026" → "2026-01-09"
-
-
-                            html += `
-                        <div class="report-item">
-                            <div class="flex-1">
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <p class="text-sm text-gray-600">Num reg:</p>
-                                        <p class="font-semibold text-gray-900">${codigoLote}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-600">Granja:</p>
-                                        <p class="font-semibold text-gray-900">${lote.tcencos}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-600">Campañia:</p>
-                                        <p class="font-semibold text-gray-900">${lote.tcampania}</p>
-                                    </div>
-                                    
-                                    <div>
-                                        <p class="text-sm text-gray-600">Galpon:</p>
-                                        <p class="font-semibold text-gray-900">${lote.tgalpon}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-600">Fecha de registro:</p>
-                                        <p class="font-semibold text-gray-900">${fechaNecropsia}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-sm text-gray-600">Hora de Registro:</p>
-                                        <p class="font-semibold text-gray-900">${horaRegistro}</p>
-                                    </div>
-                                    
-                                    
-                                    <div>
-                                        <p class="text-sm text-gray-600">Registrado por:</p>
-                                        <p class="font-semibold text-gray-900">${lote.tuser}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="flex flex-col gap-2 mt-4 sm:mt-0">
-                                <a href="generar_reporte_tabla.php?tipo=1&numreg=${lote.tnumreg}&granja=${encodeURIComponent(lote.tgranja)}&galpon=${encodeURIComponent(lote.tgalpon)}&fectra=${fectraUrl}" 
-                                   target="_blank" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 text-center">
-                                    <i class="fas fa-file-pdf mr-2"></i>PDF Tabla
-                                </a>
-                                <a href="generar_reporte_necropsia.php?granja=${encodeURIComponent(lote.tgranja)}&numreg=${lote.tnumreg}&fectra=${lote.tfectra}" 
-                                   target="_blank" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 text-center">
-                                    <i class="fas fa-images mr-2"></i>PDF Imágenes
-                                </a>
-                            </div>
-                        </div>`;
-                        });
-                    }
-
-                    contenedor.innerHTML = html;
-                    totalPaginas = Math.ceil(result.recordsFiltered / 10);
-                    paginaActual = page;
-                    renderizarPaginacion();
-                })
-                .catch(err => {
-                    contenedor.innerHTML = '<div class="text-center py-10 text-red-600">Error al cargar lotes.</div>';
-                    console.error(err);
-                });
         }
-
-        function renderizarPaginacion() {
-            const paginacion = document.getElementById("paginacion-controles");
-            if (totalPaginas <= 1) {
-                paginacion.innerHTML = "";
-                return;
-            }
-
-            let html = "";
-            if (paginaActual > 1) {
-                html += `<button class="bg-white text-gray-700 font-medium py-2 px-3 sm:px-4 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors text-sm sm:text-base"
-                          onclick="cargarLotes(${paginaActual - 1}, document.getElementById('searchReportes').value)">← Anterior</button>`;
-            }
-            html += `<span class="text-gray-600 text-xs sm:text-sm whitespace-nowrap mx-4">Página ${paginaActual} de ${totalPaginas}</span>`;
-            if (paginaActual < totalPaginas) {
-                html += `<button class="bg-white text-gray-700 font-medium py-2 px-3 sm:px-4 rounded-md border border-gray-300 hover:bg-gray-50 transition-colors text-sm sm:text-base"
-                          onclick="cargarLotes(${paginaActual + 1}, document.getElementById('searchReportes').value)">Siguiente →</button>`;
-            }
-            paginacion.innerHTML = html;
-        }
-
-        document.getElementById("searchReportes").addEventListener("input", function() {
-            cargarLotes(1, this.value.trim());
-        });
-
-        document.addEventListener("DOMContentLoaded", () => cargarLotes(1, ""));
     </script>
 </body>
 
