@@ -9,55 +9,67 @@ $length = intval($_POST['length']);
 $search = $_POST['search']['value'] ?? '';
 
 // Columnas visibles en la tabla (para ordenar)
-$columns = [
-    'tcencos', 'tedad', 'tgalpon', 'tnumreg', 'tfectra',
-    'tsistema', 'tnivel', 'tparametro',
-    'tporcentaje1', 'tporcentajetotal', 'tobservacion'
+// DataTables: 0=counter(no ordenable), 1=tnumreg, 2=fecha_registro(tdate), 3=tcencos, 4=tgalpon, 5=tedad, 6=tuser, 7=tfectra
+// Mapeo: fecha_registro (columna 2) se ordena por tdate
+$columns_map = [
+    1 => 'tnumreg',
+    2 => 'tdate',      // fecha_registro se ordena por tdate
+    3 => 'tcencos',
+    4 => 'tgalpon',
+    5 => 'tedad',
+    6 => 'tuser',
+    7 => 'tfectra'
 ];
 
-$order_column_index = $_POST['order'][0]['column'] ?? 0;
+$order_column_index = $_POST['order'][0]['column'] ?? 2;
 $order_dir = $_POST['order'][0]['dir'] ?? 'desc';
-$order_column = $columns[$order_column_index] ?? 'tfectra';
+$order_column = $columns_map[$order_column_index] ?? 'tdate';
 
-// Consulta principal: TODOS los registros detallados
-$sql = "SELECT 
-            tid, tgranja, tcencos, tedad, tgalpon, tnumreg, tfectra,
-            tsistema, tnivel, tparametro,
-            tporcentaje1, tporcentaje2, tporcentaje3, tporcentaje4, tporcentaje5,
-            tporcentajetotal, tobservacion, evidencia, tuser, tdate, ttime
-        FROM t_regnecropsia";
-
+// Búsqueda
 $where = [];
 $params = [];
 $types = '';
 
 if (!empty($search)) {
-    $where[] = "(tcencos LIKE ? OR tgranja LIKE ? OR tgalpon LIKE ? OR tnumreg LIKE ? OR tfectra LIKE ? OR tsistema LIKE ? OR tnivel LIKE ? OR tparametro LIKE ?)";
     $like = "%$search%";
-    $params = array_fill(0, 8, $like);
-    $types = str_repeat('s', 8);
+    $where[] = "(tcencos LIKE ? OR tgranja LIKE ? OR CAST(tnumreg AS CHAR) LIKE ? OR tfectra LIKE ? OR tgalpon LIKE ? OR tuser LIKE ?)";
+    $params = [$like, $like, $like, $like, $like, $like];
+    $types = str_repeat('s', 6);
 }
+
+// Total lotes únicos (sin filtro)
+$total_sql = "SELECT COUNT(DISTINCT tgranja, tnumreg, tfectra) AS total FROM t_regnecropsia";
+$total_stmt = $conn->prepare($total_sql);
+$total_stmt->execute();
+$total = $total_stmt->get_result()->fetch_assoc()['total'];
+$total_stmt->close();
+
+// Total filtrado
+$filtered = $total;
+if (!empty($where)) {
+    $filtered_sql = "SELECT COUNT(DISTINCT tgranja, tnumreg, tfectra) AS total FROM t_regnecropsia WHERE " . implode(' AND ', $where);
+    $filtered_stmt = $conn->prepare($filtered_sql);
+    $filtered_stmt->bind_param($types, ...$params);
+    $filtered_stmt->execute();
+    $filtered = $filtered_stmt->get_result()->fetch_assoc()['total'];
+    $filtered_stmt->close();
+}
+
+// Consulta lotes únicos (cabeceras)
+$sql = "SELECT DISTINCT tgranja, tnumreg, tfectra, tcencos, tedad, tgalpon, tuser, tdate, ttime
+        FROM t_regnecropsia";
 
 if (!empty($where)) {
     $sql .= " WHERE " . implode(' AND ', $where);
 }
 
-// Total registros (sin filtro)
-$total = $conn->query("SELECT COUNT(*) AS total FROM t_regnecropsia")->fetch_assoc()['total'];
-
-// Total filtrados
-$filtered = $total;
-if (!empty($where)) {
-    $count_sql = "SELECT COUNT(*) AS total FROM t_regnecropsia WHERE " . implode(' AND ', $where);
-    $stmt_count = $conn->prepare($count_sql);
-    $stmt_count->bind_param($types, ...$params);
-    $stmt_count->execute();
-    $filtered = $stmt_count->get_result()->fetch_assoc()['total'];
-    $stmt_count->close();
+// Ordenar
+// Si es orden por fecha de registro (tdate), ordenar también por hora (ttime)
+if ($order_column === 'tdate') {
+    $sql .= " ORDER BY $order_column $order_dir, ttime $order_dir, tgranja ASC LIMIT ? OFFSET ?";
+} else {
+    $sql .= " ORDER BY $order_column $order_dir, tgranja ASC LIMIT ? OFFSET ?";
 }
-
-// Ordenar y paginar
-$sql .= " ORDER BY tdate DESC, tnumreg DESC, tgranja ASC, tid ASC LIMIT ? OFFSET ?";
 $params[] = $length;
 $params[] = $start;
 $types .= 'ii';
@@ -68,31 +80,25 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 $data = [];
+$counter = $start + 1; // Contador para el número de fila
 while ($row = $result->fetch_assoc()) {
-    // Formatear fecha
+    // Formatear fecha de registro
     $fechaRegistro = $row['tdate'] === '1000-01-01' ? '-' : 
-        date('d/m/Y H:i', strtotime($row['tdate'] . ' ' . $row['ttime']));
+        date('d/m/Y H:i', strtotime($row['tdate'] . ' ' . ($row['ttime'] ?? '00:00:00')));
+    
+    // Formatear fecha de necropsia
+    $fechaNecropsia = date('d/m/Y', strtotime($row['tfectra']));
 
     $data[] = [
-        'tid' => $row['tid'],
+        'counter' => $counter++,
         'tgranja' => $row['tgranja'],
         'tcencos' => $row['tcencos'],
         'tedad' => $row['tedad'],
         'tgalpon' => $row['tgalpon'],
         'tnumreg' => $row['tnumreg'],
-        'tfectra' => date('d/m/Y', strtotime($row['tfectra'])),
-        'tsistema' => $row['tsistema'],
-        'tnivel' => $row['tnivel'],
-        'tparametro' => $row['tparametro'],
-        'tporcentaje1' => $row['tporcentaje1'],
-        'tporcentaje2' => $row['tporcentaje2'],
-        'tporcentaje3' => $row['tporcentaje3'],
-        'tporcentaje4' => $row['tporcentaje4'],
-        'tporcentaje5' => $row['tporcentaje5'],
-        'tporcentajetotal' => $row['tporcentajetotal'],
-        'tobservacion' => $row['tobservacion'],
-        'evidencia' => $row['evidencia'],
+        'tfectra' => $fechaNecropsia,
         'tuser' => $row['tuser'],
+        'tdate' => $row['tdate'],
         'fecha_registro' => $fechaRegistro
     ];
 }

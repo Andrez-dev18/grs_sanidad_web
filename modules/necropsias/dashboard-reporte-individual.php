@@ -7,6 +7,7 @@
     <title>Reportes de Necropsia</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
             background: #f8f9fa;
@@ -138,10 +139,10 @@
                                    target="_blank" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 text-center">
                                     <i class="fas fa-file-pdf mr-2"></i>PDF Tabla
                                 </a>
-                                <a href="generar_reporte_necropsia.php?granja=${encodeURIComponent(lote.tgranja)}&numreg=${lote.tnumreg}&fectra=${lote.tfectra}" 
-                                   target="_blank" class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 text-center">
+                                <button onclick="verificarYGenerarPDF('${lote.tgranja}', ${lote.tnumreg}, '${lote.tfectra}')" 
+                                        class="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 text-center">
                                     <i class="fas fa-images mr-2"></i>PDF Imágenes
-                                </a>
+                                </button>
                             </div>
                         </div>`;
                         });
@@ -183,6 +184,32 @@
         });
 
         document.addEventListener("DOMContentLoaded", () => cargarLotes(1, ""));
+
+        function verificarYGenerarPDF(granja, numreg, fectra) {
+            // Primero verificar si hay imágenes
+            fetch(`generar_reporte_necropsia.php?granja=${encodeURIComponent(granja)}&numreg=${numreg}&fectra=${encodeURIComponent(fectra)}&check=1`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.tiene_imagenes) {
+                        // Si hay imágenes, abrir el PDF normalmente
+                        window.open(`generar_reporte_necropsia.php?granja=${encodeURIComponent(granja)}&numreg=${numreg}&fectra=${encodeURIComponent(fectra)}`, '_blank');
+                    } else {
+                        // Si no hay imágenes, mostrar mensaje con SweetAlert
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'No se registró imágenes',
+                            text: 'Este registro de necropsia no tiene imágenes asociadas.',
+                            confirmButtonText: 'Aceptar',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al verificar imágenes:', error);
+                    // En caso de error, intentar abrir el PDF de todas formas
+                    window.open(`generar_reporte_necropsia.php?granja=${encodeURIComponent(granja)}&numreg=${numreg}&fectra=${encodeURIComponent(fectra)}`, '_blank');
+                });
+        }
     </script>
 </body>
 

@@ -1,6 +1,6 @@
 <?php
 error_reporting(E_ALL);
-ini_set('display_errors', 0);
+ini_set('display_errors', 1);
 ini_set('log_errors', 1);
 
 date_default_timezone_set('America/Lima');
@@ -173,41 +173,42 @@ foreach ($registros as $reg) {
 // Determinar si es comparativo entre cencos (más de un cenco)
 $esComparativoCencos = count($cencosUnicos) > 1;
 
+// Agrupar galpones por CENCO (necesario para ambos formatos)
+$galponesUnicos = [];
+$galponesPorCenco = [];
+foreach ($datosAgrupados as $key => $grupo) {
+    $galponKey = $grupo['tgalpon'];
+    if (!isset($galponesUnicos[$galponKey])) {
+        $galponesUnicos[$galponKey] = [
+            'tcencos' => $grupo['tcencos'],
+            'tgranja' => $grupo['tgranja'],
+            'tedad' => $grupo['tedad']
+        ];
+    }
+    // Agrupar por CENCO para la leyenda
+    $cenco = $grupo['tcencos'];
+    if (!isset($galponesPorCenco[$cenco])) {
+        $galponesPorCenco[$cenco] = [
+            'granja' => $grupo['tgranja'],
+            'galpones' => []
+        ];
+    }
+    if (!in_array($galponKey, $galponesPorCenco[$cenco]['galpones'])) {
+        $galponesPorCenco[$cenco]['galpones'][] = $galponKey;
+    }
+}
+// Ordenar galpones
+ksort($galponesUnicos);
+
 // Generar reporte según formato
 if ($formato === 'excel') {
-    _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles);
+    _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco);
 } else {
-    _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles);
+    _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco);
 }
 
-function _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles) {
+function _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco) {
     require_once '../../vendor/autoload.php';
-    
-    $galponesUnicos = [];
-    $galponesPorCenco = [];
-    foreach ($datosAgrupados as $key => $grupo) {
-        $galponKey = $grupo['tgalpon'];
-        if (!isset($galponesUnicos[$galponKey])) {
-            $galponesUnicos[$galponKey] = [
-                'tcencos' => $grupo['tcencos'],
-                'tgranja' => $grupo['tgranja'],
-                'tedad' => $grupo['tedad']
-            ];
-        }
-        // Agrupar por CENCO para la leyenda
-        $cenco = $grupo['tcencos'];
-        if (!isset($galponesPorCenco[$cenco])) {
-            $galponesPorCenco[$cenco] = [
-                'granja' => $grupo['tgranja'],
-                'galpones' => []
-            ];
-        }
-        if (!in_array($galponKey, $galponesPorCenco[$cenco]['galpones'])) {
-            $galponesPorCenco[$cenco]['galpones'][] = $galponKey;
-        }
-    }
-    // Ordenar galpones
-    ksort($galponesUnicos);
 
     $numColumnas = 3 + (2 * count($galponesUnicos));
     $anchoMM = max(297, 60 + ($numColumnas * 28));
@@ -216,7 +217,7 @@ function _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, 
     try {
         $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8',
-            'format' => [$anchoMM, 210], 
+            'format' => [210,  $anchoMM], 
             'orientation' => 'L',
             'margin_left' => 8,
             'margin_right' => 8,
@@ -245,23 +246,22 @@ function _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, 
     }
 }
 
-function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles) {
-    require_once '../../vendor/autoload.php';
-    
-    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
-    
-    // Obtener lista de galpones únicos para las columnas
-    $galponesUnicos = [];
-    foreach ($datosAgrupados as $key => $grupo) {
-        $galponKey = $grupo['tgalpon'];
-        if (!isset($galponesUnicos[$galponKey])) {
-            $galponesUnicos[$galponKey] = [
-                'tcencos' => $grupo['tcencos'],
-                'tgranja' => $grupo['tgranja'],
-                'tedad' => $grupo['tedad']
-            ];
-        }
+function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco) {
+    try {
+        require_once '../../vendor/autoload.php';
+        
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // === Logo ===
+    $logoPath = __DIR__ . '/logo.png';
+    $logoObj = null;
+    if (file_exists($logoPath)) {
+        $drawing = new \PhpOffice\PhpSpreadsheet\Worksheet\Drawing();
+        $drawing->setPath($logoPath);
+        $drawing->setHeight(20);
+        $drawing->setCoordinates('A1');
+        $logoObj = $drawing;
     }
     
  
@@ -292,20 +292,99 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
     
     $row = 1;
     
-    // Título
-    $numCols = count($galponesUnicos) * 2 + 3; 
+    // Calcular número de columnas totales
+    $numCols = 2; // Nivel, Parámetro (o Sistema si se usa)
+    foreach ($galponesPorCenco as $info) {
+        $numCols += count($info['galpones']) * 2; // % y Obs por cada galpón
+    }
+    // Si hay más de un CENCO, no contamos Sistema como columna separada
+    if (count($galponesPorCenco) <= 1) {
+        $numCols += 1; // Sistema
+    }
     $lastCol = $sheet->getCellByColumnAndRow($numCols, 1)->getColumn();
-    $sheet->setCellValue('A' . $row, 'REPORTE COMPARATIVO DE NECROPSIA');
-    $sheet->mergeCells('A' . $row . ':' . $lastCol . $row);
+    
+    // === Header con Logo (igual al PDF) ===
+    // Calcular proporciones: 20% logo, 60% título, 20% vacía
+    $logoCols = max(1, floor($numCols * 0.2));
+    $titleCols = max(1, floor($numCols * 0.6));
+    $emptyCols = $numCols - $logoCols - $titleCols;
+    
+    $logoEndCol = $sheet->getCellByColumnAndRow($logoCols, $row)->getColumn();
+    $titleStartCol = $sheet->getCellByColumnAndRow($logoCols + 1, $row)->getColumn();
+    $titleEndCol = $sheet->getCellByColumnAndRow($logoCols + $titleCols, $row)->getColumn();
+    $emptyStartCol = $sheet->getCellByColumnAndRow($logoCols + $titleCols + 1, $row)->getColumn();
+    
+    // Celda 1: Logo y nombre de empresa (20% del ancho)
+    if ($logoObj) {
+        $logoObj->setCoordinates('A' . $row);
+        $logoObj->setOffsetX(5);
+        $logoObj->setOffsetY(5);
+        $logoObj->setWorksheet($sheet);
+        $sheet->getRowDimension($row)->setRowHeight(30);
+    }
+    $sheet->setCellValue('A' . $row, 'GRANJA RINCONADA DEL SUR S.A.');
+    $sheet->mergeCells('A' . $row . ':' . $logoEndCol . $row);
     $sheet->getStyle('A' . $row)->applyFromArray([
-        'font' => ['bold' => true, 'size' => 16],
-        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]
+        'font' => ['size' => 8, 'color' => ['rgb' => '334155']],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+        'borders' => [
+            'allBorders' => [
+                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                'color' => ['rgb' => 'CBD5E1']
+            ]
+        ],
+        'fill' => [
+            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+            'startColor' => ['rgb' => 'FFFFFF']
+        ]
+    ]);
+    
+    // Celda 2: Título del reporte (60% del ancho)
+    $sheet->setCellValue($titleStartCol . $row, 'REPORTE COMPARATIVO DE NECROPSIA');
+    $sheet->mergeCells($titleStartCol . $row . ':' . $titleEndCol . $row);
+    $sheet->getStyle($titleStartCol . $row)->applyFromArray([
+        'font' => ['bold' => true, 'size' => 14, 'color' => ['rgb' => '000000']],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+        'borders' => [
+            'allBorders' => [
+                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                'color' => ['rgb' => 'CBD5E1']
+            ]
+        ],
+        'fill' => [
+            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+            'startColor' => ['rgb' => 'E6F2FF']
+        ]
+    ]);
+    
+    // Celda 3: Vacía (20% del ancho, igual al PDF)
+    $sheet->setCellValue($emptyStartCol . $row, '');
+    $sheet->mergeCells($emptyStartCol . $row . ':' . $lastCol . $row);
+    $sheet->getStyle($emptyStartCol . $row)->applyFromArray([
+        'borders' => [
+            'allBorders' => [
+                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                'color' => ['rgb' => 'CBD5E1']
+            ]
+        ],
+        'fill' => [
+            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+            'startColor' => ['rgb' => 'FFFFFF']
+        ]
     ]);
     $row++;
     
-    // Fechas
+    // === Período ===
     $sheet->setCellValue('A' . $row, 'Período: ' . $fecha_inicio . ' - ' . $fecha_fin);
     $sheet->mergeCells('A' . $row . ':' . $lastCol . $row);
+    $sheet->getStyle('A' . $row)->applyFromArray([
+        'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1E3A8A']],
+        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
+        'fill' => [
+            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+            'startColor' => ['rgb' => 'FFFFFF']
+        ]
+    ]);
     $row++;
     
     $coloresBaseCenco = [
@@ -371,7 +450,7 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
         
        
         $sheet->setCellValue('A' . $row, 'LEYENDA');
-        $sheet->mergeCells('A' . $row . ':' . $lastCol . $row);
+        $sheet->mergeCells('A' . $row . ':C' . $row);
         $sheet->getStyle('A' . $row)->applyFromArray([
             'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '1E40AF']],
             'fill' => [
@@ -429,7 +508,7 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
                 'borders' => [
                     'allBorders' => [
                         'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                        'color' => ['rgb' => '000000']
+                        'color' => ['rgb' => 'CBD5E1']
                     ]
                 ]
             ]);
@@ -482,169 +561,260 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
         $row++; // Espacio después de la leyenda
     }
     
-    // Cabecera de CENCOS si es comparativo entre cencos
-    if ($esComparativoCencos) {
-        $sheet->setCellValue('A' . $row, 'CENCOS COMPARADOS:');
+    // === Mapa de datos (igual al PDF) ===
+    $mapaCompleto = [];
+    foreach ($datosAgrupados as $grupo) {
+        foreach ($grupo['registros'] as $reg) {
+            $s = $reg['tsistema'] ?? '';
+            $n = $reg['tnivel'] ?? '';
+            $p = $reg['tparametro'] ?? '';
+            $g = $reg['tgalpon'] ?? '';
+            if ($s !== '' && $n !== '' && $p !== '' && $g !== '') {
+                $mapaCompleto[$s][$n][$p][$g] = [
+                    'porc' => $reg['tporcentajetotal'] ?? '0',
+                    'obs' => $reg['tobservacion'] ?? ''
+                ];
+            }
+        }
+    }
+    
+    // === Ordenar sistemas (igual al PDF) ===
+    $sistemasFinales = [];
+    $otros = [];
+    foreach ($todosNiveles as $sistema => $niveles) {
+        $sLower = mb_strtolower(trim($sistema), 'UTF-8');
+        $pos = false;
+        if (strpos($sLower, 'inmunol') !== false) $pos = 0;
+        elseif (strpos($sLower, 'digestiv') !== false) $pos = 1;
+        elseif (strpos($sLower, 'respirat') !== false) $pos = 2;
+        elseif (strpos($sLower, 'evaluaci') !== false && strpos($sLower, 'físic') !== false) $pos = 3;
+        if ($pos !== false) {
+            $sistemasFinales[$pos] = [$sistema => $niveles];
+        } else {
+            $otros[$sistema] = $niveles;
+        }
+    }
+    ksort($sistemasFinales);
+    $final = [];
+    foreach ($sistemasFinales as $item) $final = array_merge($final, $item);
+    $final = array_merge($final, $otros);
+    
+    // === Función auxiliar: convertir hex a rgb ===
+    $hexToRgb = function($hex) {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) == 3) {
+            $hex = str_repeat(substr($hex,0,1),2) . str_repeat(substr($hex,1,1),2) . str_repeat(substr($hex,2,1),2);
+        }
+        return [
+            'r' => hexdec(substr($hex,0,2)),
+            'g' => hexdec(substr($hex,2,2)),
+            'b' => hexdec(substr($hex,4,2))
+        ];
+    };
+    
+    // === Por cada sistema (igual al PDF) ===
+    foreach ($final as $sistema => $niveles) {
+        // Título del sistema
+        $sheet->setCellValue('A' . $row, strtoupper($sistema));
         $sheet->mergeCells('A' . $row . ':' . $lastCol . $row);
         $sheet->getStyle('A' . $row)->applyFromArray([
-            'font' => ['bold' => true, 'size' => 12],
+            'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '1E40AF']],
             'fill' => [
                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'E6F2FF'] // Mismo color que cabecera en PDF
+                'startColor' => ['rgb' => 'DBEAFE']
             ],
+            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                    'color' => ['rgb' => 'CBD5E1']
+                    'color' => ['rgb' => '93C5FD']
                 ]
             ]
         ]);
         $row++;
         
+        // === Fila 1: Agrupación por CENCO (igual al PDF) ===
+        $headerRow1 = $row;
         $col = 1;
-        foreach ($cencosUnicos as $cenco => $granja) {
-            $sheet->setCellValueByColumnAndRow($col++, $row, 'Cenco: ' . $cenco);
-            $sheet->setCellValueByColumnAndRow($col++, $row, 'Granja: ' . $granja);
-        }
-        $row += 2;
-    } else {
-        $row++;
-    }
-    
-    // Usar todos los niveles (sin filtrar por datos existentes)
-    $sistemas = $todosNiveles;
-    
-    // Generar cabecera - REORGANIZADA: Cenco/Granja/Edad en primera fila
-    $col = 1;
-    $sheet->setCellValueByColumnAndRow($col++, $row, 'Sistema');
-    $sheet->setCellValueByColumnAndRow($col++, $row, 'Nivel');
-    $sheet->setCellValueByColumnAndRow($col++, $row, 'Parámetro');
-    
-    // Fila 1: Información de cada galpón (Cenco, Granja, Edad) - COLSPAN 2
-    foreach ($galponesUnicos as $galpon => $info) {
-        $sheet->setCellValueByColumnAndRow($col, $row, 'Cenco: ' . $info['tcencos'] . "\nGranja: " . $info['tgranja'] . "\nEdad: " . $info['tedad']);
-        $sheet->mergeCells($sheet->getCellByColumnAndRow($col, $row)->getCoordinate() . ':' . $sheet->getCellByColumnAndRow($col + 1, $row)->getCoordinate());
-        $col += 2;
-    }
-    
-    // Aplicar estilo a la cabecera
-    $headerRange = 'A' . $row . ':' . $sheet->getCellByColumnAndRow($col - 1, $row)->getCoordinate();
-    $sheet->getStyle($headerRange)->applyFromArray($headerStyle);
-    $sheet->getStyle($headerRange)->getAlignment()->setWrapText(true);
-    $row++;
-    
-    // Fila 2: Galpón (colspan 2)
-    $col = 1;
-    $sheet->setCellValueByColumnAndRow($col++, $row, '');
-    $sheet->setCellValueByColumnAndRow($col++, $row, '');
-    $sheet->setCellValueByColumnAndRow($col++, $row, '');
-    
-    foreach ($galponesUnicos as $galpon => $info) {
-        $sheet->setCellValueByColumnAndRow($col, $row, 'Galpón ' . $galpon);
-        $sheet->mergeCells($sheet->getCellByColumnAndRow($col, $row)->getCoordinate() . ':' . $sheet->getCellByColumnAndRow($col + 1, $row)->getCoordinate());
-        $col += 2;
-    }
-    
-    $subHeaderRange = 'A' . $row . ':' . $sheet->getCellByColumnAndRow($col - 1, $row)->getCoordinate();
-    $sheet->getStyle($subHeaderRange)->applyFromArray($headerStyle);
-    $row++;
-    
-    // Fila 3: % y Observaciones
-    $col = 1;
-    $sheet->setCellValueByColumnAndRow($col++, $row, '');
-    $sheet->setCellValueByColumnAndRow($col++, $row, '');
-    $sheet->setCellValueByColumnAndRow($col++, $row, '');
-    
-    foreach ($galponesUnicos as $galpon => $info) {
-        $sheet->setCellValueByColumnAndRow($col++, $row, '%');
-        $sheet->setCellValueByColumnAndRow($col++, $row, 'Observaciones');
-    }
-    
-    $subHeaderRange = 'A' . $row . ':' . $sheet->getCellByColumnAndRow($col - 1, $row)->getCoordinate();
-    $sheet->getStyle($subHeaderRange)->applyFromArray($headerStyle);
-    $row++;
-    
-    // Calcular total de filas por sistema para rowspan
-    $filasPorSistema = [];
-    foreach ($sistemas as $sistema => $niveles) {
-        $totalFilas = 0;
-        foreach ($niveles as $nivel => $parametros) {
-            $totalFilas += count($parametros);
-        }
-        $filasPorSistema[$sistema] = $totalFilas;
-    }
-    
-    // Datos por sistema
-    foreach ($sistemas as $sistema => $niveles) {
-        $firstRowSistema = $row;
-        $totalFilasSistema = $filasPorSistema[$sistema];
         
+        if (count($galponesPorCenco) > 1) {
+            // Nivel (rowspan 2)
+            $sheet->setCellValueByColumnAndRow($col++, $row, 'Nivel');
+            // Parámetro (rowspan 2)
+            $sheet->setCellValueByColumnAndRow($col++, $row, 'Parámetro');
+            
+            // CENCOS con colspan
+            foreach ($galponesPorCenco as $cenco => $info) {
+                $colorHex = $coloresPorCenco[$cenco];
+                $numColsCenco = count($info['galpones']) * 2;
+                $startCol = $col;
+                $endCol = $col + $numColsCenco - 1;
+                
+                $sheet->setCellValueByColumnAndRow($col, $row, 'CENCO ' . $cenco . "\n" . $info['granja']);
+                $sheet->mergeCells($sheet->getCellByColumnAndRow($startCol, $row)->getCoordinate() . ':' . $sheet->getCellByColumnAndRow($endCol, $row)->getCoordinate());
+                $sheet->getStyle($sheet->getCellByColumnAndRow($startCol, $row)->getCoordinate())->applyFromArray([
+                    'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 8.5],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => $colorHex]
+                    ],
+                    'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER, 'wrapText' => true],
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'color' => ['rgb' => 'CBD5E1']
+                        ]
+                    ]
+                ]);
+                $col = $endCol + 1;
+            }
+        } else {
+            // Si solo hay un CENCO, mostrar Nivel y Parámetro normalmente
+            $sheet->setCellValueByColumnAndRow($col++, $row, 'Nivel');
+            $sheet->setCellValueByColumnAndRow($col++, $row, 'Parámetro');
+        }
+        $row++;
+        
+        // === Fila 2: Encabezados individuales (% y Obs) ===
+        $col = 1;
+        
+        if (count($galponesPorCenco) <= 1) {
+            // Si solo hay un CENCO, ya pusimos Nivel y Parámetro en la fila anterior
+            $col = 3;
+        }
+        
+        foreach ($galponesPorCenco as $cenco => $info) {
+            $colorHex = $coloresPorCenco[$cenco];
+            $rgb = $hexToRgb('#' . $colorHex);
+            // Calcular color con transparencia (similar a rgba en PDF)
+            $bgColorR = min(255, $rgb['r'] + round((255 - $rgb['r']) * 0.88));
+            $bgColorG = min(255, $rgb['g'] + round((255 - $rgb['g']) * 0.88));
+            $bgColorB = min(255, $rgb['b'] + round((255 - $rgb['b']) * 0.88));
+            $bgColor = sprintf('%02X%02X%02X', $bgColorR, $bgColorG, $bgColorB);
+            
+            foreach ($info['galpones'] as $galpon) {
+                // % Galpón
+                $sheet->setCellValueByColumnAndRow($col++, $row, '% Galpón ' . $galpon);
+                $sheet->getStyle($sheet->getCellByColumnAndRow($col - 1, $row)->getCoordinate())->applyFromArray([
+                    'font' => ['size' => 8, 'color' => ['rgb' => '0C4A6E']],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => $bgColor]
+                    ],
+                    'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'color' => ['rgb' => 'CBD5E1']
+                        ]
+                    ]
+                ]);
+                
+                // Obs Galpón
+                $sheet->setCellValueByColumnAndRow($col++, $row, 'Obs Galpón ' . $galpon);
+                $sheet->getStyle($sheet->getCellByColumnAndRow($col - 1, $row)->getCoordinate())->applyFromArray([
+                    'font' => ['size' => 8, 'color' => ['rgb' => '0C4A6E']],
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'startColor' => ['rgb' => $bgColor]
+                    ],
+                    'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'color' => ['rgb' => 'CBD5E1']
+                        ]
+                    ]
+                ]);
+            }
+        }
+        
+        $row++;
+        
+        // === Escribir datos (igual al PDF) ===
         foreach ($niveles as $nivel => $parametros) {
-            foreach ($parametros as $parametro) {
+            $totalFilas = count($parametros);
+            $nivelStartRow = $row;
+            
+            foreach ($parametros as $i => $parametro) {
                 $col = 1;
                 
-                // Sistema solo en la primera fila
-                if ($row == $firstRowSistema) {
-                    $sheet->setCellValueByColumnAndRow($col++, $row, $sistema);
-                    $sheet->mergeCells(
-                        $sheet->getCellByColumnAndRow(1, $row)->getCoordinate() . ':' . 
-                        $sheet->getCellByColumnAndRow(1, $row + $totalFilasSistema - 1)->getCoordinate()
-                    );
-                    $sheet->getStyle($sheet->getCellByColumnAndRow(1, $row)->getCoordinate())->applyFromArray([
-                        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
-                        'font' => ['bold' => true, 'color' => ['rgb' => '1E40AF']], // Mismo color de texto que sistema-header en PDF
-                        'fill' => [
-                            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                            'startColor' => ['rgb' => 'DBEAFE'] // Mismo color de fondo que sistema-header en PDF
-                        ],
-                        'borders' => [
-                            'allBorders' => [
-                                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                                'color' => ['rgb' => 'CBD5E1'] // Mismo color de borde que PDF
-                            ]
-                        ]
-                    ]);
+                // Nivel (con rowspan) - solo en la primera fila del nivel
+                if ($i === 0) {
+                    $sheet->setCellValueByColumnAndRow($col++, $row, $nivel);
                 } else {
-                    $col++;
+                    $col++; // Saltar columna de Nivel
                 }
                 
-                $sheet->setCellValueByColumnAndRow($col++, $row, $nivel);
+                // Parámetro
                 $sheet->setCellValueByColumnAndRow($col++, $row, $parametro);
                 
-                // Buscar datos para cada galpón
-                foreach ($galponesUnicos as $galpon => $info) {
-                    $porcentaje = 0;
-                    $observacion = '';
-                    
-                    // Buscar en los datos agrupados
-                    foreach ($datosAgrupados as $grupo) {
-                        if ($grupo['tgalpon'] == $galpon) {
-                            foreach ($grupo['registros'] as $reg) {
-                                if (($reg['tsistema'] ?? '') == $sistema &&
-                                    ($reg['tnivel'] ?? '') == $nivel &&
-                                    ($reg['tparametro'] ?? '') == $parametro) {
-                                    $porcentaje = $reg['tporcentajetotal'] ?? 0;
-                                    $observacion = $reg['tobservacion'] ?? '';
-                                    break 2;
-                                }
-                            }
+                // Datos por galpón
+                foreach ($galponesPorCenco as $cenco => $info) {
+                    foreach ($info['galpones'] as $galpon) {
+                        $porc = $mapaCompleto[$sistema][$nivel][$parametro][$galpon]['porc'] ?? '0';
+                        
+                        // % Galpón
+                        $sheet->setCellValueByColumnAndRow($col++, $row, $porc);
+                        
+                        // Obs Galpón (solo en la primera fila del nivel, con rowspan)
+                        if ($i === 0) {
+                            $obsPrimero = $mapaCompleto[$sistema][$nivel][$parametros[0]][$galpon]['obs'] ?? '';
+                            $sheet->setCellValueByColumnAndRow($col++, $row, $obsPrimero);
+                        } else {
+                            $col++; // Saltar columna de Obs
                         }
                     }
-                    
-                    $sheet->setCellValueByColumnAndRow($col++, $row, $porcentaje);
-                    $sheet->setCellValueByColumnAndRow($col++, $row, $observacion);
                 }
+                
+                // Aplicar estilos básicos a la fila
+                $rowRange = $sheet->getCellByColumnAndRow(1, $row)->getCoordinate() . ':' . $sheet->getCellByColumnAndRow($numCols, $row)->getCoordinate();
+                $sheet->getStyle($rowRange)->applyFromArray([
+                    'borders' => [
+                        'allBorders' => [
+                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                            'color' => ['rgb' => 'CBD5E1']
+                        ]
+                    ]
+                ]);
                 
                 $row++;
             }
+            
+            // Aplicar rowspan a Nivel después de escribir todas las filas del nivel (siempre, como en el PDF)
+            $sheet->mergeCells($sheet->getCellByColumnAndRow(1, $nivelStartRow)->getCoordinate() . ':' . $sheet->getCellByColumnAndRow(1, $nivelStartRow + $totalFilas - 1)->getCoordinate());
+            $sheet->getStyle($sheet->getCellByColumnAndRow(1, $nivelStartRow)->getCoordinate())->applyFromArray([
+                'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
+                'borders' => [
+                    'allBorders' => [
+                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                        'color' => ['rgb' => 'CBD5E1']
+                    ]
+                ]
+            ]);
+            
+            // Aplicar rowspan a Obs para cada galpón (solo primera fila del nivel)
+            // Obs está después de Nivel (col 1), Parámetro (col 2), y % Galpón (col 3), así que empieza en col 4
+            $obsCol = 4;
+            foreach ($galponesPorCenco as $cenco => $info) {
+                foreach ($info['galpones'] as $galpon) {
+                    $sheet->mergeCells($sheet->getCellByColumnAndRow($obsCol, $nivelStartRow)->getCoordinate() . ':' . $sheet->getCellByColumnAndRow($obsCol, $nivelStartRow + $totalFilas - 1)->getCoordinate());
+                    $sheet->getStyle($sheet->getCellByColumnAndRow($obsCol, $nivelStartRow)->getCoordinate())->applyFromArray([
+                        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP, 'wrapText' => true],
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                                'color' => ['rgb' => 'CBD5E1']
+                            ]
+                        ]
+                    ]);
+                    $obsCol += 2; // Siguiente par % y Obs
+                }
+            }
         }
-        $row++; // Espacio entre sistemas
+        
+        $row++; // Espacio después del sistema
     }
-    
-    // Aplicar estilos a todas las celdas de datos (desde la fila de datos, no desde la fila 4)
-    $dataStartRow = 4; // Fila donde empiezan los datos (después de las cabeceras)
-    $dataRange = 'A' . $dataStartRow . ':' . $sheet->getCellByColumnAndRow(count($galponesUnicos) * 2 + 3, $row - 1)->getCoordinate();
-    $sheet->getStyle($dataRange)->applyFromArray($cellStyle);
     
     // Ajustar ancho de columnas (las columnas de la leyenda ya se ajustaron antes, aquí ajustamos las de la tabla principal)
     // Nota: Las columnas A, B, C ya tienen ancho asignado para la leyenda, pero aquí las reajustamos para la tabla principal
@@ -661,9 +831,12 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
     header('Content-Disposition: attachment;filename="reporte_comparativo_' . date('Ymd_His') . '.xlsx"');
     header('Cache-Control: max-age=0');
     
-    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-    $writer->save('php://output');
-    exit;
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save('php://output');
+        exit;
+    } catch (Exception $e) {
+        die('Error generando Excel: ' . $e->getMessage());
+    }
 }
 
 function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco = []) {

@@ -8,7 +8,15 @@ if (!$conn) {
     exit;
 }
 
-// Tu consulta exacta
+// Obtener parámetro de filtro: 'todos', 'activos', o vacío (activos por defecto)
+$filtro = $_GET['filtro'] ?? 'activos';
+
+// Construir condición WHERE según el filtro
+$condicionSwac = '';
+if ($filtro === 'activos') {
+    $condicionSwac = "AND a.swac='A'";
+}
+
 $sql = "SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
 
 SELECT a.codigo, a.nombre, IF(b.edad IS NULL, '0', b.edad) AS edad 
@@ -21,7 +29,7 @@ LEFT JOIN (
 ) AS b ON a.codigo = b.tcencos  
 WHERE (LEFT(a.codigo,1) IN ('6','5') 
     AND RIGHT(a.codigo,3)<>'000' 
-    AND a.swac='A' 
+    $condicionSwac
     AND LENGTH(a.codigo)=6 
     AND LEFT(a.codigo,3)<>'650'
     AND LEFT(a.codigo,3) <= '667')
