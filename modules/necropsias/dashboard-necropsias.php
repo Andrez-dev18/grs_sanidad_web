@@ -34,6 +34,9 @@ if (!$conexion) {
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         /* Tus estilos existentes */
         body {
@@ -271,6 +274,12 @@ if (!$conexion) {
                 <div id="contenidoNecropsia">
                     <!-- Cabecera Inteligente Mejorada -->
                     <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8 bg-gray-50 p-4 rounded-lg">
+                        <!-- FECHA NECROPSIA (primero) -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">FECHA</label>
+                            <input type="date" id="fectra" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                        </div>
+
                         <!-- GRANJA (select más grande) -->
                         <div class="md:col-span-2"> <!-- Ocupa 2 columnas en desktop para más espacio -->
                             <label class="block text-sm font-medium text-gray-700">GRANJA</label>
@@ -297,12 +306,6 @@ if (!$conexion) {
                         <div>
                             <label class="block text-sm font-medium text-gray-700">EDAD</label>
                             <input type="text" id="edad" readonly class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed">
-                        </div>
-
-                        <!-- FECHA NECROPSIA -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">FECHA</label>
-                            <input type="date" id="fectra" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500">
                         </div>
                     </div>
 
@@ -1230,12 +1233,14 @@ if (!$conexion) {
                         <tr>
                             <th class="px-3 py-2 text-left">N°</th>
                             <th class="px-3 py-2 text-center">N°Reg</th>
-                            <th class="px-3 py-2 text-left">Fecha Registro</th>
-                            <th class="px-3 py-2 text-left">Granja</th>
+                            <th class="px-3 py-2 text-center">Fecha Necropsia</th>
+                            <th class="px-3 py-2 text-center">Granja</th>
+                            <th class="px-3 py-2 text-left">Nombre</th>
+                            <th class="px-3 py-2 text-center">Campaña</th>
                             <th class="px-3 py-2 text-center">Galpón</th>
                             <th class="px-3 py-2 text-center">Edad</th>
                             <th class="px-3 py-2 text-left">Usuario</th>
-                            <th class="px-3 py-2 text-center">Fecha</th>
+                            <th class="px-3 py-2 text-center">Fecha Registro</th>
                             <th class="px-3 py-2 text-center">Opciones</th>
                         </tr>
                     </thead>
@@ -1312,6 +1317,60 @@ if (!$conexion) {
     </div>
 
     <script>
+        // Helpers
+        function getFechaSeleccionada() {
+            const f = document.getElementById('fectra')?.value;
+            if (f) return f;
+            const hoy = new Date();
+            const yyyy = hoy.getFullYear();
+            const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+            const dd = String(hoy.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        async function cargarGranjasConFecha({ preserveSelection = false } = {}) {
+            const select = document.getElementById('granja');
+            if (!select) return;
+
+            const valorPrevio = select.value;
+            const fecha = getFechaSeleccionada();
+
+            try {
+                select.innerHTML = '<option value="">Cargando granjas...</option>';
+                const response = await fetch(`get_granjas.php?fecha=${encodeURIComponent(fecha)}`);
+                const granjas = await response.json();
+
+                select.innerHTML = '<option value="">Seleccione granja...</option>';
+                granjas.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g.codigo;
+                    opt.textContent = `${g.codigo} - ${g.nombre}`;
+                    opt.dataset.edad = g.edad;
+                    select.appendChild(opt);
+                });
+
+                if (preserveSelection && valorPrevio) {
+                    select.value = valorPrevio;
+                    if (select.value) {
+                        // Recalcular dependencias si se mantiene selección
+                        select.dispatchEvent(new Event('change'));
+                    } else {
+                        // Si la granja ya no existe para esa fecha, limpiar dependencias
+                        document.getElementById('campania').value = '';
+                        document.getElementById('edad').value = '';
+                        const selectGalpon = document.getElementById('galpon');
+                        if (selectGalpon) {
+                            selectGalpon.innerHTML = '<option value="">Seleccione granja primero</option>';
+                            selectGalpon.disabled = true;
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Error cargando granjas:', err);
+                select.innerHTML = '<option value="">Error al cargar</option>';
+            }
+        }
+
         $(document).ready(function() {
             let tabla = $('#tabla').DataTable({
                 processing: true,
@@ -1326,8 +1385,8 @@ if (!$conexion) {
                 pageLength: 10,
                 lengthMenu: [10, 25, 50, 100],
                 order: [
-                    [2, 'desc']
-                ], // Ordenar por fecha de registro
+                    [9, 'desc']
+                ], // Ordenar por fecha registro descendente (columna 9)
                 columns: [
                     {
                         data: 'counter',
@@ -1339,17 +1398,19 @@ if (!$conexion) {
                         className: 'text-center font-medium'
                     },
                     {
-                        data: 'fecha_registro'
+                        data: 'tfectra',
+                        className: 'text-center'
                     },
                     {
-                        data: 'tcencos',
-                        render: function(data, type, row) {
-                            // Extraer solo el nombre de la granja (sin el código)
-                            if (data && data.includes('C=')) {
-                                return data.split('C=')[0].trim();
-                            }
-                            return data || row.tgranja || '';
-                        }
+                        data: 'granja',
+                        className: 'text-center font-medium'
+                    },
+                    {
+                        data: 'nombre'
+                    },
+                    {
+                        data: 'campania',
+                        className: 'text-center font-medium'
                     },
                     {
                         data: 'tgalpon',
@@ -1363,7 +1424,7 @@ if (!$conexion) {
                         data: 'tuser'
                     },
                     {
-                        data: 'tfectra',
+                        data: 'fecha_registro',
                         className: 'text-center'
                     },
                     {
@@ -1371,11 +1432,13 @@ if (!$conexion) {
                         className: 'text-center',
                         orderable: false,
                         render: function(data, type, row) {
+                            // Usar tfectra_raw que está en formato Y-m-d
+                            const fectraParaEditar = row.tfectra_raw || row.tfectra;
                             return `
-                                <button onclick="editarNecropsia('${row.tgranja}', ${row.tnumreg}, '${row.tfectra}')" 
+                                <button onclick="editarNecropsia('${row.tgranja}', ${row.tnumreg}, '${fectraParaEditar}')" 
                                         class="inline-flex items-center gap-1 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs font-medium transition-colors">
-                                    
-                                  
+                                    <i class="fa-solid fa-eye"></i>
+                                    <i class="fa-solid fa-pen-to-square"></i>
                                     <span>Ver/Editar</span>
                                 </button>
                             `;
@@ -1418,6 +1481,10 @@ if (!$conexion) {
                 limpiarFormularioNecropsia();
 
                 // === CABECERA ===
+                // Fecha necropsia (setear primero para que get_granjas.php calcule edad con esta fecha)
+                const fectraInput = document.getElementById('fectra');
+                if (fectraInput) fectraInput.value = result.fectra || fectra;
+
                 // Granja (select) - cargar opciones primero si es necesario
                 const granjaSelect = document.getElementById('granja');
                 if (granjaSelect) {
@@ -1442,9 +1509,6 @@ if (!$conexion) {
                 // Edad (input readonly)
                 const edadInput = document.getElementById('edad');
                 if (edadInput) edadInput.value = result.edad || '';
-
-                // Fecha necropsia
-                document.getElementById('fectra').value = result.fectra || fectra;
 
                 // === PROCESAR REGISTROS ===
                 const registros = result.registros;
@@ -1659,7 +1723,8 @@ if (!$conexion) {
             const select = document.getElementById('granja');
             if (select.options.length <= 1) { // Solo tiene placeholder
                 try {
-                    const response = await fetch('get_granjas.php');
+                    const fecha = getFechaSeleccionada();
+                    const response = await fetch(`get_granjas.php?fecha=${encodeURIComponent(fecha)}`);
                     const granjas = await response.json();
 
                     select.innerHTML = '<option value="">Seleccione granja...</option>';
@@ -2067,24 +2132,20 @@ if (!$conexion) {
         document.getElementById('btnRegistrarNecropsia').addEventListener('click', async () => {
             document.getElementById('modalNecropsia').classList.remove('hidden');
 
-            try {
-                const response = await fetch('get_granjas.php');
-                const granjas = await response.json();
-
-                const select = document.getElementById('granja');
-                select.innerHTML = '<option value="">Seleccione granja...</option>';
-
-                granjas.forEach(g => {
-                    const opt = document.createElement('option');
-                    opt.value = g.codigo;
-                    opt.textContent = `${g.codigo} - ${g.nombre}`;
-                    opt.dataset.edad = g.edad;
-                    select.appendChild(opt);
-                });
-            } catch (err) {
-                console.error('Error cargando granjas:', err);
-                document.getElementById('granja').innerHTML = '<option value="">Error al cargar</option>';
+            // Si no hay fecha, poner hoy por defecto para que la edad se calcule bien
+            const fectraInput = document.getElementById('fectra');
+            if (fectraInput && !fectraInput.value) {
+                fectraInput.value = getFechaSeleccionada();
             }
+
+            await cargarGranjasConFecha({ preserveSelection: false });
+        });
+
+        // Si cambia la fecha, recargar granjas usando esa fecha (y mantener selección si ya eligió una)
+        document.getElementById('fectra').addEventListener('change', async function () {
+            // Si ya hay granja seleccionada, mantenerla y recalcular edad/campaña
+            const tieneSeleccion = !!document.getElementById('granja')?.value;
+            await cargarGranjasConFecha({ preserveSelection: tieneSeleccion });
         });
 
         // Al cambiar granja
@@ -2102,14 +2163,29 @@ if (!$conexion) {
             if (!codigo) return;
 
             // Rellenar edad
-            document.getElementById('edad').value = option.dataset.edad || '';
+            const edadStr = option.dataset.edad || '';
+            const edadNum = parseInt(edadStr, 10);
+            if (!isNaN(edadNum) && edadNum <= 0) {
+                // Fecha inválida (antes del ingreso): pedir corregir
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Fecha inválida',
+                    text: 'La edad calculada es negativa. Seleccione una fecha válida para esta granja.',
+                    confirmButtonText: 'Aceptar'
+                });
 
-            // Extraer campaña del nombre (C=126)
-            const texto = option.textContent;
-            const match = texto.match(/C=(\d+)/);
-            if (match) {
-                document.getElementById('campania').value = match[1];
+                // Resetear selección y dependencias
+                this.value = '';
+                document.getElementById('campania').value = '';
+                document.getElementById('edad').value = '';
+                selectGalpon.innerHTML = '<option value="">Seleccione granja primero</option>';
+                selectGalpon.disabled = true;
+                return;
             }
+            document.getElementById('edad').value = edadStr;
+
+            // Campaña: últimos 3 dígitos del código de granja (tgranja)
+            document.getElementById('campania').value = codigo.slice(-3);
 
             // Cargar galpones
             try {

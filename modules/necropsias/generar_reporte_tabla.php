@@ -79,9 +79,13 @@
             'margin_left' => 15,
             'margin_right' => 15,
             'margin_top' => 15,
-            'margin_bottom' => 20,
+            // Dar más espacio al pie para que la paginación se vea siempre
+            'margin_bottom' => 25,
+            'margin_footer' => 10,
             'tempDir' => __DIR__ . '/../../pdf_tmp',
         ]);
+
+        // Paginación: se define dentro del HTML con <htmlpagefooter> y @page { footer: html_... }
 
 
         $html = '';
@@ -101,6 +105,9 @@
     }
 
     function _generarReporte1($cabecera, $registros) {
+        // N°Reg: tomar desde la cabecera (BD) y si no existe, fallback a GET
+        $numregLocal = $cabecera['tnumreg'] ?? ($_GET['numreg'] ?? '');
+
         // Logo
         $logoPath = __DIR__ . '/logo.png';
         $logo = '';
@@ -114,9 +121,10 @@
         $html = '<html><head><meta charset="UTF-8"><style>
          @page {
     margin-top: 15mm;
-    margin-bottom: 20mm;
+    margin-bottom: 28mm; /* deja espacio para el footer/paginado */
     margin-left: 15mm;
     margin-right: 15mm;
+    footer: html_myfooter;
 }
 body {
     font-family: Arial, sans-serif;
@@ -197,8 +205,19 @@ body {
             .obs-cell {
                 width: 35%;
             }
-        </style></head><body>';
+        </style></head><body>
+        <htmlpagefooter name="myfooter">
+            <div style="text-align:center; font-size:8pt;">
+                Página {PAGENO} de {nbpg}
+            </div>
+        </htmlpagefooter>';
     
+        // Fecha de elaboración del reporte (fuera de la tabla, arriba a la derecha)
+        $fechaElaboracion = date('d/m/Y H:i');
+        $html .= '<div style="text-align: right; font-size: 8pt; font-style: italic; margin-top: 6px; margin-bottom: 4px;">';
+        $html .= htmlspecialchars($fechaElaboracion);
+        $html .= '</div>';
+
         // === Cabecera conjunta ===
         $html .= '<table width="100%" style="border-collapse: collapse; border: 1px solid #cbd5e1; margin-top: 10px; margin-bottom: 8px;">';
         $html .= '<tr>';
@@ -214,7 +233,10 @@ body {
         $html .= '<td style="width: 60%; text-align: center; padding: 5px; background-color: #e6f2ff; color: #000; font-weight: bold; font-size: 14px; border: 1px solid #cbd5e1;">';
         $html .= 'REPORTE DE NECROPSIA';
         $html .= '</td>';
-        $html .= '<td style="width: 20%; background-color: #fff; border: 1px solid #cbd5e1;"></td>';
+        // Esquina superior derecha: N°Reg
+        $html .= '<td style="width: 20%; text-align: right; padding: 5px; background-color: #fff; border: 1px solid #cbd5e1; font-size: 8pt; white-space: nowrap;">';
+        $html .= '<div><strong>N°Reg:</strong> ' . htmlspecialchars($numregLocal) . '</div>';
+        $html .= '</td>';
         $html .= '</tr>';
         $html .= '</table>';
     
@@ -361,7 +383,11 @@ body {
         $html = '<html><head><meta charset="UTF-8"><style>
             @page {
                 size: A4 landscape;
-                margin: 10mm;
+                margin-top: 10mm;
+                margin-left: 10mm;
+                margin-right: 10mm;
+                margin-bottom: 28mm; /* deja espacio para el footer/paginado */
+                footer: html_myfooter;
             }
             body {
                 font-family: Arial, sans-serif;
@@ -487,7 +513,12 @@ body {
                 text-align: left;
                 padding-left: 10px;
             }
-        </style></head><body>';
+        </style></head><body>
+        <htmlpagefooter name="myfooter">
+            <div style="text-align:center; font-size:8pt; color:#64748b;">
+                Página {PAGENO} de {nbpg}
+            </div>
+        </htmlpagefooter>';
 
         // Primera página exactamente como la segunda imagen (estilo minimalista con doble borde)
         $html .= '<div class="page">';

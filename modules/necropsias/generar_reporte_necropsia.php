@@ -4,6 +4,7 @@ require_once __DIR__ . '../../../vendor/autoload.php';
 use Mpdf\Mpdf;
 
 include_once '../../../conexion_grs_joya/conexion.php';
+$tzLima = new DateTimeZone('America/Lima');
 $conn = conectar_joya();
 
 if (!$conn) die('Error de conexión');
@@ -73,11 +74,20 @@ $mpdf = new Mpdf([
     'margin_right' => 10,
     'margin_top' => 15,
     'margin_bottom' => 15,
+    'margin_header' => 5,
+    'margin_footer' => 8,
     'simpleTables' => true,
     'useSubstitutions' => false,
     'autoPageBreak' => true,
     'tempDir' => $tempDir
 ]);
+
+// Fecha/hora arriba a la derecha (solo fecha y hora)
+$fechaReporte = (new DateTime('now', $tzLima))->format('d/m/Y H:i');
+$mpdf->SetHTMLHeader('<div style="text-align:right; font-size:9pt; color:#475569;">' . htmlspecialchars($fechaReporte) . '</div>');
+
+// Paginación al pie (centrado)
+$mpdf->SetHTMLFooter('<div style="text-align:center; font-size:9pt; color:#475569;">Página {PAGENO} de {nbpg}</div>');
 
 /* ===============================
    CABECERA

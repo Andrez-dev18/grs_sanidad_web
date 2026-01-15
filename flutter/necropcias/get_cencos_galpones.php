@@ -34,23 +34,23 @@ if (!$conexion) {
 
 mysqli_set_charset($conexion, "latin1");
 
-// --- Consulta combinada: CENCOS + GALPONES ---
 $query = "
     SELECT 
         c.codigo,
         c.nombre,
-        CAST(IFNULL(z.edad, 0) AS UNSIGNED) AS edad,
+        IFNULL(z.fec_ing_min, '') AS fec_ing_min,
         g.tcodint
     FROM ccos AS c
     LEFT JOIN (
         SELECT 
             a.tcencos,
-            DATEDIFF(NOW(), MIN(a.fec_ing)) + 1 AS edad 
+            DATE_FORMAT(MIN(a.fec_ing), '%Y-%m-%d') AS fec_ing_min
         FROM maes_zonas AS a 
         WHERE a.tcodigo IN ('P0001001','P0001002')  
         GROUP BY a.tcencos
     ) AS z ON c.codigo = z.tcencos
-    LEFT JOIN regcencosgalpones AS g ON c.codigo = g.tcencos
+    -- regcencosgalpones.tcencos guarda los 3 primeros dígitos del código (ej: 123456 -> 123)
+    LEFT JOIN regcencosgalpones AS g ON LEFT(c.codigo, 3) = g.tcencos
     WHERE 
         LEFT(c.codigo, 1) IN ('6', '5') 
         AND RIGHT(c.codigo, 3) <> '000' 
@@ -58,7 +58,6 @@ $query = "
         AND CHAR_LENGTH(c.codigo) = 6 
         AND LEFT(c.codigo, 3) <> '650'
         AND CAST(LEFT(c.codigo, 3) AS UNSIGNED) <= 667
-        AND IFNULL(z.edad, 0) > 0
     ORDER BY c.codigo ASC, g.tcodint ASC
 ";
 
@@ -85,7 +84,7 @@ while ($row = mysqli_fetch_assoc($result)) {
         $cencosMap[$codigo] = [
             'codigo' => $codigo,
             'nombre' => $row['nombre'],
-            'edad'   => (int)$row['edad'],
+            'fec_ing_min' => $row['fec_ing_min'], // YYYY-MM-DD (o '' si no hay)
             'galpones' => []
         ];
     }

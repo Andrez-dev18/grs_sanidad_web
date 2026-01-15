@@ -8,8 +8,11 @@ if (!$conn) {
     exit;
 }
 
-// Obtener parámetro de filtro: 'todos', 'activos', o vacío (activos por defecto)
 $filtro = $_GET['filtro'] ?? 'activos';
+// Fecha base para calcular edad (YYYY-MM-DD). Si no viene, usar hoy.
+$fechaInput = $_GET['fecha'] ?? '';
+$fechaObj = DateTime::createFromFormat('Y-m-d', $fechaInput);
+$fechaBase = $fechaObj ? $fechaObj->format('Y-m-d') : date('Y-m-d');
 
 // Construir condición WHERE según el filtro
 $condicionSwac = '';
@@ -22,7 +25,7 @@ $sql = "SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));
 SELECT a.codigo, a.nombre, IF(b.edad IS NULL, '0', b.edad) AS edad 
 FROM ccos AS a 
 LEFT JOIN (
-    SELECT a.tcencos, DATEDIFF(NOW(), MIN(a.fec_ing))+1 AS edad 
+    SELECT a.tcencos, DATEDIFF('$fechaBase', MIN(a.fec_ing))+1 AS edad 
     FROM maes_zonas AS a 
     WHERE a.tcodigo IN ('P0001001','P0001002')  
     GROUP BY tcencos
@@ -33,7 +36,6 @@ WHERE (LEFT(a.codigo,1) IN ('6','5')
     AND LENGTH(a.codigo)=6 
     AND LEFT(a.codigo,3)<>'650'
     AND LEFT(a.codigo,3) <= '667')
-AND IF(b.edad IS NULL, '0', b.edad) <> '0'
 ORDER BY a.nombre";
 
 $result = $conn->multi_query($sql);
