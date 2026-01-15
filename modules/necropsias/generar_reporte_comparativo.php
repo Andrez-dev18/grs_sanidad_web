@@ -285,6 +285,28 @@ function _generarPDF($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComp
 
     
     try {
+        // Evitar que cualquier Notice/Warning (o algún echo accidental) se mezcle con la salida binaria del PDF.
+        // Esto es especialmente importante en servidores con display_errors=On, donde un Notice rompe el PDF.
+        $oldDisplayErrors = ini_get('display_errors');
+        $oldErrorReporting = error_reporting();
+        ini_set('display_errors', '0');
+        // Suprimir warnings/notices durante la generación del PDF (mPDF 8.0 puede emitir Notices en PHP 8.x)
+        error_reporting($oldErrorReporting & ~E_NOTICE & ~E_WARNING);
+
+        // Buffer para poder limpiar cualquier salida previa antes de enviar el PDF
+        if (ob_get_level() === 0) {
+            ob_start();
+        }
+
+        // Asegurar tempDir existente y escribible
+        $tempDir = __DIR__ . '/../../pdf_tmp';
+        if (!is_dir($tempDir)) {
+            @mkdir($tempDir, 0775, true);
+        }
+        if (!is_dir($tempDir) || !is_writable($tempDir)) {
+            $tempDir = sys_get_temp_dir();
+        }
+
         $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8',
             'format' => [210,  $anchoMM], 
@@ -295,7 +317,7 @@ function _generarPDF($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComp
             'margin_bottom' => 10,
             'margin_header' => 5,
             'margin_footer' => 8,
-            'tempDir' => __DIR__ . '/../../pdf_tmp',
+            'tempDir' => $tempDir,
         ]);
 
         // Header/Footer se definen dentro del HTML con htmlpageheader/htmlpagefooter
@@ -314,10 +336,35 @@ function _generarPDF($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComp
         );
         
         $mpdf->WriteHTML($html);
+
+        // Limpiar cualquier salida (por ejemplo Notices) antes de imprimir el PDF
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
         $mpdf->Output('reporte_comparativo_' . date('Ymd_His') . '.pdf', 'I');
+        exit;
         
     } catch (Exception $e) {
+        // Si había buffer activo, limpiar para evitar "Data has already been sent..."
+        if (ob_get_level() > 0) {
+            @ob_end_clean();
+        }
+        // Restaurar configuración de errores si alcanzamos el catch
+        if (isset($oldDisplayErrors)) {
+            @ini_set('display_errors', $oldDisplayErrors);
+        }
+        if (isset($oldErrorReporting)) {
+            @error_reporting($oldErrorReporting);
+        }
         die('Error generando PDF: ' . $e->getMessage());
+    } finally {
+        // Restaurar configuración de errores (cuando no hacemos exit antes)
+        if (isset($oldDisplayErrors)) {
+            @ini_set('display_errors', $oldDisplayErrors);
+        }
+        if (isset($oldErrorReporting)) {
+            @error_reporting($oldErrorReporting);
+        }
     }
 }
 
@@ -1722,4 +1769,4 @@ function _generarHTMLReporte($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos,
     $html .= '</body></html>';
     return $html;
 }
-?>
+
