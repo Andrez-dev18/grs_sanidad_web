@@ -1240,7 +1240,7 @@ if (!$conexion) {
                             <th class="px-3 py-2 text-center">Galpón</th>
                             <th class="px-3 py-2 text-center">Edad</th>
                             <th class="px-3 py-2 text-left">Usuario</th>
-                            <th class="px-3 py-2 text-center">Fecha</th>
+                            <th class="px-3 py-2 text-center">Fecha Registro</th>
                             <th class="text-center">Opciones</th>
                         </tr>
                     </thead>
