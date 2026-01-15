@@ -280,14 +280,10 @@ foreach ($items as $itemIndex => $item) {
                 $tcodsistema = 0;
         }
 
-        // evidencia: mantener la existente si no hay nuevas imágenes
-        // Se actualizará después si hay nuevas imágenes para este registro específico
+      
         $evidencia = '';
         
-        // Si hay evidencias metadata para este nivel, marcar para actualización posterior
-        // (se manejará en la sección de procesamiento de imágenes)
-
-        // Asegurar valores numéricos válidos
+        
         $porcentaje1 = isset($reg['tporcentaje1']) ? (double)$reg['tporcentaje1'] : 0.0;
         $porcentaje2 = isset($reg['tporcentaje2']) ? (double)$reg['tporcentaje2'] : 0.0;
         $porcentaje3 = isset($reg['tporcentaje3']) ? (double)$reg['tporcentaje3'] : 0.0;
@@ -345,11 +341,7 @@ foreach ($items as $itemIndex => $item) {
             $affectedRows = $stmtUpdate->affected_rows;
             if ($affectedRows > 0) {
                 $actualizados++;
-                error_log("✓ Registro actualizado exitosamente: UUID=$tuuidRegistro, Sistema={$reg['tsistema']}, Nivel={$reg['tnivel']}, Filas afectadas: $affectedRows");
-            } else {
-                error_log("⚠ UPDATE ejecutado pero no afectó filas: UUID=$tuuidRegistro (puede que los datos sean idénticos)");
-                // No incrementar contadores, solo loguear
-            }
+            } 
         } else {
             $errores++;
             $errorMsg = "✗ Error al actualizar registro con UUID $tuuidRegistro: " . $stmtUpdate->error;
@@ -359,7 +351,6 @@ foreach ($items as $itemIndex => $item) {
         }
     }
 
-    // === PROCESAR IMÁGENES SI EXISTEN ===
     // Crear un mapa de tuuid -> nivel para asociar evidencias con registros específicos
     $tuuidPorNivel = [];
     foreach ($registros as $reg) {
@@ -390,7 +381,7 @@ foreach ($items as $itemIndex => $item) {
         error_log("=== FIN ARCHIVOS ===");
     }
     
-    // Niveles que deben procesarse (incluso si no tienen imágenes, para limpiar evidencias)
+    // Niveles que deben procesarse
     $nivelesProcesados = [];
     
     foreach ($evidenciasMetadata as $evidenciaKey => $evidenciaInfo) {
@@ -398,23 +389,23 @@ foreach ($items as $itemIndex => $item) {
         $nivel = $evidenciaInfo['nivel'] ?? '';
         $cantidad = isset($evidenciaInfo['cantidad']) ? (int)$evidenciaInfo['cantidad'] : 0;
         
+        $normalizedEvidenciaKey = str_replace(' ', '_', $evidenciaKey);
+        
         // Marcar este nivel como procesado
         $nivelesProcesados[] = $nivel;
         
-        error_log("Procesando evidencias para nivel: $nivel, cantidad esperada: $cantidad");
+       
         
         $rutasNivel = [];
         
-        // Si cantidad es 0, significa que el usuario eliminó todas las imágenes de este nivel
         if ($cantidad == 0) {
-            error_log("⚠ Nivel $nivel tiene cantidad 0 - se limpiarán las evidencias existentes");
-            $rutasEvidenciasPorNivel[$nivel] = ''; // Cadena vacía para limpiar
+            $rutasEvidenciasPorNivel[$nivel] = '';
             continue;
         }
         
-        // Procesar cada imagen esperada
         for ($i = 0; $i < $cantidad; $i++) {
-            $fileKey = 'evidencia_' . $evidenciaKey . '_' . $i;
+            
+            $$fileKey = 'evidencia_' . $normalizedEvidenciaKey . '_' . $i;
             
             // Intentar también con variaciones del nombre de la clave
             $fileFound = false;
@@ -423,7 +414,6 @@ foreach ($items as $itemIndex => $item) {
             if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
                 $fileFound = true;
             } else {
-                // Buscar variaciones (puede haber diferencias en normalización)
                 foreach ($_FILES as $key => $val) {
                     if (strpos($key, 'evidencia_') === 0 && 
                         strpos($key, $evidenciaKey) !== false && 
@@ -463,19 +453,15 @@ foreach ($items as $itemIndex => $item) {
         if (!empty($rutasNivel)) {
             $rutasComas = implode(',', $rutasNivel);
             $rutasEvidenciasPorNivel[$nivel] = $rutasComas;
-            error_log("✓ Rutas guardadas para nivel $nivel: $rutasComas");
-        } else if ($cantidad > 0) {
-            // Si se esperaban imágenes pero no se encontraron, mantener las existentes (no actualizar)
-            error_log("⚠ No se encontraron imágenes nuevas para el nivel: $nivel (se mantendrán las existentes)");
-        }
+            
+        } 
     }
     
-    // Actualizar evidencias en la base de datos usando tuuid (más preciso)
-    // Solo actualizar niveles que tienen nuevas imágenes o que deben limpiarse
+    
     foreach ($rutasEvidenciasPorNivel as $nivel => $rutasComas) {
-        // $rutasComas puede ser una cadena con rutas o cadena vacía (para limpiar)
+      
         if (isset($tuuidPorNivel[$nivel]) && !empty($tuuidPorNivel[$nivel])) {
-            // Actualizar cada registro del nivel usando su tuuid
+        
             foreach ($tuuidPorNivel[$nivel] as $tuuidReg) {
                 $updateEvidenciaSql = "UPDATE t_regnecropsia 
                               SET evidencia = ? 
@@ -485,22 +471,10 @@ foreach ($items as $itemIndex => $item) {
                     $stmtUpdateEvidencia->bind_param("ss", $rutasComas, $tuuidReg);
                     if ($stmtUpdateEvidencia->execute()) {
                         $affectedRows = $stmtUpdateEvidencia->affected_rows;
-                        if ($affectedRows > 0) {
-                            if (empty($rutasComas)) {
-                                error_log("✓ Limpiadas evidencias del registro con UUID $tuuidReg (nivel: $nivel)");
-                            } else {
-                                error_log("✓ Actualizado registro con UUID $tuuidReg (nivel: $nivel) con evidencia: $rutasComas");
-                            }
-                        } else {
-                            error_log("⚠ No se actualizó ningún registro con UUID $tuuidReg (puede que no exista)");
-                        }
-                    } else {
-                        error_log("✗ Error al actualizar evidencia para UUID $tuuidReg: " . $stmtUpdateEvidencia->error);
-                    }
+                       
+                    } 
                     $stmtUpdateEvidencia->close();
-                } else {
-                    error_log("✗ Error preparando consulta de actualización de evidencia para UUID $tuuidReg: " . $conn->error);
-                }
+                } 
             }
         } else {
             // Fallback: usar método anterior si no hay tuuid disponible
@@ -512,14 +486,8 @@ foreach ($items as $itemIndex => $item) {
                 $stmtUpdateEvidencia->bind_param("ssssss", $rutasComas, $granja, $galpon, $numreg, $fectra, $nivel);
                 if ($stmtUpdateEvidencia->execute()) {
                     $affectedRows = $stmtUpdateEvidencia->affected_rows;
-                    if (empty($rutasComas)) {
-                        error_log("✓ Limpiadas evidencias de $affectedRows registros para nivel: $nivel (método fallback)");
-                    } else {
-                        error_log("✓ Actualizados $affectedRows registros con evidencia para nivel: $nivel (método fallback)");
-                    }
-                } else {
-                    error_log("✗ Error al actualizar evidencia para nivel $nivel: " . $stmtUpdateEvidencia->error);
-                }
+                    
+                } 
                 $stmtUpdateEvidencia->close();
             }
         }
@@ -529,14 +497,6 @@ foreach ($items as $itemIndex => $item) {
 $stmtUpdate->close();
 $checkExiste->close();
 $conn->close();
-
-error_log("RESUMEN ACTUALIZACIÓN: Actualizados=$actualizados, No encontrados=$noEncontrados, Errores=$errores, Total items procesados=" . count($items));
-
-// Si no se actualizó ningún registro pero tampoco hubo errores ni "no encontrados",
-// puede ser que todos los registros ya tenían los mismos valores
-if ($actualizados == 0 && $noEncontrados == 0 && $errores == 0) {
-    error_log("⚠ ADVERTENCIA: No se actualizó ningún registro, pero tampoco hubo errores. Puede que todos los registros ya tengan los valores actualizados.");
-}
 
 echo json_encode([
     "success" => $actualizados > 0,

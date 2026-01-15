@@ -9,16 +9,17 @@ $length = intval($_POST['length']);
 $search = $_POST['search']['value'] ?? '';
 
 // Columnas visibles en la tabla (para ordenar)
-// DataTables: 0=counter(no ordenable), 1=tnumreg, 2=fecha_registro(tdate), 3=tcencos, 4=tgalpon, 5=tedad, 6=tuser, 7=tfectra
-// Mapeo: fecha_registro (columna 2) se ordena por tdate
+// DataTables: 0=counter(no ordenable), 1=tnumreg, 2=tfectra, 3=tgranja, 4=tcencos, 5=tcampania, 6=tgalpon, 7=tedad, 8=tuser, 9=tdate
 $columns_map = [
     1 => 'tnumreg',
-    2 => 'tdate',      // fecha_registro se ordena por tdate
-    3 => 'tcencos',
-    4 => 'tgalpon',
-    5 => 'tedad',
-    6 => 'tuser',
-    7 => 'tfectra'
+    2 => 'tfectra',    // fecha necropsia
+    3 => 'tgranja',    // granja (3 primeros dígitos) se ordena por tgranja
+    4 => 'tcencos',    // nombre se ordena por tcencos
+    5 => 'tcampania',  // campaña se ordena por tcampania (últimos 3 dígitos de tgranja)
+    6 => 'tgalpon',
+    7 => 'tedad',
+    8 => 'tuser',
+    9 => 'tdate'       // fecha registro
 ];
 
 $order_column_index = $_POST['order'][0]['column'] ?? 2;
@@ -32,9 +33,9 @@ $types = '';
 
 if (!empty($search)) {
     $like = "%$search%";
-    $where[] = "(tcencos LIKE ? OR tgranja LIKE ? OR CAST(tnumreg AS CHAR) LIKE ? OR tfectra LIKE ? OR tgalpon LIKE ? OR tuser LIKE ?)";
-    $params = [$like, $like, $like, $like, $like, $like];
-    $types = str_repeat('s', 6);
+    $where[] = "(tcencos LIKE ? OR tgranja LIKE ? OR CAST(tnumreg AS CHAR) LIKE ? OR tfectra LIKE ? OR tdate LIKE ? OR tgalpon LIKE ? OR tuser LIKE ?)";
+    $params = [$like, $like, $like, $like, $like, $like, $like];
+    $types = str_repeat('s', 7);
 }
 
 // Total lotes únicos (sin filtro)
@@ -64,12 +65,7 @@ if (!empty($where)) {
 }
 
 // Ordenar
-// Si es orden por fecha de registro (tdate), ordenar también por hora (ttime)
-if ($order_column === 'tdate') {
-    $sql .= " ORDER BY $order_column $order_dir, ttime $order_dir, tgranja ASC LIMIT ? OFFSET ?";
-} else {
-    $sql .= " ORDER BY $order_column $order_dir, tgranja ASC LIMIT ? OFFSET ?";
-}
+$sql .= " ORDER BY $order_column $order_dir, tgranja ASC LIMIT ? OFFSET ?";
 $params[] = $length;
 $params[] = $start;
 $types .= 'ii';
@@ -89,14 +85,30 @@ while ($row = $result->fetch_assoc()) {
     // Formatear fecha de necropsia
     $fechaNecropsia = date('d/m/Y', strtotime($row['tfectra']));
 
+    // Extraer granja (3 primeros dígitos de tgranja)
+    $granja = substr($row['tgranja'], 0, 3);
+    
+    // Extraer campaña (últimos 3 dígitos de tgranja)
+    $campania = strlen($row['tgranja']) >= 3 ? substr($row['tgranja'], -3) : '';
+    
+    // Extraer nombre (tcencos hasta antes de C=)
+    $nombre = $row['tcencos'];
+    if (strpos($nombre, 'C=') !== false) {
+        $nombre = trim(substr($nombre, 0, strpos($nombre, 'C=')));
+    }
+    
     $data[] = [
         'counter' => $counter++,
         'tgranja' => $row['tgranja'],
+        'granja' => $granja, // 3 primeros dígitos
         'tcencos' => $row['tcencos'],
+        'nombre' => $nombre, // Nombre hasta antes de C=
+        'campania' => $campania, // Últimos 3 dígitos de tgranja
         'tedad' => $row['tedad'],
         'tgalpon' => $row['tgalpon'],
         'tnumreg' => $row['tnumreg'],
         'tfectra' => $fechaNecropsia,
+        'tfectra_raw' => $row['tfectra'], // Formato Y-m-d para editar
         'tuser' => $row['tuser'],
         'tdate' => $row['tdate'],
         'fecha_registro' => $fechaRegistro

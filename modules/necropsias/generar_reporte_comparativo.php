@@ -4,6 +4,8 @@ ini_set('display_errors', 1);
 ini_set('log_errors', 1);
 
 date_default_timezone_set('America/Lima');
+// Zona horaria explícita para mostrar hora local en cabecera PDF
+$tzLima = new DateTimeZone('America/Lima');
 
 
 ob_start();
@@ -48,11 +50,14 @@ if (is_string($galpones) && $galpones !== 'todos') {
 }
 
 
-$sql = "SELECT DISTINCT
+$sql = "SELECT 
     tcencos, tgranja, tgalpon, tedad, tsistema, tnivel, tparametro, 
-    tporcentajetotal, tobservacion, tdate, tfectra
+    tporcentajetotal, tobservacion, tdate, tfectra, tnumreg, tcampania
 FROM t_regnecropsia 
-WHERE tdate >= ? AND tdate <= ?";
+WHERE tdate >= ? AND tdate <= ?
+    AND tgalpon IS NOT NULL 
+    AND tgalpon != '' 
+    AND tgalpon != '0'";
 
 $params = [];
 $types = "ss";
@@ -79,7 +84,15 @@ if ($galpones !== 'todos' && is_array($galpones) && !empty($galpones)) {
     }
 }
 
-$sql .= " ORDER BY tcencos, tgalpon, tsistema, tnivel, tparametro";
+$sql .= " ORDER BY 
+    CASE 
+        WHEN LOWER(tsistema) LIKE '%inmunol%' THEN 1
+        WHEN LOWER(tsistema) LIKE '%digestiv%' THEN 2
+        WHEN LOWER(tsistema) LIKE '%respirat%' THEN 3
+        WHEN LOWER(tsistema) LIKE '%evaluaci%' AND LOWER(tsistema) LIKE '%físic%' THEN 4
+        ELSE 5
+    END,
+    tsistema, tnivel, tparametro, tcencos, tgalpon";
 
 $stmt = $conn->prepare($sql);
 
@@ -99,6 +112,20 @@ $result = $stmt->get_result();
 
 $registros = [];
 while ($row = $result->fetch_assoc()) {
+    // Filtrar galpones sin número o con 0
+    $galpon = trim($row['tgalpon'] ?? '');
+    
+    if (empty($galpon) || $galpon === '0') {
+        continue;
+    }
+    
+    // Asegurar que tgalpon y tedad estén presentes
+    if (!isset($row['tgalpon']) || !isset($row['tedad'])) {
+        // Si no están en el registro, usar los valores tal cual vienen de la BD
+        $row['tgalpon'] = $galpon;
+        $row['tedad'] = $row['tedad'] ?? '0';
+    }
+    
     $registros[] = $row;
 }
 
@@ -145,24 +172,47 @@ while ($row = $resultTodosNiveles->fetch_assoc()) {
 $conn->close();
 
 if (empty($registros)) {
+    // Si se solicita verificar (desde el frontend), devolver JSON
+    if (isset($_GET['check']) && $_GET['check'] == '1') {
+        header('Content-Type: application/json');
+        echo json_encode(['tiene_resultados' => false, 'mensaje' => 'No se encontraron registros para los filtros especificados']);
+        exit;
+    }
+    // Si no hay check, mostrar mensaje normal
     die('No se encontraron registros para los filtros especificados');
 }
 
-// Agrupar datos por cenco y galpón
-$datosAgrupados = [];
+// Si se solicita verificar (desde el frontend) y SÍ hay registros, devolver JSON y salir
+if (isset($_GET['check']) && $_GET['check'] == '1') {
+    header('Content-Type: application/json');
+    echo json_encode(['tiene_resultados' => true]);
+    exit;
+}
+
+// Agrupar datos por BLOQUE (tdate, tfectra, tnumreg, tgranja, tcampania, tedad, tgalpon)
+// Cada bloque representa una columna (% y Obs) en el reporte
+$bloques = [];
 $cencosUnicos = [];
 foreach ($registros as $reg) {
-    $key = $reg['tcencos'] . '_' . $reg['tgalpon'];
-    if (!isset($datosAgrupados[$key])) {
-        $datosAgrupados[$key] = [
+    // Clave del bloque: todos los campos que lo definen
+    $keyBloque = $reg['tdate'] . '_' . $reg['tfectra'] . '_' . $reg['tnumreg'] . '_' . 
+                 $reg['tgranja'] . '_' . ($reg['tcampania'] ?? '') . '_' . 
+                 $reg['tedad'] . '_' . $reg['tgalpon'];
+    
+    if (!isset($bloques[$keyBloque])) {
+        $bloques[$keyBloque] = [
             'tcencos' => $reg['tcencos'],
             'tgranja' => $reg['tgranja'],
-            'tgalpon' => $reg['tgalpon'],
+            'tgalpon' => trim($reg['tgalpon']),
             'tedad' => $reg['tedad'],
+            'tdate' => $reg['tdate'],
+            'tfectra' => $reg['tfectra'],
+            'tnumreg' => $reg['tnumreg'],
+            'tcampania' => $reg['tcampania'] ?? '',
             'registros' => []
         ];
     }
-    $datosAgrupados[$key]['registros'][] = $reg;
+    $bloques[$keyBloque]['registros'][] = $reg;
     
     // Agrupar cencos únicos
     if (!isset($cencosUnicos[$reg['tcencos']])) {
@@ -173,28 +223,48 @@ foreach ($registros as $reg) {
 // Determinar si es comparativo entre cencos (más de un cenco)
 $esComparativoCencos = count($cencosUnicos) > 1;
 
-// Agrupar galpones por CENCO (necesario para ambos formatos)
-$galponesUnicos = [];
-$galponesPorCenco = [];
-foreach ($datosAgrupados as $key => $grupo) {
-    $galponKey = $grupo['tgalpon'];
-    if (!isset($galponesUnicos[$galponKey])) {
-        $galponesUnicos[$galponKey] = [
-            'tcencos' => $grupo['tcencos'],
-            'tgranja' => $grupo['tgranja'],
-            'tedad' => $grupo['tedad']
-        ];
+// Agrupar bloques directamente por CENCO
+$galponesUnicos = []; // Para la leyenda: galpones únicos con su edad por CENCO
+$galponesPorCenco = []; // Estructura: [cenco => ['granja' => ..., 'bloques' => [keyBloque1, keyBloque2, ...]]]
+foreach ($bloques as $keyBloque => $bloque) {
+    $galponKey = $bloque['tgalpon'];
+    $cenco = $bloque['tcencos'];
+    
+    // Filtrar galpones sin número o con 0
+    if (empty($galponKey) || $galponKey == '0') {
+        continue;
     }
-    // Agrupar por CENCO para la leyenda
-    $cenco = $grupo['tcencos'];
+    
+    $edadGalpon = $bloque['tedad'] ?? '0';
+    
+    // Agrupar galpones únicos para la leyenda (por CENCO)
+    $keyLeyenda = $cenco . '_' . $galponKey;
+    if (!isset($galponesUnicos[$keyLeyenda])) {
+        $galponesUnicos[$keyLeyenda] = [
+            'tcencos' => $cenco,
+            'tgranja' => $bloque['tgranja'],
+            'tgalpon' => $galponKey,
+            'tedad' => $edadGalpon
+        ];
+    } else {
+        // Si la edad actual es 0 o vacía y la nueva no lo es, actualizar
+        if (($galponesUnicos[$keyLeyenda]['tedad'] == '0' || empty($galponesUnicos[$keyLeyenda]['tedad'])) 
+            && $edadGalpon != '0' && !empty($edadGalpon)) {
+            $galponesUnicos[$keyLeyenda]['tedad'] = $edadGalpon;
+        }
+    }
+    
+    // Agrupar bloques directamente por CENCO
     if (!isset($galponesPorCenco[$cenco])) {
         $galponesPorCenco[$cenco] = [
-            'granja' => $grupo['tgranja'],
-            'galpones' => []
+            'granja' => $bloque['tgranja'],
+            'bloques' => [] // Lista de bloques (claves) para este CENCO
         ];
     }
-    if (!in_array($galponKey, $galponesPorCenco[$cenco]['galpones'])) {
-        $galponesPorCenco[$cenco]['galpones'][] = $galponKey;
+    
+    // Agregar bloque si no existe
+    if (!in_array($keyBloque, $galponesPorCenco[$cenco]['bloques'])) {
+        $galponesPorCenco[$cenco]['bloques'][] = $keyBloque;
     }
 }
 // Ordenar galpones
@@ -202,18 +272,18 @@ ksort($galponesUnicos);
 
 // Generar reporte según formato
 if ($formato === 'excel') {
-    _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco);
+    _generarExcel($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco);
 } else {
-    _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco);
+    _generarPDF($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco);
 }
 
-function _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco) {
+function _generarPDF($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco) {
     require_once '../../vendor/autoload.php';
-
+    
     $numColumnas = 3 + (2 * count($galponesUnicos));
     $anchoMM = max(297, 60 + ($numColumnas * 28));
 
-
+    
     try {
         $mpdf = new \Mpdf\Mpdf([
             'mode' => 'utf-8',
@@ -223,12 +293,17 @@ function _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, 
             'margin_right' => 8,
             'margin_top' => 15,
             'margin_bottom' => 10,
+            'margin_header' => 5,
+            'margin_footer' => 8,
             'tempDir' => __DIR__ . '/../../pdf_tmp',
         ]);
 
+        // Header/Footer se definen dentro del HTML con htmlpageheader/htmlpagefooter
+        // (más confiable cuando hay tablas grandes y @page en el HTML)
+
 
         $html = _generarHTMLReporte(
-            $datosAgrupados, 
+            $bloques, 
             $fecha_inicio, 
             $fecha_fin, 
             $cencosUnicos, 
@@ -237,7 +312,7 @@ function _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, 
             $galponesUnicos,
             $galponesPorCenco 
         );
-
+        
         $mpdf->WriteHTML($html);
         $mpdf->Output('reporte_comparativo_' . date('Ymd_His') . '.pdf', 'I');
         
@@ -246,13 +321,13 @@ function _generarPDF($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, 
     }
 }
 
-function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco) {
+function _generarExcel($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco) {
     try {
-        require_once '../../vendor/autoload.php';
-        
+    require_once '../../vendor/autoload.php';
+    
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        
+    $sheet = $spreadsheet->getActiveSheet();
+    
         // === Logo ===
     $logoPath = __DIR__ . '/logo.png';
     $logoObj = null;
@@ -295,7 +370,8 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
     // Calcular número de columnas totales
     $numCols = 2; // Nivel, Parámetro (o Sistema si se usa)
     foreach ($galponesPorCenco as $info) {
-        $numCols += count($info['galpones']) * 2; // % y Obs por cada galpón
+        $numBloques = isset($info['bloques']) && is_array($info['bloques']) ? count($info['bloques']) : 0;
+        $numCols += $numBloques * 2; // % y Obs por cada bloque del CENCO
     }
     // Si hay más de un CENCO, no contamos Sistema como columna separada
     if (count($galponesPorCenco) <= 1) {
@@ -375,18 +451,20 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
     $row++;
     
     // === Período ===
-    $sheet->setCellValue('A' . $row, 'Período: ' . $fecha_inicio . ' - ' . $fecha_fin);
-    $sheet->mergeCells('A' . $row . ':' . $lastCol . $row);
-    $sheet->getStyle('A' . $row)->applyFromArray([
+    $fecha_inicio_formatted = date('d/m/Y', strtotime($fecha_inicio));
+    $fecha_fin_formatted = date('d/m/Y', strtotime($fecha_fin));
+    $sheet->setCellValue('A' . $row, 'Período: ' . $fecha_inicio_formatted . ' - ' . $fecha_fin_formatted);
+        $sheet->mergeCells('A' . $row . ':' . $lastCol . $row);
+        $sheet->getStyle('A' . $row)->applyFromArray([
         'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1E3A8A']],
         'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER],
-        'fill' => [
+            'fill' => [
             'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
             'startColor' => ['rgb' => 'FFFFFF']
-        ]
-    ]);
-    $row++;
-    
+            ]
+        ]);
+        $row++;
+        
     $coloresBaseCenco = [
         '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
         '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#84cc16',
@@ -431,22 +509,39 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
     };
     
 
+    // Asignar colores a cada CENCO - mejorado para evitar repeticiones
+    $coloresUsados = [];
     foreach (array_keys($galponesPorCenco) as $cenco) {
         if ($idxColor < count($coloresBaseCenco)) {
-            $coloresPorCenco[$cenco] = strtoupper(ltrim($coloresBaseCenco[$idxColor], '#'));
-        } else {
-            // Generar color dinámicamente usando HSL (convertido a hex)
-            $hue = ($idxColor * 137.508) % 360;
-            $saturation = 55 + (($idxColor % 4) * 5);
-            $lightness = 48 + (($idxColor % 3) * 2);
-            $coloresPorCenco[$cenco] = $hslToHex($hue, $saturation, $lightness);
+            $colorHex = strtoupper(ltrim($coloresBaseCenco[$idxColor], '#'));
+            $coloresPorCenco[$cenco] = $colorHex;
+            $coloresUsados[] = $colorHex;
+    } else {
+            // Generar color dinámicamente usando HSL con golden angle para distribución uniforme
+            $hue = (($idxColor - count($coloresBaseCenco)) * 137.508) % 360;
+            $saturation = 50 + (($idxColor % 5) * 4); // Entre 50-66%
+            $lightness = 45 + (($idxColor % 4) * 3); // Entre 45-54%
+            $colorHex = strtoupper(ltrim($hslToHex($hue, $saturation, $lightness), '#'));
+            
+            // Verificar que no sea muy similar a colores ya usados
+            $intentos = 0;
+            while ($intentos < 10 && in_array($colorHex, $coloresUsados)) {
+                $hue = ($hue + 30) % 360;
+                $saturation = 50 + (($idxColor + $intentos) % 5 * 4);
+                $lightness = 45 + (($idxColor + $intentos) % 4 * 3);
+                $colorHex = strtoupper(ltrim($hslToHex($hue, $saturation, $lightness), '#'));
+                $intentos++;
+            }
+            
+            $coloresPorCenco[$cenco] = $colorHex;
+            $coloresUsados[] = $colorHex;
         }
         $idxColor++;
     }
     
     
     if (!empty($galponesPorCenco)) {
-        $row++; 
+        $row++;
         
        
         $sheet->setCellValue('A' . $row, 'LEYENDA');
@@ -469,7 +564,9 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
         // Cabeceras de la tabla de leyenda
         $sheet->setCellValue('A' . $row, 'Color');
         $sheet->setCellValue('B' . $row, 'CENCO');
-        $sheet->setCellValue('C' . $row, 'Galpones (Edad en días)');
+        $sheet->setCellValue('C' . $row, 'Galpones');
+        // Aumentar ancho de columna CENCO
+        $sheet->getColumnDimension('B')->setWidth(25);
         $sheet->getStyle('A' . $row . ':C' . $row)->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => '1E40AF']],
             'fill' => [
@@ -490,11 +587,14 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
         foreach ($galponesPorCenco as $cenco => $info) {
             $colorHex = $coloresPorCenco[$cenco];
             
-            // Construir lista de galpones con sus edades
+            // Construir lista de galpones (sin edades, agrupados por CENCO)
             $galponesList = [];
-            foreach ($info['galpones'] as $galpon) {
-                $edad = $galponesUnicos[$galpon]['tedad'] ?? '0';
-                $galponesList[] = 'Galpón ' . $galpon . ' (' . $edad . ' días)';
+            foreach ($galponesUnicos as $keyLeyenda => $det) {
+                if ($det['tcencos'] == $cenco) {
+                    $galpon = $det['tgalpon'];
+                    $texto = 'Galpón ' . $galpon;
+                    $galponesList[] = $texto;
+                }
             }
             $galponesStr = implode(', ', $galponesList);
             
@@ -555,24 +655,116 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
         
         // Ajustar ancho de columnas de la leyenda
         $sheet->getColumnDimension('A')->setWidth(12);
-        $sheet->getColumnDimension('B')->setWidth(20);
+        $sheet->getColumnDimension('B')->setWidth(25); // Aumentado para CENCO
         $sheet->getColumnDimension('C')->setWidth(50);
         
         $row++; // Espacio después de la leyenda
     }
     
-    // === Mapa de datos (igual al PDF) ===
+    // === Función para ordenar niveles y parámetros según orden específico ===
+    function ordenarNivelesYParametros($sistema, $niveles) {
+        $sLower = mb_strtolower(trim($sistema), 'UTF-8');
+        $nivelesOrdenados = [];
+        
+        // Definir orden de niveles y parámetros por sistema
+        $ordenNiveles = [];
+        
+        if (strpos($sLower, 'inmunol') !== false) {
+            // Sistema Inmunológico
+            $ordenNiveles = [
+                'Índice Bursal' => ['Normal', 'Atrofia', 'Severa Atrofia'],
+                'Mucosa de la bursa' => ['Normal', 'Petequias', 'Hemorragia'],
+                'Timos' => ['Normal', 'Atrofiados', 'Aspecto Normal', 'Congestionados']
+            ];
+        } elseif (strpos($sLower, 'digestiv') !== false) {
+            // Sistema Digestivo
+            $ordenNiveles = [
+                'Hígados' => ['Normal', 'Esteatosico', 'Tamaño Normal', 'Hipertrofiado'],
+                'Vesícula biliar' => ['Color normal', 'Color claro', 'Tamaño normal', 'Atrofiado', 'Hipertrofiado'],
+                'Erosión de molleja' => ['Normal', 'Grado 1', 'Grado 2', 'Grado 3', 'Grado 4'],
+                'Retracción del páncreas' => ['Normal', 'Retraido'],
+                'Absorcion del saco vitelino' => ['Si', 'No'],
+                'Enteritis' => ['Normal', 'Leve', 'Moderado', 'Severo'],
+                'Contenido cecal' => ['Normal', 'Gas', 'Espuma'],
+                'Alimento sin digerir' => ['Si', 'No'],
+                'Heces anaranjadas' => ['Si', 'No'],
+                'Lesión oral' => ['Si', 'No'],
+                'Tonicidad Intestinal' => ['Buena', 'Regular', 'Mala']
+            ];
+        } elseif (strpos($sLower, 'respirat') !== false) {
+            // Sistema Respiratorio
+            $ordenNiveles = [
+                'Tráquea' => ['Normal', 'Leve', 'Moderada', 'Severa'],
+                'Pulmón' => ['Normal', 'Neumónico'],
+                'Sacos aéreos' => ['Normal', 'Turbio', 'Con material caseoso']
+            ];
+        } elseif (strpos($sLower, 'evaluaci') !== false && strpos($sLower, 'físic') !== false) {
+            // Evaluación física
+            $ordenNiveles = [
+                'Pododermatitis' => ['Grado 0', 'Grado 1', 'Grado 2', 'Grado 3', 'Grado 4'],
+                'Color de tarsos' => ['3.5', '4', '4.5', '5', '5.5', '6']
+            ];
+        }
+        
+        // Si hay orden definido, aplicarlo
+        if (!empty($ordenNiveles)) {
+            foreach ($ordenNiveles as $nivelNombre => $parametrosOrden) {
+                if (isset($niveles[$nivelNombre])) {
+                    $parametros = $niveles[$nivelNombre];
+                    // Ordenar parámetros según el orden definido
+                    $parametrosOrdenados = [];
+                    $parametrosRestantes = [];
+                    
+                    // Primero agregar los parámetros en el orden especificado
+                    foreach ($parametrosOrden as $paramOrden) {
+                        foreach ($parametros as $param) {
+                            if (mb_strtolower(trim($param)) === mb_strtolower(trim($paramOrden))) {
+                                $parametrosOrdenados[] = $param;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Agregar parámetros que no están en el orden definido
+                    foreach ($parametros as $param) {
+                        if (!in_array($param, $parametrosOrdenados)) {
+                            $parametrosRestantes[] = $param;
+                        }
+                    }
+                    
+                    $nivelesOrdenados[$nivelNombre] = array_merge($parametrosOrdenados, $parametrosRestantes);
+                }
+            }
+            
+            // Agregar niveles que no están en el orden definido
+            foreach ($niveles as $nivelNombre => $parametros) {
+                if (!isset($nivelesOrdenados[$nivelNombre])) {
+                    $nivelesOrdenados[$nivelNombre] = $parametros;
+                }
+            }
+        } else {
+            // Si no hay orden definido, mantener el orden original
+            $nivelesOrdenados = $niveles;
+        }
+        
+        return $nivelesOrdenados;
+    }
+    
+    // === Mapa de datos usando bloques como clave ===
+    // Estructura: $mapaCompleto[sistema][nivel][parametro][keyBloque] = [porc, obs, ...]
     $mapaCompleto = [];
-    foreach ($datosAgrupados as $grupo) {
-        foreach ($grupo['registros'] as $reg) {
+    foreach ($bloques as $keyBloque => $bloque) {
+        foreach ($bloque['registros'] as $reg) {
             $s = $reg['tsistema'] ?? '';
             $n = $reg['tnivel'] ?? '';
             $p = $reg['tparametro'] ?? '';
-            $g = $reg['tgalpon'] ?? '';
-            if ($s !== '' && $n !== '' && $p !== '' && $g !== '') {
-                $mapaCompleto[$s][$n][$p][$g] = [
+            
+            if ($s !== '' && $n !== '' && $p !== '') {
+                // Usar la clave del bloque como identificador
+                $mapaCompleto[$s][$n][$p][$keyBloque] = [
                     'porc' => $reg['tporcentajetotal'] ?? '0',
-                    'obs' => $reg['tobservacion'] ?? ''
+                    'obs' => $reg['tobservacion'] ?? '',
+                    'cenco' => $bloque['tcencos']
                 ];
             }
         }
@@ -588,10 +780,14 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
         elseif (strpos($sLower, 'digestiv') !== false) $pos = 1;
         elseif (strpos($sLower, 'respirat') !== false) $pos = 2;
         elseif (strpos($sLower, 'evaluaci') !== false && strpos($sLower, 'físic') !== false) $pos = 3;
+        
+        // Ordenar niveles y parámetros dentro del sistema
+        $nivelesOrdenados = ordenarNivelesYParametros($sistema, $niveles);
+        
         if ($pos !== false) {
-            $sistemasFinales[$pos] = [$sistema => $niveles];
+            $sistemasFinales[$pos] = [$sistema => $nivelesOrdenados];
         } else {
-            $otros[$sistema] = $niveles;
+            $otros[$sistema] = $nivelesOrdenados;
         }
     }
     ksort($sistemasFinales);
@@ -631,28 +827,37 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
                 ]
             ]
         ]);
-        $row++;
-        
+    $row++;
+    
         // === Fila 1: Agrupación por CENCO (igual al PDF) ===
         $headerRow1 = $row;
-        $col = 1;
+    $col = 1;
         
         if (count($galponesPorCenco) > 1) {
-            // Nivel (rowspan 2)
+            // Nivel (rowspan 3)
             $sheet->setCellValueByColumnAndRow($col++, $row, 'Nivel');
-            // Parámetro (rowspan 2)
+            // Parámetro (rowspan 3)
             $sheet->setCellValueByColumnAndRow($col++, $row, 'Parámetro');
             
-            // CENCOS con colspan
+            // Fila 1: CENCOS (sin fechas)
             foreach ($galponesPorCenco as $cenco => $info) {
-                $colorHex = $coloresPorCenco[$cenco];
-                $numColsCenco = count($info['galpones']) * 2;
+                $colorHex = isset($coloresPorCenco[$cenco]) ? $coloresPorCenco[$cenco] : '3B82F6';
+                $colorHex = strtoupper(ltrim($colorHex, '#'));
+                // Calcular columnas considerando bloques del CENCO
+                $numBloques = isset($info['bloques']) && is_array($info['bloques']) ? count($info['bloques']) : 0;
+                $numColsCenco = $numBloques * 2; // % y Obs por cada bloque
                 $startCol = $col;
                 $endCol = $col + $numColsCenco - 1;
                 
-                $sheet->setCellValueByColumnAndRow($col, $row, 'CENCO ' . $cenco . "\n" . $info['granja']);
-                $sheet->mergeCells($sheet->getCellByColumnAndRow($startCol, $row)->getCoordinate() . ':' . $sheet->getCellByColumnAndRow($endCol, $row)->getCoordinate());
-                $sheet->getStyle($sheet->getCellByColumnAndRow($startCol, $row)->getCoordinate())->applyFromArray([
+                // Construir texto del CENCO (sin fechas)
+                $cencoText = 'CENCO ' . $cenco . "\n" . $info['granja'];
+                
+                $sheet->setCellValueByColumnAndRow($col, $row, $cencoText);
+                $startCoord = $sheet->getCellByColumnAndRow($startCol, $row)->getCoordinate();
+                $endCoord = $sheet->getCellByColumnAndRow($endCol, $row)->getCoordinate();
+                $sheet->mergeCells($startCoord . ':' . $endCoord);
+                // IMPORTANTE: aplicar estilo a TODO el rango combinado para que se vea el color
+                $sheet->getStyle($startCoord . ':' . $endCoord)->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 8.5],
                     'fill' => [
                         'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
@@ -673,18 +878,67 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
             $sheet->setCellValueByColumnAndRow($col++, $row, 'Nivel');
             $sheet->setCellValueByColumnAndRow($col++, $row, 'Parámetro');
         }
-        $row++;
+    $row++;
+    
+        // === Fila 2: Fechas por bloque (celdas que abarcan cada par % y Obs) ===
+    $col = 1;
+        if (count($galponesPorCenco) > 1) {
+            $col = 3; // Después de Nivel y Parámetro
+        } else {
+            $col = 3;
+        }
         
-        // === Fila 2: Encabezados individuales (% y Obs) ===
+        foreach ($galponesPorCenco as $cenco => $info) {
+            $colorHex = isset($coloresPorCenco[$cenco]) ? $coloresPorCenco[$cenco] : '#3B82F6';
+            // Iterar sobre los bloques del CENCO directamente
+            if (isset($info['bloques']) && is_array($info['bloques'])) {
+                foreach ($info['bloques'] as $keyBloque) {
+                    if (isset($bloques[$keyBloque])) {
+                        $bloque = $bloques[$keyBloque];
+                        $tdateFormatted = date('d/m/Y', strtotime($bloque['tdate']));
+                        $tfectraFormatted = date('d/m/Y', strtotime($bloque['tfectra']));
+                        $edad = $bloque['tedad'] ?? '0';
+                        $fechasText = "Reg: $tdateFormatted | Nec: $tfectraFormatted | Edad: $edad días";
+                        
+                        $startColFechas = $col;
+                        $endColFechas = $col + 1; // Abarca % y Obs (2 columnas)
+                        
+                        $sheet->setCellValueByColumnAndRow($col, $row, $fechasText);
+                        $sheet->mergeCells($sheet->getCellByColumnAndRow($startColFechas, $row)->getCoordinate() . ':' . $sheet->getCellByColumnAndRow($endColFechas, $row)->getCoordinate());
+                        $sheet->getStyle($sheet->getCellByColumnAndRow($startColFechas, $row)->getCoordinate())->applyFromArray([
+                            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 7.5],
+                            'fill' => [
+                                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                                'startColor' => ['rgb' => $colorHex]
+                            ],
+                            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER, 'wrapText' => true],
+        'borders' => [
+            'allBorders' => [
+                                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                                    'color' => ['rgb' => 'CBD5E1']
+                                ]
+                            ]
+                        ]);
+                        $col = $endColFechas + 1;
+                    }
+                }
+            }
+        }
+    $row++;
+    
+        // === Fila 3: Encabezados individuales (% y Obs) ===
         $col = 1;
         
-        if (count($galponesPorCenco) <= 1) {
+        // Si hay más de un CENCO, empezar después de Nivel (col 1) y Parámetro (col 2)
+        if (count($galponesPorCenco) > 1) {
+            $col = 3; // Después de Nivel y Parámetro
+        } else {
             // Si solo hay un CENCO, ya pusimos Nivel y Parámetro en la fila anterior
             $col = 3;
         }
         
         foreach ($galponesPorCenco as $cenco => $info) {
-            $colorHex = $coloresPorCenco[$cenco];
+            $colorHex = isset($coloresPorCenco[$cenco]) ? $coloresPorCenco[$cenco] : '#3b82f6';
             $rgb = $hexToRgb('#' . $colorHex);
             // Calcular color con transparencia (similar a rgba en PDF)
             $bgColorR = min(255, $rgb['r'] + round((255 - $rgb['r']) * 0.88));
@@ -692,40 +946,49 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
             $bgColorB = min(255, $rgb['b'] + round((255 - $rgb['b']) * 0.88));
             $bgColor = sprintf('%02X%02X%02X', $bgColorR, $bgColorG, $bgColorB);
             
-            foreach ($info['galpones'] as $galpon) {
-                // % Galpón
-                $sheet->setCellValueByColumnAndRow($col++, $row, '% Galpón ' . $galpon);
-                $sheet->getStyle($sheet->getCellByColumnAndRow($col - 1, $row)->getCoordinate())->applyFromArray([
-                    'font' => ['size' => 8, 'color' => ['rgb' => '0C4A6E']],
-                    'fill' => [
-                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => $bgColor]
-                    ],
-                    'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
-                    'borders' => [
-                        'allBorders' => [
-                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                            'color' => ['rgb' => 'CBD5E1']
+            // Iterar sobre los bloques del CENCO directamente
+            if (isset($info['bloques']) && is_array($info['bloques'])) {
+                foreach ($info['bloques'] as $keyBloque) {
+                    if (isset($bloques[$keyBloque])) {
+                        $bloque = $bloques[$keyBloque];
+                        $galpon = $bloque['tgalpon'];
+                        
+                        // % Galpón (sin fechas, solo número de galpón)
+                        $headerText = '% Galpón ' . $galpon;
+                        $sheet->setCellValueByColumnAndRow($col++, $row, $headerText);
+                    $sheet->getStyle($sheet->getCellByColumnAndRow($col - 1, $row)->getCoordinate())->applyFromArray([
+                        'font' => ['size' => 7.5, 'color' => ['rgb' => '0C4A6E']],
+                        'fill' => [
+                            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => $bgColor]
+                        ],
+                        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER, 'wrapText' => true],
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                                'color' => ['rgb' => 'CBD5E1']
+                            ]
                         ]
-                    ]
-                ]);
-                
-                // Obs Galpón
-                $sheet->setCellValueByColumnAndRow($col++, $row, 'Obs Galpón ' . $galpon);
-                $sheet->getStyle($sheet->getCellByColumnAndRow($col - 1, $row)->getCoordinate())->applyFromArray([
-                    'font' => ['size' => 8, 'color' => ['rgb' => '0C4A6E']],
-                    'fill' => [
-                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                        'startColor' => ['rgb' => $bgColor]
-                    ],
-                    'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER],
-                    'borders' => [
-                        'allBorders' => [
-                            'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                            'color' => ['rgb' => 'CBD5E1']
+                    ]);
+                    
+                    $obsHeaderText = 'Obs Galpón ' . $galpon;
+                    $sheet->setCellValueByColumnAndRow($col++, $row, $obsHeaderText);
+                    $sheet->getStyle($sheet->getCellByColumnAndRow($col - 1, $row)->getCoordinate())->applyFromArray([
+                        'font' => ['size' => 7.5, 'color' => ['rgb' => '0C4A6E']],
+                        'fill' => [
+                            'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                            'startColor' => ['rgb' => $bgColor]
+                        ],
+                        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER, 'wrapText' => true],
+                        'borders' => [
+                            'allBorders' => [
+                                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                                'color' => ['rgb' => 'CBD5E1']
+                            ]
                         ]
-                    ]
-                ]);
+                    ]);
+                    }
+                }
             }
         }
         
@@ -741,7 +1004,7 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
                 
                 // Nivel (con rowspan) - solo en la primera fila del nivel
                 if ($i === 0) {
-                    $sheet->setCellValueByColumnAndRow($col++, $row, $nivel);
+                $sheet->setCellValueByColumnAndRow($col++, $row, $nivel);
                 } else {
                     $col++; // Saltar columna de Nivel
                 }
@@ -749,20 +1012,40 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
                 // Parámetro
                 $sheet->setCellValueByColumnAndRow($col++, $row, $parametro);
                 
-                // Datos por galpón
+                // Datos por CENCO (iterar sobre bloques directamente)
                 foreach ($galponesPorCenco as $cenco => $info) {
-                    foreach ($info['galpones'] as $galpon) {
-                        $porc = $mapaCompleto[$sistema][$nivel][$parametro][$galpon]['porc'] ?? '0';
-                        
-                        // % Galpón
-                        $sheet->setCellValueByColumnAndRow($col++, $row, $porc);
-                        
-                        // Obs Galpón (solo en la primera fila del nivel, con rowspan)
-                        if ($i === 0) {
-                            $obsPrimero = $mapaCompleto[$sistema][$nivel][$parametros[0]][$galpon]['obs'] ?? '';
-                            $sheet->setCellValueByColumnAndRow($col++, $row, $obsPrimero);
-                        } else {
-                            $col++; // Saltar columna de Obs
+                    // Iterar sobre los bloques del CENCO directamente
+                    if (isset($info['bloques']) && is_array($info['bloques'])) {
+                        foreach ($info['bloques'] as $keyBloque) {
+                            // Verificar que el dato pertenezca a este CENCO
+                            $porc = '0';
+                            $obs = '';
+                            if (isset($mapaCompleto[$sistema][$nivel][$parametro][$keyBloque])) {
+                                $datosRegistro = $mapaCompleto[$sistema][$nivel][$parametro][$keyBloque];
+                                // Solo usar si el CENCO coincide
+                                if (isset($datosRegistro['cenco']) && $datosRegistro['cenco'] == $cenco) {
+                                    $porc = $datosRegistro['porc'] ?? '0';
+                                    $obs = $datosRegistro['obs'] ?? '';
+                                }
+                            }
+                            
+                            // % Galpón (par de % y Obs para este bloque del CENCO)
+                            $sheet->setCellValueByColumnAndRow($col++, $row, $porc);
+                            
+                            // Obs Galpón (solo en la primera fila del nivel, con rowspan)
+                            if ($i === 0) {
+                                $primerParametro = !empty($parametros) ? $parametros[0] : '';
+                                $obsPrimero = '';
+                                if (isset($mapaCompleto[$sistema][$nivel][$primerParametro][$keyBloque])) {
+                                    $datosPrimero = $mapaCompleto[$sistema][$nivel][$primerParametro][$keyBloque];
+                                    if (isset($datosPrimero['cenco']) && $datosPrimero['cenco'] == $cenco) {
+                                        $obsPrimero = $datosPrimero['obs'] ?? '';
+                                    }
+                                }
+                                $sheet->setCellValueByColumnAndRow($col++, $row, $obsPrimero);
+                            } else {
+                                $col++; // Saltar columna de Obs
+                            }
                         }
                     }
                 }
@@ -792,32 +1075,32 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
                     ]
                 ]
             ]);
-            
-            // Aplicar rowspan a Obs para cada galpón (solo primera fila del nivel)
-            // Obs está después de Nivel (col 1), Parámetro (col 2), y % Galpón (col 3), así que empieza en col 4
+       
             $obsCol = 4;
             foreach ($galponesPorCenco as $cenco => $info) {
-                foreach ($info['galpones'] as $galpon) {
-                    $sheet->mergeCells($sheet->getCellByColumnAndRow($obsCol, $nivelStartRow)->getCoordinate() . ':' . $sheet->getCellByColumnAndRow($obsCol, $nivelStartRow + $totalFilas - 1)->getCoordinate());
-                    $sheet->getStyle($sheet->getCellByColumnAndRow($obsCol, $nivelStartRow)->getCoordinate())->applyFromArray([
-                        'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP, 'wrapText' => true],
-                        'borders' => [
-                            'allBorders' => [
-                                'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                                'color' => ['rgb' => 'CBD5E1']
+                // Iterar sobre los bloques del CENCO directamente
+                if (isset($info['bloques']) && is_array($info['bloques'])) {
+                    foreach ($info['bloques'] as $keyBloque) {
+                        $sheet->mergeCells($sheet->getCellByColumnAndRow($obsCol, $nivelStartRow)->getCoordinate() . ':' . $sheet->getCellByColumnAndRow($obsCol, $nivelStartRow + $totalFilas - 1)->getCoordinate());
+                        $sheet->getStyle($sheet->getCellByColumnAndRow($obsCol, $nivelStartRow)->getCoordinate())->applyFromArray([
+                            'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_TOP, 'wrapText' => true],
+                            'borders' => [
+                                'allBorders' => [
+                                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                                    'color' => ['rgb' => 'CBD5E1']
+                                ]
                             ]
-                        ]
-                    ]);
-                    $obsCol += 2; // Siguiente par % y Obs
+                        ]);
+                        $obsCol += 2; 
+                    }
                 }
             }
         }
         
-        $row++; // Espacio después del sistema
+        $row++; 
     }
     
-    // Ajustar ancho de columnas (las columnas de la leyenda ya se ajustaron antes, aquí ajustamos las de la tabla principal)
-    // Nota: Las columnas A, B, C ya tienen ancho asignado para la leyenda, pero aquí las reajustamos para la tabla principal
+    
     $sheet->getColumnDimension('A')->setWidth(20);
     $sheet->getColumnDimension('B')->setWidth(20);
     $sheet->getColumnDimension('C')->setWidth(25);
@@ -826,21 +1109,20 @@ function _generarExcel($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos
         $sheet->getColumnDimension($colLetter)->setWidth(15);
     }
     
-    // Enviar archivo
     header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     header('Content-Disposition: attachment;filename="reporte_comparativo_' . date('Ymd_His') . '.xlsx"');
     header('Cache-Control: max-age=0');
     
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-        $writer->save('php://output');
-        exit;
+    $writer->save('php://output');
+    exit;
     } catch (Exception $e) {
         die('Error generando Excel: ' . $e->getMessage());
     }
 }
 
-function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco = []) {
-    // === Logo ===
+function _generarHTMLReporte($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco = []) {
+
     $logoPath = __DIR__ . '/logo.png';
     $logo = '';
     if (file_exists($logoPath)) {
@@ -849,13 +1131,16 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
         $logo = '<img src="' . htmlspecialchars($logoBase64) . '" style="height: 20px; vertical-align: top;">';
     }
 
-    // === Estilos ===
+    $fechaReporte = (new DateTime('now', new DateTimeZone('America/Lima')))->format('d/m/Y H:i');
+
     $html = '<html><head><meta charset="UTF-8"><style>
         @page {
             margin-top: 20mm;
-            margin-bottom: 10mm;
+            margin-bottom: 14mm; /* espacio para pie sin empujar demasiado el contenido */
             margin-left: 8mm;
             margin-right: 8mm;
+            header: html_myheader;
+            footer: html_myfooter;
         }
         body {
             font-family: "Segoe UI", Arial, sans-serif;
@@ -872,7 +1157,7 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
         .header-title-cell {
             width: 75%;
             background-color: #dbeafe;
-            text-align: center;
+            text-align: center; 
             font-weight: bold;
             font-size: 12pt;
             padding: 8px;
@@ -918,8 +1203,8 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
             font-size: 9.5pt;
         }
         .leyenda-table {
-            width: 100%;
-            border-collapse: collapse;
+            width: 100%; 
+            border-collapse: collapse; 
             background-color: white;
             font-size: 8.5pt;
         }
@@ -928,7 +1213,7 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
             color: #1e40af;
             font-weight: bold;
             padding: 6px 8px;
-            text-align: left;
+            text-align: left; 
             border: 1px solid #cbd5e1;
         }
         .leyenda-table td {
@@ -1000,8 +1285,14 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
         .galpon-col-porc, .galpon-col-obs {
             font-size: 8pt;
         }
-    </style></head><body>';
-
+    </style></head><body>
+    <htmlpageheader name="myheader">
+        <div style="text-align:right; font-size:9pt; color:#475569;">' . htmlspecialchars($fechaReporte) . '</div>
+    </htmlpageheader>
+    <htmlpagefooter name="myfooter">
+        <div style="text-align:center; font-size:9pt; color:#475569;">Página {PAGENO} de {nbpg}</div>
+    </htmlpagefooter>';
+    
     // === Cabecera conjunta ===
     $html .= '<table width="100%" style="border-collapse: collapse; border: 1px solid #cbd5e1; margin-top: 10px; margin-bottom: 0;">';
     $html .= '<tr>';
@@ -1022,7 +1313,9 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
     $html .= '</table>';
     
     // === Período ===
-    $html .= '<div class="periodo">Período: ' . htmlspecialchars($fecha_inicio) . ' - ' . htmlspecialchars($fecha_fin) . '</div>';
+    $fecha_inicio_formatted = date('d/m/Y', strtotime($fecha_inicio));
+    $fecha_fin_formatted = date('d/m/Y', strtotime($fecha_fin));
+    $html .= '<div class="periodo">Período: ' . htmlspecialchars($fecha_inicio_formatted) . ' - ' . htmlspecialchars($fecha_fin_formatted) . '</div>';
 
     // === Colores por CENCO  ===
 
@@ -1071,16 +1364,33 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
         return sprintf("#%02x%02x%02x", $r, $g, $b);
     };
     
-    // Asignar colores a cada CENCO
+
+    $coloresUsados = [];
     foreach (array_keys($galponesPorCenco) as $cenco) {
         if ($idxColor < count($coloresBaseCenco)) {
             $coloresPorCenco[$cenco] = $coloresBaseCenco[$idxColor];
+            $coloresUsados[] = strtoupper(ltrim($coloresBaseCenco[$idxColor], '#'));
         } else {
-            // Generar color dinámicamente usando HSL (convertido a hex)
-            $hue = ($idxColor * 137.508) % 360; // Golden angle para distribución uniforme
-            $saturation = 55 + (($idxColor % 4) * 5); // Entre 55-70%
-            $lightness = 48 + (($idxColor % 3) * 2); // Entre 48-52%
-            $coloresPorCenco[$cenco] = $hslToHex($hue, $saturation, $lightness);
+         
+            $hue = (($idxColor - count($coloresBaseCenco)) * 137.508) % 360;
+            $saturation = 50 + (($idxColor % 5) * 4); // Entre 50-66%
+            $lightness = 45 + (($idxColor % 4) * 3); // Entre 45-54%
+            $colorHex = $hslToHex($hue, $saturation, $lightness);
+            
+
+            $intentos = 0;
+            $colorHexUpper = strtoupper(ltrim($colorHex, '#'));
+            while ($intentos < 10 && in_array($colorHexUpper, $coloresUsados)) {
+                $hue = ($hue + 30) % 360;
+                $saturation = 50 + (($idxColor + $intentos) % 5 * 4);
+                $lightness = 45 + (($idxColor + $intentos) % 4 * 3);
+                $colorHex = $hslToHex($hue, $saturation, $lightness);
+                $colorHexUpper = strtoupper(ltrim($colorHex, '#'));
+                $intentos++;
+            }
+            
+            $coloresPorCenco[$cenco] = $colorHex;
+            $coloresUsados[] = $colorHexUpper;
         }
         $idxColor++;
     }
@@ -1092,25 +1402,21 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
         $html .= '<table class="leyenda-table">';
         $html .= '<thead><tr>';
         $html .= '<th style="width: 30px;">Color</th>';
-        $html .= '<th style="width: 120px;">CENCO</th>';
-        $html .= '<th>Galpones (Edad en días)</th>';
+        $html .= '<th style="width: 200px;">CENCO</th>';
+        $html .= '<th>Galpones</th>';
         $html .= '</tr></thead><tbody>';
         
         foreach ($galponesPorCenco as $cenco => $info) {
-            $color = $coloresPorCenco[$cenco];
+            $color = isset($coloresPorCenco[$cenco]) ? $coloresPorCenco[$cenco] : '#3b82f6';
             
-            // Construir lista de galpones con sus edades
+            // Construir lista de galpones (sin edades, agrupados por CENCO)
             $galponesList = [];
-            foreach ($info['galpones'] as $galpon) {
-                // Buscar edad del galpón
-                $edad = '0';
-                foreach ($galponesUnicos as $g => $det) {
-                    if ($g == $galpon) {
-                        $edad = $det['tedad'] ?? '0';
-                        break;
-                    }
+            foreach ($galponesUnicos as $keyLeyenda => $det) {
+                if ($det['tcencos'] == $cenco) {
+                    $galpon = $det['tgalpon'];
+                    $texto = 'Galpón ' . htmlspecialchars($galpon);
+                    $galponesList[] = $texto;
                 }
-                $galponesList[] = 'Galpón ' . htmlspecialchars($galpon) . ' (' . htmlspecialchars($edad) . ' días)';
             }
             $galponesStr = implode(', ', $galponesList);
             
@@ -1126,21 +1432,113 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
         $html .= '</tbody></table></div>';
     }
 
-    // === Mapa de datos ===
+    // === Mapa de datos usando bloques como clave ===
+    // Estructura: $mapaCompleto[sistema][nivel][parametro][keyBloque] = [porc, obs, ...]
     $mapaCompleto = [];
-    foreach ($datosAgrupados as $grupo) {
-        foreach ($grupo['registros'] as $reg) {
+    foreach ($bloques as $keyBloque => $bloque) {
+        foreach ($bloque['registros'] as $reg) {
             $s = $reg['tsistema'] ?? '';
             $n = $reg['tnivel'] ?? '';
             $p = $reg['tparametro'] ?? '';
-            $g = $reg['tgalpon'] ?? '';
-            if ($s !== '' && $n !== '' && $p !== '' && $g !== '') {
-                $mapaCompleto[$s][$n][$p][$g] = [
+            
+            if ($s !== '' && $n !== '' && $p !== '') {
+                // Usar la clave del bloque como identificador
+                $mapaCompleto[$s][$n][$p][$keyBloque] = [
                     'porc' => $reg['tporcentajetotal'] ?? '0',
-                    'obs' => $reg['tobservacion'] ?? ''
+                    'obs' => $reg['tobservacion'] ?? '',
+                    'cenco' => $bloque['tcencos']
                 ];
             }
         }
+    }
+
+    // === Función para ordenar niveles y parámetros según orden específico ===
+    function ordenarNivelesYParametros($sistema, $niveles) {
+        $sLower = mb_strtolower(trim($sistema), 'UTF-8');
+        $nivelesOrdenados = [];
+        
+        // Definir orden de niveles y parámetros por sistema
+        $ordenNiveles = [];
+        
+        if (strpos($sLower, 'inmunol') !== false) {
+            // Sistema Inmunológico
+            $ordenNiveles = [
+                'Índice Bursal' => ['Normal', 'Atrofia', 'Severa Atrofia'],
+                'Mucosa de la bursa' => ['Normal', 'Petequias', 'Hemorragia'],
+                'Timos' => ['Normal', 'Atrofiados', 'Aspecto Normal', 'Congestionados']
+            ];
+        } elseif (strpos($sLower, 'digestiv') !== false) {
+            // Sistema Digestivo
+            $ordenNiveles = [
+                'Hígados' => ['Normal', 'Esteatosico', 'Tamaño Normal', 'Hipertrofiado'],
+                'Vesícula biliar' => ['Color normal', 'Color claro', 'Tamaño normal', 'Atrofiado', 'Hipertrofiado'],
+                'Erosión de molleja' => ['Normal', 'Grado 1', 'Grado 2', 'Grado 3', 'Grado 4'],
+                'Retracción del páncreas' => ['Normal', 'Retraido'],
+                'Absorcion del saco vitelino' => ['Si', 'No'],
+                'Enteritis' => ['Normal', 'Leve', 'Moderado', 'Severo'],
+                'Contenido cecal' => ['Normal', 'Gas', 'Espuma'],
+                'Alimento sin digerir' => ['Si', 'No'],
+                'Heces anaranjadas' => ['Si', 'No'],
+                'Lesión oral' => ['Si', 'No'],
+                'Tonicidad Intestinal' => ['Buena', 'Regular', 'Mala']
+            ];
+        } elseif (strpos($sLower, 'respirat') !== false) {
+            // Sistema Respiratorio
+            $ordenNiveles = [
+                'Tráquea' => ['Normal', 'Leve', 'Moderada', 'Severa'],
+                'Pulmón' => ['Normal', 'Neumónico'],
+                'Sacos aéreos' => ['Normal', 'Turbio', 'Con material caseoso']
+            ];
+        } elseif (strpos($sLower, 'evaluaci') !== false && strpos($sLower, 'físic') !== false) {
+            // Evaluación física
+            $ordenNiveles = [
+                'Pododermatitis' => ['Grado 0', 'Grado 1', 'Grado 2', 'Grado 3', 'Grado 4'],
+                'Color de tarsos' => ['3.5', '4', '4.5', '5', '5.5', '6']
+            ];
+        }
+        
+        // Si hay orden definido, aplicarlo
+        if (!empty($ordenNiveles)) {
+            foreach ($ordenNiveles as $nivelNombre => $parametrosOrden) {
+                if (isset($niveles[$nivelNombre])) {
+                    $parametros = $niveles[$nivelNombre];
+                    // Ordenar parámetros según el orden definido
+                    $parametrosOrdenados = [];
+                    $parametrosRestantes = [];
+                    
+                    // Primero agregar los parámetros en el orden especificado
+                    foreach ($parametrosOrden as $paramOrden) {
+                        foreach ($parametros as $param) {
+                            if (mb_strtolower(trim($param)) === mb_strtolower(trim($paramOrden))) {
+                                $parametrosOrdenados[] = $param;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Agregar parámetros que no están en el orden definido
+                    foreach ($parametros as $param) {
+                        if (!in_array($param, $parametrosOrdenados)) {
+                            $parametrosRestantes[] = $param;
+                        }
+                    }
+                    
+                    $nivelesOrdenados[$nivelNombre] = array_merge($parametrosOrdenados, $parametrosRestantes);
+                }
+            }
+            
+            // Agregar niveles que no están en el orden definido
+            foreach ($niveles as $nivelNombre => $parametros) {
+                if (!isset($nivelesOrdenados[$nivelNombre])) {
+                    $nivelesOrdenados[$nivelNombre] = $parametros;
+                }
+            }
+        } else {
+            // Si no hay orden definido, mantener el orden original
+            $nivelesOrdenados = $niveles;
+        }
+        
+        return $nivelesOrdenados;
     }
 
     // === Ordenar sistemas ===
@@ -1153,10 +1551,14 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
         elseif (strpos($sLower, 'digestiv') !== false) $pos = 1;
         elseif (strpos($sLower, 'respirat') !== false) $pos = 2;
         elseif (strpos($sLower, 'evaluaci') !== false && strpos($sLower, 'físic') !== false) $pos = 3;
+        
+        // Ordenar niveles y parámetros dentro del sistema
+        $nivelesOrdenados = ordenarNivelesYParametros($sistema, $niveles);
+        
         if ($pos !== false) {
-            $sistemasFinales[$pos] = [$sistema => $niveles];
+            $sistemasFinales[$pos] = [$sistema => $nivelesOrdenados];
         } else {
-            $otros[$sistema] = $niveles;
+            $otros[$sistema] = $nivelesOrdenados;
         }
     }
     ksort($sistemasFinales);
@@ -1185,38 +1587,81 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
         $html .= '<table class="data-table">';
         $html .= '<thead>';
 
-        // === Fila 1: Agrupación por CENCO ===
+        // === Fila 1: Agrupación por CENCO (sin fechas) ===
         if (count($galponesPorCenco) > 1) {
-            $html .= '<tr>';
-            $html .= '<th rowspan="2">Nivel</th>';
-            $html .= '<th rowspan="2">Parámetro</th>';
+    $html .= '<tr>';
+    $html .= '<th rowspan="3">Nivel</th>';
+    $html .= '<th rowspan="3">Parámetro</th>';
             foreach ($galponesPorCenco as $cenco => $info) {
-                $color = $coloresPorCenco[$cenco];
-                $numCols = count($info['galpones']) * 2;
+                $color = isset($coloresPorCenco[$cenco]) ? $coloresPorCenco[$cenco] : '#3b82f6';
+                // Calcular columnas considerando bloques del CENCO
+                $numBloques = isset($info['bloques']) && is_array($info['bloques']) ? count($info['bloques']) : 0;
+                $numCols = $numBloques * 2; // % y Obs por cada bloque
+                
+                // Construir texto del CENCO (sin fechas)
+                $cencoText = 'CENCO ' . htmlspecialchars($cenco) . '<br><small>' . htmlspecialchars($info['granja']) . '</small>';
+                
                 $html .= '<th class="cenco-group-header" colspan="' . $numCols . '" style="background-color:' . $color . ';">';
-                $html .= 'CENCO ' . htmlspecialchars($cenco) . '<br><small>' . htmlspecialchars($info['granja']) . '</small>';
+                $html .= $cencoText;
                 $html .= '</th>';
-            }
-            $html .= '</tr>';
+    }
+    $html .= '</tr>';
         }
-
-        // === Fila 2: Encabezados individuales (% y Obs)===
-        $html .= '<tr>';
+    
+        // === Fila 2: Fechas por bloque (celdas que abarcan cada par % y Obs) ===
+        if (count($galponesPorCenco) > 1) {
+    $html .= '<tr>';
+            foreach ($galponesPorCenco as $cenco => $info) {
+                $color = isset($coloresPorCenco[$cenco]) ? $coloresPorCenco[$cenco] : '#3b82f6';
+                // Iterar sobre los bloques del CENCO directamente
+                if (isset($info['bloques']) && is_array($info['bloques'])) {
+                    foreach ($info['bloques'] as $keyBloque) {
+                        if (isset($bloques[$keyBloque])) {
+                            $bloque = $bloques[$keyBloque];
+                            $tdateFormatted = date('d/m/Y', strtotime($bloque['tdate']));
+                            $tfectraFormatted = date('d/m/Y', strtotime($bloque['tfectra']));
+                            $edad = $bloque['tedad'] ?? '0';
+                            $fechasText = "Reg: $tdateFormatted | Nec: $tfectraFormatted | Edad: $edad días";
+                            
+                            $html .= '<th class="cenco-group-header" colspan="2" style="background-color:' . $color . ';">';
+                            $html .= htmlspecialchars($fechasText);
+                            $html .= '</th>';
+                        }
+                    }
+                }
+    }
+    $html .= '</tr>';
+        }
+    
+        // === Fila 3: Encabezados individuales (% y Obs)===
+    $html .= '<tr>';
         if (count($galponesPorCenco) <= 1) {
             $html .= '<th>Nivel</th><th>Parámetro</th>';
         }
         foreach ($galponesPorCenco as $cenco => $info) {
-            $color = $coloresPorCenco[$cenco];
+            $color = isset($coloresPorCenco[$cenco]) ? $coloresPorCenco[$cenco] : '#3b82f6';
             $rgb = hexToRgb($color);
             $bgColor = 'rgba(' . $rgb['r'] . ',' . $rgb['g'] . ',' . $rgb['b'] . ', 0.12)';
-            foreach ($info['galpones'] as $galpon) {
-                $html .= '<th class="galpon-col-porc" style="background-color:' . $bgColor . ';">% Galpón ' . htmlspecialchars($galpon) . '</th>';
-                $html .= '<th class="galpon-col-obs" style="background-color:' . $bgColor . ';">Obs Galpón ' . htmlspecialchars($galpon) . '</th>';
+            // Iterar sobre los bloques del CENCO directamente
+            if (isset($info['bloques']) && is_array($info['bloques'])) {
+                foreach ($info['bloques'] as $keyBloque) {
+                    if (isset($bloques[$keyBloque])) {
+                        $bloque = $bloques[$keyBloque];
+                        $galpon = $bloque['tgalpon'];
+                        
+                        // % Galpón (sin fechas, solo número de galpón)
+                        $headerText = '% Galpón ' . htmlspecialchars($galpon);
+                        $html .= '<th class="galpon-col-porc" style="background-color:' . $bgColor . ';">' . $headerText . '</th>';
+                        // Obs Galpón (sin fechas, solo número de galpón)
+                        $obsHeaderText = 'Obs Galpón ' . htmlspecialchars($galpon);
+                        $html .= '<th class="galpon-col-obs" style="background-color:' . $bgColor . ';">' . $obsHeaderText . '</th>';
+                    }
+                }
             }
         }
         $html .= '</tr>';
         $html .= '</thead><tbody>';
-
+        
         foreach ($niveles as $nivel => $parametros) {
             $totalFilas = count($parametros);
             
@@ -1230,34 +1675,50 @@ function _generarHTMLReporte($datosAgrupados, $fecha_inicio, $fecha_fin, $cencos
             
                 // Celda de Parámetro
                 $html .= '<td>' . htmlspecialchars($parametro) . '</td>';
-            
-                // Datos por galpón
+                
+                // Datos por CENCO (iterar sobre bloques directamente)
                 foreach ($galponesPorCenco as $cenco => $info) {
-                    foreach ($info['galpones'] as $galpon) {
-                        $porc = $mapaCompleto[$sistema][$nivel][$parametro][$galpon]['porc'] ?? '0';
+                    // Iterar sobre los bloques del CENCO directamente
+                    if (isset($info['bloques']) && is_array($info['bloques'])) {
+                        foreach ($info['bloques'] as $keyBloque) {
+                            // Verificar que el dato pertenezca a este CENCO
+                            $porc = '0';
+                            $obs = '';
+                            if (isset($mapaCompleto[$sistema][$nivel][$parametro][$keyBloque])) {
+                                $datosRegistro = $mapaCompleto[$sistema][$nivel][$parametro][$keyBloque];
+                                // Solo usar si el CENCO coincide
+                                if (isset($datosRegistro['cenco']) && $datosRegistro['cenco'] == $cenco) {
+                                    $porc = $datosRegistro['porc'] ?? '0';
+                                    $obs = $datosRegistro['obs'] ?? '';
+                                }
+                            }
+                            
+                            $primerParametro = !empty($parametros) ? $parametros[0] : '';
+                            $obsPrimero = '';
+                            if (isset($mapaCompleto[$sistema][$nivel][$primerParametro][$keyBloque])) {
+                                $datosPrimero = $mapaCompleto[$sistema][$nivel][$primerParametro][$keyBloque];
+                                if (isset($datosPrimero['cenco']) && $datosPrimero['cenco'] == $cenco) {
+                                    $obsPrimero = $datosPrimero['obs'] ?? '';
+                                }
+                            }
             
-                        
-                        $obsPrimero = $mapaCompleto[$sistema][$nivel][$parametros[0]][$galpon]['obs'] ?? '';
-            
-                        
-                        if ($i === 0) {
-                            $html .= '<td>' . htmlspecialchars($porc) . '</td>';
-                            $html .= '<td rowspan="' . $totalFilas . '">' . nl2br(htmlspecialchars($obsPrimero)) . '</td>';
-                        } else {
-                         
-                            $html .= '<td>' . htmlspecialchars($porc) . '</td>';
-                           
+                            if ($i === 0) {
+                                $html .= '<td>' . htmlspecialchars($porc) . '</td>';
+                                $html .= '<td rowspan="' . $totalFilas . '">' . nl2br(htmlspecialchars($obsPrimero)) . '</td>';
+                            } else {
+                                $html .= '<td>' . htmlspecialchars($porc) . '</td>';
+                            }
                         }
                     }
                 }
-            
+                
                 $html .= '</tr>';
             }
         }
         $html .= '</tbody></table>';
         $html .= '</div>';
     }
-
+    
     $html .= '</body></html>';
     return $html;
 }

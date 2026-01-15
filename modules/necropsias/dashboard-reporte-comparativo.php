@@ -202,7 +202,7 @@ if (!$conexion) {
                 </div>
 
                 <!-- Contenedor de checkboxes de galpones (solo cuando se selecciona "Escoger") -->
-                <div id="containerGalpones" class="checkbox-group hidden">
+                <div id="containerGalpones" class="checkbox-group hidden mt-3 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-white">
                     <!-- Los checkboxes se generarán aquí dinámicamente -->
                 </div>
             </div>
@@ -256,19 +256,32 @@ if (!$conexion) {
             
             const containerCencos = document.getElementById('containerCencos');
             const seccionGalpones = document.getElementById('seccionGalpones');
+            const containerGalpones = document.getElementById('containerGalpones');
+
+            // Al cambiar la opción de CENCOS: mostrar opciones de galpones pero sin selección previa
+            galponesSeleccionados.clear();
+            galponesData = {};
+            document.querySelectorAll('input[name="tipo_galpon"]').forEach(radio => {
+                radio.checked = false;
+            });
+            if (containerGalpones) {
+                containerGalpones.classList.add('hidden');
+                containerGalpones.innerHTML = '';
+            }
+
+            // Mostrar sección de galpones (opciones) siempre que se elija un filtro de CENCOS
+            seccionGalpones.classList.remove('hidden');
             
             if (filtro === 'escoger') {
                 // Mostrar checkboxes de CENCOS
                 containerCencos.classList.remove('hidden');
                 await cargarCencos('todos'); // Cargar todos para seleccionar
-                seccionGalpones.classList.add('hidden');
             } else {
                 // Ocultar checkboxes de CENCOS
                 containerCencos.classList.add('hidden');
                 cencosSeleccionados.clear();
                 
-                // Mostrar sección de galpones y cargar según el filtro
-                seccionGalpones.classList.remove('hidden');
+                // Cargar galpones según el filtro (pero sin seleccionar ninguno)
                 await cargarGalponesPorFiltro(filtro);
             }
         }
@@ -284,6 +297,8 @@ if (!$conexion) {
                 const response = await fetch(`get_granjas.php?filtro=${filtro}`);
                 if (!response.ok) throw new Error('Error al cargar CENCOS');
                 cencosData = await response.json();
+
+                
                 if (container && !container.classList.contains('hidden')) {
                     renderizarCencos();
                 }
@@ -299,6 +314,7 @@ if (!$conexion) {
             container.innerHTML = '';
 
             cencosData.forEach(cenco => {
+                console.log(cenco);
                 const label = document.createElement('label');
                 label.className = 'flex items-center gap-2';
                 label.innerHTML = `
@@ -442,7 +458,28 @@ if (!$conexion) {
                 ? Array.from(cencosSeleccionados) 
                 : Object.keys(galponesData);
             
-            // Renderizar galpones agrupados por CENCO
+            // Crear tabla para mostrar galpones
+            const table = document.createElement('table');
+            table.className = 'min-w-full divide-y divide-gray-200 border border-gray-300 rounded-lg overflow-hidden';
+            table.setAttribute('style', 'font-size: 0.875rem;');
+            
+            // Encabezado de la tabla
+            const thead = document.createElement('thead');
+            thead.className = 'bg-gray-100';
+            thead.innerHTML = `
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-b border-gray-300">CENCO</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-b border-gray-300">Nombre</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-b border-gray-300">Galpones</th>
+                </tr>
+            `;
+            table.appendChild(thead);
+            
+            // Cuerpo de la tabla
+            const tbody = document.createElement('tbody');
+            tbody.className = 'bg-white divide-y divide-gray-200';
+            
+            // Renderizar galpones agrupados por CENCO (una fila por CENCO)
             cencosParaMostrar.sort().forEach(cencoCodigo => {
                 // Verificar que este CENCO tenga galpones cargados
                 if (!galponesData[cencoCodigo]) return;
@@ -452,46 +489,47 @@ if (!$conexion) {
                 
                 const cencoNombre = cencosMap[cencoCodigo] || cencoCodigo;
                 
-                // Contenedor del CENCO
-                const cencoDiv = document.createElement('div');
-                cencoDiv.className = 'border border-gray-200 rounded-lg p-4 bg-gray-50 mb-3';
-                cencoDiv.setAttribute('data-cenco-container', cencoCodigo);
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
                 
-                // Header del CENCO
-                const headerDiv = document.createElement('div');
-                headerDiv.className = 'flex items-center justify-between mb-3 pb-2 border-b border-gray-300';
-                headerDiv.innerHTML = `
-                    <span class="font-semibold text-sm text-gray-800">${cencoCodigo} - ${cencoNombre}</span>
-                    <span class="text-xs text-gray-500">${galpones.length} galpones</span>
+                // CENCO
+                let rowHtml = `
+                    <td class="px-4 py-3 whitespace-nowrap border-b border-gray-200">
+                        <span class="text-sm font-medium text-gray-900">${cencoCodigo}</span>
+                    </td>
+                    <td class="px-4 py-3 border-b border-gray-200">
+                        <span class="text-sm text-gray-700">${cencoNombre}</span>
+                    </td>
+                    <td class="px-4 py-3 border-b border-gray-200">
+                        <div class="flex flex-wrap gap-3 items-center">
                 `;
-                cencoDiv.appendChild(headerDiv);
                 
-                // Contenedor de checkboxes de galpones
-                const galponesDiv = document.createElement('div');
-                galponesDiv.className = 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2';
-                galponesDiv.setAttribute('data-cenco', cencoCodigo);
-                
-                galpones.forEach(galponItem => {
+                // Galpones con checkboxes en fila horizontal
+                galpones.forEach((galponItem) => {
                     const galponCodigo = galponItem.galpon || galponItem;
-                    // Solo mostrar el número del galpón (sin nombre)
-                    const displayText = galponCodigo;
-                    
-                    const label = document.createElement('label');
-                    label.className = 'flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer';
-                    label.innerHTML = `
-                        <input type="checkbox" 
-                               class="chk-galpon w-4 h-4" 
-                               data-cenco="${cencoCodigo}"
-                               value="${galponCodigo}" 
-                               onchange="actualizarGalponesSeleccionados()">
-                        <span class="text-xs">${displayText}</span>
+                    rowHtml += `
+                        <label class="flex items-center gap-1 cursor-pointer">
+                            <input type="checkbox" 
+                                   class="chk-galpon w-4 h-4" 
+                                   data-cenco="${cencoCodigo}"
+                                   value="${galponCodigo}" 
+                                   onchange="actualizarGalponesSeleccionados()">
+                            <span class="text-sm text-gray-900">${galponCodigo}</span>
+                        </label>
                     `;
-                    galponesDiv.appendChild(label);
                 });
                 
-                cencoDiv.appendChild(galponesDiv);
-                container.appendChild(cencoDiv);
+                rowHtml += `
+                        </div>
+                    </td>
+                `;
+                
+                tr.innerHTML = rowHtml;
+                tbody.appendChild(tr);
             });
+            
+            table.appendChild(tbody);
+            container.appendChild(table);
         }
 
 
@@ -507,6 +545,13 @@ if (!$conexion) {
                 container.classList.add('hidden');
                 galponesSeleccionados.clear();
             } else {
+                // Si CENCOS está en "Escoger" y no hay CENCOS seleccionados aún, avisar
+                if (filtroCencosActual === 'escoger' && cencosSeleccionados.size === 0) {
+                    container.classList.remove('hidden');
+                    container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">Seleccione primero uno o más CENCOS para ver sus galpones.</p>';
+                    galponesSeleccionados.clear();
+                    return;
+                }
                 renderizarCheckboxesGalpones();
             }
         }
@@ -578,7 +623,11 @@ if (!$conexion) {
             }
 
             // Galpones
-            const tipoGalpon = document.querySelector('input[name="tipo_galpon"]:checked').value;
+            const tipoGalpon = document.querySelector('input[name="tipo_galpon"]:checked')?.value;
+            if (!tipoGalpon) {
+                Swal.fire('Validación', 'Debe seleccionar una opción de Galpones (Todos o Escoger)', 'warning');
+                return;
+            }
             if (tipoGalpon === 'todos') {
                 params.append('galpones', 'todos');
             } else {
@@ -589,14 +638,57 @@ if (!$conexion) {
                     params.append('galpones', Array.from(galponesSeleccionados).join(','));
                 }
             }
-            // Abrir reporte en nueva ventana
-            const url = `generar_reporte_comparativo.php?${params.toString()}`;
-            window.open(url, '_blank');
+            // Verificar primero si hay resultados
+            try {
+                const checkUrl = `generar_reporte_comparativo.php?${params.toString()}&check=1`;
+                const checkResponse = await fetch(checkUrl);
+                const checkData = await checkResponse.json();
+                
+                if (!checkData.tiene_resultados) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Sin Resultados',
+                        text: checkData.mensaje || 'No se encontraron registros para los filtros especificados',
+                        confirmButtonText: 'Aceptar'
+                    });
+                    return;
+                }
+                
+                // Si hay resultados, abrir reporte en nueva ventana
+                const url = `generar_reporte_comparativo.php?${params.toString()}`;
+                window.open(url, '_blank');
+            } catch (error) {
+                console.error('Error al verificar resultados:', error);
+                // Si falla la verificación, intentar abrir el reporte de todas formas
+                const url = `generar_reporte_comparativo.php?${params.toString()}`;
+                window.open(url, '_blank');
+            }
         }
 
         // Event listeners
         document.getElementById('btnGenerarReporte').addEventListener('click', generarReporte);
         document.getElementById('btnLimpiarFiltros').addEventListener('click', limpiarFiltros);
+
+        // Defaults: fechas del mes actual (solo si están vacías)
+        (function setFechasMesActualPorDefecto() {
+            const inputInicio = document.getElementById('filtroFechaInicio');
+            const inputFin = document.getElementById('filtroFechaFin');
+            if (!inputInicio || !inputFin) return;
+
+            // No pisar si el usuario ya tiene valores (por ejemplo, si el navegador los recuerda)
+            if (inputInicio.value && inputFin.value) return;
+
+            const hoy = new Date();
+            const yyyy = hoy.getFullYear();
+            const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+            const dd = String(hoy.getDate()).padStart(2, '0');
+
+            const primerDiaMes = `${yyyy}-${mm}-01`;
+            const hoyStr = `${yyyy}-${mm}-${dd}`;
+
+            if (!inputInicio.value) inputInicio.value = primerDiaMes;
+            if (!inputFin.value) inputFin.value = hoyStr;
+        })();
 
         // No cargar nada al iniciar - el usuario debe seleccionar una opción
     </script>
