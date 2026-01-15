@@ -26,7 +26,8 @@ if (!$conexion) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Tipo de Respuestas</title>
-    <link rel="stylesheet" href="../../../css/output.css">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
     <style>
@@ -169,55 +170,56 @@ if (!$conexion) {
         }
 
         /* ✅ Encabezado de controles de DataTables: fondo blanco */
-.dataTables_wrapper .dataTables_filter,
-.dataTables_wrapper .dataTables_length {
-    background: white;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #e5e7eb;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    color: #374151; /* gris oscuro */
-}
+        .dataTables_wrapper .dataTables_filter,
+        .dataTables_wrapper .dataTables_length {
+            background: white;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            color: #374151;
+            /* gris oscuro */
+        }
 
-.dataTables_wrapper .dataTables_filter label,
-.dataTables_wrapper .dataTables_length label {
-    font-weight: 500;
-    margin: 0;
-    color: #374151;
-}
+        .dataTables_wrapper .dataTables_filter label,
+        .dataTables_wrapper .dataTables_length label {
+            font-weight: 500;
+            margin: 0;
+            color: #374151;
+        }
 
-.dataTables_wrapper .dataTables_filter input {
-    border: 1px solid #d1d5db;
-    color: #374151;
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    background: white;
-}
+        .dataTables_wrapper .dataTables_filter input {
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            background: white;
+        }
 
-.dataTables_wrapper .dataTables_length select {
-    border: 1px solid #d1d5db;
-    color: #374151;
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    background: white;
-}
+        .dataTables_wrapper .dataTables_length select {
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            background: white;
+        }
 
-/* ✅ Cabecera de la tabla: azul con texto blanco */
-#tablaRespuesta thead th {
-    background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
-    color: white !important;
-    font-weight: 600;
-    padding: 0.75rem 1rem;
-}
+        /* ✅ Cabecera de la tabla: azul con texto blanco */
+        #tablaRespuesta thead th {
+            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
+            color: white !important;
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+        }
     </style>
 </head>
 
 <body class="bg-gray-50">
-    <div class="container mx-auto px-6 py-12">
+    <div class="container-fluid py-4 mx-8">
         <div class="max-w-full mx-auto mt-6">
             <div class="border border-gray-300 rounded-2xl bg-white overflow-hidden">
                 <div class="table-wrapper">
@@ -234,7 +236,7 @@ if (!$conexion) {
                             $query = "SELECT codigo, nombre FROM san_dim_analisis ORDER BY codigo ASC";
                             $result = mysqli_query($conexion, $query);
                             while ($row = mysqli_fetch_assoc($result)) {
-                                ?>
+                            ?>
                                 <tr>
                                     <td><?= htmlspecialchars($row['codigo']) ?></td>
                                     <td><?= htmlspecialchars($row['nombre']) ?></td>
@@ -245,7 +247,7 @@ if (!$conexion) {
                                         </button>
                                     </td>
                                 </tr>
-                                <?php
+                            <?php
                             }
                             ?>
                         </tbody>
@@ -319,7 +321,6 @@ if (!$conexion) {
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
         <script>
-           
             let currentAnalisisCodigo = null;
 
             function openRespuestasModal(codigo) {
@@ -368,18 +369,20 @@ if (!$conexion) {
                 tbody.innerHTML = '<tr><td colspan="2" class="text-center py-4">Cargando...</td></tr>';
 
                 fetch('obtener_tiporesultados.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'analisis=' + encodeURIComponent(codigo)
-                })
-                .then(r => r.json())
-                .then(data => {
-                    tbody.innerHTML = '';
-                    if (data && data.length > 0) {
-                        noRespuestas.style.display = 'none';
-                        data.forEach(item => {
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = `
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: 'analisis=' + encodeURIComponent(codigo)
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        tbody.innerHTML = '';
+                        if (data && data.length > 0) {
+                            noRespuestas.style.display = 'none';
+                            data.forEach(item => {
+                                const tr = document.createElement('tr');
+                                tr.innerHTML = `
                                 <td class="border-b py-2">${escapeHtml(item.tipo)}</td>
                                 <td class="border-b py-2 text-right">
                                     <button class="text-blue-600 hover:text-blue-800 text-xs mr-2" 
@@ -392,17 +395,17 @@ if (!$conexion) {
                                     </button>
                                 </td>
                             `;
-                            tbody.appendChild(tr);
-                        });
-                    } else {
-                        noRespuestas.style.display = 'block';
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    tbody.innerHTML = '<tr><td colspan="2" class="text-center py-4 text-red-500">Error al cargar respuestas</td></tr>';
-                    noRespuestas.style.display = 'none';
-                });
+                                tbody.appendChild(tr);
+                            });
+                        } else {
+                            noRespuestas.style.display = 'block';
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        tbody.innerHTML = '<tr><td colspan="2" class="text-center py-4 text-red-500">Error al cargar respuestas</td></tr>';
+                        noRespuestas.style.display = 'none';
+                    });
             }
 
             function guardarTipoResultado() {
@@ -421,54 +424,63 @@ if (!$conexion) {
                 if (codigo) data.append('codigo', codigo);
 
                 fetch('guardar_tiporesultado.php', {
-                    method: 'POST',
-                    body: data
-                })
-                .then(r => r.json())
-                .then(res => {
-                    if (res.success) {
-                        alert(res.message);
-                        closeFormTipoResultado();
-                        cargarTipoResultados(analisis);
-                    } else {
-                        alert('Error: ' + res.message);
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert('Error al guardar la respuesta.');
-                });
+                        method: 'POST',
+                        body: data
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            alert(res.message);
+                            closeFormTipoResultado();
+                            cargarTipoResultados(analisis);
+                        } else {
+                            alert('Error: ' + res.message);
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error al guardar la respuesta.');
+                    });
             }
 
             function eliminarTipoResultado(codigo) {
                 if (!confirm('¿Eliminar esta respuesta?')) return;
 
                 fetch('eliminar_tiporesultado.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'codigo=' + encodeURIComponent(codigo)
-                })
-                .then(r => r.json())
-                .then(res => {
-                    if (res.success) {
-                        alert(res.message);
-                        cargarTipoResultados(currentAnalisisCodigo);
-                    } else {
-                        alert('Error: ' + res.message);
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert('Error al eliminar la respuesta.');
-                });
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: 'codigo=' + encodeURIComponent(codigo)
+                    })
+                    .then(r => r.json())
+                    .then(res => {
+                        if (res.success) {
+                            alert(res.message);
+                            cargarTipoResultados(currentAnalisisCodigo);
+                        } else {
+                            alert('Error: ' + res.message);
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error al eliminar la respuesta.');
+                    });
             }
 
-          $('#tablaRespuesta').DataTable({
-    language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
-    pageLength: 10,
-    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
-    order: [[0, 'asc']]
-});
+            $('#tablaRespuesta').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+                },
+                pageLength: 10,
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "Todos"]
+                ],
+                order: [
+                    [0, 'asc']
+                ]
+            });
         </script>
 </body>
 

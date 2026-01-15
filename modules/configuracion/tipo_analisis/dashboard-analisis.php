@@ -250,7 +250,7 @@ if (!$conexion) {
 </head>
 
 <body class="bg-gray-50">
-    <div class="container mx-auto px-6 py-12">
+    <div class="container-fluid py-4 mx-8">
 
         <!-- Encabezado con botones y exportar -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">

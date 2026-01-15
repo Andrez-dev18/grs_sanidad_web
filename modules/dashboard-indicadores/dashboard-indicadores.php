@@ -77,7 +77,7 @@ if (!$conexion) {
 </head>
 
 <body class="bg-gray-50">
-    <div class="container mx-auto px-6 py-12">
+    <div class="container-fluid py-4 mx-8">
 
         <!-- CARD FILTROS PLEGABLE -->
         <div class="mb-4 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
