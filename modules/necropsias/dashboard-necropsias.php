@@ -8,8 +8,8 @@ if (empty($_SESSION['active'])) {
 
 //ruta relativa a la conexion
 include_once '../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
-if (!$conexion) {
+$conn = conectar_joya();
+if (!$conn) {
     die("Error de conexión: " . mysqli_connect_error());
 }
 ?>
@@ -257,11 +257,126 @@ if (!$conexion) {
 <body class="bg-gray-50">
     <div class="container-fluid py-4 mx-8">
 
+        <!-- CARD FILTROS PLEGABLE -->
+        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
 
-        <!-- Botón para abrir el modal (igual) -->
-        <button id="btnRegistrarNecropsia" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-300">
-            Registrar Necropsia
-        </button>
+            <!-- HEADER -->
+            <button type="button" onclick="toggleFiltros()"
+                class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">
+
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">🔎</span>
+                    <h3 class="text-base font-semibold text-gray-800">
+                        Filtros de búsqueda
+                    </h3>
+                </div>
+
+                <!-- ICONO -->
+                <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
+                    fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            <!-- CONTENIDO PLEGABLE -->
+            <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
+
+                <?php
+                if ($conn) {
+                    // 1. Ejecutar el SET para evitar errores de GROUP BY
+                    $conn->query("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
+
+                    // 2. Consulta SQL optimizada
+                    // Seleccionamos SOLO codigo y nombre.
+                    // Usamos la lógica de 'edad' (b.edad) SOLO en el WHERE para filtrar, pero no la traemos en el SELECT.
+                    $sqlGranjas = "SELECT codigo, nombre
+                   FROM ccos AS a 
+                   LEFT JOIN (
+                        SELECT a.tcencos, a.tcodint, a.tcodigo, DATEDIFF(NOW(), MIN(a.fec_ing))+1 as edad 
+                        FROM maes_zonas AS a 
+                        USE INDEX(tcencos,tcodint,tcodigo) 
+                        WHERE a.tcodigo IN ('P0001001','P0001002')  
+                        GROUP BY tcencos
+                   ) AS b ON a.codigo = b.tcencos  
+                   WHERE (LEFT(codigo,1) IN ('6','5') 
+                   AND RIGHT(codigo,3)<>'000' 
+                   AND swac='A' 
+                   AND LENGTH(codigo)=6 
+                   AND LEFT(codigo,3)<>'650'
+                   AND LEFT(codigo,3) <= '667')
+                   AND IF(b.edad IS NULL, '0', b.edad) <> '0'
+                   ORDER BY nombre ASC";
+
+                    $resultadoGranjas = $conn->query($sqlGranjas);
+                }
+                ?>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
+                        <input type="date" id="filtroFechaInicio"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
+                        <input type="date" id="filtroFechaFin"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Granja</label>
+                        <select id="filtroGranja" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            <option value="">Seleccionar</option>
+
+                            <?php if (isset($resultadoGranjas) && $resultadoGranjas): ?>
+                                <?php while ($fila = $resultadoGranjas->fetch_assoc()): ?>
+                                    <?php
+                                    // 1. Convertimos caracteres especiales primero
+                                    $nombreCompleto = utf8_encode($fila['nombre']);
+
+                                    // 2. LOGICA DE LIMPIEZA:
+                                    // Explotamos el string usando 'C=' como separador y tomamos la parte [0] (la izquierda)
+                                    $nombreCorto = explode('C=', $nombreCompleto)[0];
+
+                                    // 3. Quitamos espacios en blanco sobrantes al final (el espacio antes del C=)
+                                    $nombreCorto = trim($nombreCorto);
+
+                                    // 4. Sanear para HTML
+                                    $textoMostrar = htmlspecialchars($nombreCorto);
+                                    $codigo = htmlspecialchars($fila['codigo']);
+                                    ?>
+                                    <option value="<?php echo $codigo; ?>">
+                                        <?php echo $textoMostrar; ?>
+                                    </option>
+                                <?php endwhile; ?>
+                            <?php else: ?>
+                                <option value="" disabled>Sin datos disponibles</option>
+                            <?php endif; ?>
+
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- ACCIONES -->
+                <div class="mt-6 flex flex-wrap justify-end gap-4">
+
+                    <button type="button" id="btnAplicarFiltros"
+                        class="hidden px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                        Filtrar
+                    </button>
+
+                    <button type="button" id="btnLimpiarFiltros"
+                        class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200">
+                        Limpiar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
 
         <!-- Modal con Tabs -->
         <div id="modalNecropsia" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-800 bg-opacity-75 flex items-center justify-center">
@@ -1226,28 +1341,37 @@ if (!$conexion) {
             </div>
         </div>
 
-        <div class="card-body p-0 mt-5">
-            <div class="table-wrapper overflow-x-auto">
-                <table id="tabla" class="data-table w-full text-sm border-collapse">
-                    <thead class="bg-gray-100 sticky top-0 z-10">
-                        <tr>
-                            <th class="px-3 py-2 text-left">N°</th>
-                            <th class="px-3 py-2 text-center">N°Reg</th>
-                            <th class="px-3 py-2 text-center">Fecha Necropsia</th>
-                            <th class="px-3 py-2 text-center">Granja</th>
-                            <th class="px-3 py-2 text-left">Nombre</th>
-                            <th class="px-3 py-2 text-center">Campaña</th>
-                            <th class="px-3 py-2 text-center">Galpón</th>
-                            <th class="px-3 py-2 text-center">Edad</th>
-                            <th class="px-3 py-2 text-left">Usuario</th>
-                            <th class="px-3 py-2 text-center">Fecha Registro</th>
-                            <th class="text-center">Opciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+        <!-- contenedor boton y tabla  -->
+        <div class="bg-white rounded-xl shadow-md p-5">
+            <!-- Botón para abrir el modal  -->
+            <button id="btnRegistrarNecropsia" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-300">
+                Registrar Necropsia
+            </button>
 
-                    </tbody>
-                </table>
+            <!-- tabla -->
+            <div class="card-body p-0 mt-5">
+                <div class="table-wrapper overflow-x-auto">
+                    <table id="tabla" class="data-table w-full text-sm border-collapse">
+                        <thead class="bg-gray-100 sticky top-0 z-10">
+                            <tr>
+                                <th class="px-3 py-2 text-left">N°</th>
+                                <th class="px-3 py-2 text-center">N°Reg</th>
+                                <th class="px-3 py-2 text-center">Fecha Necropsia</th>
+                                <th class="px-3 py-2 text-center">Granja</th>
+                                <th class="px-3 py-2 text-left">Nombre</th>
+                                <th class="px-3 py-2 text-center">Campaña</th>
+                                <th class="px-3 py-2 text-center">Galpón</th>
+                                <th class="px-3 py-2 text-center">Edad</th>
+                                <th class="px-3 py-2 text-left">Usuario</th>
+                                <th class="px-3 py-2 text-center">Fecha Registro</th>
+                                <th class="px-3 py-2 text-center">Opciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -1328,7 +1452,17 @@ if (!$conexion) {
             return `${yyyy}-${mm}-${dd}`;
         }
 
-        async function cargarGranjasConFecha({ preserveSelection = false } = {}) {
+        function toggleFiltros() {
+            const contenido = document.getElementById('contenidoFiltros');
+            const icono = document.getElementById('iconoFiltros');
+
+            contenido.classList.toggle('hidden');
+            icono.classList.toggle('rotate-180');
+        }
+
+        async function cargarGranjasConFecha({
+            preserveSelection = false
+        } = {}) {
             const select = document.getElementById('granja');
             if (!select) return;
 
@@ -1372,12 +1506,23 @@ if (!$conexion) {
         }
 
         $(document).ready(function() {
+
+            // Referencia a los inputs
+            const inputInicio = $('#filtroFechaInicio');
+            const inputFin = $('#filtroFechaFin');
+            const selectGranja = $('#filtroGranja');
+
             let tabla = $('#tabla').DataTable({
                 processing: true,
                 serverSide: true,
                 ajax: {
                     url: 'listar_necropsias.php',
-                    type: 'POST'
+                    type: 'POST',
+                    data: function(d) {
+                        d.fecha_inicio = inputInicio.val();
+                        d.fecha_fin = inputFin.val();
+                        d.granja = selectGranja.val();
+                    }
                 },
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
@@ -1449,6 +1594,19 @@ if (!$conexion) {
                     }
                 ]
             });
+            // Eventos para recargar la tabla al cambiar los filtros
+            $('#filtroFechaInicio, #filtroFechaFin, #filtroGranja').on('change', function() {
+                tabla.draw(); // Esto dispara el ajax de nuevo enviando los nuevos valores
+            });
+
+            // Limpiar filtros
+            $('#btnLimpiarFiltros').on('click', function() {
+                $('#filtroFechaInicio').val('');
+                $('#filtroFechaFin').val('');
+                $('#filtroGranja').val('');
+                tabla.ajax.reload();
+            });                    
+
         });
     </script>
 
@@ -1458,7 +1616,7 @@ if (!$conexion) {
 
         async function editarNecropsia(granja, numreg, fectra) {
             // Limpiar formulario primero
-                limpiarFormularioNecropsia();
+            limpiarFormularioNecropsia();
             isEditMode = true;
             loteEditando = {
                 granja,
@@ -1482,7 +1640,7 @@ if (!$conexion) {
                     return;
                 }
 
-                
+
 
                 // === CABECERA ===
                 // Fecha necropsia (setear primero para que get_granjas.php calcule edad con esta fecha)
@@ -2156,14 +2314,18 @@ if (!$conexion) {
                 fectraInput.value = getFechaSeleccionada();
             }
 
-            await cargarGranjasConFecha({ preserveSelection: false });
+            await cargarGranjasConFecha({
+                preserveSelection: false
+            });
         });
 
         // Si cambia la fecha, recargar granjas usando esa fecha (y mantener selección si ya eligió una)
-        document.getElementById('fectra').addEventListener('change', async function () {
+        document.getElementById('fectra').addEventListener('change', async function() {
             // Si ya hay granja seleccionada, mantenerla y recalcular edad/campaña
             const tieneSeleccion = !!document.getElementById('granja')?.value;
-            await cargarGranjasConFecha({ preserveSelection: tieneSeleccion });
+            await cargarGranjasConFecha({
+                preserveSelection: tieneSeleccion
+            });
         });
 
         // Al cambiar granja
