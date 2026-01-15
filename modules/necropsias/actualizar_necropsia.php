@@ -152,6 +152,9 @@ try {
 
         // C. Actualizar BD si hay imágenes
         if (!empty($rutasFinales)) {
+            // === CORRECCIÓN AQUÍ: Eliminar duplicados ===
+            $rutasFinales = array_unique($rutasFinales);
+            
             $stringEvidencia = implode(',', $rutasFinales);
             $sqlUpdate = "UPDATE t_regnecropsia SET evidencia = ? 
                           WHERE tgranja = ? AND tgalpon = ? AND tnumreg = ? AND tfectra = ? AND tnivel = ?";

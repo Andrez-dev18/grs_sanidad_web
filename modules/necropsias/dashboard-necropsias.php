@@ -1240,8 +1240,8 @@ if (!$conexion) {
                             <th class="px-3 py-2 text-center">Galpón</th>
                             <th class="px-3 py-2 text-center">Edad</th>
                             <th class="px-3 py-2 text-left">Usuario</th>
-                            <th class="px-3 py-2 text-center">Fecha Registro</th>
-                            <th class="px-3 py-2 text-center">Opciones</th>
+                            <th class="px-3 py-2 text-center">Fecha</th>
+                            <th class="text-center">Opciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1313,7 +1313,7 @@ if (!$conexion) {
             // Actualizar el año dinámicamente
             document.getElementById('currentYear').textContent = new Date().getFullYear();
         </script>
-
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     </div>
 
     <script>
@@ -1385,10 +1385,9 @@ if (!$conexion) {
                 pageLength: 10,
                 lengthMenu: [10, 25, 50, 100],
                 order: [
-                    [9, 'desc']
-                ], // Ordenar por fecha registro descendente (columna 9)
-                columns: [
-                    {
+                    [2, 'desc']
+                ], // Ordenar por fecha de registro
+                columns: [{
                         data: 'counter',
                         className: 'text-center',
                         orderable: false
@@ -1435,12 +1434,16 @@ if (!$conexion) {
                             // Usar tfectra_raw que está en formato Y-m-d
                             const fectraParaEditar = row.tfectra_raw || row.tfectra;
                             return `
-                                <button onclick="editarNecropsia('${row.tgranja}', ${row.tnumreg}, '${fectraParaEditar}')" 
-                                        class="inline-flex items-center gap-1 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs font-medium transition-colors">
-                                    <i class="fa-solid fa-eye"></i>
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                    <span>Ver/Editar</span>
-                                </button>
+                                <div class="flex justify-center items-center gap-3 flex-wrap">
+                                    <button onclick="editarNecropsia('${row.tgranja}', ${row.tnumreg}, '${row.tfectra}')" 
+                                            class="bg-blue-600 text-white px-4 py-1.5 rounded-md hover:bg-blue-700 text-xs font-medium transition-colors shadow-sm">
+                                        Ver/Editar
+                                    </button>
+                                    <button onclick="eliminarNecropsia('${row.tgranja}', ${row.tnumreg}, '${row.tfectra}')" 
+                                            class="bg-red-600 text-white px-4 py-1.5 rounded-md hover:bg-red-700 text-xs font-medium transition-colors shadow-sm">
+                                        Eliminar
+                                    </button>
+                                </div>
                             `;
                         }
                     }
@@ -1454,6 +1457,8 @@ if (!$conexion) {
         let loteEditando = {};
 
         async function editarNecropsia(granja, numreg, fectra) {
+            // Limpiar formulario primero
+                limpiarFormularioNecropsia();
             isEditMode = true;
             loteEditando = {
                 granja,
@@ -1477,8 +1482,7 @@ if (!$conexion) {
                     return;
                 }
 
-                // Limpiar formulario primero
-                limpiarFormularioNecropsia();
+                
 
                 // === CABECERA ===
                 // Fecha necropsia (setear primero para que get_granjas.php calcule edad con esta fecha)
@@ -1683,6 +1687,7 @@ if (!$conexion) {
                     });
 
                     // Imágenes (solo una vez por nivel)
+                    // ... dentro de editarNecropsia ...
                     if (datos.evidencia) {
                         const preview = document.getElementById('preview_' + obsIdBase);
                         if (preview) {
@@ -1692,17 +1697,29 @@ if (!$conexion) {
 
                             rutas.forEach(ruta => {
                                 const container = document.createElement('div');
-                                container.classList.add('relative', 'inline-block', 'mr-2', 'mb-2');
+                                container.classList.add('relative', 'inline-block', 'mr-2', 'mb-2', 'group'); // Agregué 'group'
 
+                                // Imagen
                                 const img = document.createElement('img');
-                                img.src = '../../' + ruta;
-                                img.classList.add('h-32', 'w-32', 'object-cover', 'rounded-lg');
+                                img.src = '../../' + ruta; // Ruta visual
+                                img.dataset.serverPath = ruta; // IMPORTANTE: Guardamos la ruta original del servidor
+                                img.classList.add('h-32', 'w-32', 'object-cover', 'rounded-lg', 'shadow-md');
 
+                                // Botón Eliminar (Unificado)
                                 const removeBtn = document.createElement('button');
                                 removeBtn.innerHTML = '×';
-                                removeBtn.classList.add('absolute', 'top-0', 'right-0', 'bg-red-600', 'text-white', 'text-xs', 'font-bold', 'rounded-full', 'w-6', 'h-6', 'flex', 'items-center', 'justify-center', 'cursor-pointer', 'hover:bg-red-700');
-                                removeBtn.style.transform = 'translate(50%, -50%)';
-                                removeBtn.onclick = () => container.remove();
+                                removeBtn.classList.add(
+                                    'absolute', 'top-1', 'right-1',
+                                    'bg-red-600', 'hover:bg-red-700', 'text-white',
+                                    'text-sm', 'font-bold', 'rounded-full', 'w-6', 'h-6',
+                                    'flex', 'items-center', 'justify-center', 'cursor-pointer', 'shadow-sm',
+                                    'opacity-0', 'group-hover:opacity-100', 'transition-opacity' // Efecto hover
+                                );
+
+                                removeBtn.onclick = (e) => {
+                                    e.preventDefault(); // Evitar submits accidentales
+                                    container.remove();
+                                };
 
                                 container.appendChild(img);
                                 container.appendChild(removeBtn);
@@ -1710,6 +1727,7 @@ if (!$conexion) {
                             });
                         }
                     }
+                    // ...
                 });
 
             } catch (err) {
@@ -2257,8 +2275,10 @@ if (!$conexion) {
                         removeBtn.classList.add('absolute', 'top-0', 'right-0', 'bg-red-600', 'text-white', 'text-xs', 'font-bold', 'rounded-full', 'w-6', 'h-6', 'flex', 'items-center', 'justify-center', 'cursor-pointer', 'hover:bg-red-700');
                         removeBtn.style.transform = 'translate(50%, -50%)';
                         removeBtn.onclick = function() {
-                            const index = Array.from(preview.children).indexOf(container);
-                            evidencias[obsId].splice(index, 1);
+                            const index = evidencias[obsId].indexOf(file);
+                            if (index > -1) {
+                                evidencias[obsId].splice(index, 1);
+                            }
                             container.remove();
                         };
 
@@ -2274,38 +2294,62 @@ if (!$conexion) {
             });
         });
 
-        // === FUNCIÓN PARA LIMPIAR TODO EL FORMULARIO DE NECROPSIA ===
+        // === FUNCIÓN PARA LIMPIAR TODO EL FORMULARIO Y RESETEAR ESTADO ===
         function limpiarFormularioNecropsia() {
-            // 1. Desmarcar todos los checkboxes
+            // 1. Resetear variables globales de control
+            isEditMode = false;
+            loteEditando = {}; // Limpiamos el objeto de edición
+
+            // 2. Restaurar el botón a su estado original
+            const btnGuardar = document.getElementById('btnGuardarNecropsia');
+            if (btnGuardar) {
+                btnGuardar.textContent = 'Registrar Necropsia';
+                btnGuardar.classList.remove('bg-yellow-500', 'hover:bg-yellow-600'); // Quitar color de edición (opcional)
+                btnGuardar.classList.add('bg-green-600', 'hover:bg-green-700'); // Volver al verde original
+            }
+
+            // 3. Habilitar campos que se bloquean al editar (si los hubiera)
+            const selectGalpon = document.getElementById('galpon');
+            if (selectGalpon) {
+                selectGalpon.disabled = true; // Se deshabilita al inicio hasta que seleccionen granja
+                selectGalpon.innerHTML = '<option value="">Seleccione granja primero</option>';
+            }
+
+            // 4. Limpiar campos de cabecera
+            document.getElementById('granja').value = '';
+            document.getElementById('campania').value = '';
+            document.getElementById('edad').value = '';
+            document.getElementById('fectra').value = '';
+
+            // 5. Desmarcar todos los checkboxes
             document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                 cb.checked = false;
             });
 
-            // 2. Limpiar todos los textareas de observaciones
+            // 6. Limpiar textareas de observaciones
             document.querySelectorAll('textarea[id^="obs_"]').forEach(textarea => {
                 textarea.value = '';
             });
 
-            // 3. Limpiar previews de imágenes y inputs file
+            // 7. Limpiar inputs de archivo y las vistas previas
             document.querySelectorAll('input[type="file"][id^="evidencia_"]').forEach(input => {
-                input.value = ''; // Limpia el input file
+                input.value = '';
             });
 
             document.querySelectorAll('div[id^="preview_"]').forEach(preview => {
-                preview.innerHTML = '';
+                preview.innerHTML = ''; // Esto borra tanto las fotos nuevas como las viejas cargadas
             });
 
-            // 4. Resetear los porcentajes a 0%
+            // 8. Resetear los porcentajes visuales a 0%
             document.querySelectorAll('td[id^="porc_"]').forEach(td => {
                 td.textContent = '0%';
             });
 
-            document.getElementById('granja').value = '';
-            document.getElementById('campania').value = '';
-            document.getElementById('edad').value = '';
-            document.getElementById('galpon').value = '';
-            document.getElementById('fectra').value = '';
-
+            // 9. Limpiar el objeto global de evidencias nuevas
+            // (Importante para que no se suban fotos de la sesión anterior)
+            for (const key in evidencias) {
+                delete evidencias[key];
+            }
         }
 
         let evidenciasActuales = []; // Array de rutas
@@ -2438,18 +2482,26 @@ if (!$conexion) {
                 if (previewDiv) {
                     const imgs = previewDiv.querySelectorAll('img');
                     const rutasLimpias = [];
+
                     imgs.forEach(img => {
-                        let src = img.getAttribute('src');
-                        // El src vendrá como "../../uploads/...", necesitamos limpiar los "../"
-                        // Buscamos la posición de 'uploads/'
-                        if (src.includes('uploads/')) {
-                            // Cortamos desde 'uploads/' en adelante
-                            const cleanPath = src.substring(src.indexOf('uploads/'));
-                            rutasLimpias.push(cleanPath);
+                        if (img.dataset.serverPath) {
+                            rutasLimpias.push(img.dataset.serverPath);
+                        }
+                        // Opción B (Fallback): Analizar el src buscando 'uploads/' y evitando base64
+                        else {
+                            let src = img.getAttribute('src');
+                            if (src.includes('uploads/') && !src.startsWith('data:')) {
+                                // Limpiar ../ si existe
+                                const cleanPath = src.substring(src.indexOf('uploads/'));
+                                rutasLimpias.push(cleanPath);
+                            }
                         }
                     });
+
                     if (rutasLimpias.length > 0) {
-                        imagenesExistentes[mapIdToBdName[obsId]] = rutasLimpias.join(',');
+                        // Usamos Set para eliminar duplicados visuales por si acaso
+                        const unicas = [...new Set(rutasLimpias)];
+                        imagenesExistentes[mapIdToBdName[obsId]] = unicas.join(',');
                     }
                 }
             });
@@ -2758,6 +2810,84 @@ if (!$conexion) {
                 document.getElementById('modalCarga').classList.add('hidden');
                 console.error(err);
                 alert('Error de conexión al actualizar.');
+            }
+        }
+
+        async function eliminarNecropsia(granja, numreg, fectra) {
+            // 1. Confirmación con SweetAlert2
+            const result = await Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Esta acción eliminará permanentemente los registros y las fotos asociadas. ¡No podrás revertir esto!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33', // Rojo para indicar peligro
+                cancelButtonColor: '#3085d6', // Azul para cancelar
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true, // Pone el botón de cancelar primero (más seguro UX)
+                focusCancel: true
+            });
+
+            if (!result.isConfirmed) {
+                return; // El usuario canceló
+            }
+
+            // 2. Preparar datos
+            const formData = new FormData();
+            formData.append('granja', granja);
+            formData.append('numreg', numreg);
+            formData.append('fectra', fectra);
+
+            try {
+                // 3. Mostrar Loading (Bloqueamos la pantalla con SweetAlert)
+                Swal.fire({
+                    title: 'Eliminando...',
+                    text: 'Por favor espera, borrando archivos y datos.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading(); // Muestra el spinner de carga
+                    }
+                });
+
+                // 4. Petición al servidor
+                const response = await fetch('eliminar_necropsia.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // 5. Manejar respuesta
+                if (data.success) {
+                    // Éxito: Mensaje bonito y recarga
+                    await Swal.fire({
+                        icon: 'success',
+                        title: '¡Eliminado!',
+                        text: 'La necropsia ha sido eliminada correctamente.',
+                        timer: 1500, // Se cierra solo en 1.5 seg
+                        showConfirmButton: false
+                    });
+
+                    // Recargar la tabla manteniendo la paginación actual
+                    $('#tabla').DataTable().ajax.reload(null, false);
+                } else {
+                    // Error lógico (ej: no se encontró registro)
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message || 'No se pudo eliminar el registro.'
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                // Error técnico (ej: servidor caído, error 500)
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexión',
+                    text: 'Ocurrió un problema al intentar conectar con el servidor. Por favor intenta de nuevo.'
+                });
             }
         }
     </script>
