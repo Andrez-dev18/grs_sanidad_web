@@ -89,7 +89,7 @@
                     } else {
                         result.data.forEach(lote => {
                             const codigoLote = String(lote.tnumreg).padStart(6, '0');
-                            const fechaNecropsia = new Date(lote.tfectra).toLocaleDateString('es-PE');
+                            const fechaNecropsia = lote.tfectra;
                             const horaRegistro = lote.ttime.substring(0, 5);
 
                             const fectraParts = lote.tfectra.split('/');

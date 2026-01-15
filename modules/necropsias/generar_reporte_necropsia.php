@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '../../../vendor/autoload.php';
-date_default_timezone_set('America/Lima');  // Zona horaria de Perú
+date_default_timezone_set('America/Lima');
 use Mpdf\Mpdf;
 
 include_once '../../../conexion_grs_joya/conexion.php';
@@ -44,7 +44,6 @@ foreach ($registros as $reg) {
     }
 }
 
-// Si se solicita solo verificación (parámetro check)
 if (isset($_GET['check']) && $_GET['check'] == '1') {
     header('Content-Type: application/json');
     echo json_encode(['tiene_imagenes' => $tieneImagenes]);
@@ -52,7 +51,6 @@ if (isset($_GET['check']) && $_GET['check'] == '1') {
     exit;
 }
 
-// Si no hay imágenes, no generar PDF (debe ser manejado por el frontend)
 if (!$tieneImagenes) {
     header('Content-Type: application/json');
     echo json_encode(['tiene_imagenes' => false, 'mensaje' => 'No se registró imágenes']);
@@ -84,7 +82,8 @@ $mpdf = new Mpdf([
 ================================ */
 $granjaRaw = $registros[0]['tcencos'];
 $granjaTxt = trim(explode('C=', $granjaRaw)[0]);
-$fechaGeneracion = date('d/m/Y h:i A:'); // Fecha y hora actual simple
+$fechaGeneracion = date('d/m/Y h:i A');
+
 /* ===============================
    PORCENTAJES
 ================================ */
@@ -103,7 +102,7 @@ $html = '
 <meta charset="UTF-8">
 <style>
     body { font-family: Arial; font-size: 11pt; }
-    h1 { text-align:center; color:#002060; font-size:26pt; margin-top: 0px; } /* margin-top 0 para pegarlo si es necesario */
+    h1 { text-align:center; color:#002060; font-size:26pt; margin-top: 0px; }
     h2 {
         text-align:center;
         color:#002060;
@@ -119,10 +118,16 @@ $html = '
 
     .nivel { font-size:14pt; font-weight:bold; color:#002060; margin-bottom:6px; }
 
+   /* CSS MODIFICADO */
     .img-box {
-        width:260px;
-        height:200px;
+        width: 260px;
+        min-height: 200px; /* Altura mínima, pero puede crecer */
+        overflow: visible; /* Dejar que crezca */
+        text-align: center; /* Centrar las fotos */
     }
+    
+    /* Para que la celda de la tabla se adapte al contenido estirado */
+    td { vertical-align: top; }
 
     .porc-box {
         width:260px;
@@ -140,8 +145,7 @@ $html = '
         clear: both;
     }
 
-    .tabla-bursal th,
-    .tabla-bursal td {
+    .tabla-bursal th, .tabla-bursal td {
         border: 1px solid #ffffff;
         padding: 5px 7px;
         text-align: center;
@@ -153,18 +157,9 @@ $html = '
         font-weight: bold;
     }
 
-    .tabla-bursal tbody tr:nth-child(odd) {
-        background: #f5f5f5;
-    }
-
-    .tabla-bursal tbody tr:nth-child(even) {
-        background: #ffffff;
-    }
-
-    .tabla-bursal .estado {
-        text-align: left;
-        padding-left: 10px;
-    }
+    .tabla-bursal tbody tr:nth-child(odd) { background: #f5f5f5; }
+    .tabla-bursal tbody tr:nth-child(even) { background: #ffffff; }
+    .tabla-bursal .estado { text-align: left; padding-left: 10px; }
 </style>
 </head>
 <body>
@@ -191,14 +186,12 @@ $html = '
 ';
 
 /* ===============================
-   TABLA BURSAL (ESTÁTICA)
+   TABLA BURSAL
 ================================ */
 $tablaBursalHTML = '
 <table class="tabla-bursal">
 <thead>
-<tr>
-<th>N° Ave</th><th>Peso Ave</th><th>Peso Bursa</th><th>Índice Bursal</th><th>Estado</th>
-</tr>
+<tr><th>N° Ave</th><th>Peso Ave</th><th>Peso Bursa</th><th>Índice Bursal</th><th>Estado</th></tr>
 </thead>
 <tbody>
 <tr><td>01</td><td>1.555</td><td>0.75</td><td>0.48</td><td>Atrofia severa</td></tr>
@@ -247,12 +240,33 @@ foreach ($registros as $reg) {
         $col = 0;
     }
 
+    // === MODIFICACIÓN: FOTOS GRANDES (Apiladas Verticalmente) ===
     $imgHtml = 'Sin evidencia';
+    
     if (!empty($reg['evidencia'])) {
-        $img = trim(explode(',', $reg['evidencia'])[0]);
-        $path = realpath(__DIR__ . '/../../' . $img);
-        if ($path) $imgHtml = '<img src="file:///' . $path . '" width="240">';
+        $rutas = array_filter(explode(',', $reg['evidencia']), 'trim');
+        
+        if (count($rutas) > 0) {
+            $imgHtml = ''; 
+            
+            // Forzamos un tamaño grande para todas (aprox 95% del ancho del cuadro)
+            // Esto hará que se vean muy bien, pero la fila crecerá hacia abajo.
+            $estiloImg = 'width:240px; margin-bottom: 5px; border: 1px solid #ccc;';
+
+            foreach ($rutas as $ruta) {
+                // Ajustamos la ruta física
+                $path = realpath(__DIR__ . '/../../' . $ruta);
+                
+                if ($path && file_exists($path)) {
+                    // El display:block ayuda a que mPDF entienda que van una debajo de otra
+                    $imgHtml .= '<img src="file:///' . $path . '" style="' . $estiloImg . '"> ';
+                    // Agregamos un salto de línea por seguridad visual
+                    $imgHtml .= '<br>'; 
+                }
+            }
+        }
     }
+    // ==========================================================
 
     $porcHtml = '';
     if (!empty($porcentajes[$reg['tnivel']])) {
