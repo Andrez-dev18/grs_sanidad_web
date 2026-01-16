@@ -1348,6 +1348,23 @@ if (!$conn) {
                 Registrar Necropsia
             </button>
 
+            <?php
+            $codigoUsuario = $_SESSION['usuario'] ?? 'USER';  // Cambia 'usuario' si tu sesión usa otro nombre
+            // Consulta directa, simple
+            $sql = "SELECT rol_sanidad FROM usuario WHERE codigo = '$codigoUsuario'";
+            $res = $conn->query($sql);
+
+            $rol = 'user'; // valor por defecto si no encuentra nada
+
+            if ($res && $res->num_rows > 0) {
+                $fila = $res->fetch_assoc();
+                $rol = strtolower(trim($fila['rol_sanidad']));
+            }
+            ?>
+
+            <!-- Este <p> oculto guarda el rol para que JavaScript lo lea -->
+            <p id="idRolUser" data-rol="<?= htmlspecialchars($rol) ?>"></p>
+
             <!-- tabla -->
             <div class="card-body p-0 mt-5">
                 <div class="table-wrapper overflow-x-auto">
@@ -1576,20 +1593,34 @@ if (!$conn) {
                         className: 'text-center',
                         orderable: false,
                         render: function(data, type, row) {
-                            // Usar tfectra_raw que está en formato Y-m-d
+
+                            const rolUser = document.getElementById('idRolUser')?.dataset.rol?.trim().toLowerCase() || 'user';
+
                             const fectraParaEditar = row.tfectra_raw || row.tfectra;
-                            return `
-                                <div class="flex justify-center items-center gap-3 flex-wrap">
-                                    <button onclick="editarNecropsia('${row.tgranja}', ${row.tnumreg}, '${row.tfectra}')" 
-                                            class="bg-blue-600 text-white px-4 py-1.5 rounded-md hover:bg-blue-700 text-xs font-medium transition-colors shadow-sm">
-                                        Ver/Editar
-                                    </button>
+
+                            let buttonsHtml = `
+                                    <div class="flex justify-center items-center gap-3 flex-wrap">
+                                        <button onclick="editarNecropsia('${row.tgranja}', ${row.tnumreg}, '${row.tfectra}')" 
+                                                class="bg-blue-600 text-white px-4 py-1.5 rounded-md hover:bg-blue-700 text-xs font-medium transition-colors shadow-sm"
+                                                title="Ver o Editar detalle">
+                                            Ver/Editar
+                                        </button>
+                                `;
+
+                            if (rolUser === 'admin') {
+                                buttonsHtml += `
                                     <button onclick="eliminarNecropsia('${row.tgranja}', ${row.tnumreg}, '${row.tfectra}')" 
-                                            class="bg-red-600 text-white px-4 py-1.5 rounded-md hover:bg-red-700 text-xs font-medium transition-colors shadow-sm">
+                                            class="bg-red-600 text-white px-4 py-1.5 rounded-md hover:bg-red-700 text-xs font-medium transition-colors shadow-sm"
+                                            title="Eliminar registro permanentemente">
                                         Eliminar
                                     </button>
-                                </div>
-                            `;
+                                `;
+                            }
+
+                            // 4. CERRAR EL CONTENEDOR
+                            buttonsHtml += `</div>`;
+
+                            return buttonsHtml;
                         }
                     }
                 ]
@@ -1605,7 +1636,7 @@ if (!$conn) {
                 $('#filtroFechaFin').val('');
                 $('#filtroGranja').val('');
                 tabla.ajax.reload();
-            });                    
+            });
 
         });
     </script>
