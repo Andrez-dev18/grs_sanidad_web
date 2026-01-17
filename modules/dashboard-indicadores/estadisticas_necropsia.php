@@ -14,7 +14,7 @@ $resSistemas = $conn->query($sqlSistemas);
 
 $dataSistemas = [];
 $labelSistemas = [];
-while($row = $resSistemas->fetch_assoc()) {
+while ($row = $resSistemas->fetch_assoc()) {
     $labelSistemas[] = $row['tsistema'];
     $dataSistemas[] = round($row['promedio'], 2);
 }
@@ -31,17 +31,16 @@ $resHallazgos = $conn->query($sqlHallazgos);
 
 $dataHallazgos = [];
 $labelHallazgos = [];
-while($row = $resHallazgos->fetch_assoc()) {
+while ($row = $resHallazgos->fetch_assoc()) {
     $labelHallazgos[] = $row['hallazgo'];
     $dataHallazgos[] = $row['frecuencia'];
 }
 
 // 3. CANTIDAD DE NECROPSIAS POR GRANJA
-
-// A) Desactivar modo estricto para evitar errores al agrupar
+// A) Desactivar modo estricto
 $conn->query("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
 
-// B) CONSULTA CORREGIDA (Faltaba la coma después de tcencos)
+// B) Consulta: Traemos el código y el nombre
 $sqlGranjas = "SELECT tgranja, tcencos, COUNT(DISTINCT tnumreg) as cantidad 
                FROM t_regnecropsia 
                GROUP BY tgranja 
@@ -49,39 +48,57 @@ $sqlGranjas = "SELECT tgranja, tcencos, COUNT(DISTINCT tnumreg) as cantidad
 
 $resGranjas = $conn->query($sqlGranjas);
 
-$dataGranjas = [];
-$labelGranjas = [];
+// Arrays auxiliares para agrupar
+$agrupadoPorCodigo = []; // Aquí sumaremos las cantidades: '632' => 50
+$nombresPorCodigo = [];  // Aquí guardaremos el nombre bonito: '632' => 'GJA. GUADALUPE III'
 
-// Verificamos si la consulta se ejecutó bien
 if ($resGranjas) {
-    while($row = $resGranjas->fetch_assoc()) {
-        
-        // C) IMPORTANTE: Convertir a UTF-8. 
-        // Si no haces esto y hay una 'Ñ' o tilde, json_encode devuelve todo vacío.
-        $nombreCompleto = utf8_encode($row['tcencos']); 
-        
-        // Limpieza del nombre (Quitar lo que está después de "C=")
+    while ($row = $resGranjas->fetch_assoc()) {
+
+        // 1. OBTENER EL CÓDIGO BASE (IDENTIFICADOR REAL DE LA GRANJA)
+        // Tomamos los primeros 3 dígitos (ej: '632' de '632148')
+        // Si tu código es de longitud variable, ajusta esto, pero en tus capturas veo que son los 3 primeros.
+        $codigoBase = substr($row['tgranja'], 0, 3);
+
+        // 2. OBTENER Y LIMPIAR EL NOMBRE
+        $nombreCompleto = utf8_encode($row['tcencos']);
         if (strpos($nombreCompleto, 'C=') !== false) {
             $nombreLimpio = explode('C=', $nombreCompleto)[0];
         } else {
             $nombreLimpio = $nombreCompleto;
         }
-        
-        // Si por alguna razón el nombre está vacío, usamos el código como respaldo
-        $etiqueta = trim($nombreLimpio);
-        if ($etiqueta === '') {
-            $etiqueta = $row['tgranja'];
+
+        // Normalización visual (Opcional pero recomendado para que se vea limpio)
+        $nombreLimpio = strtoupper(trim($nombreLimpio));
+        $nombreLimpio = str_replace('GRANJA', 'GJA.', $nombreLimpio); // Estandarizar prefijo
+        $nombreLimpio = str_replace('GJA. ', 'GJA.', $nombreLimpio);  // Quitar espacio después del punto
+
+        // 3. ACUMULAR CANTIDADES
+        if (!isset($agrupadoPorCodigo[$codigoBase])) {
+            $agrupadoPorCodigo[$codigoBase] = 0;
+            // Guardamos el primer nombre que encontremos para este código
+            $nombresPorCodigo[$codigoBase] = $nombreLimpio;
         }
 
-        $labelGranjas[] = $etiqueta;
-        $dataGranjas[] = $row['cantidad'];
+        $agrupadoPorCodigo[$codigoBase] += $row['cantidad'];
     }
-} else {
-    // Si falla la consulta, muestra el error real de MySQL para depurar
-    die("Error SQL: " . $conn->error);
 }
 
-// ... (Tus consultas anteriores 1, 2 y 3) ...
+// 4. PREPARAR DATOS FINALES PARA EL GRÁFICO
+$dataGranjas = [];
+$labelGranjas = [];
+
+// Ordenamos de mayor a menor cantidad para que la rosquilla se pinte ordenada
+arsort($agrupadoPorCodigo);
+
+foreach ($agrupadoPorCodigo as $codigo => $cantidad) {
+    // Usamos el nombre que guardamos. Si por error no hay nombre, usamos el código.
+    $nombreMostrar = $nombresPorCodigo[$codigo] ?: "Granja $codigo";
+
+    $labelGranjas[] = $nombreMostrar;
+    $dataGranjas[] = $cantidad;
+}
+
 
 // 4. DATOS PARA EL MAPA DE CALOR (HEATMAP)
 // Cruzamos Galpón vs Sistema y promediamos el porcentaje de daño
@@ -92,7 +109,7 @@ $sqlHeatmap = "SELECT tgalpon, tsistema, AVG(tporcentajetotal) as severidad
 $resHeatmap = $conn->query($sqlHeatmap);
 
 $dataHeatmap = [];
-while($row = $resHeatmap->fetch_assoc()) {
+while ($row = $resHeatmap->fetch_assoc()) {
     $dataHeatmap[] = [
         'y' => "Galpón " . $row['tgalpon'], // Eje Y
         'x' => $row['tsistema'],            // Eje X
@@ -110,10 +127,10 @@ $sqlDin = "SELECT tnivel, tparametro, AVG(tporcentajetotal) as promedio
 $resDin = $conn->query($sqlDin);
 
 $dataNiveles = [];
-while($row = $resDin->fetch_assoc()) {
+while ($row = $resDin->fetch_assoc()) {
     $nivel = utf8_encode($row['tnivel']); // Importante UTF8
     $param = utf8_encode($row['tparametro']);
-    
+
     if (!isset($dataNiveles[$nivel])) {
         $dataNiveles[$nivel] = ['labels' => [], 'data' => []];
     }
@@ -132,4 +149,3 @@ echo json_encode([
 
 
 $conn->close();
-?>
