@@ -47,6 +47,7 @@ $fectra     = $input['fectra'];
 $campania   = $input['campania'];
 $edad       = $input['edad'];
 $tcencos    = $input['tcencos'] ?? '';
+$diagpresuntivo = $input['diagpresuntivo'];
 $imagenes_existentes = $input['imagenes_existentes'] ?? []; // Array con rutas de fotos antiguas
 
 session_start();
@@ -76,8 +77,8 @@ try {
         tid, tuser, tdate, ttime, tcencos, tgranja, tcampania, tedad, tgalpon, tnumreg, tfectra, diareg,
         tcodsistema, tsistema, tnivel, tparametro,
         tporcentaje1, tporcentaje2, tporcentaje3, tporcentaje4, tporcentaje5, tporcentajetotal,
-        tobservacion, evidencia, tobs, tuuid
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        tobservacion, evidencia, tdiagpresuntivo, tobs, tuuid
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)";
 
     $stmt = $conn->prepare($sqlInsert);
     $tid_contador = 1;
@@ -99,11 +100,11 @@ try {
         $evidencia_temp = ''; // Se actualizará en el paso 3
 
         $stmt->bind_param(
-            "issssssssississsddddddssss",
+            "issssssssississsddddddsssss",
             $current_tid, $tuser, $tdate, $ttime, $tcencos, $granja, $campania, $edad, $galpon, $numreg, $fectra, $diareg,
             $tcodsistema, $reg['tsistema'], $reg['tnivel'], $reg['tparametro'],
             $reg['tporcentaje1'], $reg['tporcentaje2'], $reg['tporcentaje3'], $reg['tporcentaje4'], $reg['tporcentaje5'], $reg['tporcentajetotal'],
-            $obs, $evidencia_temp, $obs, $tuuid
+            $obs, $evidencia_temp, $diagpresuntivo ,$obs, $tuuid
         );
 
         if (!$stmt->execute()) {

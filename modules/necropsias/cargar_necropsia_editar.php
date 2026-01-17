@@ -41,8 +41,9 @@ if ($result->num_rows > 0) {
         'granja' => $first['tgranja'],
         'campania' => $first['tcampania'],
         'galpon' => $first['tgalpon'],
-        'edad' => $first['tedad'], // CORREGIDO: era 'ed ad'
-        'fectra' => $first['tfectra']
+        'edad' => $first['tedad'], 
+        'fectra' => $first['tfectra'],
+        'diagpresuntivo' => $first['tdiagpresuntivo']
     ];
     
     // Procesar primer registro
@@ -79,6 +80,7 @@ echo json_encode([
     'galpon' => $infoLote['galpon'] ?? '',
     'edad' => $infoLote['edad'] ?? '',
     'fectra' => $infoLote['fectra'] ?? '',
+    'diagpresuntivo' => $infoLote['diagpresuntivo'] ?? '',
     'registros' => $registros
 ]);
 
