@@ -314,6 +314,9 @@
                                 <button type="button" class="tab-button py-3 px-1 border-b-4 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium" data-tab="evaluacion">
                                     Evaluación Física
                                 </button>
+                                <button type="button" class="tab-button py-3 px-1 border-b-4 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium" data-tab="diag-presuntivo">
+                                Diag. Presuntivo
+                            </button>
                             </nav>
                         </div>
 
@@ -1191,6 +1194,33 @@
                             </table>
                         </div>
 
+                        <!-- DIAGNOSTICO PRESUNTIVO -->
+                    <div class="tab-content hidden" id="diag-presuntivo">
+                        <div class="">
+                            <div class="mb-4">
+                                <label for="txtDiagnosticoPresuntivo" class="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                                    <i class="fas fa-stethoscope text-green-600"></i> Diagnóstico Presuntivo
+                                </label>
+                                <p class="text-xs text-gray-500">
+                                    Detalle aquí las conclusiones preliminares basadas en las lesiones observadas durante la necropsia.
+                                </p>
+                            </div>
+
+                            <div class="relative flex-1">
+                                <textarea
+                                    id="txtDiagnosticoPresuntivo"
+                                    name="diagnostico_presuntivo"
+                                    class="w-full h-full min-h-[150px] p-4 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none transition-all outline-none"
+                                    placeholder="Escriba su diagnóstico aquí..."></textarea>
+
+                                <div class="absolute bottom-3 right-3 text-xs text-gray-400 pointer-events-none">
+                                    <i class="fas fa-pen"></i>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
                     <!-- Botones al final -->
                     <div class="flex justify-end mt-8 gap-4">
                         <button type="button" id="btnLimpiarFormulario" class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
@@ -1388,12 +1418,18 @@
                 const edad = document.getElementById('edad').value;
                 const galpon = galponSelect.value;
                 const fectra = document.getElementById('fectra').value;
+                const diagpresuntivo = document.getElementById('txtDiagnosticoPresuntivo').value;
 
                 // Validación básica
                 if (!codigoGranja || !galpon || !fectra) {
                     alert('Por favor complete todos los campos de la cabecera');
                     return;
                 }
+
+                if (!diagpresuntivo) {
+                alert('Por favor es importante que llene el diagnostico presuntivo');
+                return;
+            }
 
                 // === GENERAR NÚMERO DE REGISTRO AUTOMÁTICO: HHMMSS ===
                 const now = new Date();
@@ -1410,6 +1446,7 @@
                     fectra: fectra, // → tfectra
                     numreg: numreg, // → tnumreg
                     tcencos: tcencos, // → tcencos (nombre completo)
+                    diagpresuntivo: diagpresuntivo,
                     registros: [] // Aquí van los parámetros como antes
                 };
 
@@ -1865,6 +1902,7 @@
                 document.getElementById('campania').value = '';
                 document.getElementById('edad').value = '';
                 document.getElementById('fectra').value = '';
+                document.getElementById('txtDiagnosticoPresuntivo').value = '';
 
                 // 5. Desmarcar todos los checkboxes
                 document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
@@ -1900,77 +1938,7 @@
             let evidenciasActuales = []; // Array de rutas
             let indiceFotoActual = 0;
 
-            function abrirModalEvidencia(rutasEvidencia) {
-                if (!rutasEvidencia || rutasEvidencia.trim() === '') return;
-
-                evidenciasActuales = rutasEvidencia.split(',').map(r => r.trim()).filter(r => r);
-
-                if (evidenciasActuales.length === 0) return;
-
-                indiceFotoActual = 0;
-                renderizarCarrusel();
-                document.getElementById('modalEvidencia').classList.remove('hidden');
-            }
-
-            function cerrarModalEvidencia() {
-                document.getElementById('modalEvidencia').classList.add('hidden');
-                document.getElementById('carruselFotos').innerHTML = '';
-                evidenciasActuales = [];
-            }
-
-            function renderizarCarrusel() {
-                const carrusel = document.getElementById('carruselFotos');
-                carrusel.innerHTML = '';
-
-                evidenciasActuales.forEach((ruta, index) => {
-                    const div = document.createElement('div');
-                    div.className = 'min-w-full h-full flex items-center justify-center px-4';
-                    div.innerHTML = `
-                <img src="../../${ruta}" alt="Evidencia ${index + 1}" 
-                    class="max-w-full max-h-full object-contain rounded-lg shadow-xl">
-                `;
-                    carrusel.appendChild(div);
-                });
-
-                // Posicionar en la foto actual
-                carrusel.style.transform = `translateX(-${indiceFotoActual * 100}%)`;
-
-                // Actualizar contador
-                document.getElementById('contadorFotos').textContent = `${indiceFotoActual + 1} / ${evidenciasActuales.length}`;
-
-                // Ocultar flechas si solo hay una foto
-                const prev = document.getElementById('prevFoto');
-                const next = document.getElementById('nextFoto');
-                if (evidenciasActuales.length <= 1) {
-                    prev.classList.add('hidden');
-                    next.classList.add('hidden');
-                } else {
-                    prev.classList.remove('hidden');
-                    next.classList.remove('hidden');
-                }
-            }
-
-            // Navegación
-            document.getElementById('prevFoto').addEventListener('click', () => {
-                if (indiceFotoActual > 0) {
-                    indiceFotoActual--;
-                    renderizarCarrusel();
-                }
-            });
-
-            document.getElementById('nextFoto').addEventListener('click', () => {
-                if (indiceFotoActual < evidenciasActuales.length - 1) {
-                    indiceFotoActual++;
-                    renderizarCarrusel();
-                }
-            });
-
-            // Abrir foto actual en nueva pestaña
-            function abrirFotoActualEnPestana() {
-                if (evidenciasActuales.length > 0) {
-                    window.open("../../" + evidenciasActuales[indiceFotoActual], '_blank');
-                }
-            }
+        
         </script>
 
     

@@ -1326,6 +1326,7 @@ if (!$conn) {
                         </table>
                     </div>
 
+                    <!-- DIAGNOSTICO PRESUNTIVO -->
                     <div class="tab-content hidden" id="diag-presuntivo">
                         <div class="">
                             <div class="mb-4">
