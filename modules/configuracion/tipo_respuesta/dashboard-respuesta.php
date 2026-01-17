@@ -239,9 +239,12 @@ if (!$conexion) {
                                     <td><?= htmlspecialchars($row['codigo']) ?></td>
                                     <td><?= htmlspecialchars($row['nombre']) ?></td>
                                     <td>
-                                        <button class="btn-secondary text-xs px-3 py-1 flex items-center gap-1"
+                                        <button
+                                            type="button"
+                                            class="p-2 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-100 transition"
+                                            title="Ver respuestas"
                                             onclick="openRespuestasModal(<?= (int) $row['codigo'] ?>)">
-                                            <i class="fas fa-list"></i> Ver respuestas
+                                            <i class="fa-solid fa-eye"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -382,13 +385,17 @@ if (!$conexion) {
                             tr.innerHTML = `
                                 <td class="border-b py-2">${escapeHtml(item.tipo)}</td>
                                 <td class="border-b py-2 text-right">
-                                    <button class="text-blue-600 hover:text-blue-800 text-xs mr-2" 
+                                    <button
+                                        title="Editar"
+                                        class="text-blue-600 hover:text-blue-800 text-xs mr-2 inline-flex items-center gap-1 transition" 
                                         onclick="openFormTipoResultado(${JSON.stringify(item).replace(/"/g, '&quot;')})">
-                                        ✏️ Editar
+                                        <i class="fa-solid fa-edit"></i> Editar
                                     </button>
-                                    <button class="text-red-600 hover:text-red-800 text-xs" 
+                                    <button
+                                        title="Eliminar"
+                                        class="text-red-600 hover:text-red-800 text-xs inline-flex items-center gap-1 transition" 
                                         onclick="eliminarTipoResultado(${item.codigo})">
-                                        🗑️ Eliminar
+                                        <i class="fa-solid fa-trash"></i> Eliminar
                                     </button>
                                 </td>
                             `;

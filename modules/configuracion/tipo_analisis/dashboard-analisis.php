@@ -293,14 +293,19 @@ if (!$conexion) {
                                         <td><?= htmlspecialchars($row['enfermedad'] ?? '') ?></td>
                                         <td>
                                             <div class="flex items-center gap-2">
-                                                <button class="btn-secondary text-xs px-3 py-1 flex items-center gap-1"
+                                                <button
+                                                    type="button"
+                                                    class="p-2 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-100 transition"
+                                                    title="Editar"
                                                     onclick='openAnalisisModal("update", <?= json_encode($row["codigo"]) ?>, <?= json_encode($row["nombre"]) ?>, <?= json_encode($row["enfermedad"] ?? "") ?>)'>
-                                                    <i class="fas fa-pencil-alt"></i> Editar
+                                                    <i class="fa-solid fa-edit"></i>
                                                 </button>
                                                 <button
-                                                    class="btn-outline text-xs px-3 py-1 text-red-600 border-red-300 hover:bg-red-50 flex items-center gap-1"
+                                                    type="button"
+                                                    class="p-2 rounded-lg text-red-600 hover:text-red-800 hover:bg-red-100 transition"
+                                                    title="Eliminar"
                                                     onclick='confirmDelete(<?= json_encode($row["codigo"]) ?>, <?= json_encode($row["nombre"]) ?>)'>
-                                                    <i class="fas fa-trash-alt"></i> Eliminar
+                                                    <i class="fa-solid fa-trash"></i>
                                                 </button>
                                             </div>
                                         </td>

@@ -8,8 +8,8 @@ if (empty($_SESSION['active'])) {
 
 //ruta relativa a la conexion
 include_once '../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
-if (!$conexion) {
+$conn = conectar_joya();
+if (!$conn) {
     die("Error de conexión: " . mysqli_connect_error());
 }
 ?>
@@ -257,17 +257,139 @@ if (!$conexion) {
 <body class="bg-gray-50">
     <div class="container-fluid py-4 mx-8">
 
+        <!-- CARD FILTROS PLEGABLE -->
+        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
 
-        <!-- Botón para abrir el modal (igual) -->
-        <button id="btnRegistrarNecropsia" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-300">
-            Registrar Necropsia
-        </button>
+            <!-- HEADER -->
+            <button type="button" onclick="toggleFiltros()"
+                class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">
+
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">🔎</span>
+                    <h3 class="text-base font-semibold text-gray-800">
+                        Filtros de búsqueda
+                    </h3>
+                </div>
+
+                <!-- ICONO -->
+                <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
+                    fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            <!-- CONTENIDO PLEGABLE -->
+            <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
+
+                <?php
+                if ($conn) {
+                    // 1. Ejecutar el SET para evitar errores de GROUP BY
+                    $conn->query("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
+
+                    // 2. Consulta SQL optimizada
+                    // Seleccionamos SOLO codigo y nombre.
+                    // Usamos la lógica de 'edad' (b.edad) SOLO en el WHERE para filtrar, pero no la traemos en el SELECT.
+                    $sqlGranjas = "SELECT codigo, nombre
+                   FROM ccos AS a 
+                   LEFT JOIN (
+                        SELECT a.tcencos, a.tcodint, a.tcodigo, DATEDIFF(NOW(), MIN(a.fec_ing))+1 as edad 
+                        FROM maes_zonas AS a 
+                        USE INDEX(tcencos,tcodint,tcodigo) 
+                        WHERE a.tcodigo IN ('P0001001','P0001002')  
+                        GROUP BY tcencos
+                   ) AS b ON a.codigo = b.tcencos  
+                   WHERE (LEFT(codigo,1) IN ('6','5') 
+                   AND RIGHT(codigo,3)<>'000' 
+                   AND swac='A' 
+                   AND LENGTH(codigo)=6 
+                   AND LEFT(codigo,3)<>'650'
+                   AND LEFT(codigo,3) <= '667')
+                   AND IF(b.edad IS NULL, '0', b.edad) <> '0'
+                   ORDER BY nombre ASC";
+
+                    $resultadoGranjas = $conn->query($sqlGranjas);
+                }
+                ?>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
+                        <input type="date" id="filtroFechaInicio"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
+                        <input type="date" id="filtroFechaFin"
+                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Granja</label>
+                        <select id="filtroGranja" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            <option value="">Seleccionar</option>
+
+                            <?php if (isset($resultadoGranjas) && $resultadoGranjas): ?>
+                                <?php while ($fila = $resultadoGranjas->fetch_assoc()): ?>
+                                    <?php
+                                    // 1. Convertimos caracteres especiales primero
+                                    $nombreCompleto = utf8_encode($fila['nombre']);
+
+                                    // 2. LOGICA DE LIMPIEZA:
+                                    // Explotamos el string usando 'C=' como separador y tomamos la parte [0] (la izquierda)
+                                    $nombreCorto = explode('C=', $nombreCompleto)[0];
+
+                                    // 3. Quitamos espacios en blanco sobrantes al final (el espacio antes del C=)
+                                    $nombreCorto = trim($nombreCorto);
+
+                                    // 4. Sanear para HTML
+                                    $textoMostrar = htmlspecialchars($nombreCorto);
+                                    $codigo = htmlspecialchars($fila['codigo']);
+                                    ?>
+                                    <option value="<?php echo $codigo; ?>">
+                                        <?php echo $textoMostrar; ?>
+                                    </option>
+                                <?php endwhile; ?>
+                            <?php else: ?>
+                                <option value="" disabled>Sin datos disponibles</option>
+                            <?php endif; ?>
+
+                        </select>
+                    </div>
+
+                </div>
+
+                <!-- ACCIONES -->
+                <div class="mt-6 flex flex-wrap justify-end gap-4">
+
+                    <button type="button" id="btnAplicarFiltros"
+                        class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                        Filtrar
+                    </button>
+
+                    <button type="button" id="btnLimpiarFiltros"
+                        class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200">
+                        Limpiar
+                    </button>
+
+                    <button type="button"
+                        class="px-6 py-2.5 text-white font-medium rounded-lg transition inline-flex items-center gap-2"
+                        onclick="exportarNecropsiasExcel()"
+                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
+                        📊 Exportar a Excel
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
 
         <!-- Modal con Tabs -->
         <div id="modalNecropsia" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-800 bg-opacity-75 flex items-center justify-center">
             <div class="bg-white rounded-xl shadow-2xl p-8 max-w-7xl w-full mx-4 max-h-[95vh] overflow-y-auto">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">Registro de Necropsia</h2>
+                    <h2 class="text-2xl font-bold text-gray-800">Editar Necropsia</h2>
                     <button id="closeModal" class="text-gray-500 hover:text-gray-700 text-3xl">&times;</button>
                 </div>
 
@@ -1226,28 +1348,49 @@ if (!$conexion) {
             </div>
         </div>
 
-        <div class="card-body p-0 mt-5">
-            <div class="table-wrapper overflow-x-auto">
-                <table id="tabla" class="data-table w-full text-sm border-collapse">
-                    <thead class="bg-gray-100 sticky top-0 z-10">
-                        <tr>
-                            <th class="px-3 py-2 text-left">N°</th>
-                            <th class="px-3 py-2 text-center">N°Reg</th>
-                            <th class="px-3 py-2 text-center">Fecha Necropsia</th>
-                            <th class="px-3 py-2 text-center">Granja</th>
-                            <th class="px-3 py-2 text-left">Nombre</th>
-                            <th class="px-3 py-2 text-center">Campaña</th>
-                            <th class="px-3 py-2 text-center">Galpón</th>
-                            <th class="px-3 py-2 text-center">Edad</th>
-                            <th class="px-3 py-2 text-left">Usuario</th>
-                            <th class="px-3 py-2 text-center">Fecha Registro</th>
-                            <th class="px-3 py-2 text-center">Opciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+        <!-- contenedor boton y tabla  -->
+        <div class="bg-white rounded-xl shadow-md p-5">
+            <?php
+            $codigoUsuario = $_SESSION['usuario'] ?? 'USER';  // Cambia 'usuario' si tu sesión usa otro nombre
+            // Consulta directa, simple
+            $sql = "SELECT rol_sanidad FROM usuario WHERE codigo = '$codigoUsuario'";
+            $res = $conn->query($sql);
 
-                    </tbody>
-                </table>
+            $rol = 'user'; // valor por defecto si no encuentra nada
+
+            if ($res && $res->num_rows > 0) {
+                $fila = $res->fetch_assoc();
+                $rol = strtolower(trim($fila['rol_sanidad']));
+            }
+            ?>
+
+            <!-- Este <p> oculto guarda el rol para que JavaScript lo lea -->
+            <p id="idRolUser" data-rol="<?= htmlspecialchars($rol) ?>"></p>
+
+            <!-- tabla -->
+            <div class="card-body p-0 mt-5">
+                <div class="table-wrapper overflow-x-auto">
+                    <table id="tabla" class="data-table w-full text-sm border-collapse">
+                        <thead class="bg-gray-100 sticky top-0 z-10">
+                            <tr>
+                                <th class="px-3 py-2 text-left">N°</th>
+                                <th class="px-3 py-2 text-center">N°Reg</th>
+                                <th class="px-3 py-2 text-center">Fecha Necropsia</th>
+                                <th class="px-3 py-2 text-center">Granja</th>
+                                <th class="px-3 py-2 text-left">Nombre</th>
+                                <th class="px-3 py-2 text-center">Campaña</th>
+                                <th class="px-3 py-2 text-center">Galpón</th>
+                                <th class="px-3 py-2 text-center">Edad</th>
+                                <th class="px-3 py-2 text-left">Usuario</th>
+                                <th class="px-3 py-2 text-center">Fecha Registro</th>
+                                <th class="px-3 py-2 text-center">Opciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -1313,7 +1456,7 @@ if (!$conexion) {
             // Actualizar el año dinámicamente
             document.getElementById('currentYear').textContent = new Date().getFullYear();
         </script>
-
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     </div>
 
     <script>
@@ -1328,7 +1471,17 @@ if (!$conexion) {
             return `${yyyy}-${mm}-${dd}`;
         }
 
-        async function cargarGranjasConFecha({ preserveSelection = false } = {}) {
+        function toggleFiltros() {
+            const contenido = document.getElementById('contenidoFiltros');
+            const icono = document.getElementById('iconoFiltros');
+
+            contenido.classList.toggle('hidden');
+            icono.classList.toggle('rotate-180');
+        }
+
+        async function cargarGranjasConFecha({
+            preserveSelection = false
+        } = {}) {
             const select = document.getElementById('granja');
             if (!select) return;
 
@@ -1372,12 +1525,23 @@ if (!$conexion) {
         }
 
         $(document).ready(function() {
+
+            // Referencia a los inputs
+            const inputInicio = $('#filtroFechaInicio');
+            const inputFin = $('#filtroFechaFin');
+            const selectGranja = $('#filtroGranja');
+
             let tabla = $('#tabla').DataTable({
                 processing: true,
                 serverSide: true,
                 ajax: {
                     url: 'listar_necropsias.php',
-                    type: 'POST'
+                    type: 'POST',
+                    data: function(d) {
+                        d.fecha_inicio = inputInicio.val();
+                        d.fecha_fin = inputFin.val();
+                        d.granja = selectGranja.val();
+                    }
                 },
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
@@ -1385,10 +1549,9 @@ if (!$conexion) {
                 pageLength: 10,
                 lengthMenu: [10, 25, 50, 100],
                 order: [
-                    [9, 'desc']
-                ], // Ordenar por fecha registro descendente (columna 9)
-                columns: [
-                    {
+                    [2, 'desc']
+                ], // Ordenar por fecha de registro
+                columns: [{
                         data: 'counter',
                         className: 'text-center',
                         orderable: false
@@ -1432,21 +1595,116 @@ if (!$conexion) {
                         className: 'text-center',
                         orderable: false,
                         render: function(data, type, row) {
-                            // Usar tfectra_raw que está en formato Y-m-d
-                            const fectraParaEditar = row.tfectra_raw || row.tfectra;
-                            return `
-                                <button onclick="editarNecropsia('${row.tgranja}', ${row.tnumreg}, '${fectraParaEditar}')" 
-                                        class="inline-flex items-center gap-1 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-xs font-medium transition-colors">
-                                    <i class="fa-solid fa-eye"></i>
-                                    <i class="fa-solid fa-pen-to-square"></i>
-                                    <span>Ver/Editar</span>
-                                </button>
-                            `;
+
+                            const rolUser = document.getElementById('idRolUser')?.dataset.rol?.trim().toLowerCase() || 'user';
+
+                            const fectraRaw = row.tfectra_raw || '';
+                            const fectraVista = row.tfectra || '';
+                            const granja = row.tgranja || '';
+                            const numreg = row.tnumreg || '';
+                            const galpon = row.tgalpon || '';
+
+                            let buttonsHtml = `
+                                    <div class="flex justify-center items-center gap-3 flex-wrap">
+                                        <a
+                                            class="text-red-600 hover:text-red-800 transition"
+                                            title="PDF Tabla"
+                                            target="_blank"
+                                            href="generar_reporte_tabla.php?tipo=1&numreg=${encodeURIComponent(numreg)}&granja=${encodeURIComponent(granja)}&galpon=${encodeURIComponent(galpon)}&fectra=${encodeURIComponent(fectraRaw)}">
+                                            <i class="fa-solid fa-file-pdf text-lg"></i>
+                                        </a>
+
+                                        <button
+                                            type="button"
+                                            class="text-red-600 hover:text-red-800 transition"
+                                            title="PDF Imágenes"
+                                            onclick="verificarYGenerarPDF('${granja}', ${numreg}, '${fectraVista}')">
+                                            <i class="fa-solid fa-images text-lg"></i>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            class="text-indigo-600 hover:text-indigo-800 transition"
+                                            title="Editar"
+                                            onclick="editarNecropsia('${granja}', ${numreg}, '${fectraRaw}')">
+                                            <i class="fa-solid fa-edit text-lg"></i>
+                                        </button>
+                                `;
+
+                            if (rolUser === 'admin' || rolUser === 'administrador') {
+                                buttonsHtml += `
+                                    <button
+                                        type="button"
+                                        class="text-rose-600 hover:text-rose-800 transition"
+                                        title="Eliminar"
+                                        onclick="eliminarNecropsia('${granja}', ${numreg}, '${fectraRaw}')">
+                                        <i class="fa-solid fa-trash text-lg"></i>
+                                    </button>
+                                `;
+                            }
+
+                            // 4. CERRAR EL CONTENEDOR
+                            buttonsHtml += `</div>`;
+
+                            return buttonsHtml;
                         }
                     }
                 ]
             });
+            // Eventos para recargar la tabla al cambiar los filtros
+            $('#filtroFechaInicio, #filtroFechaFin, #filtroGranja').on('change', function() {
+                tabla.draw(); // Esto dispara el ajax de nuevo enviando los nuevos valores
+            });
+
+            // Botón Filtrar
+            $('#btnAplicarFiltros').on('click', function() {
+                tabla.draw();
+            });
+
+            // Limpiar filtros
+            $('#btnLimpiarFiltros').on('click', function() {
+                $('#filtroFechaInicio').val('');
+                $('#filtroFechaFin').val('');
+                $('#filtroGranja').val('');
+                tabla.ajax.reload();
+            });
+
         });
+    </script>
+
+    <script>
+        function exportarNecropsiasExcel() {
+            const params = new URLSearchParams();
+            const fi = document.getElementById('filtroFechaInicio')?.value || '';
+            const ff = document.getElementById('filtroFechaFin')?.value || '';
+            const granja = document.getElementById('filtroGranja')?.value || '';
+            if (fi) params.set('fecha_inicio', fi);
+            if (ff) params.set('fecha_fin', ff);
+            if (granja) params.set('granja', granja);
+            window.location.href = 'exportar_excel_necropsias.php?' + params.toString();
+        }
+
+        function verificarYGenerarPDF(granja, numreg, fectra) {
+            fetch(`generar_reporte_necropsia.php?granja=${encodeURIComponent(granja)}&numreg=${numreg}&fectra=${encodeURIComponent(fectra)}&check=1`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.tiene_imagenes) {
+                        window.open(`generar_reporte_necropsia.php?granja=${encodeURIComponent(granja)}&numreg=${numreg}&fectra=${encodeURIComponent(fectra)}`, '_blank');
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'No se registró imágenes',
+                            text: 'Este registro de necropsia no tiene imágenes asociadas.',
+                            confirmButtonText: 'Aceptar',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al verificar imágenes:', error);
+                    window.open(`generar_reporte_necropsia.php?granja=${encodeURIComponent(granja)}&numreg=${numreg}&fectra=${encodeURIComponent(fectra)}`, '_blank');
+                });
+        }
     </script>
 
     <script>
@@ -1454,6 +1712,8 @@ if (!$conexion) {
         let loteEditando = {};
 
         async function editarNecropsia(granja, numreg, fectra) {
+            // Limpiar formulario primero
+            limpiarFormularioNecropsia();
             isEditMode = true;
             loteEditando = {
                 granja,
@@ -1477,8 +1737,7 @@ if (!$conexion) {
                     return;
                 }
 
-                // Limpiar formulario primero
-                limpiarFormularioNecropsia();
+
 
                 // === CABECERA ===
                 // Fecha necropsia (setear primero para que get_granjas.php calcule edad con esta fecha)
@@ -1682,7 +1941,7 @@ if (!$conexion) {
                         if (porcElement) porcElement.textContent = valores.total + '%';
                     });
 
-                    // Imágenes (solo una vez por nivel)
+                  
                     if (datos.evidencia) {
                         const preview = document.getElementById('preview_' + obsIdBase);
                         if (preview) {
@@ -1692,17 +1951,29 @@ if (!$conexion) {
 
                             rutas.forEach(ruta => {
                                 const container = document.createElement('div');
-                                container.classList.add('relative', 'inline-block', 'mr-2', 'mb-2');
+                                container.classList.add('relative', 'inline-block', 'mr-2', 'mb-2', 'group'); // Agregué 'group'
 
+                                // Imagen
                                 const img = document.createElement('img');
-                                img.src = '../../' + ruta;
-                                img.classList.add('h-32', 'w-32', 'object-cover', 'rounded-lg');
+                                img.src = '../../' + ruta; // Ruta visual
+                                img.dataset.serverPath = ruta; // IMPORTANTE: Guardamos la ruta original del servidor
+                                img.classList.add('h-32', 'w-32', 'object-cover', 'rounded-lg', 'shadow-md');
 
+                                // Botón Eliminar (Unificado)
                                 const removeBtn = document.createElement('button');
                                 removeBtn.innerHTML = '×';
-                                removeBtn.classList.add('absolute', 'top-0', 'right-0', 'bg-red-600', 'text-white', 'text-xs', 'font-bold', 'rounded-full', 'w-6', 'h-6', 'flex', 'items-center', 'justify-center', 'cursor-pointer', 'hover:bg-red-700');
-                                removeBtn.style.transform = 'translate(50%, -50%)';
-                                removeBtn.onclick = () => container.remove();
+                                removeBtn.classList.add(
+                                    'absolute', 'top-1', 'right-1',
+                                    'bg-red-600', 'hover:bg-red-700', 'text-white',
+                                    'text-sm', 'font-bold', 'rounded-full', 'w-6', 'h-6',
+                                    'flex', 'items-center', 'justify-center', 'cursor-pointer', 'shadow-sm',
+                                    'opacity-0', 'group-hover:opacity-100', 'transition-opacity' // Efecto hover
+                                );
+
+                                removeBtn.onclick = (e) => {
+                                    e.preventDefault(); // Evitar submits accidentales
+                                    container.remove();
+                                };
 
                                 container.appendChild(img);
                                 container.appendChild(removeBtn);
@@ -1710,6 +1981,7 @@ if (!$conexion) {
                             });
                         }
                     }
+                    // ...
                 });
 
             } catch (err) {
@@ -1743,11 +2015,7 @@ if (!$conexion) {
     </script>
 
     <script>
-        // Abrir y cerrar modal (igual que antes)
-        document.getElementById('btnRegistrarNecropsia').addEventListener('click', () => {
-            document.getElementById('modalNecropsia').classList.remove('hidden');
-        });
-
+        
         document.getElementById('closeModal').addEventListener('click', () => {
             document.getElementById('modalNecropsia').classList.add('hidden');
             limpiarFormularioNecropsia();
@@ -2128,24 +2396,15 @@ if (!$conexion) {
     </script>
 
     <script>
-        // Cargar granjas al abrir el modal
-        document.getElementById('btnRegistrarNecropsia').addEventListener('click', async () => {
-            document.getElementById('modalNecropsia').classList.remove('hidden');
-
-            // Si no hay fecha, poner hoy por defecto para que la edad se calcule bien
-            const fectraInput = document.getElementById('fectra');
-            if (fectraInput && !fectraInput.value) {
-                fectraInput.value = getFechaSeleccionada();
-            }
-
-            await cargarGranjasConFecha({ preserveSelection: false });
-        });
+        
 
         // Si cambia la fecha, recargar granjas usando esa fecha (y mantener selección si ya eligió una)
-        document.getElementById('fectra').addEventListener('change', async function () {
+        document.getElementById('fectra').addEventListener('change', async function() {
             // Si ya hay granja seleccionada, mantenerla y recalcular edad/campaña
             const tieneSeleccion = !!document.getElementById('granja')?.value;
-            await cargarGranjasConFecha({ preserveSelection: tieneSeleccion });
+            await cargarGranjasConFecha({
+                preserveSelection: tieneSeleccion
+            });
         });
 
         // Al cambiar granja
@@ -2257,8 +2516,10 @@ if (!$conexion) {
                         removeBtn.classList.add('absolute', 'top-0', 'right-0', 'bg-red-600', 'text-white', 'text-xs', 'font-bold', 'rounded-full', 'w-6', 'h-6', 'flex', 'items-center', 'justify-center', 'cursor-pointer', 'hover:bg-red-700');
                         removeBtn.style.transform = 'translate(50%, -50%)';
                         removeBtn.onclick = function() {
-                            const index = Array.from(preview.children).indexOf(container);
-                            evidencias[obsId].splice(index, 1);
+                            const index = evidencias[obsId].indexOf(file);
+                            if (index > -1) {
+                                evidencias[obsId].splice(index, 1);
+                            }
                             container.remove();
                         };
 
@@ -2274,38 +2535,62 @@ if (!$conexion) {
             });
         });
 
-        // === FUNCIÓN PARA LIMPIAR TODO EL FORMULARIO DE NECROPSIA ===
+        // === FUNCIÓN PARA LIMPIAR TODO EL FORMULARIO Y RESETEAR ESTADO ===
         function limpiarFormularioNecropsia() {
-            // 1. Desmarcar todos los checkboxes
+            // 1. Resetear variables globales de control
+            isEditMode = false;
+            loteEditando = {}; // Limpiamos el objeto de edición
+
+            // 2. Restaurar el botón a su estado original
+            const btnGuardar = document.getElementById('btnGuardarNecropsia');
+            if (btnGuardar) {
+                btnGuardar.textContent = 'Registrar Necropsia';
+                btnGuardar.classList.remove('bg-yellow-500', 'hover:bg-yellow-600'); // Quitar color de edición (opcional)
+                btnGuardar.classList.add('bg-green-600', 'hover:bg-green-700'); // Volver al verde original
+            }
+
+            // 3. Habilitar campos que se bloquean al editar (si los hubiera)
+            const selectGalpon = document.getElementById('galpon');
+            if (selectGalpon) {
+                selectGalpon.disabled = true; // Se deshabilita al inicio hasta que seleccionen granja
+                selectGalpon.innerHTML = '<option value="">Seleccione granja primero</option>';
+            }
+
+            // 4. Limpiar campos de cabecera
+            document.getElementById('granja').value = '';
+            document.getElementById('campania').value = '';
+            document.getElementById('edad').value = '';
+            document.getElementById('fectra').value = '';
+
+            // 5. Desmarcar todos los checkboxes
             document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
                 cb.checked = false;
             });
 
-            // 2. Limpiar todos los textareas de observaciones
+            // 6. Limpiar textareas de observaciones
             document.querySelectorAll('textarea[id^="obs_"]').forEach(textarea => {
                 textarea.value = '';
             });
 
-            // 3. Limpiar previews de imágenes y inputs file
+            // 7. Limpiar inputs de archivo y las vistas previas
             document.querySelectorAll('input[type="file"][id^="evidencia_"]').forEach(input => {
-                input.value = ''; // Limpia el input file
+                input.value = '';
             });
 
             document.querySelectorAll('div[id^="preview_"]').forEach(preview => {
-                preview.innerHTML = '';
+                preview.innerHTML = ''; // Esto borra tanto las fotos nuevas como las viejas cargadas
             });
 
-            // 4. Resetear los porcentajes a 0%
+            // 8. Resetear los porcentajes visuales a 0%
             document.querySelectorAll('td[id^="porc_"]').forEach(td => {
                 td.textContent = '0%';
             });
 
-            document.getElementById('granja').value = '';
-            document.getElementById('campania').value = '';
-            document.getElementById('edad').value = '';
-            document.getElementById('galpon').value = '';
-            document.getElementById('fectra').value = '';
-
+            // 9. Limpiar el objeto global de evidencias nuevas
+            // (Importante para que no se suban fotos de la sesión anterior)
+            for (const key in evidencias) {
+                delete evidencias[key];
+            }
         }
 
         let evidenciasActuales = []; // Array de rutas
@@ -2438,18 +2723,26 @@ if (!$conexion) {
                 if (previewDiv) {
                     const imgs = previewDiv.querySelectorAll('img');
                     const rutasLimpias = [];
+
                     imgs.forEach(img => {
-                        let src = img.getAttribute('src');
-                        // El src vendrá como "../../uploads/...", necesitamos limpiar los "../"
-                        // Buscamos la posición de 'uploads/'
-                        if (src.includes('uploads/')) {
-                            // Cortamos desde 'uploads/' en adelante
-                            const cleanPath = src.substring(src.indexOf('uploads/'));
-                            rutasLimpias.push(cleanPath);
+                        if (img.dataset.serverPath) {
+                            rutasLimpias.push(img.dataset.serverPath);
+                        }
+                        // Opción B (Fallback): Analizar el src buscando 'uploads/' y evitando base64
+                        else {
+                            let src = img.getAttribute('src');
+                            if (src.includes('uploads/') && !src.startsWith('data:')) {
+                                // Limpiar ../ si existe
+                                const cleanPath = src.substring(src.indexOf('uploads/'));
+                                rutasLimpias.push(cleanPath);
+                            }
                         }
                     });
+
                     if (rutasLimpias.length > 0) {
-                        imagenesExistentes[mapIdToBdName[obsId]] = rutasLimpias.join(',');
+                        // Usamos Set para eliminar duplicados visuales por si acaso
+                        const unicas = [...new Set(rutasLimpias)];
+                        imagenesExistentes[mapIdToBdName[obsId]] = unicas.join(',');
                     }
                 }
             });
@@ -2758,6 +3051,84 @@ if (!$conexion) {
                 document.getElementById('modalCarga').classList.add('hidden');
                 console.error(err);
                 alert('Error de conexión al actualizar.');
+            }
+        }
+
+        async function eliminarNecropsia(granja, numreg, fectra) {
+            // 1. Confirmación con SweetAlert2
+            const result = await Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Esta acción eliminará permanentemente los registros y las fotos asociadas. ¡No podrás revertir esto!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33', // Rojo para indicar peligro
+                cancelButtonColor: '#3085d6', // Azul para cancelar
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true, // Pone el botón de cancelar primero (más seguro UX)
+                focusCancel: true
+            });
+
+            if (!result.isConfirmed) {
+                return; // El usuario canceló
+            }
+
+            // 2. Preparar datos
+            const formData = new FormData();
+            formData.append('granja', granja);
+            formData.append('numreg', numreg);
+            formData.append('fectra', fectra);
+
+            try {
+                // 3. Mostrar Loading (Bloqueamos la pantalla con SweetAlert)
+                Swal.fire({
+                    title: 'Eliminando...',
+                    text: 'Por favor espera, borrando archivos y datos.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    didOpen: () => {
+                        Swal.showLoading(); // Muestra el spinner de carga
+                    }
+                });
+
+                // 4. Petición al servidor
+                const response = await fetch('eliminar_necropsia.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // 5. Manejar respuesta
+                if (data.success) {
+                    // Éxito: Mensaje bonito y recarga
+                    await Swal.fire({
+                        icon: 'success',
+                        title: '¡Eliminado!',
+                        text: 'La necropsia ha sido eliminada correctamente.',
+                        timer: 1500, // Se cierra solo en 1.5 seg
+                        showConfirmButton: false
+                    });
+
+                    // Recargar la tabla manteniendo la paginación actual
+                    $('#tabla').DataTable().ajax.reload(null, false);
+                } else {
+                    // Error lógico (ej: no se encontró registro)
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message || 'No se pudo eliminar el registro.'
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                // Error técnico (ej: servidor caído, error 500)
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de conexión',
+                    text: 'Ocurrió un problema al intentar conectar con el servidor. Por favor intenta de nuevo.'
+                });
             }
         }
     </script>

@@ -300,11 +300,11 @@ if (!$conexion) {
                                     echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['codigo']) . '</td>';
                                     echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['nombre']) . '</td>';
                                     echo '<td class="px-6 py-4 flex gap-2">
-                            <button class="btn-icon p-2 text-lg hover:bg-blue-100 rounded-lg transition" title="Editar" onclick="openLaboratorioModal(\'update\', ' . (int) $row['codigo'] . ', \'' . addslashes(htmlspecialchars($row['nombre'])) . '\')">
-                                ✏️
+                            <button class="btn-icon p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition" title="Editar" onclick="openLaboratorioModal(\'update\', ' . (int) $row['codigo'] . ', \'' . addslashes(htmlspecialchars($row['nombre'])) . '\')">
+                                <i class="fa-solid fa-edit"></i>
                             </button>
-                            <button class="btn-icon p-2 text-lg hover:bg-red-100 rounded-lg transition" title="Eliminar" onclick="confirmLaboratorioDelete(' . (int) $row['codigo'] . ')">
-                                🗑️
+                            <button class="btn-icon p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition" title="Eliminar" onclick="confirmLaboratorioDelete(' . (int) $row['codigo'] . ')">
+                                <i class="fa-solid fa-trash"></i>
                             </button>
                         </td>';
                                     echo '</tr>';

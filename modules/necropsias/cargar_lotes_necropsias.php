@@ -58,6 +58,11 @@ $result = $stmt->get_result();
 
 $data = [];
 while ($row = $result->fetch_assoc()) {
+    // Formatear fecha de registro (tdate) para mostrar en tarjetas
+    $fechaRegistro = ($row['tdate'] ?? '') === '1000-01-01' || empty($row['tdate'])
+        ? '-'
+        : date('d/m/Y', strtotime($row['tdate']));
+
     $data[] = [
         'tgranja' => $row['tgranja'],
         'tnumreg' => $row['tnumreg'],
@@ -68,7 +73,8 @@ while ($row = $result->fetch_assoc()) {
         'tcampania' => $row['tcampania'] ?? '',
         'tuser' => $row['tuser'] ?? '',
         'tdate' => $row['tdate'],
-        'ttime' => $row['ttime']
+        'ttime' => $row['ttime'],
+        'fecha_registro' => $fechaRegistro
     ];
 }
 

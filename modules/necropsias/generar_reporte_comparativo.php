@@ -20,6 +20,7 @@ if (!$conn) {
 // Obtener parámetros del POST o GET
 $cencos = isset($_POST['cencos']) ? $_POST['cencos'] : (isset($_GET['cencos']) ? $_GET['cencos'] : 'todos');
 $galpones = isset($_POST['galpones']) ? $_POST['galpones'] : (isset($_GET['galpones']) ? $_GET['galpones'] : 'todos');
+$galpones_pares = isset($_POST['galpones_pares']) ? $_POST['galpones_pares'] : (isset($_GET['galpones_pares']) ? $_GET['galpones_pares'] : '');
 $fecha_inicio = isset($_POST['fecha_inicio']) ? $_POST['fecha_inicio'] : (isset($_GET['fecha_inicio']) ? $_GET['fecha_inicio'] : '');
 $fecha_fin = isset($_POST['fecha_fin']) ? $_POST['fecha_fin'] : (isset($_GET['fecha_fin']) ? $_GET['fecha_fin'] : '');
 $formato = isset($_POST['formato']) ? $_POST['formato'] : (isset($_GET['formato']) ? $_GET['formato'] : 'pdf');
@@ -30,6 +31,7 @@ if (!empty($dataJson)) {
     if ($input) {
         $cencos = $input['cencos'] ?? $cencos;
         $galpones = $input['galpones'] ?? $galpones;
+        $galpones_pares = $input['galpones_pares'] ?? $galpones_pares;
         $fecha_inicio = $input['fecha_inicio'] ?? $fecha_inicio;
         $fecha_fin = $input['fecha_fin'] ?? $fecha_fin;
         $formato = $input['formato'] ?? $formato;
@@ -47,6 +49,23 @@ if (is_string($cencos) && $cencos !== 'todos') {
 }
 if (is_string($galpones) && $galpones !== 'todos') {
     $galpones = explode(',', $galpones);
+}
+
+// PARES tgranja|tgalpon (para filtrar combinación exacta)
+$galponesParesArray = [];
+if (is_string($galpones_pares) && trim($galpones_pares) !== '') {
+    $rawPairs = array_filter(array_map('trim', explode(',', $galpones_pares)));
+    foreach ($rawPairs as $pair) {
+        // Formato esperado: 123456|12
+        $parts = explode('|', $pair, 2);
+        if (count($parts) === 2) {
+            $granja = trim($parts[0]);
+            $galpon = trim($parts[1]);
+            if ($granja !== '' && $galpon !== '') {
+                $galponesParesArray[] = [$granja, $galpon];
+            }
+        }
+    }
 }
 
 
@@ -75,7 +94,19 @@ if ($cencos !== 'todos' && is_array($cencos) && !empty($cencos)) {
 }
 
 // Filtrar por galpones
-if ($galpones !== 'todos' && is_array($galpones) && !empty($galpones)) {
+// Prioridad: si llegan pares (tgranja|tgalpon), filtrar por combinación exacta
+if (!empty($galponesParesArray)) {
+    $orParts = [];
+    foreach ($galponesParesArray as $_) {
+        $orParts[] = "(tgranja = ? AND tgalpon = ?)";
+    }
+    $sql .= " AND (" . implode(" OR ", $orParts) . ")";
+    $types .= str_repeat('ss', count($galponesParesArray));
+    foreach ($galponesParesArray as $pair) {
+        $params[] = $pair[0]; // tgranja (6 dígitos)
+        $params[] = $pair[1]; // tgalpon
+    }
+} elseif ($galpones !== 'todos' && is_array($galpones) && !empty($galpones)) {
     $placeholders = implode(',', array_fill(0, count($galpones), '?'));
     $sql .= " AND tgalpon IN ($placeholders)";
     $types .= str_repeat('s', count($galpones));
