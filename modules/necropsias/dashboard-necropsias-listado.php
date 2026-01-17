@@ -364,7 +364,7 @@ if (!$conn) {
                 <div class="mt-6 flex flex-wrap justify-end gap-4">
 
                     <button type="button" id="btnAplicarFiltros"
-                        class="hidden px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                        class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
                         Filtrar
                     </button>
 
@@ -1379,11 +1379,6 @@ if (!$conn) {
 
         <!-- contenedor boton y tabla  -->
         <div class="bg-white rounded-xl shadow-md p-5">
-            <!-- Botón para abrir el modal  -->
-            <button id="btnRegistrarNecropsia" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-300">
-                Registrar Necropsia
-            </button>
-
             <?php
             $codigoUsuario = $_SESSION['usuario'] ?? 'USER';  // Cambia 'usuario' si tu sesión usa otro nombre
             // Consulta directa, simple
@@ -1685,9 +1680,10 @@ if (!$conn) {
                     }
                 ]
             });
-            // Eventos para recargar la tabla al cambiar los filtros
-            $('#filtroFechaInicio, #filtroFechaFin, #filtroGranja').on('change', function() {
-                tabla.draw(); // Esto dispara el ajax de nuevo enviando los nuevos valores
+
+            // Botón Filtrar
+            $('#btnAplicarFiltros').on('click', function() {
+                tabla.draw();
             });
 
             // Limpiar filtros
@@ -2434,20 +2430,7 @@ if (!$conn) {
     </script>
 
     <script>
-        // Cargar granjas al abrir el modal
-        document.getElementById('btnRegistrarNecropsia').addEventListener('click', async () => {
-            document.getElementById('modalNecropsia').classList.remove('hidden');
-
-            // Si no hay fecha, poner hoy por defecto para que la edad se calcule bien
-            const fectraInput = document.getElementById('fectra');
-            if (fectraInput && !fectraInput.value) {
-                fectraInput.value = getFechaSeleccionada();
-            }
-
-            await cargarGranjasConFecha({
-                preserveSelection: false
-            });
-        });
+        
 
         // Si cambia la fecha, recargar granjas usando esa fecha (y mantener selección si ya eligió una)
         document.getElementById('fectra').addEventListener('change', async function() {
