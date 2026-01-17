@@ -215,8 +215,18 @@ if (empty($_SESSION['active'])) {
                             <td class="px-6 py-4 font-medium">${c.contacto}</td>
                             <td class="px-6 py-4">${c.correo}</td>
                             <td class="px-6 py-4 flex gap-2">
-                                <button onclick="openContactModal('edit', ${c.id}, '${c.contacto.replace(/'/g, "\\'")}', '${c.correo}')" class="text-blue-600 hover:text-blue-800">✏️</button>
-                                <button onclick="eliminarContacto(${c.id})" class="text-red-600 hover:text-red-800">🗑️</button>
+                                <button
+                                    title="Editar"
+                                    onclick="openContactModal('edit', ${c.id}, '${c.contacto.replace(/'/g, "\\'")}', '${c.correo}')"
+                                    class="text-blue-600 hover:text-blue-800 transition">
+                                    <i class="fa-solid fa-edit"></i>
+                                </button>
+                                <button
+                                    title="Eliminar"
+                                    onclick="eliminarContacto(${c.id})"
+                                    class="text-red-600 hover:text-red-800 transition">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
                             </td>
                         </tr>
                     `).join('');
@@ -229,7 +239,7 @@ if (empty($_SESSION['active'])) {
                 document.getElementById('contactoId').value = id;
                 document.getElementById('contactoNombre').value = nombre;
                 document.getElementById('contactoEmail').value = email;
-                document.getElementById('contactoModalTitle').textContent = '✏️ Editar contacto';
+                document.getElementById('contactoModalTitle').textContent = 'Editar contacto';
             } else {
                 document.getElementById('contactoId').value = '';
                 document.getElementById('contactoNombre').value = '';

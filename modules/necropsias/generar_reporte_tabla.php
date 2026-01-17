@@ -58,7 +58,7 @@
 
     $cabecera = $registros[0];
 
-    require_once '../../vendor/autoload.php'; 
+    require_once __DIR__ . '/../../vendor/autoload.php'; 
 
     use Mpdf\Mpdf;
 

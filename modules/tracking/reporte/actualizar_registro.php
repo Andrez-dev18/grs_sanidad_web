@@ -6,14 +6,18 @@ if (!$conn) {
     die("Error de conexión: " . mysqli_connect_error());
 }
 
-// === RUTA CORRECTA A LA CARPETA DE EVIDENCIAS ===
-$carpetaEvidencias = $_SERVER['DOCUMENT_ROOT'] . '/gc_sanidad_web/uploads/evidencias/';
-$rutaRelativaBD = 'uploads/evidencias/'; // para guardar en BD
+$baseDir = realpath(__DIR__ . '/../../../'); 
+$carpetaEvidencias = $baseDir . '/uploads/evidencias/';
+
+$rutaRelativaBD = 'uploads/evidencias/'; 
 
 // Verificar que la carpeta exista
 if (!is_dir($carpetaEvidencias)) {
-    echo json_encode(['ok' => false, 'mensaje' => 'Carpeta de evidencias no encontrada']);
-    exit;
+    // Intenta crearla si no existe (opcional, pero útil)
+    if (!mkdir($carpetaEvidencias, 0755, true)) {
+        echo json_encode(['ok' => false, 'mensaje' => 'Carpeta de evidencias no encontrada y no se pudo crear en: ' . $carpetaEvidencias]);
+        exit;
+    }
 }
 
 // === DATOS RECIBIDOS ===
@@ -45,31 +49,7 @@ $ubicacionActual = $registro['ubicacion'];
 $rutaEvidenciaActual = $registro['evidencia'] ?? '';
 
 $ubicacionFinal = $ubicacionNueva;
-/*
-// === VALIDAR CAMBIO DE UBICACIÓN ===
-$tieneLaboratorio = false;
 
-$sqlLab = "SELECT 1 FROM san_dim_historial_resultados WHERE codEnvio = ? AND ubicacion = 'Laboratorio' LIMIT 1";
-$stmtLab = $conn->prepare($sqlLab);
-$stmtLab->bind_param("s", $codEnvio);
-$stmtLab->execute();
-$stmtLab->store_result();
-
-if ($stmtLab->num_rows > 0) {
-    $tieneLaboratorio = true;
-}
-$stmtLab->close();
-
-if ($tieneLaboratorio && $ubicacionNueva !== $ubicacionActual) {
-    echo json_encode([
-        'ok' => false,
-        'mensaje' => 'No se puede cambiar la ubicación: el envío ya fue recibido en Laboratorio.'
-    ]);
-    exit;
-}
-
-$ubicacionFinal = $tieneLaboratorio ? $ubicacionActual : $ubicacionNueva;
-*/
 // === PROCESAR EVIDENCIAS ===
 
 // 1. Fotos que el usuario decidió mantener
@@ -86,9 +66,12 @@ $fotosAntiguas = $rutaEvidenciaActual ? array_map('trim', explode(',', $rutaEvid
 // 3. Borrar del servidor las fotos que fueron eliminadas
 foreach ($fotosAntiguas as $rutaAntigua) {
     if (!in_array($rutaAntigua, $fotosRestantes)) {
-        $rutaCompletaEliminar = $carpetaEvidencias . basename($rutaAntigua);
+        // basename() es importante por seguridad para evitar 'directory traversal'
+        $nombreArchivo = basename($rutaAntigua); 
+        $rutaCompletaEliminar = $carpetaEvidencias . $nombreArchivo;
+        
         if (file_exists($rutaCompletaEliminar)) {
-            @unlink($rutaCompletaEliminar); // borrar silenciosamente
+            @unlink($rutaCompletaEliminar); 
         }
     }
 }
@@ -117,6 +100,7 @@ if (isset($_FILES['nuevas_evidencias']) && !empty($_FILES['nuevas_evidencias']['
         }
 
         $fechaHora = date('Ymd_His') . "_edit_$i";
+        // Sanitizamos el nombre de archivo eliminando caracteres especiales
         $nombreArchivo = "evidencia_{$codEnvio}_{$fechaHora}.{$extension}";
         $rutaCompleta = $carpetaEvidencias . $nombreArchivo;
 
@@ -128,7 +112,7 @@ if (isset($_FILES['nuevas_evidencias']) && !empty($_FILES['nuevas_evidencias']['
 
 // 5. Lista final de rutas para guardar en BD
 $rutasFinales = array_merge($fotosRestantes, $rutasNuevas);
-$rutasFinales = array_unique(array_filter($rutasFinales)); // quitar duplicados y vacíos
+$rutasFinales = array_unique(array_filter($rutasFinales)); 
 $rutaEvidenciaFinal = implode(',', $rutasFinales);
 
 // === ACTUALIZAR EN BD ===
@@ -151,3 +135,4 @@ if ($stmtUpdate->execute()) {
 
 $stmtUpdate->close();
 $conn->close();
+?>

@@ -89,8 +89,11 @@
                     } else {
                         result.data.forEach(lote => {
                             const codigoLote = String(lote.tnumreg).padStart(6, '0');
-                            const fechaNecropsia = new Date(lote.tfectra).toLocaleDateString('es-PE');
-                            const horaRegistro = lote.ttime.substring(0, 5);
+                            // tfectra viene ya formateado como DD/MM/YYYY desde el backend.
+                            // Evitar new Date("DD/MM/YYYY") porque en JS es ambiguo y puede dar "Invalid Date".
+                            const fechaNecropsia = lote.tfectra || '-';
+                            const fechaRegistro = lote.fecha_registro || '-';
+                            const horaRegistro = (lote.ttime ? String(lote.ttime).substring(0, 5) : '-');
 
                             const fectraParts = lote.tfectra.split('/');
                             const fectraUrl = `${fectraParts[2]}-${fectraParts[1].padStart(2, '0')}-${fectraParts[0].padStart(2, '0')}`; // Convierte "09/01/2026" → "2026-01-09"
@@ -119,7 +122,7 @@
                                     </div>
                                     <div>
                                         <p class="text-sm text-gray-600">Fecha de registro:</p>
-                                        <p class="font-semibold text-gray-900">${fechaNecropsia}</p>
+                                        <p class="font-semibold text-gray-900">${fechaRegistro}</p>
                                     </div>
                                     <div>
                                         <p class="text-sm text-gray-600">Hora de Registro:</p>

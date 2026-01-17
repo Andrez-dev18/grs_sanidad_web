@@ -871,7 +871,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                         <th class="">Detalle</th>
                                         <th class="">Seguimiento</th>
                                         <th class="">PDF</th>
-                                        <th class="">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1742,36 +1741,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             <i class="fa-solid fa-file-pdf"></i>
                         </button>`;
                     }
-                },
-                {
-                    data: null,
-                    className: 'text-center',
-                    orderable: false,
-                    render: function (data, type, row) {
-                        const rolUser = (document.getElementById('idRolUser')?.textContent.trim().toLowerCase() ||
-                            document.getElementById('idRolUser')?.dataset.rol?.toLowerCase() ||
-                            '');
-
-                        let buttons = '';
-
-                        buttons += `<button 
-                            class="btn-editar text-blue-600 hover:text-blue-800 transition mr-2"
-                            title="Editar solicitud"
-                            data-codenvio="${row.codEnvio}">
-                            <i class="fa-solid fa-edit"></i>
-                        </button>`;
-
-                        if (rolUser === 'admin') {
-                            buttons += `<button 
-                                class="btn-borrar text-red-600 hover:text-red-800 transition"
-                                title="Eliminar solicitud"
-                                data-codenvio="${row.codEnvio}">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>`;
-                        }
-
-                        return buttons;
-                    }
                 }
                 ],
                 columnDefs: [{
@@ -1838,6 +1807,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 // Recargar la tabla con filtros limpios
                 cargarTabla();
             });
+
+            // Permitir abrir edición desde otro módulo (ej: listado/reportes)
+            // Ejemplo: dashboard-seguimiento.php?edit=ABC123
+            const params = new URLSearchParams(window.location.search);
+            const codEditar = params.get('edit');
+            if (codEditar) {
+                verificarYEditar(codEditar);
+            }
         });
 
 

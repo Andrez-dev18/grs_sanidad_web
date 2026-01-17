@@ -4,7 +4,10 @@ let destinatariosPara = []; // Solo usamos este array
 
 // =============== CARGA INICIAL ===============
 document.addEventListener("DOMContentLoaded", (e) => {
-  cargarReportes(1, "");
+  // Este JS se usa en distintas vistas. Solo cargar el listado "card-based" si existe el contenedor.
+  if (document.getElementById("reportes-lista")) {
+    cargarReportes(1, "");
+  }
 });
 // === MANEJO DE EVENTOS (DELEGACIÓN) ===
 document.addEventListener("click", function (e) {

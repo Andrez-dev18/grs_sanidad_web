@@ -8,6 +8,11 @@ $start = intval($_POST['start']);
 $length = intval($_POST['length']);
 $search = $_POST['search']['value'] ?? '';
 
+// Filtros extra (desde dashboard-necropsias-listado.php)
+$fecha_inicio = $_POST['fecha_inicio'] ?? '';
+$fecha_fin = $_POST['fecha_fin'] ?? '';
+$granja_filtro = $_POST['granja'] ?? '';
+
 // Columnas visibles en la tabla (para ordenar)
 // DataTables: 0=counter(no ordenable), 1=tnumreg, 2=tfectra, 3=tgranja, 4=tcencos, 5=tcampania, 6=tgalpon, 7=tedad, 8=tuser, 9=tdate
 $columns_map = [
@@ -34,8 +39,28 @@ $types = '';
 if (!empty($search)) {
     $like = "%$search%";
     $where[] = "(tcencos LIKE ? OR tgranja LIKE ? OR CAST(tnumreg AS CHAR) LIKE ? OR tfectra LIKE ? OR tdate LIKE ? OR tgalpon LIKE ? OR tuser LIKE ?)";
-    $params = [$like, $like, $like, $like, $like, $like, $like];
-    $types = str_repeat('s', 7);
+    $params = array_merge($params, [$like, $like, $like, $like, $like, $like, $like]);
+    $types .= str_repeat('s', 7);
+}
+
+// Fecha inicio/fin sobre tfectra (Y-m-d)
+if (!empty($fecha_inicio)) {
+    $where[] = "tfectra >= ?";
+    $params[] = $fecha_inicio;
+    $types .= 's';
+}
+
+if (!empty($fecha_fin)) {
+    $where[] = "tfectra <= ?";
+    $params[] = $fecha_fin;
+    $types .= 's';
+}
+
+// Granja exacta (tgranja suele ser el código completo)
+if (!empty($granja_filtro)) {
+    $where[] = "tgranja = ?";
+    $params[] = $granja_filtro;
+    $types .= 's';
 }
 
 // Total lotes únicos (sin filtro)

@@ -306,18 +306,18 @@ if (!$conexion) {
                                     echo '<td class="px-6 py-4 text-gray-600 text-sm" title="' . $descripcion . '">' . $descripcion_corta . '</td>';
                                     echo '<td class="px-6 py-4 text-center text-gray-700">' . htmlspecialchars($row['lonCod']) . '</td>';
                                     echo '<td class="px-6 py-4 flex gap-2">
-                                        <button class="btn-icon p-2 text-lg hover:bg-blue-100 rounded-lg transition" 
+                                        <button class="btn-icon p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition" 
                                                 title="Editar" 
                                                 onclick="openTipoMuestraModal(\'edit\', ' . (int) $row['codigo'] . ', \'' .
                                         addslashes(htmlspecialchars($row['nombre'])) . '\', \'' .
                                         addslashes(htmlspecialchars($row['descripcion'] ?? '')) . '\', ' .
                                         (int) $row['lonCod'] . ')">
-                                            ✏️
+                                            <i class="fa-solid fa-edit"></i>
                                         </button>
-                                        <button class="btn-icon p-2 text-lg hover:bg-red-100 rounded-lg transition" 
+                                        <button class="btn-icon p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition" 
                                                 title="Eliminar" 
                                                 onclick="confirmTipoMuestraDelete(' . (int) $row['codigo'] . ')">
-                                            🗑️
+                                            <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </td>';
                                     echo '</tr>';

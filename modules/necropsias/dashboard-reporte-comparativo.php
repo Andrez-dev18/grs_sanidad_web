@@ -235,8 +235,18 @@ if (!$conexion) {
         let cencosData = [];
         let galponesData = {};
         let cencosSeleccionados = new Set();
+        // Guardar selección como pares "tgranja|tgalpon" para filtrar exactamente por ambos
+        // (evita mezclar galpones entre distintas granjas/cencos cuando se usa "Todos")
         let galponesSeleccionados = new Set();
         let filtroCencosActual = ''; // 'todos', 'activos', 'escoger', o '' si no hay selección
+        let galponesLoading = false;
+        let galponesLoadToken = 0;
+
+        function setGalponRadiosDisabled(disabled) {
+            document.querySelectorAll('input[name="tipo_galpon"]').forEach(radio => {
+                radio.disabled = !!disabled;
+            });
+        }
 
         // Toggle filtros
         function toggleFiltros() {
@@ -261,8 +271,11 @@ if (!$conexion) {
             // Al cambiar la opción de CENCOS: mostrar opciones de galpones pero sin selección previa
             galponesSeleccionados.clear();
             galponesData = {};
+            galponesLoading = false;
+            galponesLoadToken++; // invalidar cargas previas
             document.querySelectorAll('input[name="tipo_galpon"]').forEach(radio => {
                 radio.checked = false;
+                radio.disabled = false;
             });
             if (containerGalpones) {
                 containerGalpones.classList.add('hidden');
@@ -348,6 +361,10 @@ if (!$conexion) {
         
         // Cargar galpones para los CENCOS seleccionados (cuando se usa "Escoger")
         async function cargarGalponesParaCencosSeleccionados() {
+            const token = ++galponesLoadToken;
+            galponesLoading = true;
+            setGalponRadiosDisabled(true);
+
             galponesData = {};
             galponesSeleccionados.clear();
             
@@ -359,30 +376,58 @@ if (!$conexion) {
             if (tipoGalpon === 'escoger') {
                 container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">Cargando galpones...</p>';
             }
-            
-            for (const cencoCodigo of Array.from(cencosSeleccionados)) {
+
+            const lista = Array.from(cencosSeleccionados);
+            let done = 0;
+            const localMap = {};
+
+            const updateProgress = () => {
+                if (tipoGalpon === 'escoger') {
+                    container.innerHTML = `<p class="text-gray-500 text-sm text-center py-4">Cargando galpones... (${done}/${lista.length})</p>`;
+                }
+            };
+            updateProgress();
+
+            await Promise.allSettled(lista.map(async (cencoCodigo) => {
                 try {
                     const response = await fetch(`get_galpones.php?codigo=${encodeURIComponent(cencoCodigo)}`);
                     if (response.ok) {
                         const galpones = await response.json();
                         if (Array.isArray(galpones)) {
-                            galponesData[cencoCodigo] = galpones;
+                            localMap[cencoCodigo] = galpones;
                         }
                     }
                 } catch (error) {
                     console.error(`Error cargando galpones para ${cencoCodigo}:`, error);
+                } finally {
+                    done++;
+                    if (token === galponesLoadToken) updateProgress();
                 }
-            }
-            
-            // Verificar si hay que mostrar checkboxes
-            if (tipoGalpon === 'escoger') {
+            }));
+
+            // Si llegó otra carga después, ignorar esta
+            if (token !== galponesLoadToken) return;
+
+            galponesData = localMap;
+            galponesLoading = false;
+            setGalponRadiosDisabled(false);
+
+            // Verificar si hay que mostrar checkboxes (releer el tipo actual)
+            const tipoActual = document.querySelector('input[name="tipo_galpon"]:checked')?.value || 'todos';
+            if (tipoActual === 'escoger') {
                 renderizarCheckboxesGalpones();
+            } else {
+                container.classList.add('hidden');
             }
         }
 
         // Cargar galpones por filtro (para "Todos" o "Activos")
         async function cargarGalponesPorFiltro(filtro) {
             try {
+                const token = ++galponesLoadToken;
+                galponesLoading = true;
+                setGalponRadiosDisabled(true);
+
                 // Cargar CENCOS según el filtro
                 const response = await fetch(`get_granjas.php?filtro=${filtro}`);
                 if (!response.ok) throw new Error('Error al cargar CENCOS');
@@ -393,15 +438,22 @@ if (!$conexion) {
                 cencosData = cencos;
                 
                 // Cargar galpones para todos estos CENCOS
-                await cargarTodosGalpones(cencos.map(c => c.codigo));
+                await cargarTodosGalpones(cencos.map(c => c.codigo), token);
             } catch (error) {
                 console.error('Error:', error);
                 Swal.fire('Error', 'No se pudieron cargar los galpones', 'error');
+            } finally {
+                // Si no hay otra carga pendiente, re-habilitar
+                galponesLoading = false;
+                setGalponRadiosDisabled(false);
             }
         }
 
         // Cargar todos los galpones para una lista de CENCOS
-        async function cargarTodosGalpones(cencosLista) {
+        async function cargarTodosGalpones(cencosLista, tokenFromCaller = null) {
+            const token = tokenFromCaller ?? ++galponesLoadToken;
+            galponesLoading = true;
+
             galponesData = {};
             galponesSeleccionados.clear();
             
@@ -413,24 +465,45 @@ if (!$conexion) {
             if (tipoGalpon === 'escoger') {
                 container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">Cargando galpones...</p>';
             }
-            
-            for (const cencoCodigo of cencosLista) {
+
+            let done = 0;
+            const localMap = {};
+            const total = cencosLista.length;
+
+            const updateProgress = () => {
+                if (tipoGalpon === 'escoger') {
+                    container.innerHTML = `<p class="text-gray-500 text-sm text-center py-4">Cargando galpones... (${done}/${total})</p>`;
+                }
+            };
+            updateProgress();
+
+            await Promise.allSettled(cencosLista.map(async (cencoCodigo) => {
                 try {
                     const response = await fetch(`get_galpones.php?codigo=${encodeURIComponent(cencoCodigo)}`);
                     if (response.ok) {
                         const galpones = await response.json();
                         if (Array.isArray(galpones)) {
-                            galponesData[cencoCodigo] = galpones;
+                            localMap[cencoCodigo] = galpones;
                         }
                     }
                 } catch (error) {
                     console.error(`Error cargando galpones para ${cencoCodigo}:`, error);
+                } finally {
+                    done++;
+                    if (token === galponesLoadToken) updateProgress();
                 }
-            }
-            
-            // Verificar si hay que mostrar checkboxes
-            if (tipoGalpon === 'escoger') {
+            }));
+
+            if (token !== galponesLoadToken) return;
+
+            galponesData = localMap;
+            galponesLoading = false;
+
+            const tipoActual = document.querySelector('input[name="tipo_galpon"]:checked')?.value || 'todos';
+            if (tipoActual === 'escoger') {
                 renderizarCheckboxesGalpones();
+            } else {
+                container.classList.add('hidden');
             }
         }
 
@@ -502,6 +575,13 @@ if (!$conexion) {
                     </td>
                     <td class="px-4 py-3 border-b border-gray-200">
                         <div class="flex flex-wrap gap-3 items-center">
+                            <label class="flex items-center gap-1 cursor-pointer select-none">
+                                <input type="checkbox"
+                                       class="chk-galpon-todos w-4 h-4"
+                                       data-cenco="${cencoCodigo}"
+                                       onchange="toggleGalponesCenco('${cencoCodigo}', this)">
+                                <span class="text-sm font-medium text-gray-900">Todos</span>
+                            </label>
                 `;
                 
                 // Galpones con checkboxes en fila horizontal
@@ -530,6 +610,35 @@ if (!$conexion) {
             
             table.appendChild(tbody);
             container.appendChild(table);
+
+            // Sincronizar estado de "Todos" por CENCO
+            actualizarEstadoTodosPorCenco();
+        }
+
+        // Checkbox "Todos" por fila (CENCO): marca/desmarca todos los galpones de ese CENCO
+        function toggleGalponesCenco(cencoCodigo, chkTodos) {
+            const marcar = !!chkTodos?.checked;
+            document.querySelectorAll(`.chk-galpon[data-cenco="${cencoCodigo}"]`).forEach(chk => {
+                chk.checked = marcar;
+            });
+            actualizarGalponesSeleccionados();
+        }
+
+        // Mantener el estado del checkbox "Todos" (checked/indeterminate) según selección individual
+        function actualizarEstadoTodosPorCenco() {
+            document.querySelectorAll('.chk-galpon-todos').forEach(chkTodos => {
+                const cencoCodigo = chkTodos.dataset.cenco;
+                const checks = Array.from(document.querySelectorAll(`.chk-galpon[data-cenco="${cencoCodigo}"]`));
+                if (checks.length === 0) {
+                    chkTodos.checked = false;
+                    chkTodos.indeterminate = false;
+                    return;
+                }
+
+                const checkedCount = checks.filter(c => c.checked).length;
+                chkTodos.checked = checkedCount === checks.length;
+                chkTodos.indeterminate = checkedCount > 0 && checkedCount < checks.length;
+            });
         }
 
 
@@ -545,6 +654,11 @@ if (!$conexion) {
                 container.classList.add('hidden');
                 galponesSeleccionados.clear();
             } else {
+                if (galponesLoading) {
+                    container.classList.remove('hidden');
+                    container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">Cargando galpones... espere un momento.</p>';
+                    return;
+                }
                 // Si CENCOS está en "Escoger" y no hay CENCOS seleccionados aún, avisar
                 if (filtroCencosActual === 'escoger' && cencosSeleccionados.size === 0) {
                     container.classList.remove('hidden');
@@ -560,8 +674,13 @@ if (!$conexion) {
         function actualizarGalponesSeleccionados() {
             galponesSeleccionados.clear();
             document.querySelectorAll('.chk-galpon:checked').forEach(chk => {
-                galponesSeleccionados.add(chk.value);
+                const cencoCodigo = chk.dataset.cenco || '';
+                const galponCodigo = chk.value || '';
+                if (cencoCodigo && galponCodigo) {
+                    galponesSeleccionados.add(`${cencoCodigo}|${galponCodigo}`);
+                }
             });
+            actualizarEstadoTodosPorCenco();
         }
 
         // Limpiar filtros
@@ -631,12 +750,14 @@ if (!$conexion) {
             if (tipoGalpon === 'todos') {
                 params.append('galpones', 'todos');
             } else {
-                const totalGalpones = document.querySelectorAll('.chk-galpon').length;
-                if (galponesSeleccionados.size === 0 || galponesSeleccionados.size === totalGalpones) {
-                    params.append('galpones', 'todos');
-                } else {
-                    params.append('galpones', Array.from(galponesSeleccionados).join(','));
+                // Escoger: generar reporte SOLO con los galpones seleccionados
+                if (galponesSeleccionados.size === 0) {
+                    Swal.fire('Validación', 'Debe seleccionar al menos un galpón para generar el reporte', 'warning');
+                    return;
                 }
+                // Enviar pares tgranja|tgalpon para que el backend filtre por combinación exacta
+                // Formato: 123456|1,123456|2,654321|3
+                params.append('galpones_pares', Array.from(galponesSeleccionados).join(','));
             }
             // Verificar primero si hay resultados
             try {
