@@ -78,11 +78,14 @@ $mpdf = new Mpdf([
 ]);
 
 /* ===============================
-   CABECERA
+   CABECERA Y DATOS GENERALES
 ================================ */
 $granjaRaw = $registros[0]['tcencos'];
 $granjaTxt = trim(explode('C=', $granjaRaw)[0]);
 $fechaGeneracion = date('d/m/Y h:i A');
+
+// EXTRAER EL DIAGNÓSTICO PRESUNTIVO (Es igual para todo el lote)
+$diagnosticoPresuntivo = $registros[0]['tdiagpresuntivo'] ?? '';
 
 /* ===============================
    PORCENTAJES
@@ -103,6 +106,8 @@ $html = '
 <style>
     body { font-family: Arial; font-size: 11pt; }
     h1 { text-align:center; color:#002060; font-size:26pt; margin-top: 0px; }
+    
+    /* ESTILO DE SUBTÍTULOS (Sistemas y ahora Diagnóstico) */
     h2 {
         text-align:center;
         color:#002060;
@@ -110,23 +115,22 @@ $html = '
         border-bottom:4px solid #002060;
         margin:40px 0 20px 0;
         padding-bottom:6px;
-        page-break-before:always;
+        page-break-before:always; /* ESTO FUERZA LA NUEVA HOJA */
     }
+
     .header { text-align:center; margin-bottom:30px; }
     .granja { font-size:22pt; font-weight:bold; color:#002060; }
     .detalles { font-size:15pt; }
 
     .nivel { font-size:14pt; font-weight:bold; color:#002060; margin-bottom:6px; }
 
-   /* CSS MODIFICADO */
     .img-box {
         width: 260px;
-        min-height: 200px; /* Altura mínima, pero puede crecer */
-        overflow: visible; /* Dejar que crezca */
-        text-align: center; /* Centrar las fotos */
+        min-height: 200px;
+        overflow: visible;
+        text-align: center;
     }
     
-    /* Para que la celda de la tabla se adapte al contenido estirado */
     td { vertical-align: top; }
 
     .porc-box {
@@ -160,6 +164,15 @@ $html = '
     .tabla-bursal tbody tr:nth-child(odd) { background: #f5f5f5; }
     .tabla-bursal tbody tr:nth-child(even) { background: #ffffff; }
     .tabla-bursal .estado { text-align: left; padding-left: 10px; }
+    
+    /* Estilo para el texto del diagnóstico */
+    .texto-diagnostico {
+        font-size: 14pt; 
+        text-align: justify; 
+        line-height: 1.6;
+        color: #000;
+        margin-top: 20px;
+    }
 </style>
 </head>
 <body>
@@ -167,7 +180,7 @@ $html = '
 <table width="100%" style="border: none; margin-bottom: 10px;">
     <tr>
         <td align="right" style="border: none; font-size: 9pt; color: #777777;">
-            Fecha de Generación : ' . $fechaGeneracion . '
+            ' . $fechaGeneracion . '
         </td>
     </tr>
 </table>
@@ -240,7 +253,7 @@ foreach ($registros as $reg) {
         $col = 0;
     }
 
-    // === MODIFICACIÓN: FOTOS GRANDES (Apiladas Verticalmente) ===
+    // === FOTOS ===
     $imgHtml = 'Sin evidencia';
     
     if (!empty($reg['evidencia'])) {
@@ -248,26 +261,18 @@ foreach ($registros as $reg) {
         
         if (count($rutas) > 0) {
             $imgHtml = ''; 
-            
-            // Forzamos un tamaño grande para todas (aprox 95% del ancho del cuadro)
-            // Esto hará que se vean muy bien, pero la fila crecerá hacia abajo.
             $estiloImg = 'width:240px; margin-bottom: 5px; border: 1px solid #ccc;';
 
             foreach ($rutas as $ruta) {
-                // Ajustamos la ruta física
                 $path = realpath(__DIR__ . '/../../' . $ruta);
-                
                 if ($path && file_exists($path)) {
-                    // El display:block ayuda a que mPDF entienda que van una debajo de otra
-                    $imgHtml .= '<img src="file:///' . $path . '" style="' . $estiloImg . '"> ';
-                    // Agregamos un salto de línea por seguridad visual
-                    $imgHtml .= '<br>'; 
+                    $imgHtml .= '<img src="file:///' . $path . '" style="' . $estiloImg . '"> <br>'; 
                 }
             }
         }
     }
-    // ==========================================================
 
+    // === TABLA PORCENTAJES ===
     $porcHtml = '';
     if (!empty($porcentajes[$reg['tnivel']])) {
         foreach ($porcentajes[$reg['tnivel']] as $p => $v) {
@@ -289,14 +294,25 @@ foreach ($registros as $reg) {
     $col++;
 }
 
-/* CIERRES FINALES */
+/* CIERRES FINALES TABLAS */
 $html .= '</tr></table>';
 
 if (!$tabla_bursal_mostrada && stripos($sistema_actual, 'INMUNO') !== false) {
     $html .= $tablaBursalHTML;
 }
 
+
+if (!empty($diagnosticoPresuntivo) && trim($diagnosticoPresuntivo) !== '') {
+  
+    $html .= '<h2>DIAGNÓSTICO PRESUNTIVO / OBSERVACIONES</h2>';
+    
+    $html .= '<div class="texto-diagnostico">';
+    $html .= nl2br(htmlspecialchars($diagnosticoPresuntivo));
+    $html .= '</div>';
+}
+
 $html .= '</body></html>';
 
 $mpdf->WriteHTML($html);
 $mpdf->Output('Reporte_Necropsia_' . $numreg . '.pdf', 'I');
+?>
