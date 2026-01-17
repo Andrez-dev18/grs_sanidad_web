@@ -1406,6 +1406,38 @@
                 guardarNecropsia();
             });
 
+            // Variable para guardar la hora de inicio
+            let fechaHoraInicio = null;
+
+            // Función para formatear fecha a MySQL (YYYY-MM-DD HH:MM:SS)
+            function obtenerFechaHoraActual() {
+                const now = new Date();
+                const yyyy = now.getFullYear();
+                const mm = String(now.getMonth() + 1).padStart(2, '0');
+                const dd = String(now.getDate()).padStart(2, '0');
+                const hh = String(now.getHours()).padStart(2, '0');
+                const min = String(now.getMinutes()).padStart(2, '0');
+                const ss = String(now.getSeconds()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+            }
+
+            // Detector de interacción
+            function detectarInicioActividad() {
+                if (fechaHoraInicio === null) {
+                    fechaHoraInicio = obtenerFechaHoraActual();
+                    console.log("Inicio de registro detectado:", fechaHoraInicio);
+                }
+            }
+
+            // Asignar el detector al contenedor principal del formulario
+            document.addEventListener('DOMContentLoaded', () => {
+                const contenedor = document.getElementById('contenidoNecropsia');
+                
+                // Detectar cualquier cambio (selects, checkbox) o escritura (inputs)
+                contenedor.addEventListener('change', detectarInicioActividad);
+                contenedor.addEventListener('input', detectarInicioActividad);
+            });
+
             async function guardarNecropsia() {
                 // === CABECERA ===
                 const granjaSelect = document.getElementById('granja');
@@ -1427,9 +1459,17 @@
                 }
 
                 if (!diagpresuntivo) {
-                alert('Por favor es importante que llene el diagnostico presuntivo');
-                return;
-            }
+                    alert('Por favor es importante que llene el diagnostico presuntivo');
+                    return;
+                }
+
+                // CAPTURAR FECHA FIN (Hora actual al momento de dar click)
+                const fechaHoraFin = obtenerFechaHoraActual();
+                
+                // Si por alguna razón no detectó inicio (ej. no tocó nada y dio guardar), usar la fecha actual
+                if (fechaHoraInicio === null) {
+                    fechaHoraInicio = fechaHoraFin;
+                }
 
                 // === GENERAR NÚMERO DE REGISTRO AUTOMÁTICO: HHMMSS ===
                 const now = new Date();
@@ -1447,6 +1487,8 @@
                     numreg: numreg, // → tnumreg
                     tcencos: tcencos, // → tcencos (nombre completo)
                     diagpresuntivo: diagpresuntivo,
+                    fechaHoraInicio: fechaHoraInicio,
+                    fechaHoraFin: fechaHoraFin,
                     registros: [] // Aquí van los parámetros como antes
                 };
 
@@ -1903,6 +1945,7 @@
                 document.getElementById('edad').value = '';
                 document.getElementById('fectra').value = '';
                 document.getElementById('txtDiagnosticoPresuntivo').value = '';
+                fechaHoraInicio = null;
 
                 // 5. Desmarcar todos los checkboxes
                 document.querySelectorAll('input[type="checkbox"]').forEach(cb => {

@@ -47,6 +47,9 @@ $numreg     = (int)$input['numreg'];
 $tcencos    = $input['tcencos'] ?? '';
 $diagpresuntivo = $input['diagpresuntivo'];
 
+$fecreghorainicio = $input['fechaHoraInicio'] ?? date('Y-m-d H:i:s');
+$fecreghorafin    = $input['fechaHoraFin'] ?? date('Y-m-d H:i:s');
+
 session_start();
 $tuser  = $_SESSION['usuario'] ?? 'WEB';
 $tdate  = date('Y-m-d');
@@ -59,12 +62,12 @@ $sql = "INSERT INTO t_regnecropsia (
     tid, tuser, tdate, ttime, tcencos, tgranja, tcampania, tedad, tgalpon, tnumreg, tfectra, diareg,
     tcodsistema, tsistema, tnivel, tparametro,
     tporcentaje1, tporcentaje2, tporcentaje3, tporcentaje4, tporcentaje5, tporcentajetotal,
-    tobservacion, evidencia, tdiagpresuntivo,tobs, tuuid
+    tobservacion, evidencia, tdiagpresuntivo,tobs, tuuid, tfecreghorainicio, tfecreghorafin
 ) VALUES (
     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?,
-    ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?
 )";
 
 $stmt = $conn->prepare($sql);
@@ -92,7 +95,7 @@ foreach ($input['registros'] as $reg) {
     $evidencia = '';
 
     $stmt->bind_param(
-        "issssssssississsddddddsssss",
+        "issssssssississsddddddsssssss",
         $current_tid,
         $tuser,
         $tdate,
@@ -119,7 +122,9 @@ foreach ($input['registros'] as $reg) {
         $evidencia,
         $diagpresuntivo,
         $obs,
-        $tuuid
+        $tuuid,
+        $fecreghorainicio,
+        $fecreghorafin
     );
 
     if ($stmt->execute()) {
