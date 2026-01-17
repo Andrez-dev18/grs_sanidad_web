@@ -241,10 +241,16 @@ if (!$conexion) {
         let filtroCencosActual = ''; // 'todos', 'activos', 'escoger', o '' si no hay selección
         let galponesLoading = false;
         let galponesLoadToken = 0;
+        let galponesProgress = { done: 0, total: 0 };
+        let cencosLoadToken = 0;
+        let ultimoFiltroCencosCargado = '';
 
         function setGalponRadiosDisabled(disabled) {
+            // UX: no bloquear la selección de "Todos/Escoger" porque puede dejar al usuario
+            // sin poder interactuar si ocurre una carga concurrente o se invalida un token.
+            // En su lugar, mostramos mensajes de "cargando..." cuando aplique.
             document.querySelectorAll('input[name="tipo_galpon"]').forEach(radio => {
-                radio.disabled = !!disabled;
+                radio.disabled = false;
             });
         }
 
@@ -288,28 +294,60 @@ if (!$conexion) {
             if (filtro === 'escoger') {
                 // Mostrar checkboxes de CENCOS
                 containerCencos.classList.remove('hidden');
+                // Reset visual (evita sensación de "duplicado" mientras carga)
+                containerCencos.innerHTML = '';
                 await cargarCencos('todos'); // Cargar todos para seleccionar
             } else {
                 // Ocultar checkboxes de CENCOS
                 containerCencos.classList.add('hidden');
                 cencosSeleccionados.clear();
                 
-                // Cargar galpones según el filtro (pero sin seleccionar ninguno)
-                await cargarGalponesPorFiltro(filtro);
+                // No precargar galpones aquí: puede ser MUY pesado si son muchos CENCOS.
+                // Los galpones se cargarán bajo demanda cuando el usuario elija "Galpones = Escoger".
+                galponesData = {};
+                galponesSeleccionados.clear();
+                galponesProgress = { done: 0, total: 0 };
+                if (containerGalpones) {
+                    containerGalpones.classList.add('hidden');
+                    containerGalpones.innerHTML = '';
+                }
             }
         }
 
         // Cargar CENCOS
         async function cargarCencos(filtro = 'activos') {
             try {
+                const token = ++cencosLoadToken;
                 const container = document.getElementById('containerCencos');
                 if (container && !container.classList.contains('hidden')) {
                     container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">Cargando CENCOS...</p>';
                 }
                 
+                // Si ya cargamos este filtro recientemente, no reconsultar (solo re-render)
+                if (ultimoFiltroCencosCargado === filtro && Array.isArray(cencosData) && cencosData.length > 0) {
+                    if (container && !container.classList.contains('hidden')) {
+                        renderizarCencos();
+                    }
+                    return;
+                }
+
                 const response = await fetch(`get_granjas.php?filtro=${filtro}`);
                 if (!response.ok) throw new Error('Error al cargar CENCOS');
-                cencosData = await response.json();
+                const raw = await response.json();
+                // Si llegó otra carga después, ignorar esta respuesta
+                if (token !== cencosLoadToken) return;
+
+                // Deduplicar por código (si el backend retorna repetidos, el UI no los repite)
+                const seen = new Set();
+                cencosData = (Array.isArray(raw) ? raw : [])
+                    .filter(c => c && typeof c.codigo !== 'undefined')
+                    .filter(c => {
+                        const key = String(c.codigo).trim();
+                        if (!key || seen.has(key)) return false;
+                        seen.add(key);
+                        return true;
+                    });
+                ultimoFiltroCencosCargado = filtro;
 
                 
                 if (container && !container.classList.contains('hidden')) {
@@ -327,7 +365,6 @@ if (!$conexion) {
             container.innerHTML = '';
 
             cencosData.forEach(cenco => {
-                console.log(cenco);
                 const label = document.createElement('label');
                 label.className = 'flex items-center gap-2';
                 label.innerHTML = `
@@ -363,7 +400,7 @@ if (!$conexion) {
         async function cargarGalponesParaCencosSeleccionados() {
             const token = ++galponesLoadToken;
             galponesLoading = true;
-            setGalponRadiosDisabled(true);
+            setGalponRadiosDisabled(false);
 
             galponesData = {};
             galponesSeleccionados.clear();
@@ -380,6 +417,7 @@ if (!$conexion) {
             const lista = Array.from(cencosSeleccionados);
             let done = 0;
             const localMap = {};
+            galponesProgress = { done: 0, total: lista.length };
 
             const updateProgress = () => {
                 if (tipoGalpon === 'escoger') {
@@ -388,25 +426,36 @@ if (!$conexion) {
             };
             updateProgress();
 
-            await Promise.allSettled(lista.map(async (cencoCodigo) => {
-                try {
-                    const response = await fetch(`get_galpones.php?codigo=${encodeURIComponent(cencoCodigo)}`);
-                    if (response.ok) {
-                        const galpones = await response.json();
-                        if (Array.isArray(galpones)) {
-                            localMap[cencoCodigo] = galpones;
+            // Cargar por lotes para evitar saturar el navegador/servidor
+            const batchSize = 10;
+            for (let i = 0; i < lista.length; i += batchSize) {
+                if (token !== galponesLoadToken) break;
+                const batch = lista.slice(i, i + batchSize);
+                await Promise.allSettled(batch.map(async (cencoCodigo) => {
+                    try {
+                        const response = await fetch(`get_galpones.php?codigo=${encodeURIComponent(cencoCodigo)}`);
+                        if (response.ok) {
+                            const galpones = await response.json();
+                            if (Array.isArray(galpones)) {
+                                localMap[cencoCodigo] = galpones;
+                            }
                         }
+                    } catch (error) {
+                        console.error(`Error cargando galpones para ${cencoCodigo}:`, error);
+                    } finally {
+                        done++;
+                        galponesProgress.done = done;
+                        if (token === galponesLoadToken) updateProgress();
                     }
-                } catch (error) {
-                    console.error(`Error cargando galpones para ${cencoCodigo}:`, error);
-                } finally {
-                    done++;
-                    if (token === galponesLoadToken) updateProgress();
-                }
-            }));
+                }));
+            }
 
-            // Si llegó otra carga después, ignorar esta
-            if (token !== galponesLoadToken) return;
+            // Si llegó otra carga después, ignorar esta (pero no bloquear UI)
+            if (token !== galponesLoadToken) {
+                galponesLoading = false;
+                setGalponRadiosDisabled(false);
+                return;
+            }
 
             galponesData = localMap;
             galponesLoading = false;
@@ -426,7 +475,7 @@ if (!$conexion) {
             try {
                 const token = ++galponesLoadToken;
                 galponesLoading = true;
-                setGalponRadiosDisabled(true);
+                setGalponRadiosDisabled(false);
 
                 // Cargar CENCOS según el filtro
                 const response = await fetch(`get_granjas.php?filtro=${filtro}`);
@@ -469,6 +518,7 @@ if (!$conexion) {
             let done = 0;
             const localMap = {};
             const total = cencosLista.length;
+            galponesProgress = { done: 0, total };
 
             const updateProgress = () => {
                 if (tipoGalpon === 'escoger') {
@@ -477,27 +527,39 @@ if (!$conexion) {
             };
             updateProgress();
 
-            await Promise.allSettled(cencosLista.map(async (cencoCodigo) => {
-                try {
-                    const response = await fetch(`get_galpones.php?codigo=${encodeURIComponent(cencoCodigo)}`);
-                    if (response.ok) {
-                        const galpones = await response.json();
-                        if (Array.isArray(galpones)) {
-                            localMap[cencoCodigo] = galpones;
+            // Cargar por lotes para evitar saturación (muchos CENCOS cuando filtro = Todos)
+            const batchSize = 10;
+            for (let i = 0; i < cencosLista.length; i += batchSize) {
+                if (token !== galponesLoadToken) break;
+                const batch = cencosLista.slice(i, i + batchSize);
+                await Promise.allSettled(batch.map(async (cencoCodigo) => {
+                    try {
+                        const response = await fetch(`get_galpones.php?codigo=${encodeURIComponent(cencoCodigo)}`);
+                        if (response.ok) {
+                            const galpones = await response.json();
+                            if (Array.isArray(galpones)) {
+                                localMap[cencoCodigo] = galpones;
+                            }
                         }
+                    } catch (error) {
+                        console.error(`Error cargando galpones para ${cencoCodigo}:`, error);
+                    } finally {
+                        done++;
+                        galponesProgress.done = done;
+                        if (token === galponesLoadToken) updateProgress();
                     }
-                } catch (error) {
-                    console.error(`Error cargando galpones para ${cencoCodigo}:`, error);
-                } finally {
-                    done++;
-                    if (token === galponesLoadToken) updateProgress();
-                }
-            }));
+                }));
+            }
 
-            if (token !== galponesLoadToken) return;
+            if (token !== galponesLoadToken) {
+                galponesLoading = false;
+                setGalponRadiosDisabled(false);
+                return;
+            }
 
             galponesData = localMap;
             galponesLoading = false;
+            setGalponRadiosDisabled(false);
 
             const tipoActual = document.querySelector('input[name="tipo_galpon"]:checked')?.value || 'todos';
             if (tipoActual === 'escoger') {
@@ -656,7 +718,8 @@ if (!$conexion) {
             } else {
                 if (galponesLoading) {
                     container.classList.remove('hidden');
-                    container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">Cargando galpones... espere un momento.</p>';
+                    const { done, total } = galponesProgress || { done: 0, total: 0 };
+                    container.innerHTML = `<p class="text-gray-500 text-sm text-center py-4">Cargando galpones... espere un momento. ${total ? `(${done}/${total})` : ''}</p>`;
                     return;
                 }
                 // Si CENCOS está en "Escoger" y no hay CENCOS seleccionados aún, avisar
@@ -666,6 +729,16 @@ if (!$conexion) {
                     galponesSeleccionados.clear();
                     return;
                 }
+
+                // Si no tenemos galpones cargados todavía (ej: Granjas=Todos/Activos), cargar bajo demanda
+                if (Object.keys(galponesData).length === 0) {
+                    container.classList.remove('hidden');
+                    container.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">Cargando galpones...</p>';
+                    // Disparar carga asíncrona y dejar que al terminar se renderice automáticamente
+                    cargarGalponesPorFiltro(filtroCencosActual || 'activos');
+                    return;
+                }
+
                 renderizarCheckboxesGalpones();
             }
         }
@@ -810,6 +883,9 @@ if (!$conexion) {
             if (!inputInicio.value) inputInicio.value = primerDiaMes;
             if (!inputFin.value) inputFin.value = hoyStr;
         })();
+
+        // Asegurar que los radios de galpones nunca queden bloqueados
+        setGalponRadiosDisabled(false);
 
         // No cargar nada al iniciar - el usuario debe seleccionar una opción
     </script>

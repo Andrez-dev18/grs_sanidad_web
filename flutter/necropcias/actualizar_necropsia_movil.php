@@ -128,7 +128,8 @@ $sqlUpdate = "UPDATE t_regnecropsia SET
     tuser = ?, tdate = ?, ttime = ?, tcencos = ?, tgranja = ?, tcampania = ?, tedad = ?, tgalpon = ?, tnumreg = ?, tfectra = ?, diareg = ?,
     tcodsistema = ?, tsistema = ?, tnivel = ?, tparametro = ?,
     tporcentaje1 = ?, tporcentaje2 = ?, tporcentaje3 = ?, tporcentaje4 = ?, tporcentaje5 = ?, tporcentajetotal = ?,
-    tobservacion = ?, evidencia = ?, tobs = ?, tuser_trans = ?, tdate_trans = ?, ttime_trans = ?, tidandroid = ?
+    tobservacion = ?, evidencia = ?, tobs = ?, tuser_trans = ?, tdate_trans = ?, ttime_trans = ?, tidandroid = ?,
+    tdiagpresuntivo = ?
 WHERE tuuid = ?";
 
 $stmtUpdate = $conn->prepare($sqlUpdate);
@@ -158,6 +159,8 @@ foreach ($items as $itemIndex => $item) {
     $fectra = $item['fectra'] ?? '';
     $numreg = isset($item['numreg']) ? (int)$item['numreg'] : 0;
     $tcencos = $item['tcencos'] ?? '';
+    $diagnosticoPresuntivo = $item['diagnostico_presuntivo'] ?? '';
+    // NOTA: NO tocar tfecreghorainicio y tfecreghorafin en actualizaciones (solo se colocan al momento de registrar)
     
     // === CAMPOS ADICIONALES ===
     $tuser = $item['tuser'] ?? 'app_movil';
@@ -212,6 +215,90 @@ foreach ($items as $itemIndex => $item) {
         $registrosPorNivel[$nivel][] = $reg;
     }
 
+    // Procesar evidencias ANTES del loop de actualización para tenerlas disponibles
+    $evidenciasMetadata = $item['evidencias_metadata'] ?? [];
+    $rutasEvidenciasPorNivel = [];
+    
+    error_log("Procesando evidencias para item #" . ($itemIndex + 1) . ". Total metadata: " . count($evidenciasMetadata));
+    
+    // Log de archivos recibidos para debugging
+    if (!empty($_FILES)) {
+        error_log("=== ARCHIVOS RECIBIDOS EN \$_FILES (ACTUALIZACIÓN) ===");
+        foreach ($_FILES as $key => $fileInfo) {
+            $errorCode = isset($fileInfo['error']) ? $fileInfo['error'] : 'N/A';
+            $size = isset($fileInfo['size']) ? $fileInfo['size'] : 0;
+            $name = isset($fileInfo['name']) ? $fileInfo['name'] : 'N/A';
+            error_log("  - Key: '$key' | Name: '$name' | Size: $size bytes | Error: $errorCode");
+        }
+        error_log("=== FIN ARCHIVOS ===");
+    }
+    
+    foreach ($evidenciasMetadata as $evidenciaKey => $evidenciaInfo) {
+        $sistema = $evidenciaInfo['sistema'] ?? '';
+        $nivel = $evidenciaInfo['nivel'] ?? '';
+        $cantidad = isset($evidenciaInfo['cantidad']) ? (int)$evidenciaInfo['cantidad'] : 0;
+        
+        $normalizedEvidenciaKey = str_replace(' ', '_', $evidenciaKey);
+        
+        $rutasNivel = [];
+        
+        if ($cantidad == 0) {
+            $rutasEvidenciasPorNivel[$nivel] = '';
+            continue;
+        }
+        
+        for ($i = 0; $i < $cantidad; $i++) {
+            $fileKey = 'evidencia_' . $normalizedEvidenciaKey . '_' . $i;
+            
+            // Intentar también con variaciones del nombre de la clave
+            $fileFound = false;
+            $actualFileKey = $fileKey;
+            
+            if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
+                $fileFound = true;
+            } else {
+                foreach ($_FILES as $key => $val) {
+                    if (strpos($key, 'evidencia_') === 0 && 
+                        strpos($key, $evidenciaKey) !== false && 
+                        strpos($key, '_' . $i) !== false) {
+                        $actualFileKey = $key;
+                        $fileFound = true;
+                        error_log("    → Usando variación encontrada: '$key' en lugar de '$fileKey'");
+                        break;
+                    }
+                }
+            }
+            
+            if ($fileFound && isset($_FILES[$actualFileKey]) && $_FILES[$actualFileKey]['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES[$actualFileKey];
+                
+                $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $nombreArchivo = $granja . '_' . $galpon . '_' . $numreg . '_' . 
+                                str_replace('-', '', $fectra) . '_' . 
+                                strtolower(str_replace(' ', '_', $nivel)) . '_' . 
+                                $i . '_' . uniqid() . '.' . $extension;
+                
+                $rutaFisica = $carpetaNecropsias . $nombreArchivo;
+                $rutaBD = $rutaRelativaBD . $nombreArchivo;
+                
+                if (move_uploaded_file($file['tmp_name'], $rutaFisica)) {
+                    $rutasNivel[] = $rutaBD;
+                    error_log("✓ Imagen guardada: $rutaBD");
+                } else {
+                    error_log("✗ Error al mover archivo: $nombreArchivo");
+                }
+            } else {
+                $errorCode = isset($_FILES[$actualFileKey]) ? $_FILES[$actualFileKey]['error'] : 'NO_EXISTE';
+                error_log("⚠ Archivo NO encontrado o con error: $fileKey (error: $errorCode)");
+            }
+        }
+        
+        if (!empty($rutasNivel)) {
+            $rutasComas = implode(',', $rutasNivel);
+            $rutasEvidenciasPorNivel[$nivel] = $rutasComas;
+        } 
+    }
+    
     // === ACTUALIZAR CADA REGISTRO ===
     error_log("Item #" . ($itemIndex + 1) . " tiene " . count($registros) . " registros");
     
@@ -281,8 +368,11 @@ foreach ($items as $itemIndex => $item) {
         }
 
       
+        // Obtener evidencia del nivel si existe
         $evidencia = '';
-        
+        if (isset($rutasEvidenciasPorNivel[$reg['tnivel'] ?? ''])) {
+            $evidencia = $rutasEvidenciasPorNivel[$reg['tnivel']];
+        }
         
         $porcentaje1 = isset($reg['tporcentaje1']) ? (double)$reg['tporcentaje1'] : 0.0;
         $porcentaje2 = isset($reg['tporcentaje2']) ? (double)$reg['tporcentaje2'] : 0.0;
@@ -305,7 +395,7 @@ foreach ($items as $itemIndex => $item) {
 
         // Ejecutar actualización
         $stmtUpdate->bind_param(
-            "ssssssssississsddddddssssssss",
+            "ssssssssississsddddddsssssssss",
             $tuser,              // 1. tuser: s
             $tdate,              // 2. tdate: s
             $ttime,              // 3. ttime: s
@@ -334,7 +424,8 @@ foreach ($items as $itemIndex => $item) {
             $tdate_trans,        // 26. tdate_trans: s
             $ttime_trans,        // 27. ttime_trans: s
             $tidandroid,         // 28. tidandroid: s
-            $tuuidRegistro       // 29. tuuid (WHERE): s
+            $diagnosticoPresuntivo, // 29. diagnostico_presuntivo: s
+            $tuuidRegistro       // 30. tuuid (WHERE): s
         );
 
         if ($stmtUpdate->execute()) {
@@ -348,148 +439,6 @@ foreach ($items as $itemIndex => $item) {
             error_log($errorMsg);
             error_log("  SQL: " . $sqlUpdate);
             error_log("  Parámetros: tuuid=$tuuidRegistro, sistema={$reg['tsistema']}, nivel={$reg['tnivel']}");
-        }
-    }
-
-    // Crear un mapa de tuuid -> nivel para asociar evidencias con registros específicos
-    $tuuidPorNivel = [];
-    foreach ($registros as $reg) {
-        $tuuidReg = $reg['tuuid'] ?? '';
-        $nivelReg = $reg['tnivel'] ?? '';
-        if (!empty($tuuidReg) && !empty($nivelReg)) {
-            if (!isset($tuuidPorNivel[$nivelReg])) {
-                $tuuidPorNivel[$nivelReg] = [];
-            }
-            $tuuidPorNivel[$nivelReg][] = $tuuidReg;
-        }
-    }
-    
-    $evidenciasMetadata = $item['evidencias_metadata'] ?? [];
-    $rutasEvidenciasPorNivel = [];
-    
-    error_log("Procesando evidencias para item #" . ($itemIndex + 1) . ". Total metadata: " . count($evidenciasMetadata));
-    
-    // Log de archivos recibidos para debugging
-    if (!empty($_FILES)) {
-        error_log("=== ARCHIVOS RECIBIDOS EN \$_FILES (ACTUALIZACIÓN) ===");
-        foreach ($_FILES as $key => $fileInfo) {
-            $errorCode = isset($fileInfo['error']) ? $fileInfo['error'] : 'N/A';
-            $size = isset($fileInfo['size']) ? $fileInfo['size'] : 0;
-            $name = isset($fileInfo['name']) ? $fileInfo['name'] : 'N/A';
-            error_log("  - Key: '$key' | Name: '$name' | Size: $size bytes | Error: $errorCode");
-        }
-        error_log("=== FIN ARCHIVOS ===");
-    }
-    
-    // Niveles que deben procesarse
-    $nivelesProcesados = [];
-    
-    foreach ($evidenciasMetadata as $evidenciaKey => $evidenciaInfo) {
-        $sistema = $evidenciaInfo['sistema'] ?? '';
-        $nivel = $evidenciaInfo['nivel'] ?? '';
-        $cantidad = isset($evidenciaInfo['cantidad']) ? (int)$evidenciaInfo['cantidad'] : 0;
-        
-        $normalizedEvidenciaKey = str_replace(' ', '_', $evidenciaKey);
-        
-        // Marcar este nivel como procesado
-        $nivelesProcesados[] = $nivel;
-        
-       
-        
-        $rutasNivel = [];
-        
-        if ($cantidad == 0) {
-            $rutasEvidenciasPorNivel[$nivel] = '';
-            continue;
-        }
-        
-        for ($i = 0; $i < $cantidad; $i++) {
-            
-            $$fileKey = 'evidencia_' . $normalizedEvidenciaKey . '_' . $i;
-            
-            // Intentar también con variaciones del nombre de la clave
-            $fileFound = false;
-            $actualFileKey = $fileKey;
-            
-            if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
-                $fileFound = true;
-            } else {
-                foreach ($_FILES as $key => $val) {
-                    if (strpos($key, 'evidencia_') === 0 && 
-                        strpos($key, $evidenciaKey) !== false && 
-                        strpos($key, '_' . $i) !== false) {
-                        $actualFileKey = $key;
-                        $fileFound = true;
-                        error_log("    → Usando variación encontrada: '$key' en lugar de '$fileKey'");
-                        break;
-                    }
-                }
-            }
-            
-            if ($fileFound && isset($_FILES[$actualFileKey]) && $_FILES[$actualFileKey]['error'] === UPLOAD_ERR_OK) {
-                $file = $_FILES[$actualFileKey];
-                
-                $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-                $nombreArchivo = $granja . '_' . $galpon . '_' . $numreg . '_' . 
-                                str_replace('-', '', $fectra) . '_' . 
-                                strtolower(str_replace(' ', '_', $nivel)) . '_' . 
-                                $i . '_' . uniqid() . '.' . $extension;
-                
-                $rutaFisica = $carpetaNecropsias . $nombreArchivo;
-                $rutaBD = $rutaRelativaBD . $nombreArchivo;
-                
-                if (move_uploaded_file($file['tmp_name'], $rutaFisica)) {
-                    $rutasNivel[] = $rutaBD;
-                    error_log("✓ Imagen guardada: $rutaBD");
-                } else {
-                    error_log("✗ Error al mover archivo: $nombreArchivo");
-                }
-            } else {
-                $errorCode = isset($_FILES[$actualFileKey]) ? $_FILES[$actualFileKey]['error'] : 'NO_EXISTE';
-                error_log("⚠ Archivo NO encontrado o con error: $fileKey (error: $errorCode)");
-            }
-        }
-        
-        if (!empty($rutasNivel)) {
-            $rutasComas = implode(',', $rutasNivel);
-            $rutasEvidenciasPorNivel[$nivel] = $rutasComas;
-            
-        } 
-    }
-    
-    
-    foreach ($rutasEvidenciasPorNivel as $nivel => $rutasComas) {
-      
-        if (isset($tuuidPorNivel[$nivel]) && !empty($tuuidPorNivel[$nivel])) {
-        
-            foreach ($tuuidPorNivel[$nivel] as $tuuidReg) {
-                $updateEvidenciaSql = "UPDATE t_regnecropsia 
-                              SET evidencia = ? 
-                              WHERE tuuid = ?";
-                $stmtUpdateEvidencia = $conn->prepare($updateEvidenciaSql);
-                if ($stmtUpdateEvidencia) {
-                    $stmtUpdateEvidencia->bind_param("ss", $rutasComas, $tuuidReg);
-                    if ($stmtUpdateEvidencia->execute()) {
-                        $affectedRows = $stmtUpdateEvidencia->affected_rows;
-                       
-                    } 
-                    $stmtUpdateEvidencia->close();
-                } 
-            }
-        } else {
-            // Fallback: usar método anterior si no hay tuuid disponible
-            $updateEvidenciaSql = "UPDATE t_regnecropsia 
-                          SET evidencia = ? 
-                          WHERE tgranja = ? AND tgalpon = ? AND tnumreg = ? AND tfectra = ? AND tnivel = ?";
-            $stmtUpdateEvidencia = $conn->prepare($updateEvidenciaSql);
-            if ($stmtUpdateEvidencia) {
-                $stmtUpdateEvidencia->bind_param("ssssss", $rutasComas, $granja, $galpon, $numreg, $fectra, $nivel);
-                if ($stmtUpdateEvidencia->execute()) {
-                    $affectedRows = $stmtUpdateEvidencia->affected_rows;
-                    
-                } 
-                $stmtUpdateEvidencia->close();
-            }
         }
     }
 }

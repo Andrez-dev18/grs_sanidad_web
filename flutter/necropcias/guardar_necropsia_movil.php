@@ -160,7 +160,6 @@ if (!$input || !isset($input['necropcias']) || !is_array($input['necropcias']) |
 $items = $input['necropcias'];
 $insertados = 0;
 $duplicados = 0;
-$actualizados = 0;
 
 $checkDuplicado = $conn->prepare("SELECT COUNT(*) FROM t_regnecropsia WHERE tuuid = ?");
 if (!$checkDuplicado) {
@@ -176,12 +175,14 @@ $sqlInsert = "INSERT INTO t_regnecropsia (
     tuuid, tuser, tdate, ttime, tcencos, tgranja, tcampania, tedad, tgalpon, tnumreg, tfectra, diareg,
     tcodsistema, tsistema, tnivel, tparametro,
     tporcentaje1, tporcentaje2, tporcentaje3, tporcentaje4, tporcentaje5, tporcentajetotal,
-    tobservacion, evidencia, tobs, tuser_trans, tdate_trans, ttime_trans, tidandroid, tid
+    tobservacion, evidencia, tobs, tuser_trans, tdate_trans, ttime_trans, tidandroid, tid,
+    tdiagpresuntivo, tfecreghorainicio, tfecreghorafin
 ) VALUES (
     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?,
-    ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?,
+    ?, ?, ?
 )";
 
 $stmtInsert = $conn->prepare($sqlInsert);
@@ -196,25 +197,6 @@ if (!$stmtInsert) {
     exit;
 }
 
-$sqlUpdate = "UPDATE t_regnecropsia SET
-    tuser = ?, tdate = ?, ttime = ?, tcencos = ?, tgranja = ?, tcampania = ?, tedad = ?, tgalpon = ?, tnumreg = ?, tfectra = ?, diareg = ?,
-    tcodsistema = ?, tsistema = ?, tnivel = ?, tparametro = ?,
-    tporcentaje1 = ?, tporcentaje2 = ?, tporcentaje3 = ?, tporcentaje4 = ?, tporcentaje5 = ?, tporcentajetotal = ?,
-    tobservacion = ?, evidencia = ?, tobs = ?, tuser_trans = ?, tdate_trans = ?, ttime_trans = ?, tidandroid = ?
-WHERE tuuid = ?";
-
-$stmtUpdate = $conn->prepare($sqlUpdate);
-
-if (!$stmtUpdate) {
-    echo json_encode([
-        'success' => false,
-        'message' => 'Error preparando consulta de actualización: ' . $conn->error
-    ], JSON_UNESCAPED_UNICODE);
-    $checkDuplicado->close();
-    $stmtInsert->close();
-    $conn->close();
-    exit;
-}
 
 $tidContador = 1; // Contador consecutivo para tid
 
@@ -230,6 +212,9 @@ foreach ($items as $itemIndex => $item) {
     $fectra = $item['fectra'] ?? '';
     $numreg = isset($item['numreg']) ? (int)$item['numreg'] : 0;
     $tcencos = $item['tcencos'] ?? '';
+    $diagnosticoPresuntivo = $item['diagnostico_presuntivo'] ?? '';
+    $tfecreghorainicio = $item['tfecreghorainicio'] ?? '';
+    $tfecreghorafin = $item['tfecreghorafin'] ?? '';
     
     // === CAMPOS ADICIONALES DE LA APP ===
     $tuser = $item['tuser'] ?? 'app_movil';
@@ -294,6 +279,38 @@ foreach ($items as $itemIndex => $item) {
 
     error_log("Procesando " . count($registros) . " registros del item #" . ($itemIndex + 1));
     
+    // Procesar evidencias ANTES del loop de registros para tenerlas disponibles
+    $evidenciasMetadata = $item['evidencias_metadata'] ?? [];
+    $rutasEvidenciasPorNivel = [];
+    
+    foreach ($evidenciasMetadata as $evidenciaKey => $evidenciaInfo) {
+        $nivel = $evidenciaInfo['nivel'] ?? '';
+        $cantidad = (int)($evidenciaInfo['cantidad'] ?? 0);
+        $rutasNivel = [];
+        $normalizedEvidenciaKey = str_replace(' ', '_', $evidenciaKey);
+        for ($i = 0; $i < $cantidad; $i++) {
+            $fileKey = 'evidencia_' . $normalizedEvidenciaKey . '_' . $i;
+            if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES[$fileKey];
+                $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                if (!$extension) $extension = 'jpg';
+                
+                $nombreArchivo = $granja . '_' . $galpon . '_' . $numreg . '_' . 
+                                str_replace('-', '', $fectra) . '_' . 
+                                strtolower(str_replace(' ', '_', $nivel)) . '_' . 
+                                $i . '_' . uniqid() . '.' . $extension;
+
+                $rutaFisica = $carpetaNecropsias . $nombreArchivo;
+                if (move_uploaded_file($file['tmp_name'], $rutaFisica)) {
+                    $rutasNivel[] = $rutaRelativaBD . $nombreArchivo;
+                }
+            }
+        }
+        if (!empty($rutasNivel)) {
+            $rutasEvidenciasPorNivel[$nivel] = implode(',', $rutasNivel);
+        }
+    }
+    
     foreach ($registros as $regIndex => $reg) {
         if (!isset($reg['tuuid']) || !isset($reg['tsistema']) || !isset($reg['tnivel']) || !isset($reg['tparametro'])) {
             error_log("Registro #" . ($regIndex + 1) . " inválido (faltan campos requeridos). Keys: " . implode(', ', array_keys($reg ?? [])));
@@ -302,18 +319,18 @@ foreach ($items as $itemIndex => $item) {
         
         $tuuidRegistro = $reg['tuuid'] ?? '';
         $existeRegistro = 0;
-        $needsUpdate = isset($item['needs_update']) && $item['needs_update'] === true;
 
-               if (!empty($tuuidRegistro)) {
+        // Verificar si el registro ya existe (duplicado)
+        if (!empty($tuuidRegistro)) {
             $checkDuplicado->bind_param("s", $tuuidRegistro);
             $checkDuplicado->execute();
             $checkDuplicado->bind_result($existeRegistro);
             $checkDuplicado->fetch();
             $checkDuplicado->free_result();
 
-            if ($existeRegistro > 0 && !$needsUpdate) {
+            if ($existeRegistro > 0) {
                 $duplicados++;
-                continue; 
+                continue; // Saltar registro duplicado
             }
         }
 
@@ -340,7 +357,12 @@ foreach ($items as $itemIndex => $item) {
                 $tcodsistema = 0;
         }
 
+        // Obtener evidencia del nivel si existe
         $evidencia = '';
+        if (isset($rutasEvidenciasPorNivel[$reg['tnivel'] ?? ''])) {
+            $evidencia = $rutasEvidenciasPorNivel[$reg['tnivel']];
+        }
+        
         $tid = $tidContador;
         $tidContador++;
 
@@ -365,51 +387,9 @@ foreach ($items as $itemIndex => $item) {
         $tnivel = (string)($reg['tnivel'] ?? '');
         $tparametro = (string)($reg['tparametro'] ?? '');
       
-        if ($existeRegistro > 0 && $needsUpdate) {
-            $stmtUpdate->bind_param(
-                "ssssssssississsddddddssssssss",
-                $tuser,              // 1. tuser: s
-                $tdate,              // 2. tdate: s
-                $ttime,              // 3. ttime: s
-                $tcencos,            // 4. tcencos: s
-                $granja,             // 5. tgranja: s
-                $campania,           // 6. tcampania: s
-                $edad,               // 7. tedad: s
-                $galpon,             // 8. tgalpon: s
-                $numreg,             // 9. tnumreg: i
-                $fectra,             // 10. tfectra: s
-                $diareg,             // 11. diareg: s
-                $tcodsistema,        // 12. tcodsistema: i
-                $tsistema,           // 13. tsistema: s
-                $tnivel,             // 14. tnivel: s
-                $tparametro,         // 15. tparametro: s
-                $porcentaje1,        // 16. tporcentaje1: d
-                $porcentaje2,        // 17. tporcentaje2: d
-                $porcentaje3,        // 18. tporcentaje3: d
-                $porcentaje4,        // 19. tporcentaje4: d
-                $porcentaje5,        // 20. tporcentaje5: d
-                $porcentajeTotal,    // 21. tporcentajetotal: d
-                $obs,                // 22. tobservacion: s
-                $evidencia,          // 23. evidencia: s
-                $tobs,               // 24. tobs: s
-                $tuser_trans,        // 25. tuser_trans: s
-                $tdate_trans,        // 26. tdate_trans: s
-                $ttime_trans,        // 27. ttime_trans: s
-                $tidandroid,         // 28. tidandroid: s
-                $tuuidRegistro       // 29. tuuid (WHERE): s
-            );
-
-            if ($stmtUpdate->execute()) {
-                $actualizados++;
-                error_log("✓ Registro actualizado exitosamente: UUID=$tuuidRegistro, Sistema={$reg['tsistema']}, Nivel={$reg['tnivel']}");
-            } else {
-                $errorMsg = "✗ Error al actualizar registro con UUID $tuuidRegistro: " . $stmtUpdate->error;
-                error_log($errorMsg);
-            }
-        } else {
-          
-            $stmtInsert->bind_param(
-                "sssssssssississsddddddsssssssi",
+        // Insertar nuevo registro
+        $stmtInsert->bind_param(
+                "sssssssssississsddddddsssssssisss",
                 $tuuidRegistro,      // 1. tuuid: s
                 $tuser,              // 2. tuser: s
                 $tdate,              // 3. tdate: s
@@ -439,92 +419,39 @@ foreach ($items as $itemIndex => $item) {
                 $tdate_trans,        // 27. tdate_trans: s
                 $ttime_trans,        // 28. ttime_trans: s
                 $tidandroid,         // 29. tidandroid: s
-                $tid                 // 30. tid: i
+                $tid,                // 30. tid: i
+                $diagnosticoPresuntivo, // 31. tdiagpresuntivo: s
+                $tfecreghorainicio,  // 32. tfecreghorainicio: s
+                $tfecreghorafin      // 33. tfecreghorafin: s
             );
 
-            if ($stmtInsert->execute()) {
-                $insertados++;
-                
-            }
+        if ($stmtInsert->execute()) {
+            $insertados++;
+        } else {
+            $errorMsg = "✗ Error al insertar registro con UUID $tuuidRegistro: " . $stmtInsert->error;
+            error_log($errorMsg);
         }
     }
-
-
-    $evidenciasMetadata = $item['evidencias_metadata'] ?? [];
-
-// Agrupar rutas por nivel (como ya haces)
-$rutasEvidenciasPorNivel = [];
-foreach ($evidenciasMetadata as $evidenciaKey => $evidenciaInfo) {
-    $nivel = $evidenciaInfo['nivel'] ?? '';
-    $cantidad = (int)($evidenciaInfo['cantidad'] ?? 0);
-    $rutasNivel = [];
-    $normalizedEvidenciaKey = str_replace(' ', '_', $evidenciaKey);
-    for ($i = 0; $i < $cantidad; $i++) {
-        $fileKey = 'evidencia_' . $normalizedEvidenciaKey . '_' . $i;
-        if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
-            $file = $_FILES[$fileKey];
-            $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            if (!$extension) $extension = 'jpg';
-            
-            $nombreArchivo = $granja . '_' . $galpon . '_' . $numreg . '_' . 
-                            str_replace('-', '', $fectra) . '_' . 
-                            strtolower(str_replace(' ', '_', $nivel)) . '_' . 
-                            $i . '_' . uniqid() . '.' . $extension;
-
-            $rutaFisica = $carpetaNecropsias . $nombreArchivo;
-            if (move_uploaded_file($file['tmp_name'], $rutaFisica)) {
-                $rutasNivel[] = $rutaRelativaBD . $nombreArchivo;
-            }
-        }
-    }
-    if (!empty($rutasNivel)) {
-        $rutasEvidenciasPorNivel[$nivel] = implode(',', $rutasNivel);
-    }
-}
-
-// AHORA: Actualizar solo los registros que pertenecen a niveles con imágenes
-if (!empty($rutasEvidenciasPorNivel)) {
-    $stmtUpdateEvidencia = $conn->prepare(
-        "UPDATE t_regnecropsia SET evidencia = ? WHERE tuuid = ?"
-    );
     
-    if ($stmtUpdateEvidencia) {
-        foreach ($registros as $reg) {
-            $nivelReg = $reg['tnivel'] ?? '';
-            $tuuidReg = $reg['tuuid'] ?? '';
-            
-            if (isset($rutasEvidenciasPorNivel[$nivelReg]) && !empty($tuuidReg)) {
-                $rutasComas = $rutasEvidenciasPorNivel[$nivelReg];
-                $stmtUpdateEvidencia->bind_param("ss", $rutasComas, $tuuidReg);
-                $stmtUpdateEvidencia->execute();
-                error_log("✓ evidencia actualizada para tuuid=$tuuidReg, nivel=$nivelReg");
-            }
-        }
-        $stmtUpdateEvidencia->close();
-    }
 }
-    }
-
 
 $stmtInsert->close();
-$stmtUpdate->close();
 $checkDuplicado->close();
 $conn->close();
 
 
 $respuesta = [
     "insertados" => $insertados,
-    "actualizados" => $actualizados,
     "duplicados" => $duplicados
 ];
 
-$totalProcesados = $insertados + $actualizados;
-error_log("RESUMEN: Insertados=$insertados, Actualizados=$actualizados, Duplicados=$duplicados, Total items procesados=" . count($items));
+$totalProcesados = $insertados;
+error_log("RESUMEN: Insertados=$insertados, Duplicados=$duplicados, Total items procesados=" . count($items));
 
 echo json_encode([
     "success" => $totalProcesados > 0,
     "message" => $totalProcesados > 0 
-        ? "Datos procesados correctamente. Insertados: $insertados, Actualizados: $actualizados, Duplicados: $duplicados"
+        ? "Datos procesados correctamente. Insertados: $insertados, Duplicados: $duplicados"
         : "No se procesaron registros. Verifique los logs para más detalles.",
     "detalle" => $respuesta
 ], JSON_UNESCAPED_UNICODE);
