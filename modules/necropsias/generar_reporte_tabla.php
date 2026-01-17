@@ -241,6 +241,19 @@ body {
         $html .= '</table>';
     
         // === Tabla de información ===
+        // Formatear fecha tdate a dd/mm/yyyy
+        $tdate = $cabecera['tdate'] ?? '';
+        $tdateFormatted = '--/--/----';
+        if (!empty($tdate)) {
+            try {
+                // Formato esperado: YYYY-MM-DD o YYYY-MM-DD HH:MM:SS
+                $dateTime = new DateTime($tdate);
+                $tdateFormatted = $dateTime->format('d/m/Y');
+            } catch (Exception $e) {
+                $tdateFormatted = $tdate;
+            }
+        }
+        
         $html .= '<table class="info-table">';
         $html .= '<tr>
             <th>Fecha</th>
@@ -250,11 +263,50 @@ body {
             <th>Edad</th>
         </tr>';
         $html .= '<tr>
-            <td>' . htmlspecialchars($cabecera['tdate'] ?? '') . '</td>
+            <td>' . htmlspecialchars($tdateFormatted) . '</td>
             <td>' . htmlspecialchars($cabecera['tgranja'] ?? '') . '</td>
             <td>' . htmlspecialchars($cabecera['tcampania'] ?? '') . '</td>
             <td>' . htmlspecialchars($cabecera['tgalpon'] ?? '') . '</td>
             <td>' . htmlspecialchars($cabecera['tedad'] ?? '') . ' días</td>
+        </tr>';
+        
+        // Fila de Inicio y Fin de Registro (ambos en la misma fila)
+        $tfecreghorainicio = $cabecera['tfecreghorainicio'] ?? '';
+        $tfecreghorainicioFormatted = '--/--/-- --:--:--';
+        if (!empty($tfecreghorainicio)) {
+            try {
+                // Formato esperado: YYYY-MM-DD HH:MM:SS o HH:MM:SS (para compatibilidad)
+                $dateTimeStr = trim($tfecreghorainicio);
+                // Si solo tiene hora (HH:MM:SS), usar la fecha actual
+                if (strpos($dateTimeStr, '-') === false && strpos($dateTimeStr, ':') !== false) {
+                    $now = new DateTime();
+                    $dateTimeStr = $now->format('Y-m-d') . ' ' . $dateTimeStr;
+                }
+                $dateTime = new DateTime($dateTimeStr);
+                $tfecreghorainicioFormatted = $dateTime->format('d/m/Y H:i:s');
+            } catch (Exception $e) {
+                $tfecreghorainicioFormatted = $tfecreghorainicio;
+            }
+        }
+        
+        $tfecreghorafin = $cabecera['tfecreghorafin'] ?? '';
+        $tfecreghorafinFormatted = '--/--/-- --:--:--';
+        if (!empty($tfecreghorafin)) {
+            try {
+                // Formato esperado: YYYY-MM-DD HH:MM:SS
+                $dateTime = new DateTime($tfecreghorafin);
+                $tfecreghorafinFormatted = $dateTime->format('d/m/Y H:i:s');
+            } catch (Exception $e) {
+                $tfecreghorafinFormatted = $tfecreghorafin;
+            }
+        }
+        
+        $html .= '<tr>
+            <td style="padding: 5px; text-align: center; border: 1px solid #cbd5e1; page-break-inside: avoid; background-color: #e6f2ff; font-weight: bold;">Inicio de Registro</td>
+            <td style="padding: 5px; text-align: center; border: 1px solid #cbd5e1; page-break-inside: avoid;">' . htmlspecialchars($tfecreghorainicioFormatted) . '</td>
+            <td style="padding: 5px; text-align: center; border: 1px solid #cbd5e1; page-break-inside: avoid; background-color: #e6f2ff; font-weight: bold;">Fin de Registro</td>
+            <td style="padding: 5px; text-align: center; border: 1px solid #cbd5e1; page-break-inside: avoid;">' . htmlspecialchars($tfecreghorafinFormatted) . '</td>
+            <td style="padding: 5px; text-align: center; border: 1px solid #cbd5e1; page-break-inside: avoid;"></td>
         </tr>';
         $html .= '</table>';
     

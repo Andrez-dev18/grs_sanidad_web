@@ -413,6 +413,9 @@ if ($codigoUsuario) {
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/necropsias/dashboard-necropsias-listado.php', '📄 Listado de Necropsias', 'Listado de Necropsias')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white">Listado</a>
+                                <a href="#"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/necropsias/dashboard-reporte-comparativo.php', '📊 Reporte Comparativo', 'Compare los resultados de las necropsias de los galpones seleccionados.')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">Reporte</a>
                         </div>
                     </div>
                 </div>
