@@ -282,6 +282,53 @@ if (!$conexion) {
                 </p>
             </div>
 
+            <div class="col-span-1 lg:col-span-2 mt-10">
+                <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-red-500 pb-2 mb-6">
+                    <i class="fas fa-notes-medical mr-2"></i>Estadísticas de Necropsias
+                </h2>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Impacto por Sistema</h3>
+                <p class="text-sm text-gray-500 mb-4">Severidad promedio (%) por sistema.</p>
+                <div class="relative h-64">
+                    <canvas id="graficoNecropsiaSistemas"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-800">Detalle por Nivel (Órgano)</h3>
+                        <p class="text-sm text-gray-500">Selecciona un nivel para ver sus parámetros específicos.</p>
+                    </div>
+
+                    <select id="selectNivelNecropsia" class="border border-gray-300 rounded-lg px-4 py-2 bg-gray-50 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
+                        <option value="">Cargando niveles...</option>
+                    </select>
+                </div>
+
+                <div class="relative h-80">
+                    <canvas id="graficoNecropsiaDinamico"></canvas>
+                </div>
+            </div>
+       
+            <div class="bg-white rounded-xl shadow-md p-6 col-span-1 lg:col-span-2">
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Top 10 Hallazgos Frecuentes</h3>
+                <p class="text-sm text-gray-500 mb-4">Lesiones específicas más reportadas.</p>
+                <div class="relative h-80">
+                    <canvas id="graficoNecropsiaHallazgos"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6 col-span-1 lg:col-span-2">
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Necropsias por Granja</h3>
+                <p class="text-sm text-gray-500 mb-4">Volumen de registros realizados.</p>
+                <div class="relative h-64 flex justify-center">
+                    <canvas id="graficoNecropsiaGranjas"></canvas>
+                </div>
+            </div>
+            
         </div>
 
         <!-- Footer dinámico -->
@@ -553,7 +600,7 @@ if (!$conexion) {
         }
 
 
-    // === GRÁFICO 4: ANÁLISIS CON MÁS/MENOS RESULTADOS ===
+        // === GRÁFICO 4: ANÁLISIS CON MÁS/MENOS RESULTADOS ===
         let graficoAnalisisResultados = null;
         let modoAnalisis = 'mas'; // 'mas' o 'menos'
 
@@ -625,7 +672,183 @@ if (!$conexion) {
         cargarGraficoAnalisisResultados('mas');
     </script>
 
-    </div>
+    <script>
+        // Función para cargar estadísticas de necropsia
+        async function cargarEstadisticasNecropsia() {
+            try {
+                const response = await fetch('estadisticas_necropsia.php');
+                const datos = await response.json();
+
+                // 1. Gráfico de SISTEMAS (Barra Vertical)
+                const ctxSistemas = document.getElementById('graficoNecropsiaSistemas').getContext('2d');
+                new Chart(ctxSistemas, {
+                    type: 'bar',
+                    data: {
+                        labels: datos.sistemas.labels,
+                        datasets: [{
+                            label: 'Severidad Promedio (%)',
+                            data: datos.sistemas.data,
+                            backgroundColor: 'rgba(59, 130, 246, 0.6)', // Azul
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1,
+                            borderRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: '% Afectación'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // 2. Gráfico de GRANJAS (Doughnut)
+                const ctxGranjas = document.getElementById('graficoNecropsiaGranjas').getContext('2d');
+                new Chart(ctxGranjas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: datos.granjas.labels,
+                        datasets: [{
+                            data: datos.granjas.data,
+                            backgroundColor: [
+                                '#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6',
+                                '#EC4899', '#6366F1', '#14B8A6'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right'
+                            }
+                        }
+                    }
+                });
+
+                // 3. Gráfico de HALLAZGOS (Barra Horizontal)
+                const ctxHallazgos = document.getElementById('graficoNecropsiaHallazgos').getContext('2d');
+                new Chart(ctxHallazgos, {
+                    type: 'bar',
+                    data: {
+                        labels: datos.hallazgos.labels,
+                        datasets: [{
+                            label: 'Frecuencia (N° Lotes)',
+                            data: datos.hallazgos.data,
+                            backgroundColor: 'rgba(239, 68, 68, 0.6)', // Rojo
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // Hace que sea horizontal
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // =========================================================
+                // 5. GRÁFICO DINÁMICO (SELECT + BARRA)
+                // =========================================================
+                const selectNivel = document.getElementById('selectNivelNecropsia');
+                const ctxDinamico = document.getElementById('graficoNecropsiaDinamico').getContext('2d');
+                let chartDinamico = null; // Variable para guardar la instancia del gráfico
+
+                // A. Llenar el Select
+                const niveles = Object.keys(datos.dinamico);
+                selectNivel.innerHTML = ''; // Limpiar
+
+                if (niveles.length > 0) {
+                    niveles.forEach(nivel => {
+                        const option = document.createElement('option');
+                        option.value = nivel;
+                        option.text = nivel;
+                        selectNivel.appendChild(option);
+                    });
+
+                    // Seleccionar el primero por defecto (ej: INDICE BURSAL)
+                    renderizarGraficoDinamico(niveles[0]);
+                } else {
+                    selectNivel.innerHTML = '<option>Sin datos disponibles</option>';
+                }
+
+                // B. Función para dibujar/actualizar el gráfico
+                function renderizarGraficoDinamico(nivelSeleccionado) {
+                    const info = datos.dinamico[nivelSeleccionado];
+
+                    // Si ya existe, lo destruimos para volver a crear
+                    if (chartDinamico) {
+                        chartDinamico.destroy();
+                    }
+
+                    chartDinamico = new Chart(ctxDinamico, {
+                        type: 'bar',
+                        data: {
+                            labels: info.labels, // Parametros (ej: Normal, Atrofia...)
+                            datasets: [{
+                                label: `% Promedio en ${nivelSeleccionado}`,
+                                data: info.data,
+                                backgroundColor: 'rgba(99, 102, 241, 0.6)', // Indigo
+                                borderColor: 'rgba(99, 102, 241, 1)',
+                                borderWidth: 1,
+                                borderRadius: 5
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // C. Evento Change del Select
+                selectNivel.addEventListener('change', (e) => {
+                    renderizarGraficoDinamico(e.target.value);
+                });
+
+            } catch (error) {
+                console.error("Error cargando estadísticas de necropsia:", error);
+            }
+        }
+
+        // Llamar a la función al cargar la página
+        document.addEventListener("DOMContentLoaded", () => {
+            // ... tus otros gráficos ...
+            cargarEstadisticasNecropsia();
+        });
+    </script>
+
 </body>
 
 </html>
