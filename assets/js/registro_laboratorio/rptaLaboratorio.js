@@ -1823,35 +1823,31 @@ const CONFIG = {
 
 
 // ============================================
-// 2. CARGAR SOLICITUD DESDE SIDEBAR
+// 2. CARGAR SOLICITUD DESDE SIDEBAR (BOTÓN INTELIGENTE)
 // ============================================
 function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMuestra = '', posSolicitud = 1, analisisStr = '', analisisCodigosStr = '', analisisEnfermedadesStr = '') {
+    
+    // 1. Configuración Inicial
     window.codigoEnvioActual = codigo;
     window.posSolicitudActual = posSolicitud;
     window.enfermedadStates = {};
-
     window.estadoActualSolicitud = estado.toLowerCase();
+    
+    // NUEVO: Bandera para saber si vamos a editar o crear
+    window.modoEdicion = false; 
 
-    // 🗑️ Limpiar archivos precargados
+    // Limpiezas visuales
     const seccionArchivos = document.getElementById('seccionArchivosCompletados');
     if (seccionArchivos) seccionArchivos.classList.add('hidden');
     const fileListPrecargados = document.getElementById('fileListPrecargados');
     if (fileListPrecargados) fileListPrecargados.innerHTML = '';
-
-    /* CODIGO ANTERIOR
-    // No se limpiaban ni cargaban archivos cuantitativos aquí
-    */
-
-    // 🗑️ Limpiar archivos cuantitativos
+    
     limpiarArchivosCuanti();
-
-    // 📎 Cargar archivos cuantitativos existentes (siempre)
     cargarArchivosCompletadosCuanti(codigo, posSolicitud);
 
-    //document.getElementById('emptyState').classList.add('hidden');
     document.getElementById('formPanel').classList.remove('hidden');
-    //document.getElementById('lblCodigo').textContent = codigo;
 
+    // Renderizar Badge de Estado
     const lblEstado = document.getElementById('lblEstado');
     if (lblEstado) {
         const e = String(estado || 'pendiente').toLowerCase();
@@ -1863,121 +1859,66 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
         }
     }
 
+    // Reset Formulario
     document.getElementById('formAnalisis').reset();
     document.getElementById('codigoSolicitud').value = codigo;
     document.getElementById('fechaToma').value = fecha;
-
-    // ✅ Limpiar fecha de registro del laboratorio al cambiar de solicitud
+    
     const fechaLabCuanti = document.getElementById('fechaRegistroLabCuanti');
-    if (fechaLabCuanti) {
-        fechaLabCuanti.value = '';
-    }
+    if (fechaLabCuanti) fechaLabCuanti.value = '';
 
+    // Decodificar Referencia
     const datosRef = decodificarCodRef(referencia);
-    //document.getElementById('edadAves').value = datosRef.codRefCompleto;
     document.getElementById('codRef_granja').value = datosRef.granja;
     document.getElementById('codRef_campana').value = datosRef.campana;
     document.getElementById('codRef_galpon').value = datosRef.galpon;
-
     const edadField = document.getElementById('edadAves_display');
     if (edadField) edadField.value = datosRef.edad;
 
-    // ✅ Cambiar texto del botón según estado
-    const btnGuardar = document.querySelector('button[type="submit"]');
+    // Configurar Botón Guardar (Estado Inicial)
+    // Usamos el ID específico para no fallar
+    const btnGuardar = document.getElementById('btnGuardarCuanti'); 
     if (btnGuardar) {
+        // Por defecto "Guardar", salvo que el estado explícito sea completado
         if (estado.toLowerCase() === 'completado') {
+            window.modoEdicion = true;
             btnGuardar.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Actualizar Resultados';
-            btnGuardar.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105';
         } else {
             btnGuardar.innerHTML = '<i class="fas fa-save mr-2"></i> Guardar Resultados';
-            btnGuardar.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105';
         }
+        btnGuardar.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105';
+        btnGuardar.disabled = false;
     }
 
-    // ✅ MODIFICADO: Cargar enfermedades desde los parámetros pasados
-    if (analisisStr && analisisCodigosStr) {
-        const nombresArr = analisisStr.split(', ').map(s => s.trim());
-        const codigosArr = analisisCodigosStr.split(',').map(s => s.trim());
-        const enfermedadesArr = analisisEnfermedadesStr ? analisisEnfermedadesStr.split(',').map(s => s.trim()).filter(s => s !== '') : []; // ← Cambio clave
+    // Cargar Enfermedades (Fetch Force)
+    const container = document.getElementById('contenedorEnfermedades');
+    if(container) container.innerHTML = '<div class="text-center text-gray-500 py-4"><i class="fas fa-spinner fa-spin"></i> Cargando enfermedades...</div>';
 
-        window.enfermedadesActuales = nombresArr.map((nombre, i) => ({
-            nombre: nombre,
-            codigo: codigosArr[i] || '',
-            enfermedad: enfermedadesArr[i] || ''
-        }));
+    fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${codigo}&posSolicitud=${posSolicitud}&estado=${estado}`)
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP error! status: ' + r.status);
+            return r.text();
+        })
+        .then(text => {
+            let data;
+            try { data = JSON.parse(text); } catch (e) { return; }
 
-        // === Llenar select de enfermedades ===
-        const selectEnfermedad = document.getElementById('selectEnfermedad');
-        if (selectEnfermedad) {
-            selectEnfermedad.innerHTML = '<option value="">Seleccionar enfermedad</option>';
+            if (data.success) {
+                window.enfermedadesActuales = data.enfermedades;
+                detectarTipo(parseInt(datosRef.edad), nomMuestra);
 
-            const enfermedadesUnicas = [...new Set(enfermedadesArr)];
-
-            enfermedadesUnicas.forEach(enfermedad => {
-                if (enfermedad) {
-                    const option = document.createElement('option');
-                    option.value = enfermedad;
-                    option.textContent = enfermedad;
-                    selectEnfermedad.appendChild(option);
-                }
-            });
-
-            const label = selectEnfermedad.parentElement.querySelector('label');
-            if (label) {
-                label.textContent = `Seleccione Enfermedad (${enfermedadesUnicas.length} asignadas)`;
+                // Cargar datos guardados (esto activará el botón Actualizar si encuentra algo)
+                setTimeout(() => {
+                    cargarDatosCompletados(codigo);
+                }, 300);
+            } else {
+                alert('❌ Error: ' + (data.message || 'No se pudieron cargar enfermedades'));
             }
-        }
-
-        detectarTipo(parseInt(datosRef.edad), nomMuestra);
-
-        /* CODIGO ANTERIOR (solo cargaba datos cuando estado era completado)
-        if (estado.toLowerCase() === 'completado') {
-            setTimeout(() => {
-                cargarDatosCompletados(codigo);
-            }, 300);
-        }
-        */
-
-        // ✅ Siempre intentar cargar datos guardados (incluso si está pendiente)
-        setTimeout(() => {
-            cargarDatosCompletados(codigo);
-        }, 300);
-    } else {
-        // Fallback: cargar desde el servidor
-        fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${codigo}&posSolicitud=${posSolicitud}&estado=${estado}`)
-            .then(r => {
-                if (!r.ok) throw new Error('HTTP error! status: ' + r.status);
-                return r.text();
-            })
-            .then(text => {
-                console.log('Respuesta del servidor:', text);
-                const data = JSON.parse(text);
-                if (data.success) {
-                    window.enfermedadesActuales = data.enfermedades;
-
-                    detectarTipo(parseInt(datosRef.edad), nomMuestra);
-
-                    /* CODIGO ANTERIOR (solo cargaba datos cuando estado era completado)
-                    if (estado.toLowerCase() === 'completado') {
-                        setTimeout(() => {
-                            cargarDatosCompletados(codigo);
-                        }, 300);
-                    }
-                    */
-
-                    // ✅ Siempre intentar cargar datos guardados (incluso si está pendiente)
-                    setTimeout(() => {
-                        cargarDatosCompletados(codigo);
-                    }, 300);
-                } else {
-                    alert('❌ Error: ' + (data.message || 'No se pudieron cargar enfermedades'));
-                }
-            })
-            .catch(e => {
-                console.error('Error completo:', e);
-                alert('❌ Error de conexión. Ver consola para detalles.');
-            });
-    }
+        })
+        .catch(e => {
+            console.error('Error completo:', e);
+            alert('❌ Error de conexión al cargar enfermedades.');
+        });
 }
 
 // ============================================
@@ -1995,107 +1936,200 @@ function decodificarCodRef(codRef) {
 }
 
 // ============================================
-// CARGAR DATOS GUARDADOS (COMPLETADOS)
+// CARGAR DATOS GUARDADOS (ACTIVA MODO EDICIÓN)
 // ============================================
 async function cargarDatosCompletados(codigoEnvio) {
     console.log('🔍 Cargando datos guardados para:', codigoEnvio);
 
     const enfermedades = window.enfermedadesActuales || [];
-
-    if (enfermedades.length === 0) {
-        console.warn('No hay enfermedades para cargar datos');
-        return;
-    }
+    if (enfermedades.length === 0) return;
 
     const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
-    const posSolicitud = window.posSolicitudActual || 1; // ✅ Obtener posSolicitud actual
-    console.log('📊 Tipo detectado:', tipo);
-    console.log('📌 posSolicitud:', posSolicitud);
-
-    // Variable para guardar la fecha de registro del laboratorio (solo se necesita cargar una vez)
+    const posSolicitud = window.posSolicitudActual || 1;
     let fechaRegistroLabCargada = false;
+    
+    // NUEVO: Bandera local para saber si encontramos algo en BD
+    let algunDatoEncontrado = false;
 
-    // Cargar TODAS las enfermedades en paralelo
     const promesas = enfermedades.map(async (enf) => {
-        /* CODIGO ANTERIOR (no incluía posSolicitud)
-        const url = `crud-serologia.php?action=get_resultados_guardados&codEnvio=${codigoEnvio}&enfermedad=${encodeURIComponent(enf.nombre)}`;
-        */
-        // ✅ Incluir posSolicitud en la URL
         const url = `crud-serologia.php?action=get_resultados_guardados&codEnvio=${codigoEnvio}&posSolicitud=${posSolicitud}&enfermedad=${encodeURIComponent(enf.nombre)}`;
-        console.log('🌐 Consultando:', url);
-
+        
         try {
             const response = await fetch(url);
             const data = await response.json();
 
             if (data.success && data.datos) {
-                console.log(`✅ Datos cargados para ${enf.nombre}:`, data.datos);
+                // ¡EUREKA! Encontramos datos guardados
+                algunDatoEncontrado = true; 
 
                 const state = {};
                 const d = data.datos;
 
-                // ✅ Cargar fecha de registro del laboratorio (solo una vez)
                 if (!fechaRegistroLabCargada && d.fecha_registro_lab) {
                     const inputFechaLab = document.getElementById('fechaRegistroLabCuanti');
-                    if (inputFechaLab) {
-                        inputFechaLab.value = d.fecha_registro_lab;
-                        console.log('📅 Fecha de registro del laboratorio cargada:', d.fecha_registro_lab);
-                    }
+                    if (inputFechaLab) inputFechaLab.value = d.fecha_registro_lab;
                     fechaRegistroLabCargada = true;
                 }
 
-                // Campos principales
                 state[`${enf.nombre}_gmean`] = d.gmean || '';
                 state[`${enf.nombre}_cv`] = d.cv || '';
                 state[`${enf.nombre}_sd`] = d.desviacion_estandar || '';
                 state[`${enf.nombre}_count`] = d.count_muestras || 20;
 
-                // Niveles según tipo
                 if (tipo.toUpperCase() === 'ADULTO') {
                     for (let i = 1; i <= 6; i++) {
                         const colBD = `s${String(i).padStart(2, '0')}`;
                         const nombreInput = `${enf.nombre}_s${i}`;
                         state[nombreInput] = d[colBD] || '';
-                        console.log(`  ${nombreInput} = ${d[colBD]}`);
                     }
                 } else {
-                    for (let i = 0; i <= 25; i++) {
-                        const colBD = `nivel_${i}`;
+                    for (let i = 1; i <= 25; i++) {
+                        const colBD = `t${String(i).padStart(2, '0')}`;
                         const nombreInput = `${enf.nombre}_n${i}`;
                         state[nombreInput] = d[colBD] || 0;
                     }
+                    state[`${enf.nombre}_n0`] = 0;
                 }
 
                 window.enfermedadStates[enf.nombre] = state;
-                console.log(`💾 Estado guardado para ${enf.nombre}:`, state);
-
                 return true;
-            } else {
-                console.log(`ℹ️ Sin datos guardados para ${enf.nombre}`);
-                return false;
-            }
+            } 
+            return false;
         } catch (e) {
             console.error(`❌ Error cargando ${enf.nombre}:`, e);
             return false;
         }
     });
 
-    // Esperar a que TODAS las peticiones terminen
     await Promise.all(promesas);
 
-    // AHORA SÍ rellenar el panel
+    // ========================================================================
+    // LOGICA DEL BOTÓN INTELIGENTE
+    // ========================================================================
+    const btnGuardar = document.getElementById('btnGuardarCuanti');
+    
+    if (algunDatoEncontrado) {
+        // Si encontramos datos, activamos modo edición y cambiamos el botón
+        window.modoEdicion = true;
+        if (btnGuardar) {
+            btnGuardar.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Actualizar Resultados';
+        }
+        console.log("✅ Datos encontrados: Modo ACTUALIZAR activado");
+    } else {
+        // Si NO encontramos datos y el estado no es completado, es modo registro
+        if (window.estadoActualSolicitud !== 'completado') {
+            window.modoEdicion = false;
+            if (btnGuardar) {
+                btnGuardar.innerHTML = '<i class="fas fa-save mr-2"></i> Guardar Resultados';
+            }
+            console.log("ℹ️ Sin datos previos: Modo GUARDAR activado");
+        }
+    }
+
+    // Refrescar panel si hay selección
     const selectEnf = document.getElementById('selectEnfermedad');
     if (selectEnf && selectEnf.value) {
-        console.log(`🖊️ Rellenando panel de: ${selectEnf.value}`);
         populatePanelValues(selectEnf.value);
     }
 
-    /* CODIGO ANTERIOR
-    // 📎 Cargar archivos adjuntos (usaba función de cualitativos)
-    await cargarArchivosCompletados(codigoEnvio);
-    */
+    await cargarArchivosCompletadosCuanti(codigoEnvio, posSolicitud);
+}// ============================================
+// CARGAR DATOS GUARDADOS (ACTIVA MODO EDICIÓN)
+// ============================================
+async function cargarDatosCompletados(codigoEnvio) {
+    console.log('🔍 Cargando datos guardados para:', codigoEnvio);
 
-    // 📎 Cargar archivos adjuntos cuantitativos
+    const enfermedades = window.enfermedadesActuales || [];
+    if (enfermedades.length === 0) return;
+
+    const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
+    const posSolicitud = window.posSolicitudActual || 1;
+    let fechaRegistroLabCargada = false;
+    
+    // NUEVO: Bandera local para saber si encontramos algo en BD
+    let algunDatoEncontrado = false;
+
+    const promesas = enfermedades.map(async (enf) => {
+        const url = `crud-serologia.php?action=get_resultados_guardados&codEnvio=${codigoEnvio}&posSolicitud=${posSolicitud}&enfermedad=${encodeURIComponent(enf.nombre)}`;
+        
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.success && data.datos) {
+                // ¡EUREKA! Encontramos datos guardados
+                algunDatoEncontrado = true; 
+
+                const state = {};
+                const d = data.datos;
+
+                if (!fechaRegistroLabCargada && d.fecha_registro_lab) {
+                    const inputFechaLab = document.getElementById('fechaRegistroLabCuanti');
+                    if (inputFechaLab) inputFechaLab.value = d.fecha_registro_lab;
+                    fechaRegistroLabCargada = true;
+                }
+
+                state[`${enf.nombre}_gmean`] = d.gmean || '';
+                state[`${enf.nombre}_cv`] = d.cv || '';
+                state[`${enf.nombre}_sd`] = d.desviacion_estandar || '';
+                state[`${enf.nombre}_count`] = d.count_muestras || 20;
+
+                if (tipo.toUpperCase() === 'ADULTO') {
+                    for (let i = 1; i <= 6; i++) {
+                        const colBD = `s${String(i).padStart(2, '0')}`;
+                        const nombreInput = `${enf.nombre}_s${i}`;
+                        state[nombreInput] = d[colBD] || '';
+                    }
+                } else {
+                    for (let i = 1; i <= 25; i++) {
+                        const colBD = `t${String(i).padStart(2, '0')}`;
+                        const nombreInput = `${enf.nombre}_n${i}`;
+                        state[nombreInput] = d[colBD] || 0;
+                    }
+                    state[`${enf.nombre}_n0`] = 0;
+                }
+
+                window.enfermedadStates[enf.nombre] = state;
+                return true;
+            } 
+            return false;
+        } catch (e) {
+            console.error(`❌ Error cargando ${enf.nombre}:`, e);
+            return false;
+        }
+    });
+
+    await Promise.all(promesas);
+
+    // ========================================================================
+    // LOGICA DEL BOTÓN INTELIGENTE
+    // ========================================================================
+    const btnGuardar = document.getElementById('btnGuardarCuanti');
+    
+    if (algunDatoEncontrado) {
+        // Si encontramos datos, activamos modo edición y cambiamos el botón
+        window.modoEdicion = true;
+        if (btnGuardar) {
+            btnGuardar.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Actualizar Resultados';
+        }
+        console.log("✅ Datos encontrados: Modo ACTUALIZAR activado");
+    } else {
+        // Si NO encontramos datos y el estado no es completado, es modo registro
+        if (window.estadoActualSolicitud !== 'completado') {
+            window.modoEdicion = false;
+            if (btnGuardar) {
+                btnGuardar.innerHTML = '<i class="fas fa-save mr-2"></i> Guardar Resultados';
+            }
+            console.log("ℹ️ Sin datos previos: Modo GUARDAR activado");
+        }
+    }
+
+    // Refrescar panel si hay selección
+    const selectEnf = document.getElementById('selectEnfermedad');
+    if (selectEnf && selectEnf.value) {
+        populatePanelValues(selectEnf.value);
+    }
+
     await cargarArchivosCompletadosCuanti(codigoEnvio, posSolicitud);
 }
 
@@ -2385,17 +2419,30 @@ function guardar(e, estadoCuanti = 'completado') {
     const form = document.getElementById('formAnalisis');
     document.querySelectorAll('.tmp-enf-input').forEach(n => n.remove());
 
-    // ✅ Determinar si es UPDATE o CREATE según el estado
-    const esActualizacion = window.estadoActualSolicitud === 'completado';
-    const actionValue = esActualizacion ? 'update' : 'create';
+    // ====================================================================================
+    // 🔍 CORRECCIÓN CRÍTICA: LÓGICA DE DECISIÓN (CREATE vs UPDATE)
+    // ====================================================================================
+    // Antes dependía solo del estado 'completado', lo cual fallaba si estaba 'pendiente' pero con datos.
+    // Ahora usamos 'window.modoEdicion', que se activa si 'cargarDatosCompletados' encontró algo en la BD.
+    
+    const esActualizacion = (window.modoEdicion === true);
+    
+    // Fallback de seguridad: Si dice completado, forzamos update por si acaso
+    const forzarUpdate = window.estadoActualSolicitud === 'completado';
+    
+    const actionValue = (esActualizacion || forzarUpdate) ? 'update' : 'create';
+
+    console.log(`🚀 Decisión tomada: ${actionValue.toUpperCase()}`);
+    console.log(`   - Datos previos detectados (modoEdicion): ${window.modoEdicion}`);
+    console.log(`   - Estado actual etiqueta: ${window.estadoActualSolicitud}`);
 
     // Cambiar el valor del action hidden
     document.getElementById('action').value = actionValue;
 
+    // ====================================================================================
+
     // ✅ LOG: Ver qué enfermedades se van a enviar
     const enfermedadesAEnviar = Object.keys(window.enfermedadStates || {});
-    console.log('📋 Enfermedades a enviar:', enfermedadesAEnviar);
-    console.log('📋 Total enfermedades:', enfermedadesAEnviar.length);
     
     // ✅ Usar Set para evitar duplicados
     const enfermedadesUnicas = [...new Set(enfermedadesAEnviar)];
@@ -2422,34 +2469,13 @@ function guardar(e, estadoCuanti = 'completado') {
 
     const fd2 = new FormData(form);
 
-    /* CODIGO ANTERIOR
-    const archivos = document.getElementById('archivoPdf') ? document.getElementById('archivoPdf').files : [];
-
-    console.log('📁 Archivos detectados:', archivos.length);
-
-    if (archivos && archivos.length > 0) {
-        for (let i = 0; i < archivos.length; i++) {
-            console.log(`   Agregando archivo #${i}: ${archivos[i].name} (${archivos[i].size} bytes)`);
-            fd2.append('archivoPdf[]', archivos[i]);
-        }
-    }
-    */
-
     // Usar archivoPdfCuanti para cuantitativos
     const archivosCuanti = document.getElementById('archivoPdfCuanti') ? document.getElementById('archivoPdfCuanti').files : [];
 
-    console.log('📁 Archivos cuantitativos detectados:', archivosCuanti.length);
-
     if (archivosCuanti && archivosCuanti.length > 0) {
         for (let i = 0; i < archivosCuanti.length; i++) {
-            console.log(`   Agregando archivo #${i}: ${archivosCuanti[i].name} (${archivosCuanti[i].size} bytes)`);
             fd2.append('archivoPdf[]', archivosCuanti[i]);
         }
-    }
-
-    let archivosCount = 0;
-    for (let pair of fd2.entries()) {
-        if (pair[1] instanceof File) archivosCount++;
     }
 
     const enfermedadStates = window.enfermedadStates || {};
@@ -2459,6 +2485,7 @@ function guardar(e, estadoCuanti = 'completado') {
     }).length;
 
     if (enfermedadesConDatos === 0) {
+        // Fallback: revisar inputs visibles si el estado falló
         const visibles = document.querySelectorAll('input[name="enfermedades[]"]');
         enfermedadesConDatos = visibles.length || 0;
     }
@@ -2469,51 +2496,20 @@ function guardar(e, estadoCuanti = 'completado') {
         return;
     }
 
-    /* CODIGO ANTERIOR
-    // ✅ Mensaje diferente según acción
-    const accionTexto = esActualizacion ? 'Actualizar' : 'Guardar';
-    if (!confirm(`¿${accionTexto} análisis?`)) {
-        document.querySelectorAll('.tmp-enf-input').forEach(n => n.remove());
-        return;
-    }
-
-    const btn = document.querySelector('button[type="submit"]');
-    const original = btn.innerHTML;
-    const textoBoton = esActualizacion ? 'Actualizando...' : 'Guardando...';
-    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${textoBoton}`;
-    btn.disabled = true;
-    */
-
-    /* CODIGO ANTERIOR (selector incorrecto)
-    const btn = document.querySelector('#formAnalisis button[type="button"]');
-    */
-
-    // ✅ Ahora el confirm ya no es necesario porque usamos el modal
-    const accionTexto = esActualizacion ? 'Actualizar' : 'Guardar';
-
-    // ✅ Usar el ID específico del botón de guardar cuantitativos
     const btn = document.getElementById('btnGuardarCuanti');
     const original = btn ? btn.innerHTML : '';
-    const textoBoton = esActualizacion ? 'Actualizando...' : 'Guardando...';
+    const textoBoton = (actionValue === 'update') ? 'Actualizando...' : 'Guardando...';
+    
     if (btn) {
         btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${textoBoton}`;
         btn.disabled = true;
     }
 
-    // ✅ Agregar posSolicitud directamente al FormData (NO al form, ya que fd2 ya fue creado)
+    // ✅ Agregar posSolicitud directamente al FormData
     fd2.append('posSolicitud', window.posSolicitudActual || 1);
 
     // ✅ Agregar estado cuantitativo al FormData
     fd2.append('estadoCuanti', estadoCuanti);
-
-    console.log(`📤 ${accionTexto} datos:`, actionValue);
-    for (let pair of fd2.entries()) {
-        if (pair[1] instanceof File) {
-            console.log(`  ${pair[0]}: [Archivo] ${pair[1].name}`);
-        } else {
-            console.log(`  ${pair[0]}: ${pair[1]}`);
-        }
-    }
 
     fetch('crud-serologia.php', {
         method: 'POST',
@@ -2526,42 +2522,18 @@ function guardar(e, estadoCuanti = 'completado') {
             return r.text();
         })
         .then(text => {
-            console.log('📥 Respuesta del servidor:', text);
-
             let data;
             try {
                 data = JSON.parse(text);
             } catch (e) {
                 console.error('Error al parsear JSON:', e);
-                throw new Error('Respuesta del servidor no es JSON válido: ' + text.substring(0, 200));
+                throw new Error('Respuesta del servidor no es JSON válido');
             }
 
             if (data.success) {
-                const accionTexto = window.estadoActualSolicitud === 'completado' ? 'actualizado' : 'guardado';
-
-                /* CODIGO ANTERIOR
-                alert(`✅ Análisis ${accionTexto} correctamente`);
+                const accionTexto = (actionValue === 'update') ? 'actualizado' : 'guardado';
+                const estadoGuardado = estadoCuanti; 
                 
-                // Restaurar botón
-                btn.innerHTML = original;
-                btn.disabled = false;
-                
-                // Actualizar estado a completado sin recargar la página
-                window.estadoActualSolicitud = 'completado';
-                
-                // Actualizar el badge de estado cuantitativo
-                const badgeCuanti = document.getElementById('badgeStatusCuanti');
-                if (badgeCuanti) {
-                    badgeCuanti.textContent = 'Completado';
-                    badgeCuanti.className = 'inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide bg-green-100 text-green-800 ring-2 ring-green-300';
-                }
-                
-                // Actualizar el botón a modo "Actualizar"
-                btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Actualizar Resultados';
-                btn.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105';
-                */
-
-                const estadoGuardado = estadoCuanti; // Estado seleccionado en el modal
                 alert(`✅ Análisis ${accionTexto} como ${estadoGuardado}`);
 
                 // Restaurar botón
@@ -2570,10 +2542,13 @@ function guardar(e, estadoCuanti = 'completado') {
                     btn.disabled = false;
                 }
 
-                // Actualizar estado según lo seleccionado en el modal
+                // Actualizar estado global y visual
                 window.estadoActualSolicitud = estadoGuardado;
+                
+                // IMPORTANTE: Ahora que guardamos, activamos modo edición para futuras interacciones sin recargar
+                window.modoEdicion = true; 
 
-                // Actualizar el badge de estado cuantitativo según el estado seleccionado
+                // Actualizar el badge
                 const badgeCuanti = document.getElementById('badgeStatusCuanti');
                 if (badgeCuanti) {
                     if (estadoGuardado === 'completado') {
@@ -2585,40 +2560,28 @@ function guardar(e, estadoCuanti = 'completado') {
                     }
                 }
 
-                // Actualizar el botón según el estado
+                // Actualizar texto del botón para reflejar que ahora es update
                 if (btn) {
-                    if (estadoGuardado === 'completado') {
-                        btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Actualizar Resultados';
-                    } else {
-                        btn.innerHTML = '<i class="fas fa-save mr-2"></i> Guardar Resultados';
-                    }
-                    btn.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105';
+                    btn.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Actualizar Resultados';
                 }
 
-                // Actualizar el sidebar para reflejar el cambio de estado
                 loadSidebar(currentPage);
 
-                // Limpiar inputs temporales
+                // Limpiezas
                 document.querySelectorAll('.tmp-enf-input').forEach(n => n.remove());
-
-                // Limpiar input de archivos nuevos y recargar archivos guardados
                 const inputPDFCuantiLocal = document.getElementById('archivoPdfCuanti');
                 if (inputPDFCuantiLocal) {
                     const dt = new DataTransfer();
                     inputPDFCuantiLocal.files = dt.files;
                 }
                 const fileListCuantiLocal = document.getElementById('fileListCuanti');
-                if (fileListCuantiLocal) {
-                    fileListCuantiLocal.innerHTML = '';
-                }
+                if (fileListCuantiLocal) fileListCuantiLocal.innerHTML = '';
 
-                // Recargar los archivos guardados de cuantitativos
+                // Recargar datos y archivos para asegurar sincronía
                 cargarArchivosCompletadosCuanti(window.codigoEnvioActual, window.posSolicitudActual);
-
-                // ✅ Limpiar registro de enfermedades agregadas recientemente (ya están guardadas)
                 window.enfermedadesAgregadasReciente = {};
-
-                // ✅ Re-renderizar el panel para quitar la X de eliminar
+                
+                // Re-renderizar
                 const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
                 renderizarEnfermedades(tipo);
             } else {
@@ -2746,26 +2709,51 @@ function renderEnfermedadPanel(enf, conf, tipo) {
 // ELIMINAR ENFERMEDAD DE CUANTITATIVOS
 // ============================================
 function eliminarEnfermedadCuanti(nombreEnfermedad, codigoEnfermedad) {
-    /* CODIGO ANTERIOR - no permitía eliminar si tenía resultados
-    const tieneEstado = window.enfermedadStates && 
-        window.enfermedadStates[nombreEnfermedad] && 
-        Object.keys(window.enfermedadStates[nombreEnfermedad]).some(k => {
-            const val = window.enfermedadStates[nombreEnfermedad][k];
-            return val !== null && val !== '' && val !== '0' && val !== 0;
-        });
 
-    if (tieneEstado) {
-        alert('⚠️ Esta enfermedad ya tiene resultados guardados. No se puede eliminar.');
+    // =================================================================================
+    // 1. CASO VISUAL: Si la enfermedad fue agregada en esta sesión (aún no guardada en BD)
+    // =================================================================================
+    if (window.enfermedadesAgregadasReciente && window.enfermedadesAgregadasReciente[nombreEnfermedad]) {
+        
+        if (!confirm(`¿Quitar "${nombreEnfermedad}" de la lista temporal?`)) {
+            return;
+        }
+
+        // A. Eliminar del array visual principal (window.enfermedadesActuales)
+        // Buscamos filtrar quitando la que coincida por nombre o propiedad enfermedad
+        if (window.enfermedadesActuales) {
+            window.enfermedadesActuales = window.enfermedadesActuales.filter(e => 
+                (e.nombre !== nombreEnfermedad) && (e.enfermedad !== nombreEnfermedad)
+            );
+        }
+
+        // B. Eliminar de los estados guardados (datos del formulario)
+        if (window.enfermedadStates && window.enfermedadStates[nombreEnfermedad]) {
+            delete window.enfermedadStates[nombreEnfermedad];
+        }
+
+        // C. Eliminar del registro de "recientes"
+        delete window.enfermedadesAgregadasReciente[nombreEnfermedad];
+
+        alert('✅ Enfermedad quitada de la lista');
+
+        // D. Re-renderizar la vista
+        const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
+        renderizarEnfermedades(tipo);
+
+        // E. IMPORTANTE: RETORNAR AQUÍ PARA NO EJECUTAR EL FETCH AL SERVIDOR
+        return; 
+    }
+
+
+    // =================================================================================
+    // 2. CASO BASE DE DATOS: Si la enfermedad ya existía (viene del backend)
+    // =================================================================================
+    if (!confirm(`¿Eliminar "${nombreEnfermedad}" de esta solicitud?\n\nSi tiene resultados guardados en la BD, también se eliminarán.`)) {
         return;
     }
-    */
 
-    //  Permitir eliminar aunque tenga resultados (solo enfermedades agregadas recientemente)
-    if (!confirm(`¿Eliminar "${nombreEnfermedad}" de esta solicitud?\n\nSi tiene resultados guardados, también se eliminarán.`)) {
-        return;
-    }
-
-    // Llamar al backend para eliminar de san_fact_solicitud_det
+    // Llamar al backend para eliminar de san_fact_solicitud_det (solo si ya existe en BD)
     const fd = new FormData();
     fd.append('action', 'eliminar_enfermedad_solicitud');
     fd.append('codEnvio', window.codigoEnvioActual);
@@ -2777,19 +2765,14 @@ function eliminarEnfermedadCuanti(nombreEnfermedad, codigoEnfermedad) {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                alert('✅ Enfermedad eliminada');
+                alert('✅ Enfermedad eliminada de la base de datos');
 
-                // Eliminar del estado local
+                // Eliminar del estado local para limpiar memoria
                 if (window.enfermedadStates && window.enfermedadStates[nombreEnfermedad]) {
                     delete window.enfermedadStates[nombreEnfermedad];
                 }
 
-                // Eliminar del registro de enfermedades recientes
-                if (window.enfermedadesAgregadasReciente && window.enfermedadesAgregadasReciente[nombreEnfermedad]) {
-                    delete window.enfermedadesAgregadasReciente[nombreEnfermedad];
-                }
-
-                // Recargar lista de enfermedades
+                // Recargar lista de enfermedades DESDE EL SERVIDOR para asegurar sincronía
                 fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}&posSolicitud=${window.posSolicitudActual}`)
                     .then(r => r.json())
                     .then(dd => {
@@ -2945,113 +2928,84 @@ function filtrarEnfermedadesCatalogo() {
 }
 
 function agregarEnfermedadASolicitud(codigo, nombre) {
-    if (!confirm(`¿Agregar "${nombre}" a la solicitud ${window.codigoEnvioActual} (Pos: ${window.posSolicitudActual})?`)) return;
+    if (!confirm(`¿Agregar "${nombre}" a la lista de análisis?`)) return;
 
-    const codRef = document.getElementById('edadAves_display').value;
-    //const fecToma = document.getElementById('fechaToma').value;
-
+    // Datos necesarios para la llamada (aunque sea fake)
     const fd = new FormData();
     fd.append('action', 'agregar_enfermedad_solicitud');
     fd.append('codEnvio', window.codigoEnvioActual);
-    fd.append('posSolicitud', window.posSolicitudActual); // ✅ Enviar posSolicitud actual
+    fd.append('posSolicitud', window.posSolicitudActual);
     fd.append('codAnalisis', codigo);
     fd.append('nomAnalisis', nombre);
-    fd.append('codRef', codRef);
-    fd.append('fecToma', fecTomaCuantiAux);
 
-    // ✅ Guardar el nombre de la enfermedad que se está agregando
+    // Guardar referencias
     const nombreEnfermedadNueva = nombre;
     const codigoEnfermedadNueva = codigo;
 
     fetch('crud-serologia.php', { method: 'POST', body: fd })
-        .then(r => r.text())
-        .then(text => {
-            try {
-                const data = JSON.parse(text);
-                if (data.success) {
-                    alert('✅ Enfermedad agregada');
-                    cerrarModalAgregarEnfermedad();
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Enfermedad agregada a la lista (Pendiente de guardar)');
+                cerrarModalAgregarEnfermedad();
 
-                    /* CODIGO ANTERIOR (no incluía posSolicitud en la consulta)
-                    fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}`)
-                    */
-                    // ✅ Incluir posSolicitud en la consulta para obtener solo las enfermedades de esta solicitud
-                    fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}&posSolicitud=${window.posSolicitudActual}`)
-                        .then(r => r.text())
-                        .then(t => {
-                            try {
-                                const dd = JSON.parse(t);
-                                if (dd.success) {
-                                    window.enfermedadesActuales = dd.enfermedades;
+                // ============================================================
+                // CAMBIO CLAVE: MANIPULACIÓN LOCAL (NO RECARGAR DEL SERVIDOR)
+                // ============================================================
+                
+                // 1. Crear el objeto de la nueva enfermedad
+                const nuevaEnfermedadObj = {
+                    nombre: nombreEnfermedadNueva,
+                    codigo: codigoEnfermedadNueva,
+                    enfermedad: nombreEnfermedadNueva // Para compatibilidad
+                };
 
-                                    // ✅ Inicializar el estado de la nueva enfermedad (vacío para poder guardar datos)
-                                    dd.enfermedades.forEach(enf => {
-                                        if (!window.enfermedadStates[enf.nombre]) {
-                                            window.enfermedadStates[enf.nombre] = {};
-                                        }
-                                    });
-
-                                    // ✅ Marcar la enfermedad como agregada recientemente (para mostrar X)
-                                    if (!window.enfermedadesAgregadasReciente) {
-                                        window.enfermedadesAgregadasReciente = {};
-                                    }
-                                    window.enfermedadesAgregadasReciente[nombreEnfermedadNueva] = codigoEnfermedadNueva;
-
-                                    const tipo = document.getElementById('tipo_ave_hidden') ? document.getElementById('tipo_ave_hidden').value : 'BB';
-
-                                    /* CODIGO ANTERIOR (solo renderizaba sin seleccionar la nueva)
-                                    renderizarEnfermedades(tipo);
-                                    const selectEnfermedad = document.getElementById('selectEnfermedad');
-                                    if (selectEnfermedad) {
-                                        const enfermedadesUnicas = [...new Set(dd.enfermedades.map(e => e.enfermedad || e.nombre))];
-                                        const label = selectEnfermedad.parentElement?.querySelector('label');
-                                        if (label) {
-                                            label.textContent = `Seleccione Enfermedad (${enfermedadesUnicas.length} asignadas)`;
-                                        }
-                                    }
-                                    */
-
-                                    //  Seleccionar automáticamente la nueva enfermedad agregada
-                                    // Primero renderizamos las enfermedades (esto pondrá la primera por defecto)
-                                    renderizarEnfermedades(tipo);
-
-                                    const selectEnfermedad = document.getElementById('selectEnfermedad');
-                                    if (selectEnfermedad) {
-                                        // Buscar la opción que coincida con el nombre de la enfermedad agregada
-                                        const opciones = Array.from(selectEnfermedad.options);
-                                        const opcionNueva = opciones.find(opt => opt.value === nombreEnfermedadNueva);
-
-                                        if (opcionNueva) {
-                                            // Cambiar el valor del select a la nueva enfermedad
-                                            selectEnfermedad.value = nombreEnfermedadNueva;
-                                            window.currentEnfermedadSelected = nombreEnfermedadNueva;
-
-                                            // Disparar el evento change para que se renderice el panel correcto
-                                            selectEnfermedad.dispatchEvent(new Event('change'));
-                                        }
-
-                                        const enfermedadesUnicas = [...new Set(dd.enfermedades.map(e => e.enfermedad || e.nombre))];
-                                        const label = selectEnfermedad.parentElement?.querySelector('label');
-                                        if (label) {
-                                            label.textContent = `Seleccione Enfermedad (${enfermedadesUnicas.length} asignadas)`;
-                                        }
-                                    }
-                                }
-                            } catch (e) {
-                                console.error('Error parseando respuesta:', e);
-                            }
-                        });
-                } else {
-                    alert('❌ Error: ' + data.message);
+                // 2. Agregarlo al array global de enfermedades actuales
+                if (!window.enfermedadesActuales) window.enfermedadesActuales = [];
+                
+                // Verificar que no esté ya en el array visual para no duplicar
+                const existe = window.enfermedadesActuales.some(e => e.nombre === nombreEnfermedadNueva);
+                if (!existe) {
+                    window.enfermedadesActuales.push(nuevaEnfermedadObj);
                 }
-            } catch (err) {
-                console.error('Respuesta no JSON:', text);
-                alert('Respuesta inesperada del servidor. Revisa la consola (F12).');
+
+                // 3. Inicializar su estado vacío para que 'guardar()' sepa que existe
+                if (!window.enfermedadStates) window.enfermedadStates = {};
+                if (!window.enfermedadStates[nombreEnfermedadNueva]) {
+                    window.enfermedadStates[nombreEnfermedadNueva] = {};
+                }
+
+                // 4. Marcar como "Reciente" para que aparezca la X de eliminar
+                if (!window.enfermedadesAgregadasReciente) window.enfermedadesAgregadasReciente = {};
+                window.enfermedadesAgregadasReciente[nombreEnfermedadNueva] = codigoEnfermedadNueva;
+
+                // 5. RENDERIZAR LA VISTA CON EL DATO LOCAL
+                const tipo = document.getElementById('tipo_ave_hidden') ? document.getElementById('tipo_ave_hidden').value : 'BB';
+                renderizarEnfermedades(tipo);
+
+                // 6. Seleccionar automáticamente la nueva enfermedad en el Select
+                const selectEnfermedad = document.getElementById('selectEnfermedad');
+                if (selectEnfermedad) {
+                    selectEnfermedad.value = nombreEnfermedadNueva;
+                    window.currentEnfermedadSelected = nombreEnfermedadNueva;
+                    
+                    // Actualizar label de cantidad
+                    const label = selectEnfermedad.parentElement?.querySelector('label');
+                    if (label) {
+                        label.textContent = `Seleccione Enfermedad (${window.enfermedadesActuales.length} asignadas)`;
+                    }
+
+                    // Disparar evento para mostrar el panel de inputs
+                    selectEnfermedad.dispatchEvent(new Event('change'));
+                }
+
+            } else {
+                alert('❌ Error: ' + data.message);
             }
         })
         .catch(e => {
-            console.error('Error fetch:', e);
-            alert('❌ Error de conexión: ' + e.message);
+            console.error('Error:', e);
+            alert('❌ Error de conexión');
         });
 }
 
