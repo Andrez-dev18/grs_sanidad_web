@@ -1,66 +1,66 @@
 <?php
-    error_reporting(E_ALL);
-    ini_set('display_errors', 0);
-    ini_set('log_errors', 1);
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 
-    date_default_timezone_set('America/Lima');
+date_default_timezone_set('America/Lima');
 
-    ob_start();
-    include_once '../../../conexion_grs_joya/conexion.php';
-    $conn = conectar_joya();
-    ob_end_clean();
+ob_start();
+include_once '../../../conexion_grs_joya/conexion.php';
+$conn = conectar_joya();
+ob_end_clean();
 
-    if (!$conn) {
-        die('Error de conexión a la base de datos');
-    }
+if (!$conn) {
+    die('Error de conexión a la base de datos');
+}
 
-    // Obtener parámetros
-    $tipo = isset($_GET['tipo']) ? $_GET['tipo'] : '1';
-    $numreg = isset($_GET['numreg']) ? $_GET['numreg'] : '';
-    $granja = isset($_GET['granja']) ? $_GET['granja'] : '';
-    $galpon = isset($_GET['galpon']) ? $_GET['galpon'] : '';
-    $fectra = isset($_GET['fectra']) ? $_GET['fectra'] : '';
+// Obtener parámetros
+$tipo = isset($_GET['tipo']) ? $_GET['tipo'] : '1';
+$numreg = isset($_GET['numreg']) ? $_GET['numreg'] : '';
+$granja = isset($_GET['granja']) ? $_GET['granja'] : '';
+$galpon = isset($_GET['galpon']) ? $_GET['galpon'] : '';
+$fectra = isset($_GET['fectra']) ? $_GET['fectra'] : '';
 
-    if (empty($numreg) || empty($granja) || empty($galpon) || empty($fectra)) {
-        die('Parámetros incompletos');
-    }
+if (empty($numreg) || empty($granja) || empty($galpon) || empty($fectra)) {
+    die('Parámetros incompletos');
+}
 
-    $sql = "SELECT * 
-    FROM t_regnecropsia 
-    WHERE tnumreg = ? AND tgranja = ? AND tgalpon = ? AND tfectra = ?
-    ORDER BY 
-        tdate DESC,
-        tnumreg DESC,
-        tgranja ASC,
-        tid ASC";
+$sql = "SELECT * 
+FROM t_regnecropsia 
+WHERE tnumreg = ? AND tgranja = ? AND tgalpon = ? AND tfectra = ?
+ORDER BY 
+    tdate DESC,
+    tnumreg DESC,
+    tgranja ASC,
+    tid ASC";
 
-    $stmt = $conn->prepare($sql);
+$stmt = $conn->prepare($sql);
 
-    if (!$stmt) {
-        die('Error preparando consulta: ' . $conn->error);
-    }
+if (!$stmt) {
+    die('Error preparando consulta: ' . $conn->error);
+}
 
-    $stmt->bind_param("isss", $numreg, $granja, $galpon, $fectra);
-    $stmt->execute();
-    $result = $stmt->get_result();
+$stmt->bind_param("isss", $numreg, $granja, $galpon, $fectra);
+$stmt->execute();
+$result = $stmt->get_result();
 
-    $registros = [];
-    while ($row = $result->fetch_assoc()) {
-        $registros[] = $row;
-    }
+$registros = [];
+while ($row = $result->fetch_assoc()) {
+    $registros[] = $row;
+}
 
-    $stmt->close();
-    $conn->close();
+$stmt->close();
+$conn->close();
 
-    if (empty($registros)) {
-        die('No se encontraron registros');
-    }
+if (empty($registros)) {
+    die('No se encontraron registros');
+}
 
-    $cabecera = $registros[0];
+$cabecera = $registros[0];
 
     require_once __DIR__ . '/../../vendor/autoload.php'; 
 
-    use Mpdf\Mpdf;
+use Mpdf\Mpdf;
 
     // === Logo ===
     $logoPath = __DIR__ . '/logo.png';
@@ -71,13 +71,13 @@
         $logo = '<img src="' . htmlspecialchars($logoBase64) . '" style="height: 20px; vertical-align: top;">';
     }*/
 
-    try {
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'orientation' => 'P',
-            'margin_left' => 15,
-            'margin_right' => 15,
+try {
+    $mpdf = new Mpdf([
+        'mode' => 'utf-8',
+        'format' => 'A4',
+        'orientation' => 'P',
+        'margin_left' => 15,
+        'margin_right' => 15,
             'margin_top' => 15,
             // Dar más espacio al pie para que la paginación se vea siempre
             'margin_bottom' => 25,
@@ -88,23 +88,23 @@
         // Paginación: se define dentro del HTML con <htmlpagefooter> y @page { footer: html_... }
 
 
-        $html = '';
+    $html = '';
+    
+    if ($tipo == '1') {
+        $html = _generarReporte1($cabecera, $registros);
+    } else {
         
-        if ($tipo == '1') {
-            $html = _generarReporte1($cabecera, $registros);
-        } else {
-        
-            $html = _generarReportePDF($cabecera, $registros);
-        }
-
-        $mpdf->WriteHTML($html);
-        $mpdf->Output('reporte_necropsia_' . $numreg . '_' . $tipo . '.pdf', 'I');
-        
-    } catch (Exception $e) {
-        die('Error generando PDF: ' . $e->getMessage());
+        $html = _generarReportePDF($cabecera, $registros);
     }
 
-    function _generarReporte1($cabecera, $registros) {
+    $mpdf->WriteHTML($html);
+    $mpdf->Output('reporte_necropsia_' . $numreg . '_' . $tipo . '.pdf', 'I');
+    
+} catch (Exception $e) {
+    die('Error generando PDF: ' . $e->getMessage());
+}
+
+function _generarReporte1($cabecera, $registros) {
         // N°Reg: tomar desde la cabecera (BD) y si no existe, fallback a GET
         $numregLocal = $cabecera['tnumreg'] ?? ($_GET['numreg'] ?? '');
 
@@ -118,7 +118,7 @@
         }
         
         // HTML
-        $html = '<html><head><meta charset="UTF-8"><style>
+    $html = '<html><head><meta charset="UTF-8"><style>
          @page {
     margin-top: 15mm;
     margin-bottom: 28mm; /* deja espacio para el footer/paginado */
@@ -310,17 +310,17 @@ body {
         </tr>';
         $html .= '</table>';
     
-        // Agrupar por sistema
-        $porSistema = [];
-        foreach ($registros as $reg) {
-            $sistema = $reg['tsistema'] ?? '';
-            if (!isset($porSistema[$sistema])) {
-                $porSistema[$sistema] = [];
-            }
-            $porSistema[$sistema][] = $reg;
+    // Agrupar por sistema
+    $porSistema = [];
+    foreach ($registros as $reg) {
+        $sistema = $reg['tsistema'] ?? '';
+        if (!isset($porSistema[$sistema])) {
+            $porSistema[$sistema] = [];
         }
+        $porSistema[$sistema][] = $reg;
+    }
     
-        foreach ($porSistema as $sistema => $regs) {
+    foreach ($porSistema as $sistema => $regs) {
             if (empty(trim($sistema))) continue;
     
             $html .= '<table class="data-table">';
@@ -356,7 +356,7 @@ body {
             
                 for ($i = 0; $i < $rowspan; $i++) {
                     $item = $items[$i];
-                    $html .= '<tr>';
+            $html .= '<tr>';
             
                     if ($i === 0) {
                         // Primera fila: Nivel + Parámetro + % + Observaciones (con rowspan)
@@ -368,19 +368,39 @@ body {
                         // Filas siguientes: solo Parámetro + %
                         $html .= '<td class="param-cell">' . htmlspecialchars($item['tparametro'] ?? '') . '</td>';
                         $html .= '<td class="porc-cell">' . htmlspecialchars($item['tporcentajetotal'] ?? '0') . '%</td>';
-                        // ¡NO se agrega la celda de observaciones aquí!
+                       
                     }
             
-                    $html .= '</tr>';
+            $html .= '</tr>';
                 }
             }
     
             $html .= '</table>';
         }
     
-        $html .= '</body></html>';
-        return $html;
-    }
+        // Sección de Diagnóstico Presuntivo al final
+        $diagnosticoPresuntivo = $cabecera['tdiagpresuntivo'] ?? $cabecera['diagnostico_presuntivo'] ?? '';
+        
+        $html .= '<table class="diagnostico-section" style="width: 100%; border-collapse: collapse; margin-top: 20px; page-break-inside: avoid;">';
+        $html .= '<tr>';
+        $html .= '<td class="diagnostico-title" style="background-color: #e6f2ff; font-weight: bold; text-align: center; padding: 5px; border: 1px solid #cbd5e1; page-break-inside: avoid;">';
+        $html .= 'DIAGNÓSTICO PRESUNTIVO';
+        $html .= '</td>';
+        $html .= '</tr>';
+        $html .= '<tr>';
+        $html .= '<td class="diagnostico-content" style="padding: 8px; border: 1px solid #cbd5e1; border-top: none; text-align: left; page-break-inside: avoid;">';
+        if (empty(trim($diagnosticoPresuntivo))) {
+            $html .= '<em>No se registró diagnóstico</em>';
+        } else {
+            $html .= nl2br(htmlspecialchars($diagnosticoPresuntivo));
+        }
+        $html .= '</td>';
+        $html .= '</tr>';
+        $html .= '</table>';
+    
+    $html .= '</body></html>';
+    return $html;
+}
 
     function _generarReportePDF($cabecera, $registros) {
         // Logo y nombre de empresa en esquina superior derecha
@@ -586,6 +606,21 @@ body {
         $html .= '<div class="first-page-title">GRANJA ' . htmlspecialchars($granjaTxt) . '</div>';
         $html .= '<div class="first-page-line"></div>';
         $html .= '<div class="first-page-subtitle">Campaña ' . htmlspecialchars($cabecera['tcampania'] ?? '') . '</div>';
+        
+        // Nueva fila con N° Reg y Fecha
+        $numreg = $cabecera['numreg'] ?? $cabecera['tnumreg'] ?? '';
+        $fecha = '--/--/----';
+        $fechaRaw = $cabecera['fectra'] ?? $cabecera['tdate'] ?? '';
+        if (!empty($fechaRaw)) {
+            try {
+                $dateTime = new DateTime($fechaRaw);
+                $fecha = $dateTime->format('d/m/Y');
+            } catch (Exception $e) {
+                $fecha = $fechaRaw;
+            }
+        }
+        $html .= '<div class="first-page-subtitle" style="margin-top: 10px;">N° Reg: ' . htmlspecialchars($numreg) . ' &nbsp;&nbsp; Fecha: ' . htmlspecialchars($fecha) . '</div>';
+        
         $html .= '<div class="first-page-subtitle">GALPÓN ' . htmlspecialchars($cabecera['tgalpon'] ?? '') . '</div>';
         $html .= '<div class="first-page-subtitle">EDAD ' . htmlspecialchars($cabecera['tedad'] ?? '') . ' DÍAS</div>';
         $html .= '</div>';
@@ -659,8 +694,27 @@ body {
             $html .= '</table>';
         }
 
+        // Sección de Diagnóstico Presuntivo en nueva página
+        $diagnosticoPresuntivo = $cabecera['tdiagpresuntivo'] ?? $cabecera['diagnostico_presuntivo'] ?? '';
+        
+        // Salto de página antes de la sección de diagnóstico
+        $html .= '<div style="page-break-before: always;"></div>';
+        
+        // Siempre mostrar la sección, con "No se registró diagnóstico" si está vacío
+        $html .= '<div class="diagnostico-section" style="margin-top: 40px; margin-bottom: 20px; page-break-inside: avoid;">';
+        $html .= '<div class="diagnostico-title" style="font-size: 18pt; font-weight: bold; color: #002060; text-align: center; margin-bottom: 12px; border-bottom: 3px solid #002060; padding-bottom: 8px;">';
+        $html .= 'DIAGNÓSTICO PRESUNTIVO';
+        $html .= '</div>';
+        $html .= '<div class="diagnostico-content" style="font-size: 12pt; color: #000; text-align: left; padding: 15px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word;">';
+        if (empty(trim($diagnosticoPresuntivo))) {
+            $html .= '<em>No se registró diagnóstico</em>';
+        } else {
+            $html .= nl2br(htmlspecialchars($diagnosticoPresuntivo));
+        }
+        $html .= '</div>';
+        $html .= '</div>';
+
         $html .= '</body></html>';
         return $html;
     }
-    ?>
     ?>
