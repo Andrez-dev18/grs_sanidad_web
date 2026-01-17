@@ -96,7 +96,7 @@ if (!$conexion) {
 <body class="bg-light">
     <div class="container-fluid py-4">
         <!-- TABS -->
-        <div class="mx-5 mb-6">
+        <div class="mx-5">
             <div class="tabs-container">
                 <nav class="tabs-nav" role="tablist">
                     <button id="tabIndividual"

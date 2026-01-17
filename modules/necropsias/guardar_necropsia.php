@@ -45,6 +45,7 @@ $edad       = $input['edad'];
 $fectra     = $input['fectra'];
 $numreg     = (int)$input['numreg'];
 $tcencos    = $input['tcencos'] ?? '';
+$diagpresuntivo = $input['diagpresuntivo'];
 
 session_start();
 $tuser  = $_SESSION['usuario'] ?? 'WEB';
@@ -58,12 +59,12 @@ $sql = "INSERT INTO t_regnecropsia (
     tid, tuser, tdate, ttime, tcencos, tgranja, tcampania, tedad, tgalpon, tnumreg, tfectra, diareg,
     tcodsistema, tsistema, tnivel, tparametro,
     tporcentaje1, tporcentaje2, tporcentaje3, tporcentaje4, tporcentaje5, tporcentajetotal,
-    tobservacion, evidencia, tobs, tuuid
+    tobservacion, evidencia, tdiagpresuntivo,tobs, tuuid
 ) VALUES (
     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
     ?, ?, ?, ?,
     ?, ?, ?, ?, ?, ?,
-    ?, ?, ?, ?
+    ?, ?, ?, ?, ?
 )";
 
 $stmt = $conn->prepare($sql);
@@ -91,7 +92,7 @@ foreach ($input['registros'] as $reg) {
     $evidencia = '';
 
     $stmt->bind_param(
-        "issssssssississsddddddssss",
+        "issssssssississsddddddsssss",
         $current_tid,
         $tuser,
         $tdate,
@@ -116,6 +117,7 @@ foreach ($input['registros'] as $reg) {
         $reg['tporcentajetotal'],
         $obs,
         $evidencia,
+        $diagpresuntivo,
         $obs,
         $tuuid
     );

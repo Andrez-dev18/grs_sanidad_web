@@ -196,7 +196,7 @@ $result = $conexion->query($query);
 </head>
 
 <body class="bg-gray-50">
-    <div class="container mx-auto px-3 py-6">
+    <div class="container-fluid py-4 mx-8">
 
         <div class="flex flex-col h-screen">
 

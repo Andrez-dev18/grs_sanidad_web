@@ -5,7 +5,7 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once '../conexion_grs_joya/conexion.php';
+include_once '../../../../conexion_grs_joya/conexion.php';
 include_once '../../../includes/historial_acciones.php';
 $conexion = conectar_joya();
 if (!$conexion) {

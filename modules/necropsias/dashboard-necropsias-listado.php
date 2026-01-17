@@ -364,7 +364,7 @@ if (!$conn) {
                 <div class="mt-6 flex flex-wrap justify-end gap-4">
 
                     <button type="button" id="btnAplicarFiltros"
-                        class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                        class="hidden px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
                         Filtrar
                     </button>
 
@@ -445,6 +445,9 @@ if (!$conn) {
                             </button>
                             <button type="button" class="tab-button py-3 px-1 border-b-4 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium" data-tab="evaluacion">
                                 Evaluación Física
+                            </button>
+                            <button type="button" class="tab-button py-3 px-1 border-b-4 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium" data-tab="diag-presuntivo">
+                                Diag. Presuntivo
                             </button>
                         </nav>
                     </div>
@@ -1323,6 +1326,32 @@ if (!$conn) {
                         </table>
                     </div>
 
+                    <div class="tab-content hidden" id="diag-presuntivo">
+                        <div class="">
+                            <div class="mb-4">
+                                <label for="txtDiagnosticoPresuntivo" class="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
+                                    <i class="fas fa-stethoscope text-green-600"></i> Diagnóstico Presuntivo
+                                </label>
+                                <p class="text-xs text-gray-500">
+                                    Detalle aquí las conclusiones preliminares basadas en las lesiones observadas durante la necropsia.
+                                </p>
+                            </div>
+
+                            <div class="relative flex-1">
+                                <textarea
+                                    id="txtDiagnosticoPresuntivo"
+                                    name="diagnostico_presuntivo"
+                                    class="w-full h-full min-h-[150px] p-4 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none transition-all outline-none"
+                                    placeholder="Escriba su diagnóstico aquí..."></textarea>
+
+                                <div class="absolute bottom-3 right-3 text-xs text-gray-400 pointer-events-none">
+                                    <i class="fas fa-pen"></i>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
                     <!-- Botones al final -->
                     <div class="flex justify-end mt-8 gap-4">
                         <button type="button" id="closeModalBtn" class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition">
@@ -1350,6 +1379,11 @@ if (!$conn) {
 
         <!-- contenedor boton y tabla  -->
         <div class="bg-white rounded-xl shadow-md p-5">
+            <!-- Botón para abrir el modal  -->
+            <button id="btnRegistrarNecropsia" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-300">
+                Registrar Necropsia
+            </button>
+
             <?php
             $codigoUsuario = $_SESSION['usuario'] ?? 'USER';  // Cambia 'usuario' si tu sesión usa otro nombre
             // Consulta directa, simple
@@ -1656,11 +1690,6 @@ if (!$conn) {
                 tabla.draw(); // Esto dispara el ajax de nuevo enviando los nuevos valores
             });
 
-            // Botón Filtrar
-            $('#btnAplicarFiltros').on('click', function() {
-                tabla.draw();
-            });
-
             // Limpiar filtros
             $('#btnLimpiarFiltros').on('click', function() {
                 $('#filtroFechaInicio').val('');
@@ -1742,6 +1771,9 @@ if (!$conn) {
                 // Fecha necropsia (setear primero para que get_granjas.php calcule edad con esta fecha)
                 const fectraInput = document.getElementById('fectra');
                 if (fectraInput) fectraInput.value = result.fectra || fectra;
+
+                const diagpresuntivo = document.getElementById('txtDiagnosticoPresuntivo');
+                if(diagpresuntivo) diagpresuntivo.value = result.diagpresuntivo || diagpresuntivo;
 
                 // Granja (select) - cargar opciones primero si es necesario
                 const granjaSelect = document.getElementById('granja');
@@ -2075,10 +2107,16 @@ if (!$conn) {
             const edad = document.getElementById('edad').value;
             const galpon = galponSelect.value;
             const fectra = document.getElementById('fectra').value;
+            const diagpresuntivo = document.getElementById('txtDiagnosticoPresuntivo').value;
 
             // Validación básica
             if (!codigoGranja || !galpon || !fectra) {
                 alert('Por favor complete todos los campos de la cabecera');
+                return;
+            }
+
+            if (!diagpresuntivo) {
+                alert('Por favor es importante que llene el diagnostico presuntivo');
                 return;
             }
 
@@ -2097,6 +2135,7 @@ if (!$conn) {
                 fectra: fectra, // → tfectra
                 numreg: numreg, // → tnumreg
                 tcencos: tcencos, // → tcencos (nombre completo)
+                diagpresuntivo: diagpresuntivo,
                 registros: [] // Aquí van los parámetros como antes
             };
 
@@ -2395,7 +2434,20 @@ if (!$conn) {
     </script>
 
     <script>
-        
+        // Cargar granjas al abrir el modal
+        document.getElementById('btnRegistrarNecropsia').addEventListener('click', async () => {
+            document.getElementById('modalNecropsia').classList.remove('hidden');
+
+            // Si no hay fecha, poner hoy por defecto para que la edad se calcule bien
+            const fectraInput = document.getElementById('fectra');
+            if (fectraInput && !fectraInput.value) {
+                fectraInput.value = getFechaSeleccionada();
+            }
+
+            await cargarGranjasConFecha({
+                preserveSelection: false
+            });
+        });
 
         // Si cambia la fecha, recargar granjas usando esa fecha (y mantener selección si ya eligió una)
         document.getElementById('fectra').addEventListener('change', async function() {
@@ -2560,6 +2612,7 @@ if (!$conn) {
             document.getElementById('campania').value = '';
             document.getElementById('edad').value = '';
             document.getElementById('fectra').value = '';
+            document.getElementById('txtDiagnosticoPresuntivo').value = '';
 
             // 5. Desmarcar todos los checkboxes
             document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
@@ -2683,6 +2736,7 @@ if (!$conn) {
             const edad = document.getElementById('edad').value;
             const galpon = galponSelect.value;
             const fectra = document.getElementById('fectra').value;
+            const diagpresuntivo = document.getElementById('txtDiagnosticoPresuntivo').value;
 
             // VALIDACIÓN IMPORTANTE: Usamos los datos globales de edición para asegurar integridad
             if (!loteEditando.granja || !loteEditando.numreg) {
@@ -2755,6 +2809,7 @@ if (!$conn) {
                 campania: campania,
                 edad: edad,
                 tcencos: tcencos,
+                diagpresuntivo: diagpresuntivo,
                 registros: [],
                 imagenes_existentes: imagenesExistentes // Enviamos las rutas viejas
             };
