@@ -1770,7 +1770,7 @@ if (!$conn) {
                 if (fectraInput) fectraInput.value = result.fectra || fectra;
 
                 const diagpresuntivo = document.getElementById('txtDiagnosticoPresuntivo');
-                if(diagpresuntivo) diagpresuntivo.value = result.diagpresuntivo || diagpresuntivo;
+                if(diagpresuntivo) diagpresuntivo.value = result.diagpresuntivo || '';
 
                 // Granja (select) - cargar opciones primero si es necesario
                 const granjaSelect = document.getElementById('granja');
