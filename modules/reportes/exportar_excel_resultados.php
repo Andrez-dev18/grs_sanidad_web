@@ -1,6 +1,4 @@
 <?php
-// Exportar a Excel (mismo espíritu que modules/seguimiento/exportar_excel_resultados.php),
-// pero asegurando rutas robustas a vendor/ y conexión usando __DIR__.
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 include_once __DIR__ . '/../../../conexion_grs_joya/conexion.php';
@@ -15,10 +13,10 @@ if (!$conn) {
     die('Error de conexión.');
 }
 
-// Filtros (mismos del listado en dashboard-reportes.php)
 $fechaInicio = $_GET['fechaInicio'] ?? '';
 $fechaFin = $_GET['fechaFin'] ?? '';
 $laboratorio = $_GET['laboratorio'] ?? '';
+$empTrans = $_GET['empTrans'] ?? '';
 $muestra = $_GET['muestra'] ?? '';
 $analisis = $_GET['analisis'] ?? '';
 
@@ -39,6 +37,11 @@ if ($fechaInicio !== '' && $fechaFin !== '') {
 if ($laboratorio !== '') {
     $lab = mysqli_real_escape_string($conn, $laboratorio);
     $where .= " AND a.nomLab = '$lab' ";
+}
+
+if ($empTrans !== '') {
+    $et = mysqli_real_escape_string($conn, $empTrans);
+    $where .= " AND a.nomEmpTrans = '$et' ";
 }
 
 if ($muestra !== '') {

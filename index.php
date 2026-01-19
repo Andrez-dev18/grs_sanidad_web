@@ -65,12 +65,17 @@ if ($codigoUsuario) {
             overflow: hidden;
         }
 
+        :root {
+            --sidebar-width: 300px;
+            --sidebar-mini-width: 112px;
+        }
+
         .sidebar {
             position: fixed;
             left: 0;
             top: 0;
             height: 100vh;
-            width: 300px;
+            width: var(--sidebar-width);
             background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
             transition: transform 0.3s ease, width 0.3s ease;
             z-index: 1000;
@@ -80,8 +85,9 @@ if ($codigoUsuario) {
         }
 
         .sidebar.collapsed {
-            width: 0;
-            overflow: hidden;
+            /* Desktop: mini sidebar (NO se oculta por completo) */
+            width: var(--sidebar-mini-width);
+            overflow: visible;
         }
 
         .toggle-sidebar-btn {
@@ -218,7 +224,7 @@ if ($codigoUsuario) {
 
         /* Content area - ¡CORRECCIÓN CLAVE! */
         .content-wrapper {
-            margin-left: 300px;
+            margin-left: var(--sidebar-width);
             transition: margin-left 0.3s ease;
         }
 
@@ -243,6 +249,12 @@ if ($codigoUsuario) {
 
             .content-wrapper.sidebar-collapsed {
                 margin-left: 0;
+            }
+
+            /* Móvil: en colapsado sí se oculta completo como antes */
+            .sidebar.collapsed {
+                width: 0;
+                overflow: hidden;
             }
         }
 
@@ -281,7 +293,83 @@ if ($codigoUsuario) {
 
         /* Clave: Asegurar que el content-wrapper tenga margen izquierdo cuando el sidebar está abierto */
         .content-wrapper.sidebar-collapsed {
-            margin-left: 0;
+            /* Desktop: cuando está colapsado, usar el ancho mini */
+            margin-left: var(--sidebar-mini-width);
+        }
+
+        /* ===============================
+           MINI SIDEBAR (desktop)
+           Icono arriba + texto debajo
+        ================================ */
+        @media (min-width: 1024px) {
+            .sidebar.collapsed .sidebar-header {
+                padding: 16px 12px !important;
+            }
+
+            .sidebar.collapsed .sidebar-logo-text {
+                display: none;
+            }
+
+            .sidebar.collapsed .sidebar-nav {
+                padding: 12px !important;
+            }
+
+            .sidebar.collapsed .nav-section-title {
+                display: none;
+            }
+
+            .sidebar.collapsed .menu-group {
+                margin-top: 8px;
+            }
+
+            .sidebar.collapsed .menu-item {
+                padding: 10px 8px !important;
+                justify-content: center;
+            }
+
+            .sidebar.collapsed .menu-item > span {
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+            }
+
+            .sidebar.collapsed .menu-item > span > i {
+                font-size: 18px;
+                width: auto;
+            }
+
+            .sidebar.collapsed .menu-item > span > span {
+                text-align: center;
+                font-size: 11px;
+                line-height: 1.1;
+                /* Evitar desbordes en nombres largos */
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: calc(var(--sidebar-mini-width) - 24px);
+            }
+
+            /* Ocultar chevron lateral en mini (se expande igual al click) */
+            .sidebar.collapsed .menu-item > i {
+                display: none;
+            }
+
+            /* Submenú en mini: centrado y sin sangría */
+            .sidebar.collapsed .submenu {
+                padding-left: 0 !important;
+                margin-top: 6px !important;
+            }
+
+            .sidebar.collapsed .submenu-link {
+                text-align: center;
+                font-size: 12px;
+                padding: 6px 8px;
+                border-radius: 8px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
         }
     </style>
 </head>
@@ -590,19 +678,23 @@ if ($codigoUsuario) {
 
             const isCollapsed = sidebar.classList.contains('collapsed');
 
-            if (isCollapsed) {
-                // Vamos a abrir el sidebar (solo en móvil)
-                sidebar.classList.remove('collapsed');
-                if (window.innerWidth < 1024) {
+            // Móvil: mismo comportamiento actual (abre/cierra con overlay)
+            if (window.innerWidth < 1024) {
+                if (isCollapsed) {
+                    sidebar.classList.remove('collapsed');
                     overlay.classList.add('active');
+                } else {
+                    sidebar.classList.add('collapsed');
+                    overlay.classList.remove('active'); // ← ¡IMPORTANTE!
                 }
-            } else {
-                // Vamos a cerrar el sidebar
-                sidebar.classList.add('collapsed');
-                overlay.classList.remove('active'); // ← ¡IMPORTANTE!
+                contentWrapper.classList.toggle('sidebar-collapsed', !isCollapsed);
+                return;
             }
 
-            contentWrapper.classList.toggle('sidebar-collapsed', !isCollapsed);
+            // Desktop: colapsado tipo "mini sidebar" (no se oculta completo)
+            sidebar.classList.toggle('collapsed');
+            overlay.classList.remove('active');
+            contentWrapper.classList.toggle('sidebar-collapsed');
         }
 
         function toggleSubmenu(id, btn) {

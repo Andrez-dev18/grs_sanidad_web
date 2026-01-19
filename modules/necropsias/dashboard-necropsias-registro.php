@@ -35,7 +35,6 @@
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
         <style>
-            /* Tus estilos existentes */
             body {
                 background: #f8f9fa;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -253,16 +252,9 @@
 
     <body class="bg-gray-50">
         <div class="container-fluid py-4 mx-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">                
 
-            
-
-
-            <!-- REGISTRO (antes era modal, ahora es pantalla) -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                
-
-                <div id="contenidoNecropsia">
-                        <!-- Cabecera Inteligente Mejorada -->
+                <div id="contenidoNecropsia">                        
                         <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8 bg-gray-50 p-4 rounded-lg">
                             <!-- FECHA NECROPSIA (primero) -->
                             <div>
@@ -277,7 +269,6 @@
                                     <option value="">Cargando granjas...</option>
                                 </select>
                             </div>
-
                             <!-- CAMPAÑA (solo lectura) -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">CAMP.</label>

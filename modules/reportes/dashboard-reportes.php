@@ -26,29 +26,128 @@ if (!$conexion) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Reportes</title>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+     <!-- Tailwind CSS -->
+     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Bootstrap 5 (modal correo) -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Font Awesome para iconos -->
+<link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
+<!-- DataTables -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
-    <!-- DataTables + jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
-    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-
-    <!-- Select2 -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        body {
+       body {
             background: #f8f9fa;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+            border: none;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-export:hover {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            padding: 0.625rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-outline:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.625rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
         }
 
         .table-wrapper {
@@ -58,16 +157,34 @@ if (!$conexion) {
             border-radius: 1rem;
         }
 
+        .table-wrapper::-webkit-scrollbar {
+            height: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
         .data-table {
             width: 100% !important;
             border-collapse: collapse;
-            min-width: 1400px;
+            min-width: 1200px;
         }
 
         .data-table th,
         .data-table td {
             padding: 0.75rem 1rem;
-            text-align: center;
+            text-align: left;
             font-size: 0.875rem;
             border-bottom: 1px solid #e5e7eb;
             white-space: nowrap;
@@ -82,182 +199,292 @@ if (!$conexion) {
             z-index: 10;
         }
 
-        .dataTables_wrapper {
-            overflow-x: visible !important;
+        .data-table tbody tr:hover {
+            background-color: #eff6ff !important;
         }
 
-        /* Separación del header de DataTables ("Show ...", buscador, etc.) */
         .dataTables_wrapper .dataTables_length,
         .dataTables_wrapper .dataTables_filter,
         .dataTables_wrapper .dataTables_info,
         .dataTables_wrapper .dataTables_paginate {
-            padding-top: 1rem;
-            padding-left: 1.25rem;
-            padding-right: 1.25rem;
+            padding: 1rem;
+        }
+
+        .dataTables_wrapper .dataTables_length select {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            margin: 0 0.5rem;
+        }
+
+        .dataTables_wrapper .dataTables_filter input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            margin-left: 0.5rem;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            padding: 0.5rem 1rem !important;
+            margin: 0 0.25rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
+            color: white !important;
+            border: 1px solid #1e40af !important;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+        }
+
+        table.dataTable thead .sorting:before,
+        table.dataTable thead .sorting_asc:before,
+        table.dataTable thead .sorting_desc:before,
+        table.dataTable thead .sorting:after,
+        table.dataTable thead .sorting_asc:after,
+        table.dataTable thead .sorting_desc:after {
+            color: white !important;
+        }
+
+        .dataTables_wrapper {
+            overflow-x: visible !important;
         }
     </style>
 
 </head>
 
 <body class="bg-gray-50">
-    <div class="container mx-auto px-6 py-10">
-        <div class="max-w-7xl mx-auto">
-            <!-- Filtros -->
-            <div class="mb-6 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                        <span class="text-lg">🔎</span>
-                        <h3 class="text-base font-semibold text-gray-800">Filtros de búsqueda</h3>
+    <div class="container-fluid py-4 mx-8">
+
+        <!-- CARD FILTROS PLEGABLE -->
+        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+            <!-- HEADER -->
+            <button type="button" onclick="toggleFiltros()"
+                class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">
+
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">🔎</span>
+                    <h3 class="text-base font-semibold text-gray-800">Filtros de búsqueda</h3>
+                </div>
+
+                <!-- ICONO -->
+                <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
+                    fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            <!-- CONTENIDO PLEGABLE -->
+            <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
+                        <input type="date" id="filtroFechaInicio" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
+                        <input type="date" id="filtroFechaFin" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Laboratorio</label>
+                        <select id="filtroLaboratorio" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            <option value="">Seleccionar</option>
+                            <?php
+                            $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
+                            $res = $conexion->query($sql);
+                            if ($res && $res->num_rows > 0) {
+                                while ($row = $res->fetch_assoc()) {
+                                    echo '<option value="' . htmlspecialchars($row['nombre']) . '">' . htmlspecialchars($row['nombre']) . '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Emp. transporte</label>
+                        <select id="filtroEmpTrans" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            <option value="">Seleccionar</option>
+                            <?php
+                            $sql = "SELECT DISTINCT nomEmpTrans AS nombre
+                                    FROM san_fact_solicitud_cab
+                                    WHERE nomEmpTrans IS NOT NULL AND nomEmpTrans <> ''
+                                    ORDER BY nomEmpTrans ASC";
+                            $res = $conexion->query($sql);
+                            if ($res && $res->num_rows > 0) {
+                                while ($row = $res->fetch_assoc()) {
+                                    echo '<option value="' . htmlspecialchars($row['nombre']) . '">' . htmlspecialchars($row['nombre']) . '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo muestra</label>
+                        <select id="filtroTipoMuestra" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                            <option value="">Seleccionar</option>
+                            <?php
+                            $sql = "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY nombre ASC";
+                            $res = $conexion->query($sql);
+                            if ($res && $res->num_rows > 0) {
+                                while ($row = $res->fetch_assoc()) {
+                                    echo '<option value="' . htmlspecialchars($row['nombre']) . '">' . htmlspecialchars($row['nombre']) . '</option>';
+                                }
+                            }
+                            ?>
+                        </select>
                     </div>
                 </div>
-                <div class="px-6 py-6">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
-                            <input type="date" id="filtroFechaInicio" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
-                            <input type="date" id="filtroFechaFin" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Laboratorio</label>
-                            <select id="filtroLaboratorio" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                                <option value="">Seleccionar</option>
-                                <?php
-                                $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
-                                $res = $conexion->query($sql);
-                                if ($res && $res->num_rows > 0) {
-                                    while ($row = $res->fetch_assoc()) {
-                                        echo '<option value="' . htmlspecialchars($row['nombre']) . '">' . htmlspecialchars($row['nombre']) . '</option>';
-                                    }
-                                }
-                                ?>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tipo muestra</label>
-                            <select id="filtroTipoMuestra" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                                <option value="">Seleccionar</option>
-                                <?php
-                                $sql = "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY nombre ASC";
-                                $res = $conexion->query($sql);
-                                if ($res && $res->num_rows > 0) {
-                                    while ($row = $res->fetch_assoc()) {
-                                        echo '<option value="' . htmlspecialchars($row['nombre']) . '">' . htmlspecialchars($row['nombre']) . '</option>';
-                                    }
-                                }
-                                ?>
-                            </select>
-                        </div>
-                    </div>
 
-                    <div class="mt-8 flex flex-wrap justify-end gap-4">
-                        <button type="button" id="btnFiltrar" class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
-                            Filtrar
-                        </button>
-                        <button type="button" id="btnLimpiar" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200">
-                            Limpiar
-                        </button>
-                        <button type="button" class="px-6 py-2.5 text-white font-medium rounded-lg transition inline-flex items-center gap-2"
-                            onclick="exportarReporteExcel()"
-                            style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
-                            📊 Exportar a Excel
-                        </button>
-                    </div>
+                <!-- ACCIONES -->
+                <div class="mt-6 flex flex-wrap justify-end gap-4">
+                    <button type="button" id="btnFiltrar" class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                        Filtrar
+                    </button>
+                    <button type="button" id="btnLimpiar" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200">
+                        Limpiar
+                    </button>
+                    <button type="button" class="px-6 py-2.5 text-white font-medium rounded-lg transition inline-flex items-center gap-2"
+                        onclick="exportarReporteExcel()"
+                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
+                        📊 Exportar a Excel
+                    </button>
                 </div>
             </div>
+        </div>
 
-            <!-- Tabla -->
-            <div class="max-w-full mx-auto mt-6">
-                <div class="border border-gray-300 rounded-2xl bg-white overflow-hidden">
-                    <div class="table-wrapper">
-                        <table id="tablaReportes" class="data-table display" style="width:100%">
-                            <thead>
-                                <tr>
-                                    <th>Cod. Envío</th>
-                                    <th>Fecha Envio</th>
-                                    <th>Nom. Lab</th>
-                                    <th>Nom. EmpTrans</th>
-                                    <th>Usuario Registrador</th>
-                                    <th>Usuario Responsable</th>
-                                    <th>Autorizado Por</th>
-                                    <th>Muestra</th>
-                                    <th>Analisis</th>
-                                    <th>Obs</th>
-                                    <th>Opciones</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
+        <!-- Tabla -->
+        <div class="bg-white rounded-xl shadow-md p-5">
+            <div class="card-body p-0 mt-5">
+                <div class="table-wrapper overflow-x-auto">
+                    <table id="tablaReportes" class="data-table display w-full text-sm border-collapse" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>Cod. Envío</th>
+                                <th>Fecha Envio</th>
+                                <th>Laboratorio</th>
+                                <th>Emp. Trans.</th>
+                                <th>U. Reg.</th>
+                                <th>U. Resp.</th>
+                                <th>Aut. Por</th>
+                                <th>Detalles</th>
+                                <th>Opciones</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
                 </div>
             </div>
+        </div>
 
-            <!-- Footer -->
-            <div class="text-center mt-12">
-                <p class="text-gray-500 text-sm">
-                    Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
-                    © <span id="currentYear"></span>
-                </p>
+        <!-- Footer -->
+        <div class="text-center mt-12">
+            <p class="text-gray-500 text-sm">
+                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
+                © <span id="currentYear"></span>
+            </p>
+        </div>
+    </div>
+    <!-- Modal Tailwind - Enviar reporte por correo -->
+    <div id="modalCorreo" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4" aria-hidden="true">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h5 class="text-lg font-semibold text-gray-800">Enviar reporte por correo</h5>
+                <button type="button" onclick="cerrarModalCorreo()"
+                    class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition"
+                    aria-label="Cerrar">
+                    &times;
+                </button>
+            </div>
+
+            <div class="px-6 py-5 overflow-auto flex-1">
+                <input type="hidden" id="codigoEnvio" value="">
+
+                <!-- DESTINATARIOS -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Para (destinatarios) *</label>
+                    <button type="button" id="btnMostrarSelect"
+                        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-blue-300 text-blue-700 bg-white hover:bg-blue-50 transition text-sm font-medium">
+                        <i class="fas fa-plus"></i>
+                        Seleccionar contactos
+                    </button>
+
+                    <!-- Select oculto con contactos -->
+                    <select id="destinatarioSelect" multiple
+                        class="mt-2 w-full rounded-lg border border-gray-300 text-sm p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        size="6"
+                        style="display:none;"></select>
+
+                    <!-- Lista de destinatarios elegidos -->
+                    <div id="listaPara" class="mt-2 text-sm"></div>
+                </div>
+
+                <!-- ASUNTO Y MENSAJE -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Asunto *</label>
+                    <input type="text" id="asuntoCorreo"
+                        class="w-full rounded-lg border border-gray-300 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mensaje *</label>
+                    <textarea id="mensajeCorreo" rows="3"
+                        class="w-full rounded-lg border border-gray-300 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required></textarea>
+                </div>
+
+                <!-- ARCHIVOS -->
+                <div class="mt-4">
+                    <p class="font-semibold text-gray-800 mb-2">Archivos adjuntos:</p>
+                    <div id="listaArchivos" class="mb-3"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Agregar más archivos</label>
+                    <input type="file" id="archivosAdjuntos" multiple
+                        class="w-full rounded-lg border border-gray-300 text-sm p-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div id="mensajeResultado" class="text-center text-sm min-h-[2rem]"></div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                <button type="button" onclick="cerrarModalCorreo()"
+                    class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition">
+                    Cancelar
+                </button>
+                <button type="button" onclick="enviarCorreoDesdeSistema()"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition">
+                    Enviar
+                </button>
             </div>
         </div>
     </div>
-    <!-- Modal Bootstrap -->
-    <div class="modal fade" id="modalCorreo" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column;">
-                <div class="modal-header">
-                    <h5 class="modal-title">Enviar reporte por correo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
 
-                <div class="modal-body flex-grow-1 overflow-auto">
-                    <input type="hidden" id="codigoEnvio" value="">
-
-                    <!-- DESTINATARIOS -->
-                    <div class="mb-3">
-                        <label class="form-label">Para (destinatarios) *</label>
-                        <button type="button" class="btn btn-outline-primary btn-sm d-flex align-items-center"
-                            id="btnMostrarSelect">
-                            <i class="fas fa-plus me-1"></i> Seleccionar contactos
-                        </button>
-
-                        <!-- Select oculto con contactos -->
-                        <select id="destinatarioSelect" multiple class="form-select mt-2" size="6"
-                            style="display:none;"></select>
-
-                        <!-- Lista de destinatarios elegidos -->
-                        <div id="listaPara" class="mt-2 small"></div>
-                    </div>
-
-                    <!-- ASUNTO Y MENSAJE -->
-                    <div class="mb-3">
-                        <label class="form-label">Asunto *</label>
-                        <input type="text" id="asuntoCorreo" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Mensaje *</label>
-                        <textarea id="mensajeCorreo" class="form-control" rows="3" required></textarea>
-                    </div>
-
-                    <!-- ARCHIVOS -->
-                    <div class="mt-4">
-                        <p class="fw-bold mb-2">Archivos adjuntos:</p>
-                        <div id="listaArchivos" class="mb-3"></div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Agregar más archivos</label>
-                        <input type="file" id="archivosAdjuntos" multiple class="form-control">
-                    </div>
-
-                    <div id="mensajeResultado" class="text-center small min-vh-25"></div>
-                </div>
-
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" onclick="enviarCorreoDesdeSistema()">Enviar</button>
-                </div>
+    <!-- Modal Tailwind - Detalles (Muestra + Análisis) -->
+    <div id="modalDetallesEnvio"
+        class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4"
+        aria-hidden="true">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h5 class="text-lg font-semibold text-gray-800" id="modalDetallesEnvioTitle">Detalles</h5>
+                <button type="button" onclick="cerrarModalDetallesEnvio()"
+                    class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition"
+                    aria-label="Cerrar">
+                    &times;
+                </button>
+            </div>
+            <div class="px-6 py-5 overflow-auto flex-1">
+                <div id="modalDetallesEnvioBody"></div>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+                <button type="button" onclick="cerrarModalDetallesEnvio()"
+                    class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition">
+                    Cerrar
+                </button>
             </div>
         </div>
     </div>
@@ -456,17 +683,35 @@ if (!$conexion) {
     <script>
         let tableReportes;
 
+        function toggleFiltros() {
+            const contenido = document.getElementById('contenidoFiltros');
+            const icono = document.getElementById('iconoFiltros');
+            if (!contenido || !icono) return;
+
+            contenido.classList.toggle('hidden');
+            icono.classList.toggle('rotate-180');
+
+            // Si la tabla ya existe, recalcular anchos (evita header angosto vs body con scrollX)
+            if (window.tableReportes) {
+                setTimeout(() => {
+                    try { window.tableReportes.columns.adjust(); } catch (e) {}
+                }, 150);
+            }
+        }
+
         function exportarReporteExcel() {
             const params = new URLSearchParams();
             const fechaInicio = $('#filtroFechaInicio').val();
             const fechaFin = $('#filtroFechaFin').val();
             const laboratorio = $('#filtroLaboratorio').val();
             const muestra = $('#filtroTipoMuestra').val();
+            const empTrans = $('#filtroEmpTrans').val();
 
             if (fechaInicio) params.set('fechaInicio', fechaInicio);
             if (fechaFin) params.set('fechaFin', fechaFin);
             if (laboratorio) params.set('laboratorio', laboratorio);
             if (muestra) params.set('muestra', muestra);
+            if (empTrans) params.set('empTrans', empTrans);
 
             window.location.href = 'exportar_excel_resultados.php?' + params.toString();
         }
@@ -505,6 +750,8 @@ if (!$conexion) {
             if (e.key === 'Escape') {
                 cerrarModalAdvertencia();
                 cerrarModalEditar();
+                cerrarModalDetallesEnvio();
+                if (typeof cerrarModalCorreo === 'function') cerrarModalCorreo();
             }
         });
 
@@ -512,9 +759,11 @@ if (!$conexion) {
         document.addEventListener('click', function (e) {
             const modalAdvertencia = document.getElementById('modalAdvertenciaEdicion');
             const modalEditar = document.getElementById('modalEditarEnvio');
+            const modalDetalles = document.getElementById('modalDetallesEnvio');
 
             if (e.target === modalAdvertencia) cerrarModalAdvertencia();
             if (e.target === modalEditar) cerrarModalEditar();
+            if (e.target === modalDetalles) cerrarModalDetallesEnvio();
         });
 
         let currentSolicitudCount = 0;
@@ -1010,6 +1259,145 @@ if (!$conexion) {
                 });
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function formatearFechaDMY(value) {
+            if (!value) return '<span class="text-gray-400 italic">—</span>';
+            const raw = String(value).trim();
+
+            // Soporta "YYYY-MM-DD" y "YYYY-MM-DD HH:mm:ss"
+            if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+                const ymd = raw.substring(0, 10);
+                const [yyyy, mm, dd] = ymd.split('-');
+                return `${dd}/${mm}/${yyyy}`;
+            }
+
+            // Si ya viene como dd/mm/yyyy
+            if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) return raw;
+
+            return escapeHtml(raw);
+        }
+
+        function construirHtmlDetalles(detalles) {
+            if (!Array.isArray(detalles) || detalles.length === 0) {
+                return `<div class="rounded-lg border border-yellow-200 bg-yellow-50 text-yellow-900 px-4 py-3 text-sm">No se encontraron detalles para este envío.</div>`;
+            }
+
+            // Agrupar por posSolicitud (similar a PDF)
+            const grupos = {};
+            for (const item of detalles) {
+                const pos = item.posSolicitud ?? '—';
+                if (!grupos[pos]) grupos[pos] = [];
+                grupos[pos].push(item);
+            }
+
+            const posiciones = Object.keys(grupos).sort((a, b) => (Number(a) || 0) - (Number(b) || 0));
+            let html = '';
+
+            for (const pos of posiciones) {
+                const items = grupos[pos] || [];
+                const muestra = items.find(i => i.nomMuestra)?.nomMuestra || '—';
+                const fecToma = items.find(i => i.fecToma)?.fecToma || '';
+
+                // Agrupar análisis por paquete (similar a PDF)
+                const paquetes = new Map(); // paquete => Set(analisis)
+                for (const it of items) {
+                    const paquete = (it.nomPaquete && String(it.nomPaquete).trim()) ? String(it.nomPaquete).trim() : 'Sin paquete';
+                    const analisis = (it.nomAnalisis && String(it.nomAnalisis).trim()) ? String(it.nomAnalisis).trim() : '';
+                    if (!paquetes.has(paquete)) paquetes.set(paquete, new Set());
+                    if (analisis) paquetes.get(paquete).add(analisis);
+                }
+
+                let bloquesAnalisis = '';
+                for (const [paq, setAnalisis] of paquetes.entries()) {
+                    const lista = Array.from(setAnalisis);
+                    if (lista.length === 0) continue;
+                    bloquesAnalisis += `
+                        <div class="mb-2">
+                            <span class="font-semibold text-gray-800">${escapeHtml(paq)}:</span>
+                            <span class="text-gray-700">${escapeHtml(lista.join(', '))}</span>
+                        </div>
+                    `;
+                }
+                if (!bloquesAnalisis) {
+                    bloquesAnalisis = `<div class="text-gray-400 italic">—</div>`;
+                }
+
+                html += `
+                    <div class="border border-gray-200 rounded-xl p-4 mb-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                            <div class="font-semibold text-gray-800">Solicitud #${escapeHtml(pos)}</div>
+                            <div class="text-gray-500 text-sm">Fecha toma: ${formatearFechaDMY(fecToma)}</div>
+                        </div>
+                        <div class="mb-2 text-sm">
+                            <span class="font-semibold text-gray-800">Muestra:</span>
+                            <span class="text-gray-700">${escapeHtml(muestra)}</span>
+                        </div>
+                        <div class="text-sm">
+                            <div class="font-semibold text-gray-800 mb-1">Análisis:</div>
+                            <div class="pl-3 ml-1 border-l border-gray-200">
+                                ${bloquesAnalisis}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return html;
+        }
+
+        function abrirModalDetallesEnvioUI() {
+            const modal = document.getElementById('modalDetallesEnvio');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function cerrarModalDetallesEnvio() {
+            const modal = document.getElementById('modalDetallesEnvio');
+            if (!modal) return;
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+
+        async function abrirModalDetallesEnvio(codEnvio) {
+            const titleEl = document.getElementById('modalDetallesEnvioTitle');
+            const bodyEl = document.getElementById('modalDetallesEnvioBody');
+            if (!titleEl || !bodyEl) return;
+
+            titleEl.textContent = `Detalles - Envío ${codEnvio}`;
+            bodyEl.innerHTML = `
+                <div class="flex items-center gap-2 text-sm text-gray-600">
+                    <div class="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+                    <div>Cargando detalles...</div>
+                </div>
+            `;
+
+            abrirModalDetallesEnvioUI();
+
+            try {
+                const res = await fetch(`../seguimiento/get_detalles_envio.php?codEnvio=${encodeURIComponent(codEnvio)}`);
+                const data = await res.json();
+                if (!res.ok || data?.error) {
+                    bodyEl.innerHTML = `<div class="rounded-lg border border-red-200 bg-red-50 text-red-900 px-4 py-3 text-sm">Error al cargar detalles: ${escapeHtml(data?.error || res.statusText)}</div>`;
+                    return;
+                }
+                bodyEl.innerHTML = construirHtmlDetalles(data);
+            } catch (err) {
+                console.error(err);
+                bodyEl.innerHTML = `<div class="rounded-lg border border-red-200 bg-red-50 text-red-900 px-4 py-3 text-sm">Error de conexión al cargar detalles.</div>`;
+            }
+        }
+
         function cargarTablaReportes() {
             if (tableReportes) tableReportes.destroy();
 
@@ -1017,12 +1405,17 @@ if (!$conexion) {
             const fechaFin = $('#filtroFechaFin').val();
             const laboratorio = $('#filtroLaboratorio').val();
             const muestra = $('#filtroTipoMuestra').val();
+            const empTrans = $('#filtroEmpTrans').val();
 
             tableReportes = $('#tablaReportes').DataTable({
                 processing: true,
                 serverSide: true,
-                scrollX: true,
+                scrollX: false,
                 autoWidth: false,
+                initComplete: function () {
+                    // Ajuste inicial de columnas
+                    this.api().columns.adjust();
+                },
                 ajax: {
                     url: '../seguimiento/listar_cab_filtros.php',
                     type: 'POST',
@@ -1031,6 +1424,7 @@ if (!$conexion) {
                         fechaFin,
                         laboratorio,
                         muestra,
+                        empTrans,
                         granjas: [],
                         galpon: '',
                         edadDesde: '',
@@ -1039,20 +1433,33 @@ if (!$conexion) {
                 },
                 columns: [
                     { data: 'codEnvio' },
-                    { data: 'fecEnvio' },
+                    {
+                        data: 'fecEnvio',
+                        render: function (data, type) {
+                            if (type !== 'display' && type !== 'filter') return data;
+                            return formatearFechaDMY(data);
+                        }
+                    },
                     { data: 'nomLab' },
                     { data: 'nomEmpTrans' },
                     { data: 'usuarioRegistrador' },
                     { data: 'usuarioResponsable' },
                     { data: 'autorizadoPor' },
-                    { data: 'muestras', defaultContent: '—' },
-                    { data: 'analisis', defaultContent: '—' },
                     {
-                        data: 'obs',
-                        defaultContent: '',
-                        render: function (data) {
-                            if (!data) return '<span class="text-gray-400 italic">—</span>';
-                            return data;
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        render: function (data, type, row) {
+                            const cod = escapeHtml(row.codEnvio || '');
+                            return `
+                                <button type="button"
+                                    class="btn-detalles cursor-pointer text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-2 transition"
+                                    title="Ver detalles"
+                                    data-codigo="${cod}">
+                                   <i class="fas fa-eye"></i>
+                                    Ver
+                                </button>
+                            `;
                         }
                     },
                     {
@@ -1097,6 +1504,13 @@ if (!$conexion) {
         }
 
         $(document).ready(function () {
+            // Delegación para botón "Detalles" (tabla server-side)
+            $(document).on('click', '.btn-detalles', function () {
+                const codEnvio = $(this).data('codigo');
+                if (!codEnvio) return;
+                abrirModalDetallesEnvio(codEnvio);
+            });
+
             cargarTablaReportes();
 
             $('#btnFiltrar').click(function () {
@@ -1108,13 +1522,14 @@ if (!$conexion) {
                 $('#filtroFechaFin').val('');
                 $('#filtroLaboratorio').val('');
                 $('#filtroTipoMuestra').val('');
+                $('#filtroEmpTrans').val('');
                 cargarTablaReportes();
             });
 
         });
     </script>
 
-    <!-- JS existente para modal de correo (reutilizado) -->
+    <!-- JS existente para modal de correo-->
     <script src="../../assets/js/reportes/reportes.js"></script>
 </body>
 
