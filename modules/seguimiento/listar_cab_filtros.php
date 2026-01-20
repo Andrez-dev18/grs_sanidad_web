@@ -13,6 +13,7 @@ $fechaInicio = $_POST['fechaInicio'] ?? '';
 $fechaFin = $_POST['fechaFin'] ?? '';
 $estado = $_POST['estado'] ?? '';
 $laboratorio = $_POST['laboratorio'] ?? '';
+$empTrans = $_POST['empTrans'] ?? '';
 $muestra = $_POST['muestra'] ?? '';
 $analisis = $_POST['analisis'] ?? '';
 $granjas = $_POST['granjas'] ?? [];
@@ -38,6 +39,11 @@ if ($estado) {
 if ($laboratorio) {
     $laboratorio = mysqli_real_escape_string($conexion, $laboratorio);
     $where .= " AND c.nomLab = '$laboratorio' ";
+}
+
+if ($empTrans) {
+    $empTrans = mysqli_real_escape_string($conexion, $empTrans);
+    $where .= " AND c.nomEmpTrans = '$empTrans' ";
 }
 
 if ($muestra) {
