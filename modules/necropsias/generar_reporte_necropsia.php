@@ -23,6 +23,7 @@ if (!$granja || !$numreg || !$fectra) die('Parámetros inválidos');
 /* ===============================
    CONSULTA
 ================================ */
+// Se asume que la columna tobservacion ya existe en la tabla t_regnecropsia
 $sql = "SELECT * FROM t_regnecropsia
         WHERE tgranja = ? AND tnumreg = ? AND tfectra = ?
         ORDER BY tid ASC";
@@ -40,7 +41,7 @@ $tieneImagenes = false;
 foreach ($registros as $reg) {
     if (!empty($reg['evidencia']) && trim($reg['evidencia']) !== '') {
         $tieneImagenes = true;
-        break;
+        $break;
     }
 }
 
@@ -138,6 +139,17 @@ $html = '
         margin-top:6px;
         font-size:10pt;
         background: #D5D5D5;
+    }
+
+    /* --- NUEVO ESTILO PARA OBSERVACIONES --- */
+    .observacion-box {
+        width: 250px; /* Un poco menos que la caja para padding */
+        margin-top: 5px;
+        padding: 5px;
+        font-size: 8pt;
+        background: #f4f4f4;
+        border: 1px solid #ccc;
+        color: #333;
     }
 
     .tabla-bursal {
@@ -284,12 +296,19 @@ foreach ($registros as $reg) {
         }
     }
 
+    // === NUEVO: OBSERVACIÓN ===
+    $obsHtml = '';
+    // Verificamos si existe tobservacion y no está vacía
+    if (!empty($reg['tobservacion']) && trim($reg['tobservacion']) !== '') {
+        $obsHtml = '<div class="observacion-box"><strong>Obs:</strong> ' . nl2br(htmlspecialchars($reg['tobservacion'])) . '</div>';
+    }
+
     $html .= '
     <td width="33%" align="center" valign="top">
         <div class="nivel">' . htmlspecialchars($reg['tnivel']) . '</div>
         <table class="img-box"><tr><td align="center" valign="middle">' . $imgHtml . '</td></tr></table>
         <table class="porc-box">' . $porcHtml . '</table>
-    </td>';
+        ' . $obsHtml . ' </td>';
 
     $col++;
 }

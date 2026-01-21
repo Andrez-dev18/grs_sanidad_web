@@ -1527,7 +1527,7 @@
                     {
                         sistema: 'SISTEMA DIGESTIVO',
                         nivel: 'RETRACCION DEL PANCREAS',
-                        opciones: ['Sí', 'No'],
+                        opciones: ['Normal', 'Retraido'],
                         obsId: 'obs_pancreas'
                     },
                     {
@@ -1648,7 +1648,7 @@
                             else if (opcion === 'Grado 4') idGrupo = 'erosion_grado4';
                         } else if (param.nivel === 'RETRACCION DEL PANCREAS') {
                             if (opcion === 'Normal') idGrupo = 'pancreas_normal';
-                            else if (opcion === 'Retraído') idGrupo = 'pancreas_retraido';
+                            else if (opcion === 'Retraido') idGrupo = 'pancreas_retraido';
                         } else if (param.nivel === 'ABSORCION DEL SACO VITELINO') {
                             if (opcion === 'Sí') idGrupo = 'saco_si';
                             else if (opcion === 'No') idGrupo = 'saco_no';
