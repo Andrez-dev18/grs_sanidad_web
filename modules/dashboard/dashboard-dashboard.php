@@ -22,7 +22,7 @@ if (empty($_SESSION['active'])) {
     <title>Dashboard - Reportes</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../css/output.css" rel="stylesheet">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

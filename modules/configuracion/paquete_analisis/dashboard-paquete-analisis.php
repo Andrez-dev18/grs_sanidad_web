@@ -560,7 +560,11 @@ if (!$conexion) {
                 var api = tablePaquetes;
                 var cont = $('#cardsContainerPaq');
                 cont.empty();
+                var info = api.page.info();
+                var rowIndex = 0;
                 api.rows({ page: 'current' }).every(function() {
+                    rowIndex++;
+                    var numero = info.start + rowIndex;
                     var $row = $(this.node());
                     var cells = $row.find('td');
                     if (cells.length < 4) return;
@@ -570,7 +574,8 @@ if (!$conexion) {
                     var codAttr = (codigo + '').replace(/"/g, '&quot;');
                     var nomAttr = (nombre + '').replace(/"/g, '&quot;');
                     var card = $('<div class="card-item" data-codigo="' + codAttr + '" data-nombre="' + nomAttr + '">' +
-                        '<div class="card-codigo">' + $('<div>').text(codigo).html() + '</div>' +
+                        '<div class="card-numero-row">#' + numero + '</div>' +
+                        '<div class="card-row"><span class="label">codigo:</span> ' + $('<div>').text(codigo).html() + '</div>' +
                         '<div class="card-row"><span class="label">Nombre:</span> ' + $('<div>').text(nombre).html() + '</div>' +
                         '<div class="card-row"><span class="label">Tipo muestra:</span> ' + $('<div>').text(tipoMuestra).html() + '</div>' +
                         '<div class="card-acciones">' +

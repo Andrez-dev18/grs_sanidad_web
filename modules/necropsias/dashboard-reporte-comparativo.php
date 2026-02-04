@@ -21,7 +21,7 @@ if (!$conexion) {
     <title>Reporte Comparativo de Necropsias</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../css/output.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="../../css/dashboard-responsive.css">

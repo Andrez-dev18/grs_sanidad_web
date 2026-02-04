@@ -43,7 +43,7 @@ if ($codigoUsuario) {
     <title>Dashboard - Reportes</title>
 
      <!-- Tailwind CSS -->
-     <script src="https://cdn.tailwindcss.com"></script>
+     <link href="../../css/output.css" rel="stylesheet">
 
 <!-- Font Awesome para iconos -->
 <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
@@ -766,7 +766,7 @@ if ($codigoUsuario) {
                             </div>
                         </div>
 
-                        <!-- Número de Solicitudes -->
+                        <!-- Número de Solicitudes (al cambiar se agregan/quitan tarjetas dinámicamente) -->
                         <div class="form-field max-w-xs">
                             <label class="block text-xs font-medium text-gray-700 mb-1">
                                 Número de Solicitudes <span class="text-red-500">*</span>
@@ -888,6 +888,7 @@ if ($codigoUsuario) {
         });
 
         let currentSolicitudCount = 0;
+        let tiposMuestraCacheModal = null;
         let datosOriginales = { cabecera: null, detalles: {} };
 
         async function verificarYEditar(codEnvio) {
@@ -1098,6 +1099,115 @@ if ($codigoUsuario) {
                     }
                 });
             }
+        }
+
+        async function getTiposMuestraParaModal() {
+            if (tiposMuestraCacheModal) return tiposMuestraCacheModal;
+            const res = await fetch('../../includes/get_tipos_muestra.php');
+            tiposMuestraCacheModal = await res.json();
+            return tiposMuestraCacheModal || [];
+        }
+
+        function actualizarCantidadSolicitudesModal() {
+            const input = document.getElementById('numeroSolicitudes');
+            const contenedor = document.getElementById('tablaSolicitudes');
+            if (!input || !contenedor) return;
+            let n = parseInt(input.value, 10) || 1;
+            n = Math.max(1, Math.min(30, n));
+            input.value = n;
+
+            const filas = contenedor.querySelectorAll('div[id^="fila-solicitud-"]');
+            const current = filas.length;
+
+            if (n > current) {
+                for (let pos = current + 1; pos <= n; pos++) {
+                    agregarFilaSolicitudEnModal(pos);
+                }
+                currentSolicitudCount = n;
+            } else if (n < current) {
+                const sortedPos = Array.from(filas).map(f => parseInt(f.id.split('-').pop(), 10)).sort((a, b) => a - b);
+                for (let i = sortedPos.length - 1; i >= n; i--) {
+                    const el = document.getElementById('fila-solicitud-' + sortedPos[i]);
+                    if (el) el.remove();
+                }
+                currentSolicitudCount = n;
+            }
+        }
+
+        function agregarFilaSolicitudEnModal(pos) {
+            const contenedor = document.getElementById('tablaSolicitudes');
+            if (!contenedor) return;
+            const analisisIniciales = [];
+            const div = document.createElement('div');
+            div.id = 'fila-solicitud-' + pos;
+            div.className = 'border rounded-lg p-4 bg-gray-50';
+            div.setAttribute('data-analisis', JSON.stringify(analisisIniciales));
+            div.innerHTML = `
+                <h6 class="font-bold mb-3">Solicitud #${pos}</h6>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                    <div>
+                        <label class="text-xs text-gray-600">Tipo de muestra</label>
+                        <select class="w-full text-sm px-2 py-1 border rounded tipo-muestra" data-pos="${pos}">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-600">Cód. Referencia</label>
+                        <input type="text" class="w-full text-sm px-2 py-1 border rounded cod-ref" value="" data-pos="${pos}">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-600">Núm. Muestras</label>
+                        <select class="w-full text-sm px-2 py-1 border rounded num-muestras" data-pos="${pos}">
+                            ${Array.from({ length: 30 }, (_, i) => `<option value="${i + 1}"${i === 0 ? ' selected' : ''}>${i + 1}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-600">Fecha Toma</label>
+                        <input type="date" class="w-full text-sm px-2 py-1 border rounded fecha-toma" value="" data-pos="${pos}">
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="text-xs text-gray-600">Observaciones</label>
+                    <textarea class="w-full text-sm px-2 py-1 border rounded obs" data-pos="${pos}" rows="2"></textarea>
+                </div>
+                <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border-2 border-sky-400 bg-white text-sky-500 hover:bg-sky-500 hover:text-white transition duration-200 ver-analisis-toggle" data-pos="${pos}">
+                    <span class="toggle-text">Ver Análisis</span>
+                </button>
+                <div class="mt-3 analisis-container hidden" id="analisis-container-${pos}"></div>
+            `;
+            contenedor.appendChild(div);
+
+            getTiposMuestraParaModal().then(tipos => {
+                const select = div.querySelector('.tipo-muestra');
+                (tipos || []).forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.codigo;
+                    opt.textContent = t.nombre;
+                    select.appendChild(opt);
+                });
+            });
+
+            div.querySelector('.ver-analisis-toggle').addEventListener('click', async function () {
+                const posActual = this.dataset.pos;
+                const tipoId = div.querySelector('.tipo-muestra').value;
+                if (!tipoId) {
+                    alert('Seleccione primero el tipo de muestra');
+                    return;
+                }
+                const container = document.getElementById('analisis-container-' + posActual);
+                const toggleText = this.querySelector('.toggle-text');
+                if (container.classList.contains('hidden')) {
+                    if (container.innerHTML.trim() === '' || container.innerHTML.includes('Cargando')) {
+                        container.innerHTML = '<p>Cargando análisis...</p>';
+                        await cargarAnalisisEnContenedor(posActual, tipoId, null, div);
+                    }
+                    container.classList.remove('hidden');
+                    toggleText.textContent = 'Ocultar Análisis';
+                } else {
+                    container.classList.add('hidden');
+                    toggleText.textContent = 'Ver Análisis';
+                }
+            });
         }
 
         async function cargarAnalisisEnContenedor(pos, tipoId, analisisIniciales, filaDiv) {
@@ -1356,6 +1466,8 @@ if ($codigoUsuario) {
                 alert('Error de red al guardar');
             }
         });
+
+        document.getElementById('numeroSolicitudes') && document.getElementById('numeroSolicitudes').addEventListener('change', actualizarCantidadSolicitudesModal);
 
         function borrarRegistroDesdeListado(codEnvio) {
             if (!confirm(`¿Eliminar el envío "${codEnvio}"?\n\nEsta acción no se puede deshacer.`)) return;

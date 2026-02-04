@@ -25,8 +25,12 @@ if (!$res || $res->num_rows === 0) {
 $row = $res->fetch_assoc();
 $rutaAnteriorRelativa = $row["archRuta"]; // ej: uploads/resultados/archivo.pdf
 
+// === RAÍZ DEL PROYECTO (portable, sin nombre fijo) ===
+$raizProyecto = dirname(__DIR__, 2); // Sube 2 niveles desde modules/registro_laboratorio
+
 // === RUTA ABSOLUTA PARA OPERACIONES EN SERVIDOR ===
-$rutaAnteriorAbsoluta = $_SERVER['DOCUMENT_ROOT'] . '/gc_sanidad_web/' . $rutaAnteriorRelativa;
+$carpetaResultados = $raizProyecto . '/uploads/resultados/';
+$rutaAnteriorAbsoluta = $carpetaResultados . basename($rutaAnteriorRelativa);
 
 // Borrar archivo anterior si existe
 if (file_exists($rutaAnteriorAbsoluta)) {
@@ -38,13 +42,12 @@ $file = $_FILES["archivo"];
 $nombreFinal = $codigoEnvio . "_" . $pos . "_" . time() . "_" . $file["name"];
 $nombreFinal = str_replace(" ", "_", $nombreFinal);
 
-// === RUTA ABSOLUTA PARA GUARDAR EL ARCHIVO ===
-$carpetaAbsoluta = $_SERVER['DOCUMENT_ROOT'] . '/gc_sanidad_web/uploads/resultados/';
-$rutaCompleta = $carpetaAbsoluta . $nombreFinal;
+// === GUARDAR NUEVO ARCHIVO ===
+$rutaCompleta = $carpetaResultados . $nombreFinal;
 
 // Crear carpeta si no existe
-if (!is_dir($carpetaAbsoluta)) {
-    mkdir($carpetaAbsoluta, 0755, true);
+if (!is_dir($carpetaResultados)) {
+    mkdir($carpetaResultados, 0755, true);
 }
 
 if (!move_uploaded_file($file["tmp_name"], $rutaCompleta)) {
@@ -52,7 +55,7 @@ if (!move_uploaded_file($file["tmp_name"], $rutaCompleta)) {
     exit;
 }
 
-// === RUTA RELATIVA PARA GUARDAR EN BD (¡esta es la importante!) ===
+// === RUTA RELATIVA PARA GUARDAR EN BD ===
 $rutaNuevaBD = 'uploads/resultados/' . $nombreFinal;
 
 $conn->query("
@@ -63,3 +66,4 @@ $conn->query("
 ");
 
 echo json_encode(["success" => true]);
+

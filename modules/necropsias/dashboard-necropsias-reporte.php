@@ -21,7 +21,7 @@ if (!$conexion) {
     <title>Reportes de Necropsias</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../css/output.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

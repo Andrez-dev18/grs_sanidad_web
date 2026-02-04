@@ -95,12 +95,11 @@ $result = $conexion->query($query);
     <title>Dashboard - Respuesta lab</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../css/output.css" rel="stylesheet">
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="stylesheet" href="../../css/style-rpt-lab.css">
-    <link rel="stylesheet" href="../../css/dashboard-responsive.css">
 
     <style>
         body {
@@ -123,19 +122,6 @@ $result = $conexion->query($query);
         .card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-        }
-
-        /* Lista de solicitudes: todas las tarjetas con el mismo alto (desktop = grid, móvil = flex row) */
-        .rpta-lab-solicitudes-list {
-            display: grid;
-            grid-template-columns: 1fr;
-            grid-auto-rows: 1fr;
-            gap: 0.75rem;
-        }
-        .rpta-lab-solicitudes-list > * {
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
         }
 
         .icon-box {
@@ -193,6 +179,45 @@ $result = $conexion->query($query);
             grid-template-columns: repeat(13, 1fr);
         }
 
+        /* Pantallas chicas: una fila de tarjetas, scroll horizontal */
+        @media (max-width: 767px) {
+            .panel-solicitudes-fila {
+                max-height: 280px;
+                overflow: hidden;
+            }
+            .pending-orders-row {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                overflow-y: hidden;
+                gap: 0.75rem;
+                -webkit-overflow-scrolling: touch;
+            }
+            .pending-orders-row .solicitud-card {
+                flex-shrink: 0;
+                width: 260px;
+                min-width: 260px;
+            }
+        }
+        /* Pantallas grandes: estilo original - sidebar con lista vertical */
+        @media (min-width: 768px) {
+            .panel-solicitudes-fila {
+                max-height: none;
+            }
+            .pending-orders-row {
+                flex-direction: column;
+                flex-wrap: nowrap;
+                overflow-x: hidden;
+                overflow-y: auto;
+                gap: 0;
+            }
+            .pending-orders-row .solicitud-card {
+                width: 100%;
+                min-width: 0;
+                flex-shrink: 0;
+            }
+        }
+
         #modalAgregarEnfermedad {
             animation: fadeIn 0.2s ease-in;
         }
@@ -206,65 +231,16 @@ $result = $conexion->query($query);
                 opacity: 1;
             }
         }
-
-        /* En pantallas pequeñas: panel Solicitudes con scroll horizontal (una sola zona de scroll vertical = main) */
-        @media (max-width: 767px) {
-            .rpta-lab-wrap {
-                overflow-y: auto !important;
-                overflow-x: hidden;
-                min-height: 0;
-            }
-            .rpta-lab-aside {
-                flex: 0 0 auto !important;
-                min-height: 0;
-                max-height: none;
-                display: flex;
-                flex-direction: column;
-            }
-            /* Lista de solicitudes: fila horizontal con scroll, sin scroll vertical */
-            .rpta-lab-aside .rpta-lab-solicitudes-list {
-                display: flex;
-                flex-direction: row;
-                flex-wrap: nowrap;
-                overflow-x: auto;
-                overflow-y: hidden;
-                gap: 0.75rem;
-                padding: 1rem;
-                min-height: 120px;
-                max-height: 200px;
-                align-items: stretch;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: thin;
-            }
-            .rpta-lab-aside .rpta-lab-solicitudes-list > * {
-                flex: 0 0 auto;
-                min-width: 260px;
-                max-width: 280px;
-                margin: 0;
-                align-self: stretch;
-                min-height: 0;
-            }
-            /* Mensaje vacío (solo un hijo div) ocupa el ancho disponible */
-            .rpta-lab-aside .rpta-lab-solicitudes-list > div:only-child {
-                flex: 1 1 auto;
-                min-width: 0;
-                max-width: none;
-            }
-            .rpta-lab-main {
-                flex: 1 1 auto;
-                min-height: 40vh;
-            }
-        }
     </style>
 </head>
 
-<body class="bg-gray-50">
-    <div class="container mx-auto px-3 py-6">
+<body class="bg-gray-50 overflow-x-hidden">
+    <div class="w-full max-w-full py-4 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
 
-        <div class="flex flex-col h-screen">
+        <div class="flex flex-col h-screen overflow-hidden">
 
             <!-- HEADER -->
-            <header class=" bg-white p-4 rounded-xl shadow-sm border border-[#e5e7eb]">
+            <header class="flex-shrink-0 bg-white p-4 rounded-xl shadow-sm border border-[#e5e7eb]">
 
                 <!-- FILTROS -->
                 <div class="mt-2 bg-white">
@@ -347,29 +323,24 @@ $result = $conexion->query($query);
 
             </header>
 
-            <div class="rpta-lab-wrap flex flex-1 overflow-hidden flex-col md:flex-row">
+            <!-- Pantallas chicas: columna (fila de tarjetas arriba, detalle abajo). Pantallas grandes: fila (sidebar izquierdo, detalle derecha) -->
+            <div class="flex flex-1 min-h-0 overflow-hidden flex-col md:flex-row">
 
-                <!-- SIDEBAR -->
-                <aside
-                    class="rpta-lab-aside bg-white w-full md:w-[300px] rounded-xl shadow-sm border border-[#e5e7eb] mt-4 md:mr-3 flex flex-col flex-shrink-0">
-                    <div class="px-6 py-5 border-b border-[#e5e7eb]">
+                <!-- Sidebar solicitudes: en chicas una fila con scroll horizontal; en grandes columna con scroll vertical -->
+                <aside id="panelSolicitudes"
+                    class="panel-solicitudes-fila flex-shrink-0 bg-white w-full md:w-[300px] md:flex-shrink-0 md:mr-3 rounded-xl shadow-sm border border-[#e5e7eb] mt-4 flex flex-col min-h-0 min-w-0">
+                    <div class="px-4 py-3 md:px-6 md:py-5 border-b border-[#e5e7eb] flex-shrink-0 flex flex-wrap items-center gap-3">
                         <h3 class="text-base font-semibold text-[#2c3e50]">Solicitudes</h3>
-
-                        <input id="searchInput" type="text" placeholder="Buscar..." class="mt-3 w-full px-3 py-2 border border-[#d0d7de] rounded-md text-sm placeholder-[#a0aec0]
-                                focus:outline-none focus:ring-2 focus:ring-[#0066cc]/30">
+                        <input id="searchInput" type="text" placeholder="Buscar..." class="flex-1 min-w-[120px] max-w-xs md:mt-0 md:w-full px-3 py-2 border border-[#d0d7de] rounded-md text-sm placeholder-[#a0aec0] focus:outline-none focus:ring-2 focus:ring-[#0066cc]/30">
                     </div>
-
-                    <!-- Lista de solicitudes (en móvil: scroll horizontal; todas las tarjetas mismo alto) -->
-                    <div id="pendingOrdersList" class="rpta-lab-solicitudes-list flex-1 overflow-y-auto p-4">
-
+                    <div id="pendingOrdersList" class="pending-orders-row flex flex-1 min-h-0 p-4 md:space-y-3">
                     </div>
-                    <div id="paginationControls" class="p-4 flex justify-between text-sm text-gray-600"></div>
-
+                    <div id="paginationControls" class="p-3 md:p-4 flex justify-between text-sm text-gray-600 flex-shrink-0 border-t border-[#e5e7eb]"></div>
                 </aside>
 
-                <!-- MAIN CONTENT -->
-                <main
-                    class="rpta-lab-main flex-1 overflow-y-auto mt-4 bg-white rounded-xl shadow-sm border border-[#e5e7eb] p-6 md:p-10 min-w-0">
+                <!-- Panel detalle: en chicas abajo con scroll propio; en grandes a la derecha -->
+                <main id="panelDetalle"
+                    class="flex-1 min-h-0 min-w-0 overflow-auto mt-4 bg-white rounded-xl shadow-sm border border-[#e5e7eb] p-6 md:p-10">
 
                     <!-- EMPTY STATE (lo que se ve al inicio) -->
                     <div id="emptyStatePanel" class="mx-auto max-w-6xl">
@@ -639,7 +610,7 @@ $result = $conexion->query($query);
                                     </div>
 
                                     <!-- Botones -->
-                                    <div class="dashboard-modal-actions mt-6 flex flex-wrap justify-end gap-3">
+                                    <div class="mt-6 flex justify-end gap-3">
                                         <button onclick="closeDetail()"
                                             class="px-5 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100">Cancelar</button>
                                         <button id="btnGuardarResultados" onclick="abrirModalConfirmacion()"
@@ -762,7 +733,7 @@ $result = $conexion->query($query);
                                                 <p class="text-xs text-gray-500 mt-1">(Máx. 10 MB por archivo)</p>
                                             </div>
 
-                                            <div class="dashboard-modal-actions mt-8 flex flex-wrap justify-end gap-3">
+                                            <div class="mt-8 flex justify-end">
 
                                                 <!-- CODIGO ANTERIOR
                                                 <button type="submit"
@@ -774,10 +745,10 @@ $result = $conexion->query($query);
                                                     class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105">
                                                     <i class="fas fa-save mr-2"></i> Guardar Resultados
                                                 </button>
-                                                <button type="button" onclick="closeDetail()"
-                                                    class="px-5 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100">Cancelar</button>
                                             </div>
                                         </form>
+                                        <button onclick="closeDetail()"
+                                            class="mr-2 px-5 py-2 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-100">Cancelar</button>
                                     </div>
                                 </div>
                             </div>
@@ -806,7 +777,7 @@ $result = $conexion->query($query);
                     <!-- Aquí se cargarán los grupos con checkboxes -->
                 </div>
 
-                <div class="dashboard-modal-actions flex flex-wrap justify-end mt-6 gap-3">
+                <div class="flex justify-end mt-6 gap-3">
                     <button onclick="cerrarModalAnalisis()" class="px-4 py-2 bg-gray-300 rounded">Cancelar</button>
                     <button onclick="confirmarAnalisisMultiples()" class="px-4 py-2 bg-blue-600 text-white rounded">
                         Agregar Seleccionados
@@ -857,7 +828,7 @@ $result = $conexion->query($query);
                     </div>
 
                     <!-- Botones -->
-                    <div class="dashboard-modal-actions flex flex-wrap gap-4 justify-center">
+                    <div class="flex gap-4 justify-center">
                         <button onclick="guardarResultadosCuanti('pendiente')"
                             class="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">
                             Guardar como pendiente
@@ -911,7 +882,7 @@ $result = $conexion->query($query);
                     </div>
 
                     <!-- Botones -->
-                    <div class="dashboard-modal-actions flex flex-wrap gap-4 justify-center">
+                    <div class="flex gap-4 justify-center">
                         <button onclick="guardarResultados('pendiente')"
                             class="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">
                             Guardar como pendiente
@@ -966,7 +937,7 @@ $result = $conexion->query($query);
                     </div>
 
                     <!-- Botones -->
-                    <div class="dashboard-modal-actions flex flex-wrap gap-4 justify-center">
+                    <div class="flex gap-4 justify-center">
                         <button onclick="cerrarModalCompletar()"
                             class="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">
                             Cancelar
@@ -1022,7 +993,7 @@ $result = $conexion->query($query);
                     </div>
 
                     <!-- Botones -->
-                    <div class="dashboard-modal-actions flex flex-wrap gap-4 justify-center">
+                    <div class="flex gap-4 justify-center">
                         <button onclick="cerrarModalPendiente()"
                             class="px-6 py-3 bg-gray-200 text-gray-800 font-medium rounded-lg hover:bg-gray-300 transition">
                             Cancelar

@@ -449,7 +449,11 @@ if (!$conexion) {
             var api = tableTipoMuestra;
             var cont = $('#cardsContainerTM');
             cont.empty();
+            var info = api.page.info();
+            var rowIndex = 0;
             api.rows({ page: 'current' }).every(function() {
+                rowIndex++;
+                var numero = info.start + rowIndex;
                 var $row = $(this.node());
                 var cells = $row.find('td');
                 if (cells.length < 4) return;
@@ -461,7 +465,8 @@ if (!$conexion) {
                 var nomAttr = (nombre + '').replace(/"/g, '&quot;');
                 var descAttr = (desc + '').replace(/"/g, '&quot;');
                 var card = $('<div class="card-item" data-codigo="' + codAttr + '" data-nombre="' + nomAttr + '" data-descripcion="' + descAttr + '" data-loncod="' + (lonCod + '').replace(/"/g, '&quot;') + '">' +
-                    '<div class="card-codigo">' + $('<div>').text(codigo).html() + '</div>' +
+                    '<div class="card-numero-row">#' + numero + '</div>' +
+                    '<div class="card-row"><span class="label">codigo:</span> ' + $('<div>').text(codigo).html() + '</div>' +
                     '<div class="card-row"><span class="label">Nombre:</span> ' + $('<div>').text(nombre).html() + '</div>' +
                     '<div class="card-row"><span class="label">Descripción:</span> ' + $('<div>').text(desc).html() + '</div>' +
                     '<div class="card-row"><span class="label">Long. Código:</span> ' + $('<div>').text(lonCod).html() + '</div>' +

@@ -22,7 +22,7 @@ if (empty($_SESSION['active'])) {
     <title>Dashboard - Configuración de Correo</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../../css/output.css" rel="stylesheet">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">

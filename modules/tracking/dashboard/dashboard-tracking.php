@@ -23,7 +23,7 @@ if (!$conexion) {
     <title>Dashboard - tracking</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../../css/output.css" rel="stylesheet">
 
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">

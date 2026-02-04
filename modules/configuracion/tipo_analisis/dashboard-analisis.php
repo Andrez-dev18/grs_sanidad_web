@@ -28,7 +28,7 @@ if (!$conexion) {
     <title>Dashboard - Análisis</title>
     <link rel="stylesheet" href="../../../css/output.css">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../../css/output.css" rel="stylesheet">
       <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
@@ -405,7 +405,11 @@ if (!$conexion) {
                 var api = tableAnalisis;
                 var cont = $('#cardsContainerAna');
                 cont.empty();
+                var info = api.page.info();
+                var rowIndex = 0;
                 api.rows({ page: 'current' }).every(function() {
+                    rowIndex++;
+                    var numero = info.start + rowIndex;
                     var $row = $(this.node());
                     var cells = $row.find('td');
                     if (cells.length < 3) return;
@@ -416,7 +420,8 @@ if (!$conexion) {
                     var nomAttr = (nombre + '').replace(/"/g, '&quot;');
                     var enfAttr = (enfermedad + '').replace(/"/g, '&quot;');
                     var card = $('<div class="card-item" data-codigo="' + codAttr + '" data-nombre="' + nomAttr + '" data-enfermedad="' + enfAttr + '">' +
-                        '<div class="card-codigo">' + $('<div>').text(codigo).html() + '</div>' +
+                        '<div class="card-numero-row">#' + numero + '</div>' +
+                        '<div class="card-row"><span class="label">codigo:</span> ' + $('<div>').text(codigo).html() + '</div>' +
                         '<div class="card-row"><span class="label">Nombre:</span> ' + $('<div>').text(nombre).html() + '</div>' +
                         '<div class="card-row"><span class="label">Enfermedad:</span> ' + $('<div>').text(enfermedad).html() + '</div>' +
                         '<div class="card-acciones">' +

@@ -495,7 +495,11 @@ if (!$conexion) {
               var api = tableRespuesta;
               var cont = $('#cardsContainerResp');
               cont.empty();
+              var info = api.page.info();
+              var rowIndex = 0;
               api.rows({ page: 'current' }).every(function() {
+                  rowIndex++;
+                  var numero = info.start + rowIndex;
                   var $row = $(this.node());
                   var cells = $row.find('td');
                   if (cells.length < 2) return;
@@ -503,14 +507,14 @@ if (!$conexion) {
                   var nombre = $(cells[1]).text().trim();
                   var codAttr = (codigo + '').replace(/"/g, '&quot;');
                   var card = $('<div class="card-item" data-codigo="' + codAttr + '">' +
-                      '<div class="card-codigo">' + $('<div>').text(codigo).html() + '</div>' +
+                      '<div class="card-numero-row">#' + numero + '</div>' +
+                      '<div class="card-row"><span class="label">codigo:</span> ' + $('<div>').text(codigo).html() + '</div>' +
                       '<div class="card-row"><span class="label">Nombre:</span> ' + $('<div>').text(nombre).html() + '</div>' +
                       '<div class="card-acciones">' +
                       '<button type="button" class="btn-ver-resp-card p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition" title="Ver respuestas" data-codigo="' + codAttr + '"><i class="fa-solid fa-eye"></i> Ver respuestas</button>' +
                       '</div></div>');
                   cont.append(card);
               });
-              var info = api.page.info();
               var pagHtml = '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' +
                   '<div class="flex gap-2"><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="tableRespuesta && tableRespuesta.page(\'previous\').draw(false); renderizarTarjetasResp();">Anterior</button>' +
                   '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="tableRespuesta && tableRespuesta.page(\'next\').draw(false); renderizarTarjetasResp();">Siguiente</button></div>';

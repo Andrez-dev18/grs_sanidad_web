@@ -1,4 +1,4 @@
-﻿//###################################################
+//###################################################
 //BLOQUE PARA CARGAR SIDEBAR CON LAS SOLICITUDES
 //####################################################
 
@@ -36,7 +36,7 @@ function loadSidebar(page = 1) {
                 const btn = document.createElement("button");
                 // id único por codEnvio + pos
                 btn.id = `item-${row.codEnvio}-${row.posSolicitud}`;
-                btn.className = "w-full text-left p-3 rounded-md hover:bg-gray-50 transition border border-gray-200 hover:border-gray-100";
+                btn.className = "solicitud-card w-full text-left p-3 rounded-md hover:bg-gray-50 transition border border-gray-200 hover:border-gray-100";
 
                 btn.onclick = () => {
                     // resaltar visualmente

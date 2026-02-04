@@ -46,7 +46,7 @@ if ($codigoUsuario) {
     <title>Dashboard - Laboratorios</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../../css/output.css" rel="stylesheet">
 
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
@@ -443,7 +443,11 @@ if ($codigoUsuario) {
             cont.empty();
             var rolLab = ($('#idRolUserLab').attr('data-rol') || '').trim().toLowerCase();
             var puedeEliminar = (rolLab === 'admin');
+            var info = api.page.info();
+            var rowIndex = 0;
             api.rows({ page: 'current' }).every(function() {
+                rowIndex++;
+                var numero = info.start + rowIndex;
                 var row = this.node();
                 var $row = $(row);
                 var cells = $row.find('td');
@@ -457,7 +461,8 @@ if ($codigoUsuario) {
                     acciones += '<button type="button" class="btn-eliminar-card-lab p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition" title="Eliminar" data-codigo="' + $('<div>').text(codigo).html() + '"><i class="fa-solid fa-trash"></i></button>';
                 }
                 var card = $('<div class="card-item" data-codigo="' + codAttr + '" data-nombre="' + nomAttr + '">' +
-                    '<div class="card-codigo">' + $('<div>').text(codigo).html() + '</div>' +
+                    '<div class="card-numero-row">#' + numero + '</div>' +
+                    '<div class="card-row"><span class="label">codigo:</span> ' + $('<div>').text(codigo).html() + '</div>' +
                     '<div class="card-row"><span class="label">Nombre:</span> ' + $('<div>').text(nombre).html() + '</div>' +
                     '<div class="card-acciones">' + acciones + '</div></div>');
                 cont.append(card);

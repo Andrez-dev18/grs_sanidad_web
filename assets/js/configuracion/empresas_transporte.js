@@ -28,8 +28,9 @@ function renderizarTarjetasEmpTrans() {
         card.className = 'card-item';
         card.setAttribute('data-codigo', codigo);
         card.setAttribute('data-nombre', nombre);
+        var codEsc = (codigo + '').replace(/</g, '&lt;').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
         card.innerHTML = '<div class="card-numero-row">#' + idx + '</div>' +
-            '<div class="card-codigo">' + (codigo + '').replace(/</g, '&lt;') + '</div>' +
+            '<div class="card-row"><span class="label">codigo:</span> <span>' + codEsc + '</span></div>' +
             '<div class="card-row"><span class="label">Nombre:</span> <span>' + nomEsc + '</span></div>' +
             '<div class="card-acciones">' +
             '<button type="button" class="btn-editar-card-emptrans p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition" title="Editar"><i class="fa-solid fa-edit"></i></button>' +

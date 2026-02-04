@@ -1,10 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./*.html",       // HTML raíz
-    "./*php",
-    "./**/*.html",    // HTML en subcarpetas
-    "./js/**/*.js",   // Solo tu carpeta js
+    "./*.html",
+    "./*.php",
+    "./**/*.html",
+    "./**/*.php",
+    "./js/**/*.js",
   ],
   theme: {
     extend: {},

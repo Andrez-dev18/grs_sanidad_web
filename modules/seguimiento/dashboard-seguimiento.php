@@ -420,7 +420,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     <title>Dashboard - Resultado de lab</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../css/output.css" rel="stylesheet">
 
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
@@ -510,7 +510,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         .data-table th,
         .data-table td {
             padding: 0.75rem 1rem;
-            text-align: center;
+            text-align: left;
             font-size: 0.875rem;
             border-bottom: 1px solid #e5e7eb;
             white-space: nowrap;
@@ -581,6 +581,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             overflow-x: visible !important;
         }
 
+        /* Vista tarjetas (iconos) - mismo estilo que reportes */
+        .view-toggle-group {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        .view-toggle-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        .view-toggle-btn:hover {
+            background: #f3f4f6;
+        }
+        .view-toggle-btn.active {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border-color: #1d4ed8;
+        }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            padding: 0.5rem 0;
+        }
+        .card-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 1rem;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s;
+        }
+        .card-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .card-item .card-codigo {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+        }
+        .card-item .card-row {
+            font-size: 0.8rem;
+            color: #4b5563;
+            margin-bottom: 0.25rem;
+        }
+        .card-item .card-row span.label { color: #6b7280; }
+        .card-item .card-acciones {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #f3f4f6;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .card-item .card-acciones a,
+        .card-item .card-acciones button {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 0.375rem;
+        }
+        @media (max-width: 767px) {
+            #tablaSeguimientoWrapper .view-tarjetas-wrap { display: block; }
+            #tablaSeguimientoWrapper .view-lista-wrap { display: none; }
+            #tablaSeguimientoWrapper[data-vista="lista"] .view-tarjetas-wrap { display: none !important; }
+            #tablaSeguimientoWrapper[data-vista="lista"] .view-lista-wrap { display: block !important; }
+        }
+        @media (min-width: 768px) {
+            #tablaSeguimientoWrapper .view-lista-wrap { display: block; }
+            #tablaSeguimientoWrapper .view-tarjetas-wrap { display: none; }
+            #tablaSeguimientoWrapper[data-vista="iconos"] .view-lista-wrap { display: none !important; }
+            #tablaSeguimientoWrapper[data-vista="iconos"] .view-tarjetas-wrap { display: block !important; }
+        }
 
         /* Select2 estilo Tailwind */
         .select2-container .select2-selection--single {
@@ -610,14 +688,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 </head>
 
 <body class="bg-gray-50">
-    <div class="container mx-auto px-6 py-12">
+    <div class="w-full max-w-full py-4 px-4 sm:px-6 lg:px-8 box-border">
 
-        <!--  -->
-        <div id="" class="content-view">
-
-            <div class="form-container w-full">
-                <!-- CARD FILTROS PLEGABLE -->
-                <div class="mb-6 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <!-- CARD FILTROS PLEGABLE (mismo estilo que reportes) -->
+        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
 
                     <!-- HEADER -->
                     <button type="button" onclick="toggleFiltros()"
@@ -804,7 +878,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         </div>
 
                         <!-- ACCIONES -->
-                        <div class="dashboard-actions mt-8 mb-4 flex flex-wrap justify-end gap-4">
+                        <div class="dashboard-actions mt-6 flex flex-wrap justify-end gap-4">
 
                             <button type="button" id="btnFiltrar"
                                 class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
@@ -847,48 +921,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 }
                 ?>
 
-                <!-- Este <p> oculto guarda el rol para que JavaScript lo lea -->
-                <p id="idRolUser" data-rol="<?= htmlspecialchars($rol) ?>"></p>
+        <!-- Rol (oculto, para JS) -->
+        <p id="idRolUser" data-rol="<?= htmlspecialchars($rol) ?>" class="hidden"></p>
 
-                <!-- Tabla  -->
-                <div class="max-w-full mx-auto mt-6">
-                    <div id="tablaSeguimientoWrapper" class="border border-gray-300 rounded-2xl bg-white overflow-hidden p-4" data-vista-tabla-iconos data-vista="">
-                        <div class="view-toggle-group flex items-center gap-2 mb-4">
-                            <button type="button" class="view-toggle-btn active" id="btnViewTablaSeg" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
-                            <button type="button" class="view-toggle-btn" id="btnViewIconosSeg" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
-                        </div>
-                        <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasSeg">
-                            <div id="cardsControlsTopSeg" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
-                            <div id="cardsContainerSeg" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
-                            <div id="cardsPaginationSeg" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
-                        </div>
-                        <div class="view-lista-wrap table-wrapper">
-                            <table id="tablaResultados" class="data-table display" style="width:100%">
-                                <thead>
-                                    <tr>
-                                        <th class="">Cod. Envío</th>
-                                        <th class="">Fecha Envio</th>
-                                        <th class="">Nom. Lab</th>
-                                        <th class="">Nom. EmpTrans</th>
-                                        <th class="">Usuario Registrador</th>
-                                        <th class="">Usuario Responsable</th>
-                                        <th class="">Autorizado Por</th>
-                                        <th class="">Muestra</th>
-                                        <th class="">Analisis</th>
-                                        <th class="">Estado</th>
-                                        <th class="">Obs</th>
-                                        <th class="">Planificación</th>
-                                        <th class="">Detalle</th>
-                                        <th class="">Seguimiento</th>
-                                        <th class="">PDF</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
+        <!-- Tabla (mismo estilo que dashboard-reportes) -->
+        <div class="bg-white rounded-xl shadow-md p-5" id="tablaSeguimientoWrapper" data-vista-tabla-iconos data-vista="">
+            <div class="card-body p-0 mt-5">
+                <div class="view-toggle-group flex items-center gap-2 mb-4">
+                    <button type="button" class="view-toggle-btn active" id="btnViewTablaSeg" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                    <button type="button" class="view-toggle-btn" id="btnViewIconosSeg" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                </div>
+                <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasSeg">
+                    <div id="cardsControlsTopSeg" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
+                    <div id="cardsContainerSeg" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
+                    <div id="cardsPaginationSeg" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
+                </div>
+                <div class="view-lista-wrap" id="viewListaSeg">
+                    <div class="table-wrapper overflow-x-auto">
+                        <table id="tablaResultados" class="data-table display w-full text-sm border-collapse" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Cod. Envío</th>
+                                    <th>Fecha Envio</th>
+                                    <th>Nom. Lab</th>
+                                    <th>Nom. EmpTrans</th>
+                                    <th>U. Reg.</th>
+                                    <th>U. Resp.</th>
+                                    <th>Aut Por</th>
+                                    <th>Muestra</th>
+                                    <th>Analisis</th>
+                                    <th>Estado</th>
+                                    <th>Obs</th>
+                                    <th>Planificación</th>
+                                    <th>Detalle</th>
+                                    <th>Seguimiento</th>
+                                    <th>PDF</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
-
             </div>
         </div>
 
@@ -1762,10 +1835,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     }
                 }
                 ],
-                columnDefs: [{
-                    targets: '_all',
-                    className: 'px-6 py-4 text-sm text-gray-700'
-                }],
+                columnDefs: [
+                    { targets: '_all', className: 'px-6 py-4 text-sm text-gray-700' },
+                    { targets: [7, 8, 10, 11], visible: false }
+                ],
                 rowCallback: function (row, data) {
                     $(row).addClass('hover:bg-gray-50 transition');
                 },
@@ -1783,9 +1856,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             });
 
             function aplicarVisibilidadVistaSeg(vista) {
-                var esTabla = (vista === 'tabla');
+                var esLista = (vista === 'lista');
                 $('#tablaSeguimientoWrapper').attr('data-vista', vista);
-                if (esTabla) {
+                if (esLista) {
                     $('#viewTarjetasSeg').addClass('hidden').css('display', 'none');
                     $('#tablaSeguimientoWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
                 } else {
@@ -1798,13 +1871,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 var w = $(window).width();
                 var w$ = $('#tablaSeguimientoWrapper');
                 if (!w$.attr('data-vista')) {
-                    var vistaInicial = w < 768 ? 'iconos' : 'tabla';
+                    var vistaInicial = w < 768 ? 'iconos' : 'lista';
                     w$.attr('data-vista', vistaInicial);
-                    $('#btnViewTablaSeg').toggleClass('active', vistaInicial === 'tabla');
+                    $('#btnViewTablaSeg').toggleClass('active', vistaInicial === 'lista');
                     $('#btnViewIconosSeg').toggleClass('active', vistaInicial === 'iconos');
                     $('#cardsContainerSeg').attr('data-vista-cards', 'iconos');
                     aplicarVisibilidadVistaSeg(vistaInicial);
                 }
+            }
+            function formatearFechaDMY(val) {
+                if (!val) return '';
+                var d = new Date(val);
+                if (isNaN(d.getTime())) return val;
+                var day = ('0' + d.getDate()).slice(-2);
+                var month = ('0' + (d.getMonth() + 1)).slice(-2);
+                var year = d.getFullYear();
+                return day + '/' + month + '/' + year;
+            }
+            function escapeHtmlSeg(str) {
+                if (str == null || str === undefined) return '';
+                var div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
             }
             function renderizarTarjetasSeguimiento() {
                 if (!table) return;
@@ -1817,21 +1905,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     rowIndex++;
                     var numero = info.start + rowIndex;
                     var row = this.data();
-                    var cod = (row.codEnvio || '').replace(/"/g, '&quot;');
+                    var cod = escapeHtmlSeg(row.codEnvio || '');
+                    var codRaw = (row.codEnvio || '').replace(/'/g, "\\'");
+                    var fec = formatearFechaDMY(row.fecEnvio);
                     var card = '<div class="card-item">' +
                         '<div class="card-numero-row">#' + numero + '</div>' +
                         '<div class="card-contenido">' +
-                        '<div class="card-codigo">' + $('<div>').text(row.codEnvio || '').html() + '</div>' +
+                        '<div class="card-codigo">' + cod + '</div>' +
                         '<div class="card-campos">' +
-                        '<div class="card-row"><span class="label">Fecha:</span> ' + $('<div>').text(row.fecEnvio || '').html() + '</div>' +
-                        '<div class="card-row"><span class="label">Lab:</span> ' + $('<div>').text(row.nomLab || '').html() + '</div>' +
-                        '<div class="card-row"><span class="label">Emp.Trans:</span> ' + $('<div>').text(row.nomEmpTrans || '').html() + '</div>' +
-                        '<div class="card-row"><span class="label">Estado:</span> ' + $('<div>').text(row.estado || '').html() + '</div>' +
+                        '<div class="card-row"><span class="label">Fecha:</span> ' + fec + '</div>' +
+                        '<div class="card-row"><span class="label">Lab:</span> ' + escapeHtmlSeg(row.nomLab || '') + '</div>' +
+                        '<div class="card-row"><span class="label">Emp.Trans:</span> ' + escapeHtmlSeg(row.nomEmpTrans || '') + '</div>' +
+                        '<div class="card-row"><span class="label">U.Reg:</span> ' + escapeHtmlSeg(row.usuarioRegistrador || '') + '</div>' +
+                        '<div class="card-row"><span class="label">U.Resp:</span> ' + escapeHtmlSeg(row.usuarioResponsable || '') + '</div>' +
+                        '<div class="card-row"><span class="label">Aut Por:</span> ' + escapeHtmlSeg(row.autorizadoPor || '') + '</div>' +
+                        '<div class="card-row"><span class="label">Estado:</span> ' + escapeHtmlSeg(row.estado || '') + '</div>' +
                         '</div>' +
                         '<div class="card-acciones">' +
-                        '<button type="button" class="text-blue-600 hover:text-blue-800 transition" title="Detalle" onclick="abrirModalDetalle(\'' + (row.codEnvio || '').replace(/'/g, "\\'") + '\')"><i class="fas fa-eye"></i></button>' +
-                        '<button type="button" class="text-indigo-600 hover:text-indigo-800 transition" title="Editar" onclick="verificarYEditar(\'' + (row.codEnvio || '').replace(/'/g, "\\'") + '\')"><i class="fa-solid fa-edit"></i></button>' +
-                        '<button type="button" class="text-red-600 hover:text-red-800 transition" title="PDF" onclick="generarReportePDF(\'' + (row.codEnvio || '').replace(/'/g, "\\'") + '\')"><i class="fa-solid fa-file-pdf"></i></button>' +
+                        '<button type="button" class="text-blue-600 hover:text-blue-800 transition" title="Detalle" onclick="verDetalle(\'' + codRaw + '\')"><i class="fas fa-eye"></i></button>' +
+                        '<button type="button" class="text-amber-600 hover:text-amber-800 transition" title="Historial" onclick="verHistorial(\'' + codRaw + '\')"><i class="fa-solid fa-clock-rotate-left"></i></button>' +
+                        '<button type="button" class="text-indigo-600 hover:text-indigo-800 transition" title="Editar" onclick="verificarYEditar(\'' + codRaw + '\')"><i class="fa-solid fa-edit"></i></button>' +
+                        '<button type="button" class="text-red-600 hover:text-red-800 transition" title="PDF" onclick="generarReportePDF(\'' + codRaw + '\')"><i class="fa-solid fa-file-pdf"></i></button>' +
                         '</div></div></div>';
                     cont.append(card);
                 });
@@ -1856,7 +1950,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             }
             actualizarVistaInicialSeg();
             $('#btnViewTablaSeg').on('click', function () {
-                aplicarVisibilidadVistaSeg('tabla');
+                aplicarVisibilidadVistaSeg('lista');
                 $('#btnViewTablaSeg').addClass('active');
                 $('#btnViewIconosSeg').removeClass('active');
             });

@@ -48,7 +48,7 @@ if ($codigoUsuario) {
     <title>Tracking</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../../css/output.css" rel="stylesheet">
     <!-- DataTables -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
