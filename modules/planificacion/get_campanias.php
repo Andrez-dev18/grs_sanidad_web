@@ -5,11 +5,7 @@ if (!$_SESSION['active'])
 include '../../../conexion_grs_joya/conexion.php';
 $conn = conectar_joya();
 $g = mysqli_real_escape_string($conn, $_GET['granja']);
-// Campaña: últimos 3 dígitos del centro de costo (tcencos = granja+campaña)
-$sql = "SELECT DISTINCT RIGHT(tcencos,3) AS campania 
-        FROM cargapollo_proyeccion 
-        WHERE LEFT(tcencos,3) = '$g' 
-        ORDER BY campania";
+$sql = "SELECT DISTINCT tcodint AS campania FROM regcencosgalpones WHERE tcencos = '$g'  ORDER BY tcodint";
 $res = mysqli_query($conn, $sql);
 $data = [];
 while ($row = mysqli_fetch_assoc($res))

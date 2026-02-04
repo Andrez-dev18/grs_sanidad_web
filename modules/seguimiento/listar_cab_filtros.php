@@ -138,8 +138,7 @@ $dataQuery = mysqli_query($conexion, "
         c.estado,
         
         GROUP_CONCAT(DISTINCT d.nomMuestra ORDER BY d.posSolicitud SEPARATOR ', ') as muestras,
-        GROUP_CONCAT(DISTINCT d.nomAnalisis ORDER BY d.posSolicitud SEPARATOR ', ') as analisis,
-        (SELECT COUNT(*) FROM san_plan_link_muestra lm WHERE lm.codEnvio = c.codEnvio) as enlace_plan
+        GROUP_CONCAT(DISTINCT d.nomAnalisis ORDER BY d.posSolicitud SEPARATOR ', ') as analisis
         
     FROM san_fact_solicitud_cab c
     LEFT JOIN san_fact_solicitud_det d ON c.codEnvio = d.codEnvio
@@ -151,7 +150,6 @@ $dataQuery = mysqli_query($conexion, "
 
 $data = [];
 while ($row = mysqli_fetch_assoc($dataQuery)) {
-    $row['enlace_plan'] = !empty($row['enlace_plan']) && (int)$row['enlace_plan'] > 0;
     $data[] = $row;
 }
 

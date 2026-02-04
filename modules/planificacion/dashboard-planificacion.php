@@ -26,8 +26,6 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- DataTables -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-  <link rel="stylesheet" href="../../css/dashboard-vista-tabla-iconos.css">
-  <link rel="stylesheet" href="../../css/dashboard-responsive.css">
   <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
@@ -559,10 +557,7 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
             </select>
           </div>
         </div>
-        <div class="d-flex justify-content-end gap-2 mt-3">
-          <button type="button" class="btn-outline" id="btnLimpiarFiltrosPlan">
-            <i class="fas fa-eraser"></i> Limpiar filtros
-          </button>
+        <div class="d-flex justify-content-end mt-3">
           <button class="btn-primary" id="btnAplicar">
             <i class="fas fa-filter"></i> Aplicar
           </button>
@@ -582,30 +577,32 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
 
     <!-- TABLA -->
     <div class="card">
-      <div class="card-body p-0" id="tablaPlanificacionWrapper" data-vista-tabla-iconos data-vista="">
-        <div class="view-toggle-group d-flex align-items-center gap-2 p-3 border-bottom">
-          <button type="button" class="view-toggle-btn active" id="btnViewTablaPlan" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
-          <button type="button" class="view-toggle-btn" id="btnViewIconosPlan" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
-          <h5 class="mb-0 ms-3">Planificación de Muestreo</h5>
-        </div>
-        <div class="view-tarjetas-wrap p-3 overflow-x-hidden" id="viewTarjetasPlan">
-          <div id="cardsControlsTopPlan" class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3 small text-muted border-bottom pb-3"></div>
-          <div id="cardsContainerPlan" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
-          <div id="cardsPaginationPlan" class="d-flex flex-wrap align-items-center justify-content-between gap-3 mt-3 small text-muted border-top pt-3"></div>
-        </div>
-        <div class="view-lista-wrap table-wrapper">
+      <div class="card-body p-0">
+        <div class="table-wrapper">
+          <div class="d-flex align-items-center justify-content-between p-3 border-bottom">
+            <h5 class="mb-0">Planificación de Muestreo</h5>
+            <button class="btn-secondary" id="btnVerHorario" data-bs-toggle="modal" data-bs-target="#modalCalendario">
+              <i class="fas fa-calendar-alt"></i> Ver en Calendario
+            </button>
+          </div>
           <table id="tablaPlanificacion" class="data-table">
             <thead>
               <tr>
-                <th>Fecha programación</th>
-                <th>Periodo</th>
-                <th>Usuario</th>
-                <th>Ver</th>
+                <th>Fecha</th>
+                <th>Granja</th>
+                <th>Nombre</th>
+                <th>Campaña</th>
+                <th>Galpón</th>
+                <th>Edad</th>
+                <th>Análisis</th>
               </tr>
             </thead>
             <tbody></tbody>
           </table>
+
         </div>
+
+
       </div>
     </div>
 
@@ -636,7 +633,7 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
     </div>
   </div>
 
-  <!-- MODAL DE DETALLES (evento calendario) -->
+  <!-- MODAL DE DETALLES -->
   <div class="modal fade" id="modalDetallesEvento" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
@@ -645,24 +642,6 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body" id="detallesContenido">
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-outline" data-bs-dismiss="modal">Cerrar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL DETALLES PLAN (san_plan_det por cabId) -->
-  <div class="modal fade" id="modalDetallesPlanCab" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Detalles de planificación - <span id="modalDetallesPlanCabTitle">Plan</span></h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body overflow-auto" id="modalDetallesPlanCabBody" style="max-height: 70vh;">
-          <p class="text-muted">Cargando...</p>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-outline" data-bs-dismiss="modal">Cerrar</button>
@@ -1020,7 +999,7 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
         "processing": true,
         "serverSide": true,
         "ajax": {
-          "url": "listar_plan_cab.php",
+          "url": "listar_planificacion.php",
           "data": function (d) {
             d.fecha_desde = $('#fechaDesde').val();
             d.fecha_hasta = $('#fechaHasta').val();
@@ -1031,169 +1010,33 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
           }
         },
         "columns": [
-          {
-            "data": "fecProgramacion",
+          { 
+            "data": "fecha",
             "render": function(data, type, row) {
               if (data) {
                 const fecha = new Date(data);
                 const dia = String(fecha.getDate()).padStart(2, '0');
                 const mes = String(fecha.getMonth() + 1).padStart(2, '0');
                 const anio = fecha.getFullYear();
-                return dia + '/' + mes + '/' + anio;
+                return `${dia}/${mes}/${anio}`;
               }
-              return data || '–';
+              return data;
             }
           },
-          { "data": "periodo", "defaultContent": "–" },
-          { "data": "usuarioRegistrador", "defaultContent": "–" },
-          {
-            "data": "cabId",
-            "orderable": false,
-            "searchable": false,
-            "render": function(data, type, row) {
-              if (!data) return '–';
-              return '<button type="button" class="btn btn-sm btn-primary btn-ver-plan" data-cab-id="' + encodeURIComponent(data) + '" title="Ver detalles"><i class="fas fa-eye"></i> Ver</button>';
-            }
-          }
+          { "data": "granja" },
+          { "data": "nombreGranja" },
+          { "data": "campania" },
+          { "data": "galpon" },
+          { "data": "edad" },
+          { "data": "analisisResumen" }
         ],
         "pageLength": 25,
         "language": {
-          "url": "../../assets/i18n/es-ES.json"
-        },
-        "drawCallback": function () {
-          if (typeof renderizarTarjetasPlan === 'function') renderizarTarjetasPlan();
+          "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
         }
       });
-
-      function actualizarVistaInicialPlan() {
-        var w = $(window).width();
-        var w$ = $('#tablaPlanificacionWrapper');
-        if (!w$.attr('data-vista')) {
-          var vistaInicial = w < 768 ? 'iconos' : 'tabla';
-          w$.attr('data-vista', vistaInicial);
-          $('#btnViewTablaPlan').toggleClass('active', vistaInicial === 'tabla');
-          $('#btnViewIconosPlan').toggleClass('active', vistaInicial === 'iconos');
-          $('#cardsContainerPlan').attr('data-vista-cards', 'iconos');
-          aplicarVisibilidadVistaPlan(vistaInicial);
-        }
-      }
-      function aplicarVisibilidadVistaPlan(vista) {
-        var esTabla = (vista === 'tabla');
-        $('#tablaPlanificacionWrapper').attr('data-vista', vista);
-        if (esTabla) {
-          $('#viewTarjetasPlan').addClass('hidden').css('display', 'none');
-          $('#tablaPlanificacionWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
-        } else {
-          $('#tablaPlanificacionWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
-          $('#viewTarjetasPlan').removeClass('hidden').css('display', 'block');
-          $('#cardsContainerPlan').attr('data-vista-cards', 'iconos');
-        }
-      }
-      function renderizarTarjetasPlan() {
-        if (!tablaPlanificacion) return;
-        var api = tablaPlanificacion;
-        var cont = $('#cardsContainerPlan');
-        cont.empty();
-        var info = api.page.info();
-        var rowIndex = 0;
-        api.rows({ page: 'current' }).every(function () {
-          rowIndex++;
-          var numero = info.start + rowIndex;
-          var row = this.data();
-          var fecha = row.fecProgramacion ? (function(d) { var x = new Date(d); return (String(x.getDate()).padStart(2,'0') + '/' + String(x.getMonth()+1).padStart(2,'0') + '/' + x.getFullYear()); })(row.fecProgramacion) : '';
-          var cabId = (row.cabId || '').replace(/"/g, '&quot;');
-          var card = '<div class="card-item">' +
-            '<div class="card-numero-row">#' + numero + '</div>' +
-            '<div class="card-contenido">' +
-            '<div class="card-codigo">' + $('<div>').text(row.periodo || 'Plan ' + (row.cabId || '')).html() + '</div>' +
-            '<div class="card-campos">' +
-            '<div class="card-row"><span class="label">Fecha programación:</span> ' + $('<div>').text(fecha).html() + '</div>' +
-            '<div class="card-row"><span class="label">Usuario:</span> ' + $('<div>').text(row.usuarioRegistrador || '–').html() + '</div>' +
-            '</div>' +
-            '<div class="card-acciones">' +
-            '<button type="button" class="btn btn-sm btn-primary btn-ver-plan" data-cab-id="' + cabId + '" title="Ver detalles"><i class="fas fa-eye"></i> Ver</button>' +
-            '</div></div></div>';
-          cont.append(card);
-        });
-        var len = api.page.len();
-        var lengthOptions = [10, 25, 50, 100];
-        var lengthSelect = '<label class="d-inline-flex align-items-center gap-2"><span>Mostrar</span><select class="cards-length-select form-select form-select-sm" style="width:auto">' +
-          lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
-          '</select><span>registros</span></label>';
-        var navBtns = '<div class="d-flex gap-2">' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary ' + (info.page === 0 ? 'disabled' : '') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaPlanificacion\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
-          '<button type="button" class="btn btn-sm btn-outline-secondary ' + (info.page >= info.pages - 1 ? 'disabled' : '') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaPlanificacion\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
-          '</div>';
-        var controlsHtml = '<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 w-100">' + lengthSelect + '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' + navBtns + '</div>';
-        $('#cardsControlsTopPlan').html(controlsHtml);
-        $('#cardsPaginationPlan').html(controlsHtml);
-        $('#cardsControlsTopPlan .cards-length-select, #cardsPaginationPlan .cards-length-select').on('change', function() {
-          var val = parseInt($(this).val(), 10);
-          if (tablaPlanificacion) tablaPlanificacion.page.len(val).draw(false);
-        });
-      }
-      actualizarVistaInicialPlan();
-      $('#btnViewTablaPlan').on('click', function () {
-        aplicarVisibilidadVistaPlan('tabla');
-        $('#btnViewTablaPlan').addClass('active');
-        $('#btnViewIconosPlan').removeClass('active');
-      });
-      $('#btnViewIconosPlan').on('click', function () {
-        aplicarVisibilidadVistaPlan('iconos');
-        $('#btnViewIconosPlan').addClass('active');
-        $('#btnViewTablaPlan').removeClass('active');
-      });
-      $(window).on('resize', function () {
-        if (!$('#tablaPlanificacionWrapper').attr('data-vista')) return;
-        actualizarVistaInicialPlan();
-      });
-
-      $(document).on('click', '.btn-ver-plan', function () {
-        var cabId = $(this).attr('data-cab-id') || $(this).data('cab-id');
-        if (cabId) abrirModalDetallesPlanCab(cabId);
-      });
-
-      function abrirModalDetallesPlanCab(cabId) {
-        var $modal = $('#modalDetallesPlanCab');
-        var $body = $('#modalDetallesPlanCabBody');
-        var $title = $('#modalDetallesPlanCabTitle');
-        $title.text('Plan #' + cabId);
-        $body.html('<p class="text-muted">Cargando detalles...</p>');
-        $modal.modal('show');
-        fetch('get_plan_det_by_cab.php?cabId=' + encodeURIComponent(cabId))
-          .then(function (r) { return r.json(); })
-          .then(function (data) {
-            var list = (data && data.data) ? data.data : [];
-            if (list.length === 0) {
-              $body.html('<p class="text-muted">No hay registros de detalle para esta planificación.</p>');
-              return;
-            }
-            var html = '<div class="table-responsive"><table class="table table-sm table-bordered table-hover"><thead class="table-light"><tr>' +
-              '<th>Cronograma</th><th>Granja</th><th>Campaña</th><th>Galpón</th><th>Edad</th><th>Ref.</th><th>Fecha toma</th><th>Muestra</th><th>Destino</th><th>Estado</th><th>Observación</th><th>Enlaces muestra</th><th>Enlaces necropsia</th></tr></thead><tbody>';
-            list.forEach(function (d) {
-              var fecToma = d.fecToma ? (function(s) { var x = new Date(s); return x.getDate() + '/' + (x.getMonth()+1) + '/' + x.getFullYear(); })(d.fecToma) : '–';
-              var fecProg = d.fecProgramacion ? (function(s) { var x = new Date(s); return x.getDate() + '/' + (x.getMonth()+1) + '/' + x.getFullYear(); })(d.fecProgramacion) : '–';
-              html += '<tr><td>' + (d.nomCronograma || '–') + '</td><td>' + (d.nomGranja || d.granja || '–') + '</td><td>' + (d.campania || '–') + '</td><td>' + (d.galpon || '–') + '</td><td>' + (d.edad || '–') + '</td><td>' + (d.codRef || '–') + '</td><td>' + fecToma + '</td><td>' + (d.nomMuestra || '–') + '</td><td>' + (d.nomDestino || '–') + '</td><td>' + (d.estado || '–') + '</td><td>' + (d.observacion || '–') + '</td><td>' + (d.enlaces_muestra || '–') + '</td><td>' + (d.enlaces_necropsia || '–') + '</td></tr>';
-            });
-            html += '</tbody></table></div>';
-            $body.html(html);
-          })
-          .catch(function () {
-            $body.html('<p class="text-danger">Error al cargar los detalles.</p>');
-          });
-      }
 
       $('#btnAplicar').on('click', () => tablaPlanificacion.ajax.reload());
-
-      $('#btnLimpiarFiltrosPlan').on('click', function () {
-        $('#fechaDesde').val('');
-        $('#fechaHasta').val('');
-        $('#filtroGranja').val('');
-        $('#filtroCampania').val('');
-        $('#filtroGalpon').val('');
-        $('#filtroEdad').val('');
-        tablaPlanificacion.ajax.reload();
-      });
 
       $('#selectAllEdades').on('change', function () {
         $('#edadesPlan option').prop('selected', this.checked);

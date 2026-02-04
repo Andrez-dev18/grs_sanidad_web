@@ -2,6 +2,10 @@
 header('Content-Type: application/json');
 include_once '../../../conexion_grs_joya/conexion.php';
 $conn = conectar_joya();
+if (!$conn) {
+    echo json_encode(['draw' => intval($_POST['draw'] ?? 0), 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Error de conexión']);
+    exit;
+}
 
 $draw = intval($_POST['draw']);
 $start = intval($_POST['start']);
@@ -66,6 +70,10 @@ if (!empty($granja_filtro)) {
 // Total lotes únicos (sin filtro)
 $total_sql = "SELECT COUNT(DISTINCT tgranja, tnumreg, tfectra) AS total FROM t_regnecropsia";
 $total_stmt = $conn->prepare($total_sql);
+if (!$total_stmt) {
+    echo json_encode(['draw' => $draw, 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Error SQL (total): ' . $conn->error]);
+    exit;
+}
 $total_stmt->execute();
 $total = $total_stmt->get_result()->fetch_assoc()['total'];
 $total_stmt->close();
@@ -75,15 +83,18 @@ $filtered = $total;
 if (!empty($where)) {
     $filtered_sql = "SELECT COUNT(DISTINCT tgranja, tnumreg, tfectra) AS total FROM t_regnecropsia WHERE " . implode(' AND ', $where);
     $filtered_stmt = $conn->prepare($filtered_sql);
+    if (!$filtered_stmt) {
+        echo json_encode(['draw' => $draw, 'recordsTotal' => $total, 'recordsFiltered' => 0, 'data' => [], 'error' => 'Error SQL (filtrado): ' . $conn->error]);
+        exit;
+    }
     $filtered_stmt->bind_param($types, ...$params);
     $filtered_stmt->execute();
     $filtered = $filtered_stmt->get_result()->fetch_assoc()['total'];
     $filtered_stmt->close();
 }
 
-// Consulta lotes únicos (cabeceras) con indicador de enlace planificación
-$sql = "SELECT DISTINCT r.tgranja, r.tnumreg, r.tfectra, r.tcencos, r.tedad, r.tgalpon, r.tuser, r.tdate, r.ttime,
-        (SELECT COUNT(*) FROM san_plan_link_necropsia ln WHERE ln.tgranja = r.tgranja AND ln.tfectra = r.tfectra AND ln.tnumreg = r.tnumreg) AS enlace_plan
+// Consulta lotes únicos (cabeceras)
+$sql = "SELECT DISTINCT r.tgranja, r.tnumreg, r.tfectra, r.tcencos, r.tedad, r.tgalpon, r.tuser, r.tdate, r.ttime
         FROM t_regnecropsia r";
 
 if (!empty($where)) {
@@ -108,6 +119,10 @@ $params[] = $start;
 $types .= 'ii';
 
 $stmt = $conn->prepare($sql);
+if (!$stmt) {
+    echo json_encode(['draw' => $draw, 'recordsTotal' => $total, 'recordsFiltered' => $filtered, 'data' => [], 'error' => 'Error SQL (listado): ' . $conn->error]);
+    exit;
+}
 if ($types) $stmt->bind_param($types, ...$params);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -134,8 +149,6 @@ while ($row = $result->fetch_assoc()) {
         $nombre = trim(substr($nombre, 0, strpos($nombre, 'C=')));
     }
     
-    $enlacePlan = !empty($row['enlace_plan']) && (int)$row['enlace_plan'] > 0;
-
     $data[] = [
         'counter' => $counter++,
         'tgranja' => $row['tgranja'],
@@ -150,8 +163,7 @@ while ($row = $result->fetch_assoc()) {
         'tfectra_raw' => $row['tfectra'], // Formato Y-m-d para editar
         'tuser' => $row['tuser'],
         'tdate' => $row['tdate'],
-        'fecha_registro' => $fechaRegistro,
-        'enlace_plan' => $enlacePlan
+        'fecha_registro' => $fechaRegistro
     ];
 }
 

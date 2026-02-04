@@ -157,23 +157,6 @@ if ($insertadas > 0) {
     }
 }
 
-// === ENLAZAR CON PLANIFICACIÓN (si aplica) ===
-if ($planId !== '') {
-    $linkId = generar_uuid_v4();
-    $usuarioEnlace = $tuser;
-    $usuarioTransferencia = $tuser;
-
-    // san_plan_link_necropsia usa detId (referencia a san_plan_det)
-    $sqlLink = "INSERT INTO san_plan_link_necropsia (id, detId, tgranja, tgalpon, tfectra, tnumreg, usuarioRegistrador, usuarioTransferencia) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    $stmtLink = $conn->prepare($sqlLink);
-    if ($stmtLink) {
-        $stmtLink->bind_param("sssssiss", $linkId, $planId, $granja, $galpon, $fectra, $numreg, $usuarioEnlace, $usuarioTransferencia);
-        $stmtLink->execute();
-        $stmtLink->close();
-        $conn->query("UPDATE san_plan_det SET estado = 'EJECUTADO' WHERE id = '$planId' AND estado = 'PLANIFICADO'");
-    }
-}
-
 // === PROCESAR IMÁGENES (hasta 3 por nivel) ===
 $imagenesGuardadas = 0;
 

@@ -952,7 +952,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                     <th>Analisis</th>
                                     <th>Estado</th>
                                     <th>Obs</th>
-                                    <th>Planificación</th>
                                     <th>Detalle</th>
                                     <th>Seguimiento</th>
                                     <th>PDF</th>
@@ -1782,17 +1781,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         return (data === null || data === undefined || data.trim() === '') ?
                             '<span class="text-gray-400 italic">N/A</span>' :
                             data;
-                    }
-                },
-                {
-                    data: 'enlace_plan',
-                    className: 'text-center',
-                    orderable: false,
-                    render: function (data, type, row) {
-                        if (row.enlace_plan) {
-                            return '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800" title="Enlazado con planificación"><i class="fas fa-link mr-1"></i>Enlazado</span>';
-                        }
-                        return '<span class="text-gray-400 text-xs">-</span>';
                     }
                 },
                 {

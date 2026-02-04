@@ -5,11 +5,7 @@ if (!$_SESSION['active'])
 include '../../../conexion_grs_joya/conexion.php';
 $conn = conectar_joya();
 $g = mysqli_real_escape_string($conn, $_GET['granja']);
-// Galpón: código interno (tcodint) asociado a la granja (3 dígitos)
-$sql = "SELECT DISTINCT tcodint AS galpon 
-        FROM regcencosgalpones 
-        WHERE tcencos = '$g' 
-        ORDER BY galpon";
+$sql = "SELECT DISTINCT RIGHT(tcencos,3) AS galpon FROM cargapollo_proyeccion WHERE LEFT(tcencos,3) = '$g' ORDER BY galpon";
 $res = mysqli_query($conn, $sql);
 $data = [];
 while ($row = mysqli_fetch_assoc($res))

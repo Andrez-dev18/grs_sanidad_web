@@ -99,9 +99,8 @@ try {
         if ($resNormal) {
             while ($combo = mysqli_fetch_assoc($resNormal)) {
                 $granja = $combo['granja'];
-                // Formato codRef: Granja(3) + Campaña(3) + Galpón(2) + Edad(2)
-                $campania = str_pad($combo['campania'], 3, '0', STR_PAD_LEFT);
-                $galpon = str_pad($combo['galpon'], 2, '0', STR_PAD_LEFT);
+                $galpon = $combo['campania'];
+                $campania = str_pad($combo['galpon'], 2, '0', STR_PAD_LEFT);
                 $edad = str_pad($combo['edad'], 2, '0', STR_PAD_LEFT);
                 $fecha = $combo['fecha'];
                 $codRef = $granja . $campania . $galpon . $edad;
@@ -133,9 +132,8 @@ try {
         if ($resBebe) {
             while ($combo = mysqli_fetch_assoc($resBebe)) {
                 $granja = $combo['granja'];
-                // Formato codRef: Granja(3) + Campaña(3) + Galpón(2) + Edad(2)
-                $campania = str_pad($combo['campania'], 3, '0', STR_PAD_LEFT);
-                $galpon = str_pad($combo['galpon'], 2, '0', STR_PAD_LEFT);
+                $galpon = $combo['campania'];
+                $campania = str_pad($combo['galpon'], 2, '0', STR_PAD_LEFT);
                 $edad = '00';
                 $fecha = $combo['fecha'];
                 $codRef = $granja . $campania . $galpon . $edad;
