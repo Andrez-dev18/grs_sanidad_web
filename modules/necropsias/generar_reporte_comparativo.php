@@ -4,7 +4,6 @@ ini_set('display_errors', 1);
 ini_set('log_errors', 1);
 
 date_default_timezone_set('America/Lima');
-// Zona horaria explícita para mostrar hora local en cabecera PDF
 $tzLima = new DateTimeZone('America/Lima');
 
 
@@ -51,12 +50,12 @@ if (is_string($galpones) && $galpones !== 'todos') {
     $galpones = explode(',', $galpones);
 }
 
-// PARES tgranja|tgalpon (para filtrar combinación exacta)
+
 $galponesParesArray = [];
 if (is_string($galpones_pares) && trim($galpones_pares) !== '') {
     $rawPairs = array_filter(array_map('trim', explode(',', $galpones_pares)));
     foreach ($rawPairs as $pair) {
-        // Formato esperado: 123456|12
+       
         $parts = explode('|', $pair, 2);
         if (count($parts) === 2) {
             $granja = trim($parts[0]);
@@ -150,9 +149,7 @@ while ($row = $result->fetch_assoc()) {
         continue;
     }
     
-    // Asegurar que tgalpon y tedad estén presentes
-    if (!isset($row['tgalpon']) || !isset($row['tedad'])) {
-        // Si no están en el registro, usar los valores tal cual vienen de la BD
+    if (!isset($row['tgalpon']) || !isset($row['tedad'])) {        
         $row['tgalpon'] = $galpon;
         $row['tedad'] = $row['tedad'] ?? '0';
     }
@@ -220,12 +217,9 @@ if (isset($_GET['check']) && $_GET['check'] == '1') {
     exit;
 }
 
-// Agrupar datos por BLOQUE (tdate, tfectra, tnumreg, tgranja, tcampania, tedad, tgalpon)
-// Cada bloque representa una columna (% y Obs) en el reporte
 $bloques = [];
 $cencosUnicos = [];
 foreach ($registros as $reg) {
-    // Clave del bloque: todos los campos que lo definen
     $keyBloque = $reg['tdate'] . '_' . $reg['tfectra'] . '_' . $reg['tnumreg'] . '_' . 
                  $reg['tgranja'] . '_' . ($reg['tcampania'] ?? '') . '_' . 
                  $reg['tedad'] . '_' . $reg['tgalpon'];
@@ -244,31 +238,27 @@ foreach ($registros as $reg) {
         ];
     }
     $bloques[$keyBloque]['registros'][] = $reg;
-    
-    // Agrupar cencos únicos
+
     if (!isset($cencosUnicos[$reg['tcencos']])) {
         $cencosUnicos[$reg['tcencos']] = $reg['tgranja'];
     }
 }
 
-// Determinar si es comparativo entre cencos (más de un cenco)
+
 $esComparativoCencos = count($cencosUnicos) > 1;
 
-// Agrupar bloques directamente por CENCO
-$galponesUnicos = []; // Para la leyenda: galpones únicos con su edad por CENCO
-$galponesPorCenco = []; // Estructura: [cenco => ['granja' => ..., 'bloques' => [keyBloque1, keyBloque2, ...]]]
+$galponesUnicos = []; 
+$galponesPorCenco = []; 
 foreach ($bloques as $keyBloque => $bloque) {
     $galponKey = $bloque['tgalpon'];
     $cenco = $bloque['tcencos'];
     
-    // Filtrar galpones sin número o con 0
     if (empty($galponKey) || $galponKey == '0') {
         continue;
     }
     
     $edadGalpon = $bloque['tedad'] ?? '0';
     
-    // Agrupar galpones únicos para la leyenda (por CENCO)
     $keyLeyenda = $cenco . '_' . $galponKey;
     if (!isset($galponesUnicos[$keyLeyenda])) {
         $galponesUnicos[$keyLeyenda] = [
@@ -278,30 +268,26 @@ foreach ($bloques as $keyBloque => $bloque) {
             'tedad' => $edadGalpon
         ];
     } else {
-        // Si la edad actual es 0 o vacía y la nueva no lo es, actualizar
         if (($galponesUnicos[$keyLeyenda]['tedad'] == '0' || empty($galponesUnicos[$keyLeyenda]['tedad'])) 
             && $edadGalpon != '0' && !empty($edadGalpon)) {
             $galponesUnicos[$keyLeyenda]['tedad'] = $edadGalpon;
         }
     }
     
-    // Agrupar bloques directamente por CENCO
     if (!isset($galponesPorCenco[$cenco])) {
         $galponesPorCenco[$cenco] = [
             'granja' => $bloque['tgranja'],
-            'bloques' => [] // Lista de bloques (claves) para este CENCO
+            'bloques' => [] 
         ];
     }
     
-    // Agregar bloque si no existe
     if (!in_array($keyBloque, $galponesPorCenco[$cenco]['bloques'])) {
         $galponesPorCenco[$cenco]['bloques'][] = $keyBloque;
     }
 }
-// Ordenar galpones
+
 ksort($galponesUnicos);
 
-// Generar reporte según formato
 if ($formato === 'excel') {
     _generarExcel($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComparativoCencos, $todosNiveles, $galponesUnicos, $galponesPorCenco);
 } else {
@@ -316,20 +302,19 @@ function _generarPDF($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComp
 
     
     try {
-        // Evitar que cualquier Notice/Warning (o algún echo accidental) se mezcle con la salida binaria del PDF.
-        // Esto es especialmente importante en servidores con display_errors=On, donde un Notice rompe el PDF.
+       
         $oldDisplayErrors = ini_get('display_errors');
         $oldErrorReporting = error_reporting();
         ini_set('display_errors', '0');
-        // Suprimir warnings/notices durante la generación del PDF (mPDF 8.0 puede emitir Notices en PHP 8.x)
+       
         error_reporting($oldErrorReporting & ~E_NOTICE & ~E_WARNING);
 
-        // Buffer para poder limpiar cualquier salida previa antes de enviar el PDF
+      
         if (ob_get_level() === 0) {
             ob_start();
         }
 
-        // Asegurar tempDir existente y escribible
+       
         $tempDir = __DIR__ . '/../../pdf_tmp';
         if (!is_dir($tempDir)) {
             @mkdir($tempDir, 0775, true);
@@ -351,10 +336,6 @@ function _generarPDF($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComp
             'tempDir' => $tempDir,
         ]);
 
-        // Header/Footer se definen dentro del HTML con htmlpageheader/htmlpagefooter
-        // (más confiable cuando hay tablas grandes y @page en el HTML)
-
-
         $html = _generarHTMLReporte(
             $bloques, 
             $fecha_inicio, 
@@ -367,8 +348,7 @@ function _generarPDF($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComp
         );
         
         $mpdf->WriteHTML($html);
-
-        // Limpiar cualquier salida (por ejemplo Notices) antes de imprimir el PDF
+     // Limpiar cualquier salida (por ejemplo Notices) antes de imprimir el PDF
         if (ob_get_level() > 0) {
             ob_clean();
         }

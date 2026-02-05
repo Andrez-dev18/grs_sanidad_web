@@ -32,6 +32,8 @@ if (!$conexion) {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
     <style>
         body {
@@ -627,18 +629,18 @@ if (!$conexion) {
                 if (cod !== undefined) confirmDelete(isNaN(cod) ? cod : parseInt(cod, 10), nom);
             });
 
-            function confirmDelete(codigo, nombre) {
-                if (confirm(`¿Eliminar el paquete "${nombre}" y todos sus análisis asociados?`)) {
-                    fetch('crud_paquete_analisis.php', {
+            async function confirmDelete(codigo, nombre) {
+                var ok = await SwalConfirm('¿Eliminar el paquete "' + nombre + '" y todos sus análisis asociados?', 'Confirmar eliminación');
+                if (!ok) return;
+                fetch('crud_paquete_analisis.php', {
                         method: 'POST',
                         body: new URLSearchParams({ action: 'delete', codigo: codigo })
                     })
                         .then(r => r.json())
                         .then(d => {
                             if (d.success) location.reload();
-                            else alert('❌ ' + d.message);
+                            else SwalAlert(d.message, 'error');
                         });
-                }
             }
         </script>
 </body>

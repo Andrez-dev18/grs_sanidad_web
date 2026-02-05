@@ -36,6 +36,8 @@ if (!$conexion) {
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
     <style>
         body {

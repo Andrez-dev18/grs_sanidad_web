@@ -113,7 +113,7 @@ function saveEmpTrans(event) {
     const codigo = document.getElementById('editCodigo').value;
 
     if (!nombre) {
-        alert('⚠️ El nombre es obligatorio.');
+        if (typeof SwalAlert === 'function') SwalAlert('El nombre es obligatorio.', 'warning'); else alert('⚠️ El nombre es obligatorio.');
         return false;
     }
 
@@ -128,22 +128,26 @@ function saveEmpTrans(event) {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
-            location.reload();
+            if (typeof SwalAlert === 'function') SwalAlert(data.message, 'success').then(function() { location.reload(); }); else { alert(data.message); location.reload(); }
         } else {
-            alert('❌ ' + data.message);
+            if (typeof SwalAlert === 'function') SwalAlert(data.message, 'error'); else alert('❌ ' + data.message);
         }
     })
     .catch(err => {
         console.error(err);
-        alert('Error al guardar la empresa de transporte.');
+        if (typeof SwalAlert === 'function') SwalAlert('Error al guardar la empresa de transporte.', 'error'); else alert('Error al guardar la empresa de transporte.');
     });
 
     return false;
 }
 
 function confirmDelete(codigo) {
-    if (confirm('¿Está seguro de eliminar esta empresa de transporte? Esta acción no se puede deshacer.')) {
+    var msg = '¿Está seguro de eliminar esta empresa de transporte? Esta acción no se puede deshacer.';
+    var doDelete = typeof SwalConfirm === 'function'
+        ? SwalConfirm(msg, 'Confirmar eliminación')
+        : Promise.resolve(confirm(msg));
+    doDelete.then(function(confirmed) {
+        if (!confirmed) return;
         fetch('crud_emp_trans.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -155,17 +159,16 @@ function confirmDelete(codigo) {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                alert(data.message);
-                location.reload();
+                if (typeof SwalAlert === 'function') SwalAlert(data.message, 'success').then(function() { location.reload(); }); else { alert(data.message); location.reload(); }
             } else {
-                alert('❌ ' + data.message);
+                if (typeof SwalAlert === 'function') SwalAlert(data.message, 'error'); else alert('❌ ' + data.message);
             }
         })
         .catch(err => {
             console.error(err);
-            alert('Error al eliminar la empresa.');
+            if (typeof SwalAlert === 'function') SwalAlert('Error al eliminar la empresa.', 'error'); else alert('Error al eliminar la empresa.');
         });
-    }
+    });
 }
 
 // Función para exportar a Excel

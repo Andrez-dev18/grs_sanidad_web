@@ -331,6 +331,8 @@ if (!$conexion) {
 
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="../../../assets/js/sweetalert-helpers.js"></script>
         <script>
            
             let currentAnalisisCodigo = null;
@@ -428,7 +430,7 @@ if (!$conexion) {
                 const analisis = currentAnalisisCodigo;
 
                 if (!tipo) {
-                    alert('El valor de la respuesta es obligatorio.');
+                    SwalAlert('El valor de la respuesta es obligatorio.', 'warning');
                     return;
                 }
 
@@ -444,21 +446,22 @@ if (!$conexion) {
                 .then(r => r.json())
                 .then(res => {
                     if (res.success) {
-                        alert(res.message);
+                        SwalAlert(res.message, 'success');
                         closeFormTipoResultado();
                         cargarTipoResultados(analisis);
                     } else {
-                        alert('Error: ' + res.message);
+                        SwalAlert('Error: ' + res.message, 'error');
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('Error al guardar la respuesta.');
+                    SwalAlert('Error al guardar la respuesta.', 'error');
                 });
             }
 
-            function eliminarTipoResultado(codigo) {
-                if (!confirm('¿Eliminar esta respuesta?')) return;
+            async function eliminarTipoResultado(codigo) {
+                var ok = await SwalConfirm('¿Eliminar esta respuesta?', 'Confirmar');
+                if (!ok) return;
 
                 fetch('eliminar_tiporesultado.php', {
                     method: 'POST',
@@ -468,15 +471,15 @@ if (!$conexion) {
                 .then(r => r.json())
                 .then(res => {
                     if (res.success) {
-                        alert(res.message);
+                        SwalAlert(res.message, 'success');
                         cargarTipoResultados(currentAnalisisCodigo);
                     } else {
-                        alert('Error: ' + res.message);
+                        SwalAlert('Error: ' + res.message, 'error');
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('Error al eliminar la respuesta.');
+                    SwalAlert('Error al eliminar la respuesta.', 'error');
                 });
             }
 

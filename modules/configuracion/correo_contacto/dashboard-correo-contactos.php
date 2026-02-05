@@ -162,6 +162,8 @@ if (empty($_SESSION['active'])) {
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../../assets/js/sweetalert-helpers.js"></script>
     <script>
         // --- Navegación por tabs ---
         function showTab(tab) {
@@ -194,9 +196,9 @@ if (empty($_SESSION['active'])) {
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        alert('✅ Configuración guardada correctamente');
+                        if (typeof SwalAlert === 'function') SwalAlert('Configuración guardada correctamente', 'success'); else alert('✅ Configuración guardada correctamente');
                     } else {
-                        alert('❌ Error: ' + (data.message || 'No se pudo guardar'));
+                        if (typeof SwalAlert === 'function') SwalAlert(data.message || 'No se pudo guardar', 'error'); else alert('❌ Error: ' + (data.message || 'No se pudo guardar'));
                     }
                 });
         }
@@ -280,14 +282,16 @@ if (empty($_SESSION['active'])) {
         }
 
         function eliminarContacto(id) {
-            if (!confirm('¿Estás seguro de eliminar este contacto?')) return;
-            fetch('contactos_crud.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `action=delete&id=${id}`
-            }).then(() => cargarContactos());
+            var msg = '¿Estás seguro de eliminar este contacto?';
+            var prom = (typeof SwalConfirm === 'function') ? SwalConfirm(msg, 'Confirmar eliminación') : Promise.resolve(confirm(msg));
+            prom.then(function(ok) {
+                if (!ok) return;
+                fetch('contactos_crud.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'action=delete&id=' + id
+                }).then(function() { cargarContactos(); });
+            });
         }
 
         // Cargar configuración al inicio

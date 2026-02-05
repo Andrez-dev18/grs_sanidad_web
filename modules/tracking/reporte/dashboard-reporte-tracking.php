@@ -270,6 +270,14 @@ if ($codigoUsuario) {
         .dataTables_wrapper {
             overflow-x: visible !important;
         }
+
+        /* Comentario: varias líneas */
+        #tabla td.comentario-cell {
+            white-space: normal !important;
+            word-wrap: break-word;
+            max-width: 280px;
+            vertical-align: top;
+        }
     </style>
 </head>
 
@@ -430,7 +438,7 @@ if ($codigoUsuario) {
                             <?php if (empty($pendientes)): ?>
                                 <p class="col-span-full text-center text-gray-500 py-8">¡Excelente! No hay envíos pendientes.</p>
                             <?php else: ?>
-                                <?php foreach ($pendientes as $idx => $p): $n = $idx + 1; $codSafe = htmlspecialchars($p['codEnvio']); $faltaSafe = htmlspecialchars($p['falta']); $codJs = json_encode($p['codEnvio']); ?>
+                                <?php foreach ($pendientes as $idx => $p): $n = $idx + 1; $codSafe = htmlspecialchars($p['codEnvio']); $faltaSafe = htmlspecialchars($p['falta']); $codAttr = htmlspecialchars($p['codEnvio'], ENT_QUOTES, 'UTF-8'); ?>
                                     <div class="card-item">
                                         <div class="card-numero-row">#<?php echo $n; ?></div>
                                         <div class="card-contenido">
@@ -439,7 +447,7 @@ if ($codigoUsuario) {
                                                 <div class="card-row"><span class="label">Falta:</span> <span class="text-orange-600 font-medium"><?php echo $faltaSafe; ?></span></div>
                                             </div>
                                             <div class="card-acciones">
-                                                <button type="button" onclick="cargarEscaneoConCodigo(<?php echo $codJs; ?>)"
+                                                <button type="button" onclick="cargarEscaneoConCodigo('<?php echo $codAttr; ?>')"
                                                     class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition">
                                                     <i class="fa-solid fa-qrcode mr-2"></i> Escanear / Recepcionar
                                                 </button>
@@ -649,6 +657,7 @@ if ($codigoUsuario) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
     <script>
         $(document).ready(function() {
@@ -686,16 +695,22 @@ if ($codigoUsuario) {
                     },
                     {
                         data: 'comentario',
+                        className: 'comentario-cell',
                         render: function(data) {
-                            return data ? data.substring(0, 100) + (data.length > 100 ? '...' : '') : '-';
+                            if (!data) return '<span class="text-gray-400">—</span>';
+                            var esc = (data + '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            return '<div class="text-wrap whitespace-normal max-w-md">' + esc + '</div>';
                         }
                     },
                     {
                         data: 'evidencia',
                         orderable: false,
                         searchable: false,
+                        className: 'text-center',
                         render: function(data) {
-                            return data ? `<button onclick="abrirModalEvidencia('${data}')" class="text-blue-600 hover:underline">Ver evidencias</button>` : '-';
+                            if (!data) return '<span class="text-gray-400">—</span>';
+                            var esc = (data + '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                            return '<button type="button" onclick="abrirModalEvidencia(\'' + esc + '\')" class="text-blue-600 hover:text-blue-800 transition inline-flex items-center justify-center" title="Ver evidencias"><i class="fa-solid fa-eye text-lg"></i></button>';
                         }
                     },
                     {
@@ -930,11 +945,9 @@ if ($codigoUsuario) {
         }
 
 
-        function eliminarRegistro(idRegistro) {
-            // Confirmación simple del navegador
-            if (!confirm('¿Estás seguro de que deseas eliminar este registro?\nEsta acción no se puede deshacer.')) {
-                return;
-            }
+        async function eliminarRegistro(idRegistro) {
+            var ok = await SwalConfirm('¿Estás seguro de que deseas eliminar este registro?\nEsta acción no se puede deshacer.', 'Confirmar eliminación');
+            if (!ok) return;
 
             // Mostrar loading en el botón (opcional, pero recomendado)
             const boton = event.target.closest('button');

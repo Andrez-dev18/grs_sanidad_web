@@ -30,7 +30,7 @@ function saveLaboratorio(event) {
     const codigo = document.getElementById('laboratorioEditCodigo').value;
 
     if (!nombre) {
-        alert('⚠️ El nombre es obligatorio.');
+        if (typeof SwalAlert === 'function') SwalAlert('El nombre es obligatorio.', 'warning'); else alert('⚠️ El nombre es obligatorio.');
         return false;
     }
 
@@ -45,22 +45,26 @@ function saveLaboratorio(event) {
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
-            location.reload();
+            if (typeof SwalAlert === 'function') SwalAlert(data.message, 'success').then(function() { location.reload(); }); else { alert(data.message); location.reload(); }
         } else {
-            alert('❌ ' + data.message);
+            if (typeof SwalAlert === 'function') SwalAlert(data.message, 'error'); else alert('❌ ' + data.message);
         }
     })
     .catch(err => {
         console.error(err);
-        alert('Error al guardar.');
+        if (typeof SwalAlert === 'function') SwalAlert('Error al guardar.', 'error'); else alert('Error al guardar.');
     });
 
     return false;
 }
 
 function confirmLaboratorioDelete(codigo) {
-    if (confirm('¿Está seguro de eliminar este laboratorio? Esta acción no se puede deshacer.')) {
+    var msg = '¿Está seguro de eliminar este laboratorio? Esta acción no se puede deshacer.';
+    var doDelete = typeof SwalConfirm === 'function'
+        ? SwalConfirm(msg, 'Confirmar eliminación')
+        : Promise.resolve(confirm(msg));
+    doDelete.then(function(confirmed) {
+        if (!confirmed) return;
         fetch('crud_laboratorio.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -72,17 +76,16 @@ function confirmLaboratorioDelete(codigo) {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                alert(data.message);
-                location.reload();
+                if (typeof SwalAlert === 'function') SwalAlert(data.message, 'success').then(function() { location.reload(); }); else { alert(data.message); location.reload(); }
             } else {
-                alert('❌ ' + data.message);
+                if (typeof SwalAlert === 'function') SwalAlert(data.message, 'error'); else alert('❌ ' + data.message);
             }
         })
         .catch(err => {
             console.error(err);
-            alert('Error al eliminar.');
+            if (typeof SwalAlert === 'function') SwalAlert('Error al eliminar.', 'error'); else alert('Error al eliminar.');
         });
-    }
+    });
 }
 
 // Función para exportar a Excel

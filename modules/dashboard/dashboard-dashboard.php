@@ -26,6 +26,8 @@ if (empty($_SESSION['active'])) {
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../assets/js/sweetalert-helpers.js"></script>
 
     <style>
         body {
@@ -322,7 +324,7 @@ if (empty($_SESSION['active'])) {
 
                 } catch (err) {
                     console.error('Error al cargar datos:', err);
-                    alert('⚠️ No se pudieron cargar los datos del dashboard.');
+                    SwalAlert('No se pudieron cargar los datos del dashboard.', 'warning');
                 }
             }
 

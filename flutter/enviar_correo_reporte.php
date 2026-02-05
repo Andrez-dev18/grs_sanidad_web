@@ -1,8 +1,6 @@
 <?php
-// Iniciar buffer de salida para capturar cualquier output no deseado
 ob_start();
 
-// --- CORS ---
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Authorization, Content-Type, X-Requested-With");
@@ -14,12 +12,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// Configurar manejo de errores
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
 
-// Función para enviar error JSON
 function enviarError($mensaje, $codigo = 500) {
     ob_end_clean();
     http_response_code($codigo);
@@ -27,7 +23,6 @@ function enviarError($mensaje, $codigo = 500) {
     exit;
 }
 
-// Función para capturar errores fatales
 register_shutdown_function(function() {
     $error = error_get_last();
     if ($error !== NULL && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
@@ -41,7 +36,6 @@ register_shutdown_function(function() {
     }
 });
 
-// Limpiar cualquier output previo
 ob_clean();
 
 try {
@@ -62,7 +56,6 @@ try {
     enviarError('Error al incluir funciones.php: ' . $e->getMessage());
 }
 
-// Limpiar cualquier output de los includes
 ob_clean();
 
 try {
@@ -104,13 +97,11 @@ try {
     enviarError('Error al obtener configuración de correo: ' . $e->getMessage());
 }
 
-// Datos del correo
 $subject = $_POST['subject'] ?? '';
 $body = $_POST['body'] ?? '';
 $codigo = $_POST['codigo'] ?? '';
 $para = [];
 
-// Procesar destinatarios (pueden venir como para[] o para)
 if (isset($_POST['para']) && is_array($_POST['para'])) {
     $para = $_POST['para'];
 } elseif (isset($_POST['para'])) {
@@ -128,17 +119,6 @@ if (empty($subject) || empty($body) || empty($codigo) || empty($para) || !is_arr
     enviarError('Faltan datos obligatorios o destinatarios inválidos.', 400);
 }
 
-// Generar PDF
-// Asegurar que funciones.php esté incluido antes de requerir pdf_generador
-// porque pdf_generador.php lo necesita pero la ruta relativa puede fallar desde Flutter
-if (!function_exists('formatearFecha')) {
-    try {
-        include_once '../includes/funciones.php';
-    } catch (Exception $e) {
-        error_log("Advertencia: No se pudo incluir funciones.php: " . $e->getMessage());
-    }
-}
-
 try {
     require_once  '../modules/reportes/pdf_generador.php';
     $pdfContent = generarPDFReporte($codigo, $conexion);
@@ -153,7 +133,7 @@ try {
     enviarError('Error fatal al generar el PDF: ' . $e->getMessage());
 }
 
-// Guardar PDF temporalmente
+
 $tmpPdf = tempnam(sys_get_temp_dir(), 'reporte_') . '.pdf';
 file_put_contents($tmpPdf, $pdfContent);
 
@@ -164,7 +144,7 @@ require_once '../vendor/autoload.php';
 
 $mail = new PHPMailer(true);
 try {
-    // Configuración SMTP
+   
     $mail->isSMTP();
     $mail->Host       = 'mail.rinconadadelsur.com.pe'; // 'smtp.gmail.com';
     $mail->SMTPAuth   = true;
@@ -178,7 +158,6 @@ try {
     $mail->Body    = $body;
     $mail->isHTML(false);
 
-    // Añadir destinatarios en "Para"
     $alMenosUnoValido = false;
     foreach ($para as $email) {
         $email = trim($email);
@@ -192,10 +171,8 @@ try {
         throw new Exception('Ningún destinatario válido en "Para".');
     }
 
-    // Adjuntar PDF
     $mail->addAttachment($tmpPdf, "Reporte_{$codigo}.pdf");
 
-    // Adjuntar archivos adicionales (si los hay)
     if (!empty($_FILES['archivos_adjuntos']['tmp_name'][0])) {
         foreach ($_FILES['archivos_adjuntos']['tmp_name'] as $index => $tmpName) {
             if ($tmpName && $_FILES['archivos_adjuntos']['error'][$index] === UPLOAD_ERR_OK) {
@@ -207,7 +184,6 @@ try {
 
     $mail->send();
     
-    // Registrar en historial de acciones
     $nom_usuario = $_POST['usuarioNombre'] ?? $usuario ?? 'Usuario Móvil';
     $datos_nuevos = [
         'asunto' => $subject,

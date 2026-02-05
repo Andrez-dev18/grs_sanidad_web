@@ -141,12 +141,12 @@ function savePaqueteMuestra(event) {
 
     // Validaciones reforzadas
     if (!nombre) {
-        alert('⚠️ El nombre del paquete es obligatorio.');
+        if (typeof SwalAlert === 'function') SwalAlert('El nombre del paquete es obligatorio.', 'warning'); else alert('⚠️ El nombre del paquete es obligatorio.');
         document.getElementById('paqueteMuestraModalNombre').focus();
         return;
     }
     if (!tipoMuestra) {
-        alert('⚠️ Debe seleccionar un tipo de muestra.');
+        if (typeof SwalAlert === 'function') SwalAlert('Debe seleccionar un tipo de muestra.', 'warning'); else alert('⚠️ Debe seleccionar un tipo de muestra.');
         document.getElementById('paqueteMuestraModalTipoMuestra').focus();
         return;
     }
@@ -173,16 +173,15 @@ function savePaqueteMuestra(event) {
         btn.innerHTML = orig;
         btn.disabled = false;
         if (data.success) {
-            alert('✅ ' + data.message);
-            location.reload();
+            if (typeof SwalAlert === 'function') SwalAlert(data.message, 'success').then(function() { location.reload(); }); else { alert('✅ ' + data.message); location.reload(); }
         } else {
-            alert('❌ ' + data.message);
+            if (typeof SwalAlert === 'function') SwalAlert(data.message, 'error'); else alert('❌ ' + data.message);
         }
     })
     .catch(err => {
         btn.innerHTML = orig;
         btn.disabled = false;
-        alert('Error de red: ' + err.message);
+        if (typeof SwalAlert === 'function') SwalAlert('Error de red: ' + err.message, 'error'); else alert('Error de red: ' + err.message);
     });
 }
 
@@ -240,14 +239,14 @@ window.exportarPaquetesMuestra = function() {
     // 1. Obtener la tabla
     const table = document.getElementById('tablaPaquetes');
     if (!table) {
-        alert('⚠️ No se encontró la tabla de paquetes.');
+        if (typeof SwalAlert === 'function') SwalAlert('No se encontró la tabla de paquetes.', 'warning'); else alert('⚠️ No se encontró la tabla de paquetes.');
         return;
     }
 
     // 2. Obtener todas las filas del cuerpo
     const rows = table.querySelectorAll('tbody tr');
     if (rows.length === 0 || (rows.length === 1 && rows[0].querySelector('td')?.textContent?.includes('No hay paquetes'))) {
-        alert('⚠️ No hay datos para exportar.');
+        if (typeof SwalAlert === 'function') SwalAlert('No hay datos para exportar.', 'warning'); else alert('⚠️ No hay datos para exportar.');
         return;
     }
 
@@ -301,7 +300,7 @@ window.exportarPaquetesMuestra = function() {
     csv += `Total de Paquetes:,${count},\n`;
 
     if (count === 0) {
-        alert('⚠️ No hay datos válidos para exportar.');
+        if (typeof SwalAlert === 'function') SwalAlert('No hay datos válidos para exportar.', 'warning'); else alert('⚠️ No hay datos válidos para exportar.');
         return;
     }
 
@@ -319,5 +318,5 @@ window.exportarPaquetesMuestra = function() {
     link.click();
     document.body.removeChild(link);
 
-    alert(`✅ Se exportaron ${count} paquete(s) correctamente.`);
+    if (typeof SwalAlert === 'function') SwalAlert('Se exportaron ' + count + ' paquete(s) correctamente.', 'success'); else alert('✅ Se exportaron ' + count + ' paquete(s) correctamente.');
 }

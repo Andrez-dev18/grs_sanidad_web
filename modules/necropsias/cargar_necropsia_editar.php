@@ -67,13 +67,26 @@ if ($result->num_rows > 0) {
     }
 }
 
-// Agregar evidencias agrupadas a los registros
+// Agregar evidencias agrupadas y normalizar claves/valores para el front (porcentajes como número)
 foreach ($registros as &$reg) {
     $nivel = $reg['tnivel'];
     if (isset($evidenciasPorNivel[$nivel])) {
         $reg['evidencia'] = $evidenciasPorNivel[$nivel];
     }
+    // Asegurar claves esperadas por JS y porcentajes como número (tolerar distinto casing de la BD)
+    $get = function ($key) use ($reg) {
+        $u = $key[0] === 't' ? 'T' . substr($key, 1) : $key;
+        return $reg[$key] ?? $reg[$u] ?? 0;
+    };
+    $reg['tporcentaje1']     = (float)$get('tporcentaje1');
+    $reg['tporcentaje2']     = (float)$get('tporcentaje2');
+    $reg['tporcentaje3']     = (float)$get('tporcentaje3');
+    $reg['tporcentaje4']     = (float)$get('tporcentaje4');
+    $reg['tporcentaje5']     = (float)$get('tporcentaje5');
+    $reg['tporcentajetotal'] = (float)$get('tporcentajetotal');
+    $reg['tobservacion']     = trim((string)($reg['tobservacion'] ?? $reg['tObservacion'] ?? ''));
 }
+unset($reg);
 
 echo json_encode([
     'success' => true,

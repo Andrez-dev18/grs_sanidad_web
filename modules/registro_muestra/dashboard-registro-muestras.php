@@ -494,6 +494,8 @@ if (!$conexion) {
     </div>
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../assets/js/sweetalert-helpers.js"></script>
     <script>
         let currentFormData = null;
         // === Variables globales ===
@@ -587,9 +589,7 @@ if (!$conexion) {
                 document.getElementById("codigoEnvio").value = data.codigo_envio;
             } catch (error) {
                 console.error("Error al reservar código:", error);
-                alert(
-                    "⚠️ No se pudo generar el código de envío. Intente recargar la página."
-                );
+                if (typeof SwalAlert === 'function') SwalAlert('No se pudo generar el código de envío. Intente recargar la página.', 'warning'); else alert("⚠️ No se pudo generar el código de envío. Intente recargar la página.");
             }
         }
 
@@ -659,7 +659,7 @@ if (!$conexion) {
                     })
                     .catch(error => {
                         console.error("Error al cargar config:", error);
-                        alert("⚠️ No se pudo cargar la configuración del tipo de muestra.");
+                        if (typeof SwalAlert === 'function') SwalAlert('No se pudo cargar la configuración del tipo de muestra.', 'warning'); else alert("⚠️ No se pudo cargar la configuración del tipo de muestra.");
                         reject(error);
                     });
             });
@@ -786,7 +786,7 @@ if (!$conexion) {
         function copyAnalisisTo(sourceIndex) {
             const sourceCache = sampleDataCache[sourceIndex];
             if (!sourceCache || !sourceCache.analisisSeleccionados?.length) {
-                alert('No hay análisis seleccionados en la fila origen.');
+                if (typeof SwalAlert === 'function') SwalAlert('No hay análisis seleccionados en la fila origen.', 'warning'); else alert('No hay análisis seleccionados en la fila origen.');
                 return;
             }
 
@@ -817,7 +817,7 @@ if (!$conexion) {
             const targetIndex = parseInt(document.getElementById('copyTargetSelect').value);
 
             if (isNaN(targetIndex) || targetIndex < 0 || targetIndex >= totalSamples) {
-                alert('Seleccione una solicitud válida.');
+                if (typeof SwalAlert === 'function') SwalAlert('Seleccione una solicitud válida.', 'warning'); else alert('Seleccione una solicitud válida.');
                 return;
             }
 
@@ -846,14 +846,14 @@ if (!$conexion) {
 
             // 4. Cerrar modal y notificar
             bootstrap.Modal.getInstance(document.getElementById('copyAnalisisModal')).hide();
-            alert(` Análisis copiados a la Solicitud ${targetIndex + 1}.`);
+            if (typeof SwalAlert === 'function') SwalAlert('Análisis copiados a la Solicitud ' + (targetIndex + 1) + '.', 'success'); else alert('Análisis copiados a la Solicitud ' + (targetIndex + 1) + '.');
         });
 
         // === Función para abrir el modal de análisis ===
         window.openAnalisisModal = async function (sampleIndex) {
             const tipoMuestraSelect = document.getElementById(`tipoMuestra_${sampleIndex}`);
             if (!tipoMuestraSelect || tipoMuestraSelect.value === "") {
-                alert("Primero seleccione un tipo de muestra.");
+                if (typeof SwalAlert === 'function') SwalAlert('Primero seleccione un tipo de muestra.', 'warning'); else alert("Primero seleccione un tipo de muestra.");
                 return;
             }
 
@@ -1154,7 +1154,7 @@ if (!$conexion) {
             }
 
             if (errores.length > 0) {
-                alert("❌ Corrija los siguientes errores:\n" + errores.join('\n'));
+                if (typeof SwalAlert === 'function') SwalAlert('Corrija los siguientes errores:\n' + errores.join('\n'), 'error'); else alert("❌ Corrija los siguientes errores:\n" + errores.join('\n'));
                 return;
             }
 
@@ -1404,7 +1404,7 @@ if (!$conexion) {
                     resetAllState();
 
                     // Mensaje de éxito
-                    alert(" Registro guardado exitosamente. Código: " + result.codigoEnvio);
+                    if (typeof SwalAlert === 'function') SwalAlert('Registro guardado exitosamente. Código: ' + result.codigoEnvio, 'success'); else alert("Registro guardado exitosamente. Código: " + result.codigoEnvio);
 
 
                 } else {
@@ -1412,7 +1412,7 @@ if (!$conexion) {
                 }
             } catch (error) {
                 console.error("Error:", error);
-                alert("❌ Error al guardar el registro: " + error.message);
+                if (typeof SwalAlert === 'function') SwalAlert('Error al guardar el registro: ' + error.message, 'error'); else alert("❌ Error al guardar el registro: " + error.message);
             }
         };
 

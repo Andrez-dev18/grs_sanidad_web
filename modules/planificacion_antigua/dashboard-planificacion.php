@@ -717,6 +717,8 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="../../assets/js/sweetalert-helpers.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
   <script>
     let analisisSeleccionados = {};
@@ -955,7 +957,7 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
       );
 
       if (granjas.length === 0 || edades.length === 0 || !year || tipos.length === 0) {
-        alert("Por favor, complete todos los campos y seleccione al menos un análisis.");
+        SwalAlert("Por favor, complete todos los campos y seleccione al menos un análisis.", "warning");
         return;
       }
 
@@ -977,7 +979,7 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
         const result = await res.json();
 
         if (result.success) {
-          alert("Planificación guardada exitosamente.");
+          SwalAlert("Planificación guardada exitosamente.", "success");
           $('#modalPlanificacion').modal('hide');
           // Recargar tabla si usas DataTables
           if (typeof tablaPlanificacion !== 'undefined') {
@@ -988,7 +990,7 @@ $usuario = $_SESSION['usuario'] ?? 'usuario';
         }
       } catch (err) {
         console.error(err);
-        alert("Error al guardar. Verifique la consola.");
+        SwalAlert("Error al guardar. Verifique la consola.", "error");
       }
     });
 

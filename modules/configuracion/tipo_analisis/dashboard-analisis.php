@@ -33,6 +33,8 @@ if (!$conexion) {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
     <style>
         /* Tus estilos existentes */
@@ -386,7 +388,6 @@ if (!$conexion) {
     
     <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-       
     <script src="../../../assets/js/configuracion/analisis.js"></script>
 
         <script>
@@ -470,22 +471,21 @@ if (!$conexion) {
                 });
             });
 
-            function confirmDelete(codigo, nombre) {
-                if (confirm(`¿Eliminar el análisis "${nombre}"?\n\n⚠️ Si está asociado a paquetes, no se podrá eliminar.`)) {
-                    fetch('crud_analisis.php', {
+            async function confirmDelete(codigo, nombre) {
+                var ok = await SwalConfirm('¿Eliminar el análisis "' + nombre + '"?\n\nSi está asociado a paquetes, no se podrá eliminar.', 'Confirmar eliminación');
+                if (!ok) return;
+                fetch('crud_analisis.php', {
                         method: 'POST',
                         body: new URLSearchParams({ action: 'delete', codigo: codigo })
                     })
                         .then(r => r.json())
                         .then(d => {
                             if (d.success) {
-                                alert('✅ ' + d.message);
-                                location.reload();
+                                SwalAlert(d.message, 'success').then(() => location.reload());
                             } else {
-                                alert('❌ ' + d.message);
+                                SwalAlert(d.message, 'error');
                             }
                         });
-                }
             }
         </script>
 </body>

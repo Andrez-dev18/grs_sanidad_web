@@ -2,7 +2,7 @@
 
 session_start();
 if (empty($_SESSION['active'])) {
-    header('Location: login.php');
+    echo '<script>var u="../../login.php";if(window.top!==window.self){window.top.location.href=u;}else{window.location.href=u;}</script>';
     exit();
 }
 
@@ -34,6 +34,7 @@ if (!$conn) {
     <link rel="stylesheet" href="../../css/dashboard-responsive.css">
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../assets/js/sweetalert-helpers.js"></script>
 
     <style>
         body {
@@ -1452,7 +1453,7 @@ if (!$conn) {
 
             // Validación básica
             if (!codigoGranja || !galpon || !fectra) {
-                alert('Por favor complete todos los campos de la cabecera');
+                SwalAlert('Por favor complete todos los campos de la cabecera', 'warning');
                 return;
             }
 
@@ -1768,15 +1769,15 @@ if (!$conn) {
                 document.getElementById('modalCarga').classList.add('hidden');
 
                 if (result.success) {
-                    alert('¡Necropsia registrada con éxito!');
+                    SwalAlert('¡Necropsia registrada con éxito!', 'success');
                     limpiarFormularioNecropsia();
                 } else {
-                    alert('Error: ' + result.message);
+                    SwalAlert('Error: ' + result.message, 'error');
                 }
             } catch (err) {
                 document.getElementById('modalCarga').classList.add('hidden');
                 console.error(err);
-                alert('Error de conexión. Intenta nuevamente.');
+                SwalAlert('Error de conexión. Intenta nuevamente.', 'error');
             }
         }
     </script>
@@ -1883,7 +1884,7 @@ if (!$conn) {
                 const total = evidencias[obsId].length + newFiles.length;
 
                 if (total > 3) {
-                    alert('Máximo 3 imágenes por nivel. Se agregarán solo hasta completar 3.');
+                    SwalAlert('Máximo 3 imágenes por nivel. Se agregarán solo hasta completar 3.', 'warning');
                     newFiles.splice(3 - evidencias[obsId].length);
                 }
 

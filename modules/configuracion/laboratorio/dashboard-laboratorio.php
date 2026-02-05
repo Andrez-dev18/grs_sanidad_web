@@ -47,6 +47,8 @@ if ($codigoUsuario) {
 
     <!-- Tailwind CSS -->
     <link href="../../../css/output.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">

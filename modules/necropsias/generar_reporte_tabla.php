@@ -56,7 +56,21 @@ if (empty($registros)) {
     die('No se encontraron registros');
 }
 
+foreach ($registros as &$reg) {
+    $get = function ($key) use ($reg) {
+        $u = (isset($key[0]) && $key[0] === 't') ? 'T' . substr($key, 1) : $key;
+        return $reg[$key] ?? $reg[$u] ?? (strpos($key, 'porcentaje') !== false ? 0 : '');
+    };
+    $reg['tporcentajetotal'] = (float)$get('tporcentajetotal');
+    $reg['tobservacion']     = trim((string)($reg['tobservacion'] ?? $reg['tObservacion'] ?? ''));
+    $reg['tnivel']           = trim((string)($reg['tnivel'] ?? $reg['tNivel'] ?? ''));
+    $reg['tparametro']       = trim((string)($reg['tparametro'] ?? $reg['tParametro'] ?? ''));
+}
+unset($reg);
+
 $cabecera = $registros[0];
+// Asegurar cabecera con las mismas claves que usa el reporte (p. ej. diagnóstico presuntivo)
+$cabecera['tdiagpresuntivo'] = trim((string)($cabecera['tdiagpresuntivo'] ?? $cabecera['tdiagPresuntivo'] ?? ''));
 
     require_once __DIR__ . '/../../vendor/autoload.php'; 
 
@@ -84,8 +98,7 @@ try {
             'margin_footer' => 10,
             'tempDir' => __DIR__ . '/../../pdf_tmp',
         ]);
-
-        // Paginación: se define dentro del HTML con <htmlpagefooter> y @page { footer: html_... }
+     
 
 
     $html = '';
@@ -104,8 +117,7 @@ try {
     die('Error generando PDF: ' . $e->getMessage());
 }
 
-function _generarReporte1($cabecera, $registros) {
-        // N°Reg: tomar desde la cabecera (BD) y si no existe, fallback a GET
+function _generarReporte1($cabecera, $registros) {        
         $numregLocal = $cabecera['tnumreg'] ?? ($_GET['numreg'] ?? '');
 
         // Logo
@@ -270,7 +282,7 @@ body {
             <td>' . htmlspecialchars($cabecera['tedad'] ?? '') . ' días</td>
         </tr>';
         
-        // Fila de Inicio y Fin de Registro (ambos en la misma fila)
+       
         $tfecreghorainicio = $cabecera['tfecreghorainicio'] ?? '';
         $tfecreghorainicioFormatted = '--/--/-- --:--:--';
         if (!empty($tfecreghorainicio)) {
@@ -362,12 +374,12 @@ body {
                         // Primera fila: Nivel + Parámetro + % + Observaciones (con rowspan)
                         $html .= '<td class="nivel-cell" rowspan="' . $rowspan . '">' . htmlspecialchars(strtoupper($nivel)) . '</td>';
                         $html .= '<td class="param-cell">' . htmlspecialchars($item['tparametro'] ?? '') . '</td>';
-                        $html .= '<td class="porc-cell">' . htmlspecialchars($item['tporcentajetotal'] ?? '0') . '%</td>';
+                        $html .= '<td class="porc-cell">' . number_format((float)($item['tporcentajetotal'] ?? 0), 2) . '%</td>';
                         $html .= '<td class="obs-cell" rowspan="' . $rowspan . '">' . nl2br(htmlspecialchars($observacionNivel)) . '</td>';
                     } else {
                         // Filas siguientes: solo Parámetro + %
                         $html .= '<td class="param-cell">' . htmlspecialchars($item['tparametro'] ?? '') . '</td>';
-                        $html .= '<td class="porc-cell">' . htmlspecialchars($item['tporcentajetotal'] ?? '0') . '%</td>';
+                        $html .= '<td class="porc-cell">' . number_format((float)($item['tporcentajetotal'] ?? 0), 2) . '%</td>';
                        
                     }
             

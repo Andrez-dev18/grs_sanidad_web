@@ -1594,6 +1594,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../assets/js/sweetalert-helpers.js"></script>
 
     <script>
         var table; // Variable global
@@ -2131,19 +2133,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     <script>
         function generarReportePDF(codEnvio) {
             if (!codEnvio) {
-                alert('Seleccione una solicitud primero');
+                SwalAlert('Seleccione una solicitud primero', 'warning');
                 return;
             }
             window.open(`reporteSeguimientoMuestrasPdf.php?codEnvio=${codEnvio}`, '_blank');
         }
 
-        function borrarRegistros(codEnvio) {
-            // Confirmación simple y clara
-            if (!confirm(`¿Estás COMPLETAMENTE seguro de eliminar el envío "${codEnvio}"?\n\nEsta acción:\n• Eliminará todos los resultados, archivos y detalles asociados\n• NO se puede deshacer\n\n¿Continuar?`)) {
-                return; // Cancela si dice "No"
-            }
+        async function borrarRegistros(codEnvio) {
+            var ok = await SwalConfirm('¿Estás COMPLETAMENTE seguro de eliminar el envío "' + codEnvio + '"?\n\nEsta acción:\n• Eliminará todos los resultados, archivos y detalles asociados\n• NO se puede deshacer\n\n¿Continuar?', 'Confirmar eliminación');
+            if (!ok) return;
 
-            // Enviar al PHP
             fetch('borrarSolicitudCompleto.php', {
                 method: 'POST',
                 headers: {
@@ -2154,16 +2153,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        alert('✅ Envío eliminado correctamente');
-                        // Recargar la tabla
+                        SwalAlert('Envío eliminado correctamente', 'success');
                         if (table) table.ajax.reload();
                     } else {
-                        alert('❌ Error: ' + data.message);
+                        SwalAlert('Error: ' + data.message, 'error');
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('❌ Error de conexión');
+                    SwalAlert('Error de conexión', 'error');
                 });
         }
     </script>
@@ -2641,7 +2639,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 editarRegistro(codEnvio);
             } catch (err) {
                 console.error('Error al verificar si se puede editar:', err);
-                alert('Error al verificar si se puede editar el envío');
+                SwalAlert('Error al verificar si se puede editar el envío', 'error');
             }
         }
 
@@ -2679,7 +2677,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('Error al cargar la cabecera: ' + err.message);
+                    SwalAlert('Error al cargar la cabecera: ' + err.message, 'error');
                 });
 
             // 2. Cargar detalles y contar posSolicitud únicos
@@ -2720,7 +2718,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('Error al cargar los detalles: ' + err.message);
+                    SwalAlert('Error al cargar los detalles: ' + err.message, 'error');
                 });
         }
         function renderizarFilasDeSolicitudes(grupos) {
@@ -2813,7 +2811,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     const posActual = this.dataset.pos;
                     const tipoId = div.querySelector('.tipo-muestra').value;
                     if (!tipoId) {
-                        alert('Seleccione primero el tipo de muestra');
+                        SwalAlert('Seleccione primero el tipo de muestra', 'warning');
                         return;
                     }
 
@@ -3048,7 +3046,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
             // === 3. Mostrar errores si existen ===
             if (errores.length > 0) {
-                alert("❌ Por favor, corrija los siguientes errores:\n\n" + errores.join('\n'));
+                SwalAlert("Por favor, corrija los siguientes errores:\n\n" + errores.join('\n'), 'error');
                 return;
             }
 
@@ -3073,7 +3071,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
             // Si no hay cambios, informar y salir
             if (!cabeceraModificada && detallesModificados.length === 0) {
-                alert('No se detectaron cambios para guardar.');
+                SwalAlert('No se detectaron cambios para guardar.', 'info');
                 return;
             }
 
@@ -3140,15 +3138,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    alert('¡Cambios guardados exitosamente!');
+                    SwalAlert('¡Cambios guardados exitosamente!', 'success');
                     cerrarModalEditar();
                     if (table) table.ajax.reload();
                 } else {
-                    alert('Error: ' + (data.error || 'No se pudo guardar'));
+                    SwalAlert('Error: ' + (data.error || 'No se pudo guardar'), 'error');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Error de red al guardar');
+                SwalAlert('Error de red al guardar', 'error');
             }
         });
 
@@ -3365,7 +3363,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 const posActual = this.dataset.pos;
                 const tipoId = div.querySelector('.tipo-muestra').value;
                 if (!tipoId) {
-                    alert('Seleccione primero el tipo de muestra');
+                    SwalAlert('Seleccione primero el tipo de muestra', 'warning');
                     return;
                 }
 

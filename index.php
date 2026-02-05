@@ -517,15 +517,16 @@ if ($codigoUsuario) {
                             <i class="fas fa-chevron-down text-sm"></i>
                         </button>
                         <div id="submenu-planificacion" class="submenu hidden pl-10 mt-2 space-y-2">
+                           
                             <a href="#"
-                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/dashboard-planificacion-registro.php', '📅 Registro de Planificación', 'Registro de la planificación')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Registro</a>
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/programas/dashboard-programas.php', '📋 Programas', 'Gestión de programas de planificación')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">Programas</a>
                             <a href="#"
-                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/dashboard-planificacion.php', '📄 Listado de Planificación', 'Listado de planificaciones registradas')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Listado</a>
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma.php', '📅 Cronograma', 'Cronograma de planificación')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">Cronograma</a>
                         </div>
                     </div-->
-
+                    
                     <div class="menu-group">
                         <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                             onclick="toggleSubmenu('submenu-necropsia')">
@@ -830,6 +831,8 @@ if ($codigoUsuario) {
             }
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="assets/js/sweetalert-helpers.js"></script>
     <script src="logout.js"></script>
 
 </body>

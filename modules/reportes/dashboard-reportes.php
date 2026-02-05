@@ -58,6 +58,7 @@ if ($codigoUsuario) {
 
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="../../assets/js/sweetalert-helpers.js"></script>
 
     <style>
        body {
@@ -897,7 +898,7 @@ if ($codigoUsuario) {
                 const data = await res.json();
 
                 if (data.error) {
-                    alert('Error al verificar: ' + data.error);
+                    SwalAlert('Error al verificar: ' + data.error, 'error');
                     return;
                 }
 
@@ -917,7 +918,7 @@ if ($codigoUsuario) {
                 editarRegistro(codEnvio);
             } catch (err) {
                 console.error('Error al verificar si se puede editar:', err);
-                alert('Error al verificar si se puede editar el envío');
+                SwalAlert('Error al verificar si se puede editar el envío', 'error');
             }
         }
 
@@ -992,7 +993,7 @@ if ($codigoUsuario) {
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('Error al cargar los detalles: ' + err.message);
+                    SwalAlert('Error al cargar los detalles: ' + err.message, 'error');
                 });
         }
 
@@ -1398,7 +1399,7 @@ if ($codigoUsuario) {
             });
 
             if (errores.length > 0) {
-                alert("❌ Por favor, corrija los siguientes errores:\n\n" + errores.join('\n'));
+                SwalAlert("Por favor, corrija los siguientes errores:\n\n" + errores.join('\n'), 'error');
                 return;
             }
 
@@ -1459,18 +1460,19 @@ if ($codigoUsuario) {
                     cerrarModalEditar();
                     if (tableReportes) tableReportes.ajax.reload();
                 } else {
-                    alert('Error: ' + (data.error || 'No se pudo guardar'));
+                    SwalAlert('Error: ' + (data.error || 'No se pudo guardar'), 'error');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Error de red al guardar');
+                SwalAlert('Error de red al guardar', 'error');
             }
         });
 
         document.getElementById('numeroSolicitudes') && document.getElementById('numeroSolicitudes').addEventListener('change', actualizarCantidadSolicitudesModal);
 
-        function borrarRegistroDesdeListado(codEnvio) {
-            if (!confirm(`¿Eliminar el envío "${codEnvio}"?\n\nEsta acción no se puede deshacer.`)) return;
+        async function borrarRegistroDesdeListado(codEnvio) {
+            var ok = await SwalConfirm('¿Eliminar el envío "' + codEnvio + '"?\n\nEsta acción no se puede deshacer.', 'Confirmar eliminación');
+            if (!ok) return;
 
             fetch('../seguimiento/borrarSolicitudCompleto.php', {
                 method: 'POST',
@@ -1480,15 +1482,15 @@ if ($codigoUsuario) {
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        alert('✅ Envío eliminado correctamente');
+                        SwalAlert('Envío eliminado correctamente', 'success');
                         if (tableReportes) tableReportes.ajax.reload();
                     } else {
-                        alert('❌ Error: ' + (data.message || 'No se pudo eliminar'));
+                        SwalAlert('Error: ' + (data.message || 'No se pudo eliminar'), 'error');
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('❌ Error de conexión');
+                    SwalAlert('Error de conexión', 'error');
                 });
         }
 
@@ -1687,6 +1689,7 @@ if ($codigoUsuario) {
                                 <div class="card-row"><span class="label">Emp.Trans:</span> ${escapeHtml(row.nomEmpTrans || '')}</div>
                                 <div class="card-row"><span class="label">U.Reg:</span> ${escapeHtml(row.usuarioRegistrador || '')}</div>
                                 <div class="card-row"><span class="label">U.Resp:</span> ${escapeHtml(row.usuarioResponsable || '')}</div>
+                                <div class="card-row"><span class="label">Aut Por:</span> ${escapeHtml(row.autorizadoPor || '')}</div>
                             </div>
                             <div class="card-acciones">
                                 <button type="button" class="btn-detalles text-blue-600 hover:text-blue-800" data-codigo="${cod}" title="Ver"><i class="fas fa-eye"></i></button>
@@ -1866,9 +1869,9 @@ if ($codigoUsuario) {
             $(document).on('click', '.btn-eliminar-card', function () {
                 const cod = $(this).data('codigo');
                 if (cod) {
-                    if (confirm('¿Eliminar el envío "' + cod + '"?\n\nEsta acción no se puede deshacer.')) {
-                        borrarRegistroDesdeListado(cod);
-                    }
+                    SwalConfirm('¿Eliminar el envío "' + cod + '"?\n\nEsta acción no se puede deshacer.', 'Confirmar eliminación').then(function(ok) {
+                        if (ok) borrarRegistroDesdeListado(cod);
+                    });
                 }
             });
 

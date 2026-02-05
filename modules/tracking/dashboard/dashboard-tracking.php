@@ -2,7 +2,7 @@
 
 session_start();
 if (empty($_SESSION['active'])) {
-    header('Location: login.php');
+    echo '<script>var u="../../../login.php";if(window.top!==window.self){window.top.location.href=u;}else{window.location.href=u;}</script>';
     exit();
 }
 
@@ -399,6 +399,8 @@ if (!$conexion) {
         cargarGraficoDemoras('horas');
     </script>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../../assets/js/sweetalert-helpers.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const calendarEl = document.getElementById('calendarioTracking');
@@ -447,10 +449,8 @@ if (!$conexion) {
                 dayMaxEvents: 4, // Recomendado: evita sobrecarga visual en month
                 events: cargarEventos,
                 eventClick: function(info) {
-                    alert('Envío: ' + info.event.title +
-                        '\nUbicación: ' + info.event.extendedProps.ubicacion +
-                        '\nFecha/Hora: ' + info.event.start);
-                    // Aquí puedes abrir un modal más completo después
+                    var txt = 'Envío: ' + info.event.title + '\nUbicación: ' + (info.event.extendedProps.ubicacion || '') + '\nFecha/Hora: ' + info.event.start;
+                    if (typeof SwalAlert === 'function') SwalAlert(txt, 'info'); else alert(txt);
                 },
                 loading: function(isLoading) {
                     // Opcional: mostrar un spinner mientras carga

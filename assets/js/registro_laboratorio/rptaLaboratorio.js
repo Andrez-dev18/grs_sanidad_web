@@ -157,7 +157,7 @@ function confirmarCompletado() {
 
     // ✅ Validar que tenemos los datos necesarios
     if (!codEnvioCurrent || !posSolicitudCurrent || !tipoCurrent) {
-        alert('Error: Datos de solicitud no válidos');
+        if (typeof SwalAlert === 'function') SwalAlert('Error: Datos de solicitud no válidos', 'error'); else alert('Error: Datos de solicitud no válidos');
         cerrarModalCompletar();
         return;
     }
@@ -207,7 +207,7 @@ function confirmarCompletado() {
                 /* CODIGO ANTERIOR
                 alert('Resultado marcado como completado');
                 */
-                alert(`Resultado marcado como completado (${data.affected_rows} registros actualizados)`);
+                if (typeof SwalAlert === 'function') SwalAlert('Resultado marcado como completado (' + data.affected_rows + ' registros actualizados)', 'success'); else alert('Resultado marcado como completado (' + data.affected_rows + ' registros actualizados)');
 
                 // ✅ Verificar si el panel actual corresponde a la solicitud que se actualizó
                 const esMismaSolicitud = (window.codigoEnvioActual === codEnvioAActualizar &&
@@ -273,12 +273,12 @@ function confirmarCompletado() {
                 }, 300);
 
             } else {
-                alert('No se pudo cambiar el estado: ' + data.message);
+                if (typeof SwalAlert === 'function') SwalAlert('No se pudo cambiar el estado: ' + data.message, 'error'); else alert('No se pudo cambiar el estado: ' + data.message);
             }
         })
         .catch(err => {
             console.error('Error:', err);
-            alert('Error de conexión');
+            if (typeof SwalAlert === 'function') SwalAlert('Error de conexión', 'error'); else alert('Error de conexión');
         });
 
     cerrarModalCompletar();
@@ -351,7 +351,7 @@ function confirmarPendiente() {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                alert('Resultado marcado como pendiente');
+                if (typeof SwalAlert === 'function') SwalAlert('Resultado marcado como pendiente', 'success'); else alert('Resultado marcado como pendiente');
 
                 // ✅ Verificar si el panel actual corresponde a la solicitud que se actualizó
                 const esMismaSolicitud = (window.codigoEnvioActual === codEnvioAActualizar &&
@@ -417,12 +417,12 @@ function confirmarPendiente() {
                 }, 300);
 
             } else {
-                alert('No se pudo cambiar el estado: ' + data.message);
+                if (typeof SwalAlert === 'function') SwalAlert('No se pudo cambiar el estado: ' + data.message, 'error'); else alert('No se pudo cambiar el estado: ' + data.message);
             }
         })
         .catch(err => {
             console.error(err);
-            alert('Error de conexión');
+            if (typeof SwalAlert === 'function') SwalAlert('Error de conexión', 'error'); else alert('Error de conexión');
         });
 
     cerrarModalPendiente();
@@ -798,7 +798,7 @@ async function guardarResultados(estadoCuali) {
     let fechaRegistroLab = document.getElementById('fechaRegistroLab').value.trim();
 
     if (!fechaRegistroLab) {
-        alert("⚠️ Tiene que seleccionar una fecha para guardar primero.");
+        if (typeof SwalAlert === 'function') SwalAlert('Tiene que seleccionar una fecha para guardar primero.', 'warning'); else alert("⚠️ Tiene que seleccionar una fecha para guardar primero.");
         return;
     }
 
@@ -835,7 +835,7 @@ async function guardarResultados(estadoCuali) {
     const r = await res.json();
 
     if (!r.success) {
-        alert("❌ Error al guardar: " + r.error);
+        if (typeof SwalAlert === 'function') SwalAlert('Error al guardar: ' + r.error, 'error'); else alert("❌ Error al guardar: " + r.error);
         return;
     }
 
@@ -853,7 +853,7 @@ async function guardarResultados(estadoCuali) {
         mensajes.push("ℹ️ No se realizaron cambios en los análisis");
     }
 
-    alert(mensajes.join("\n"));
+    if (typeof SwalAlert === 'function') SwalAlert(mensajes.join("\n"), 'info'); else alert(mensajes.join("\n"));
 
     // -------------------------
     // 🔑 SUBIR ARCHIVOS SIEMPRE QUE EXISTAN
@@ -1046,30 +1046,19 @@ async function confirmarAnalisisMultiples() {
 function confirmarCambioCuali(checkbox) {
 
     if (!checkbox.checked) {
-
-        const confirmar = confirm(
-            "⚠️ ¿Desea desactivar los resultados cualitativos?"
-        );
-
-        // ❌ Si cancela → volver a ON
-        if (!confirmar) {
-            checkbox.checked = true;
-            return;
-        }
-        desactivarResultadosCuali();
+        var prom = (typeof SwalConfirm === 'function') ? SwalConfirm('¿Desea desactivar los resultados cualitativos?', 'Confirmar') : Promise.resolve(confirm('⚠️ ¿Desea desactivar los resultados cualitativos?'));
+        prom.then(function(confirmar) {
+            if (!confirmar) { checkbox.checked = true; return; }
+            desactivarResultadosCuali();
+        });
         return;
     }
     if (checkbox.checked) {
-        const confirmar = confirm(
-            "⚠️ ¿Desea activar los resultados cualitativos?"
-        );
-
-        // ❌ Si cancela → volver a OFF
-        if (!confirmar) {
-            checkbox.checked = false;
-            return;
-        }
-        activarResultadosCuali();
+        var prom = (typeof SwalConfirm === 'function') ? SwalConfirm('¿Desea activar los resultados cualitativos?', 'Confirmar') : Promise.resolve(confirm('⚠️ ¿Desea activar los resultados cualitativos?'));
+        prom.then(function(confirmar) {
+            if (!confirmar) { checkbox.checked = false; return; }
+            activarResultadosCuali();
+        });
         return;
     }
 }
@@ -1121,30 +1110,19 @@ function activarResultadosCuali() {
 function confirmarCambioCuanti(checkbox) {
 
     if (!checkbox.checked) {
-
-        const confirmar = confirm(
-            "⚠️ ¿Desea desactivar los resultados cuantitativos?"
-        );
-
-        // ❌ Si cancela → volver a ON
-        if (!confirmar) {
-            checkbox.checked = true;
-            return;
-        }
-        desactivarResultadosCuanti();
+        var prom = (typeof SwalConfirm === 'function') ? SwalConfirm('¿Desea desactivar los resultados cuantitativos?', 'Confirmar') : Promise.resolve(confirm('⚠️ ¿Desea desactivar los resultados cuantitativos?'));
+        prom.then(function(confirmar) {
+            if (!confirmar) { checkbox.checked = true; return; }
+            desactivarResultadosCuanti();
+        });
         return;
     }
     if (checkbox.checked) {
-        const confirmar = confirm(
-            "⚠️ ¿Desea activar los resultados cuantitativos?"
-        );
-
-        // ❌ Si cancela → volver a OFF
-        if (!confirmar) {
-            checkbox.checked = false;
-            return;
-        }
-        activarResultadosCuanti();
+        var prom = (typeof SwalConfirm === 'function') ? SwalConfirm('¿Desea activar los resultados cuantitativos?', 'Confirmar') : Promise.resolve(confirm('⚠️ ¿Desea activar los resultados cuantitativos?'));
+        prom.then(function(confirmar) {
+            if (!confirmar) { checkbox.checked = false; return; }
+            activarResultadosCuanti();
+        });
         return;
     }
 }
@@ -1302,12 +1280,12 @@ async function guardarPDF() {
         let r = await res.json();
 
         if (!r.success) {
-            alert("❌ Error con " + file.name + ": " + r.error);
+            if (typeof SwalAlert === 'function') SwalAlert('Error con ' + file.name + ': ' + r.error, 'error'); else alert("❌ Error con " + file.name + ": " + r.error);
             return;
         }
     }
 
-    alert("📁 Todos los archivos fueron subidos correctamente");
+    if (typeof SwalAlert === 'function') SwalAlert('Todos los archivos fueron subidos correctamente', 'success'); else alert("📁 Todos los archivos fueron subidos correctamente");
 
     // limpiar input
     inputPDF.value = "";
@@ -1374,13 +1352,13 @@ inputPDF.addEventListener("change", () => {
 
         // validar tipo
         if (!allowedTypes.includes(file.type)) {
-            alert(`❌ Archivo no permitido: ${file.name}`);
-            continue;
+                if (typeof SwalAlert === 'function') SwalAlert('Archivo no permitido: ' + file.name, 'error'); else alert('❌ Archivo no permitido: ' + file.name);
+                continue;
         }
 
         // validar tamaño
         if (file.size > MAX_SIZE) {
-            alert(`❌ ${file.name} pesa ${(file.size / 1024 / 1024).toFixed(2)}MB (máx. 10MB)`);
+            if (typeof SwalAlert === 'function') SwalAlert(file.name + ' pesa ' + (file.size / 1024 / 1024).toFixed(2) + 'MB (máx. 10MB)', 'error'); else alert('❌ ' + file.name + ' pesa ' + (file.size / 1024 / 1024).toFixed(2) + 'MB (máx. 10MB)');
             continue;
         }
 
@@ -1490,7 +1468,7 @@ async function descargarArchivo(ruta, nombre) {
         document.body.removeChild(a);
 
     } catch (err) {
-        alert("❌ No se pudo verificar el archivo.");
+        if (typeof SwalAlert === 'function') SwalAlert('No se pudo verificar el archivo.', 'error'); else alert("❌ No se pudo verificar el archivo.");
         console.error(err);
     }
 }
@@ -1634,12 +1612,12 @@ function reemplazarArchivoCuanti(idArchivo) {
 
         // Validaciones
         if (!allowedTypes.includes(file.type)) {
-            alert("❌ Tipo de archivo no permitido");
+            if (typeof SwalAlert === 'function') SwalAlert('Tipo de archivo no permitido', 'error'); else alert("❌ Tipo de archivo no permitido");
             return;
         }
 
         if (file.size > MAX_SIZE) {
-            alert("❌ Archivo supera el tamaño permitido");
+            if (typeof SwalAlert === 'function') SwalAlert('Archivo supera el tamaño permitido', 'error'); else alert("❌ Archivo supera el tamaño permitido");
             return;
         }
 
@@ -1660,10 +1638,10 @@ function reemplazarArchivoCuanti(idArchivo) {
         const r = await res.json();
 
         if (r.success) {
-            alert("♻️ Archivo reemplazado correctamente");
+            if (typeof SwalAlert === 'function') SwalAlert('Archivo reemplazado correctamente', 'success'); else alert("♻️ Archivo reemplazado correctamente");
             cargarArchivosCompletadosCuanti(codigoEnvio, posSolicitud);
         } else {
-            alert("❌ Error: " + r.error);
+            if (typeof SwalAlert === 'function') SwalAlert('Error: ' + r.error, 'error'); else alert("❌ Error: " + r.error);
         }
     };
 
@@ -1671,14 +1649,13 @@ function reemplazarArchivoCuanti(idArchivo) {
 }
 
 function eliminarArchivoCuanti(idArchivo, nombreArchivo) {
-    if (!confirm(`¿Estás seguro de eliminar el archivo "${nombreArchivo}"?\nEsta acción no se puede deshacer.`)) {
-        return;
-    }
-
-    const codigoEnvio = window.codigoEnvioActual;
-    const posSolicitud = window.posSolicitudActual;
-
-    fetch('eliminar_archivo.php', {
+    var msg = '¿Estás seguro de eliminar el archivo "' + nombreArchivo + '"? Esta acción no se puede deshacer.';
+    var prom = (typeof SwalConfirm === 'function') ? SwalConfirm(msg, 'Confirmar eliminación') : Promise.resolve(confirm(msg));
+    prom.then(function(confirmed) {
+        if (!confirmed) return;
+        var codigoEnvio = window.codigoEnvioActual;
+        var posSolicitud = window.posSolicitudActual;
+        fetch('eliminar_archivo.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -1688,17 +1665,17 @@ function eliminarArchivoCuanti(idArchivo, nombreArchivo) {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                alert('Archivo eliminado correctamente');
-                // Recargar la lista de archivos cuantitativos
+                if (typeof SwalAlert === 'function') SwalAlert('Archivo eliminado correctamente', 'success'); else alert('Archivo eliminado correctamente');
                 cargarArchivosCompletadosCuanti(codigoEnvio, posSolicitud);
             } else {
-                alert('Error: ' + data.message);
+                if (typeof SwalAlert === 'function') SwalAlert('Error: ' + data.message, 'error'); else alert('Error: ' + data.message);
             }
         })
         .catch(err => {
             console.error(err);
-            alert('Error de conexión al eliminar archivo');
+            if (typeof SwalAlert === 'function') SwalAlert('Error de conexión al eliminar archivo', 'error'); else alert('Error de conexión al eliminar archivo');
         });
+    });
 }
 
 function reemplazarArchivo(idArchivo) {
@@ -1714,12 +1691,12 @@ function reemplazarArchivo(idArchivo) {
 
         // Validaciones (reuse de las tuyas)
         if (!allowedTypes.includes(file.type)) {
-            alert("❌ Tipo de archivo no permitido");
+            if (typeof SwalAlert === 'function') SwalAlert('Tipo de archivo no permitido', 'error'); else alert("❌ Tipo de archivo no permitido");
             return;
         }
 
         if (file.size > MAX_SIZE) {
-            alert("❌ Archivo supera el tamaño permitido");
+            if (typeof SwalAlert === 'function') SwalAlert('Archivo supera el tamaño permitido', 'error'); else alert("❌ Archivo supera el tamaño permitido");
             return;
         }
 
@@ -1742,7 +1719,7 @@ function reemplazarArchivo(idArchivo) {
             alert("♻️ Archivo reemplazado correctamente");
             cargarArchivosCompletados(codigoEnvio, currentPosition);
         } else {
-            alert("❌ Error: " + r.error);
+            if (typeof SwalAlert === 'function') SwalAlert('Error: ' + r.error, 'error'); else alert("❌ Error: " + r.error);
         }
     };
 
@@ -1750,11 +1727,12 @@ function reemplazarArchivo(idArchivo) {
 }
 
 function eliminarArchivo(idArchivo, nombreArchivo) {
-    if (!confirm(`¿Estás seguro de eliminar el archivo "${nombreArchivo}"?\nEsta acción no se puede deshacer.`)) {
-        return;
-    }
-    const codigoEnvio = document.getElementById("detailCodigo").textContent;
-    fetch('eliminar_archivo.php', {
+    var msg = '¿Estás seguro de eliminar el archivo "' + nombreArchivo + '"? Esta acción no se puede deshacer.';
+    var prom = (typeof SwalConfirm === 'function') ? SwalConfirm(msg, 'Confirmar eliminación') : Promise.resolve(confirm(msg));
+    prom.then(function(confirmed) {
+        if (!confirmed) return;
+        var codigoEnvio = document.getElementById("detailCodigo").textContent;
+        fetch('eliminar_archivo.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -1764,17 +1742,17 @@ function eliminarArchivo(idArchivo, nombreArchivo) {
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                alert('Archivo eliminado correctamente');
-                // Recargar la lista de archivos
+                if (typeof SwalAlert === 'function') SwalAlert('Archivo eliminado correctamente', 'success'); else alert('Archivo eliminado correctamente');
                 cargarArchivosCompletados(codigoEnvio, currentPosition);
             } else {
-                alert('Error: ' + data.message);
+                if (typeof SwalAlert === 'function') SwalAlert('Error: ' + data.message, 'error'); else alert('Error: ' + data.message);
             }
         })
         .catch(err => {
             console.error(err);
-            alert('Error de conexión al eliminar archivo');
+            if (typeof SwalAlert === 'function') SwalAlert('Error de conexión al eliminar archivo', 'error'); else alert('Error de conexión al eliminar archivo');
         });
+    });
 }
 
 
@@ -1970,12 +1948,12 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
                         cargarDatosCompletados(codigo);
                     }, 300);
                 } else {
-                    alert('❌ Error: ' + (data.message || 'No se pudieron cargar enfermedades'));
+                    if (typeof SwalAlert === 'function') SwalAlert(data.message || 'No se pudieron cargar enfermedades', 'error'); else alert('❌ Error: ' + (data.message || 'No se pudieron cargar enfermedades'));
                 }
             })
             .catch(e => {
                 console.error('Error completo:', e);
-                alert('❌ Error de conexión. Ver consola para detalles.');
+                if (typeof SwalAlert === 'function') SwalAlert('Error de conexión. Ver consola para detalles.', 'error'); else alert('❌ Error de conexión. Ver consola para detalles.');
             });
     }
 }
@@ -2319,7 +2297,7 @@ function abrirModalConfirmacionCuanti() {
     let fechaRegistroLabCuanti = document.getElementById('fechaRegistroLabCuanti').value.trim();
 
     if (!fechaRegistroLabCuanti) {
-        alert("⚠️ Tiene que seleccionar una fecha de registro del laboratorio primero.");
+        if (typeof SwalAlert === 'function') SwalAlert('Tiene que seleccionar una fecha de registro del laboratorio primero.', 'warning'); else alert("⚠️ Tiene que seleccionar una fecha de registro del laboratorio primero.");
         return;
     }
 
@@ -2336,7 +2314,7 @@ function abrirModalConfirmacionCuanti() {
     }
 
     if (enfermedadesConDatos === 0) {
-        alert('⚠️ No hay enfermedades con datos para guardar');
+        if (typeof SwalAlert === 'function') SwalAlert('No hay enfermedades con datos para guardar', 'warning'); else alert('⚠️ No hay enfermedades con datos para guardar');
         return;
     }
 
@@ -2465,7 +2443,7 @@ function guardar(e, estadoCuanti = 'completado') {
 
     if (enfermedadesConDatos === 0) {
         document.querySelectorAll('.tmp-enf-input').forEach(n => n.remove());
-        alert('⚠️ No hay enfermedades con datos para guardar');
+        if (typeof SwalAlert === 'function') SwalAlert('No hay enfermedades con datos para guardar', 'warning'); else alert('⚠️ No hay enfermedades con datos para guardar');
         return;
     }
 
@@ -2540,7 +2518,7 @@ function guardar(e, estadoCuanti = 'completado') {
                 const accionTexto = window.estadoActualSolicitud === 'completado' ? 'actualizado' : 'guardado';
 
                 /* CODIGO ANTERIOR
-                alert(`✅ Análisis ${accionTexto} correctamente`);
+                if (typeof SwalAlert === 'function') SwalAlert('Análisis ' + accionTexto + ' correctamente', 'success'); else alert('✅ Análisis ' + accionTexto + ' correctamente');
                 
                 // Restaurar botón
                 btn.innerHTML = original;
@@ -2562,7 +2540,7 @@ function guardar(e, estadoCuanti = 'completado') {
                 */
 
                 const estadoGuardado = estadoCuanti; // Estado seleccionado en el modal
-                alert(`✅ Análisis ${accionTexto} como ${estadoGuardado}`);
+                if (typeof SwalAlert === 'function') SwalAlert('Análisis ' + accionTexto + ' como ' + estadoGuardado, 'success'); else alert('✅ Análisis ' + accionTexto + ' como ' + estadoGuardado);
 
                 // Restaurar botón
                 if (btn) {
@@ -2622,7 +2600,7 @@ function guardar(e, estadoCuanti = 'completado') {
                 const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
                 renderizarEnfermedades(tipo);
             } else {
-                alert('❌ Error: ' + data.message);
+                if (typeof SwalAlert === 'function') SwalAlert(data.message, 'error'); else alert('❌ Error: ' + data.message);
                 if (btn) {
                     btn.innerHTML = original;
                     btn.disabled = false;
@@ -2631,7 +2609,7 @@ function guardar(e, estadoCuanti = 'completado') {
         })
         .catch(e => {
             console.error('Error completo:', e);
-            alert('❌ Error de conexión: ' + e.message);
+            if (typeof SwalAlert === 'function') SwalAlert('Error de conexión: ' + e.message, 'error'); else alert('❌ Error de conexión: ' + e.message);
             if (btn) {
                 btn.innerHTML = original;
                 btn.disabled = false;
@@ -2755,58 +2733,55 @@ function eliminarEnfermedadCuanti(nombreEnfermedad, codigoEnfermedad) {
         });
 
     if (tieneEstado) {
-        alert('⚠️ Esta enfermedad ya tiene resultados guardados. No se puede eliminar.');
+        if (typeof SwalAlert === 'function') SwalAlert('Esta enfermedad ya tiene resultados guardados. No se puede eliminar.', 'warning'); else alert('⚠️ Esta enfermedad ya tiene resultados guardados. No se puede eliminar.');
         return;
     }
     */
 
     //  Permitir eliminar aunque tenga resultados (solo enfermedades agregadas recientemente)
-    if (!confirm(`¿Eliminar "${nombreEnfermedad}" de esta solicitud?\n\nSi tiene resultados guardados, también se eliminarán.`)) {
-        return;
-    }
+    var msgElim = '¿Eliminar "' + nombreEnfermedad + '" de esta solicitud?\n\nSi tiene resultados guardados, también se eliminarán.';
+    var promElim = (typeof SwalConfirm === 'function') ? SwalConfirm(msgElim, 'Confirmar eliminación') : Promise.resolve(confirm(msgElim));
+    promElim.then(function(ok) {
+        if (!ok) return;
+        var fd = new FormData();
+        fd.append('action', 'eliminar_enfermedad_solicitud');
+        fd.append('codEnvio', window.codigoEnvioActual);
+        fd.append('posSolicitud', window.posSolicitudActual);
+        fd.append('codAnalisis', codigoEnfermedad);
+        fd.append('nomAnalisis', nombreEnfermedad);
 
-    // Llamar al backend para eliminar de san_fact_solicitud_det
-    const fd = new FormData();
-    fd.append('action', 'eliminar_enfermedad_solicitud');
-    fd.append('codEnvio', window.codigoEnvioActual);
-    fd.append('posSolicitud', window.posSolicitudActual);
-    fd.append('codAnalisis', codigoEnfermedad);
-    fd.append('nomAnalisis', nombreEnfermedad);
+        fetch('crud-serologia.php', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    if (typeof SwalAlert === 'function') SwalAlert('Enfermedad eliminada', 'success'); else alert('✅ Enfermedad eliminada');
 
-    fetch('crud-serologia.php', { method: 'POST', body: fd })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                alert('✅ Enfermedad eliminada');
+                    if (window.enfermedadStates && window.enfermedadStates[nombreEnfermedad]) {
+                        delete window.enfermedadStates[nombreEnfermedad];
+                    }
 
-                // Eliminar del estado local
-                if (window.enfermedadStates && window.enfermedadStates[nombreEnfermedad]) {
-                    delete window.enfermedadStates[nombreEnfermedad];
+                    if (window.enfermedadesAgregadasReciente && window.enfermedadesAgregadasReciente[nombreEnfermedad]) {
+                        delete window.enfermedadesAgregadasReciente[nombreEnfermedad];
+                    }
+
+                    fetch('crud-serologia.php?action=get_enfermedades&codEnvio=' + window.codigoEnvioActual + '&posSolicitud=' + window.posSolicitudActual)
+                        .then(r => r.json())
+                        .then(dd => {
+                            if (dd.success) {
+                                window.enfermedadesActuales = dd.enfermedades;
+                                const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
+                                renderizarEnfermedades(tipo);
+                            }
+                        });
+                } else {
+                    if (typeof SwalAlert === 'function') SwalAlert(data.message || 'No se pudo eliminar', 'error'); else alert('❌ Error: ' + (data.message || 'No se pudo eliminar'));
                 }
-
-                // Eliminar del registro de enfermedades recientes
-                if (window.enfermedadesAgregadasReciente && window.enfermedadesAgregadasReciente[nombreEnfermedad]) {
-                    delete window.enfermedadesAgregadasReciente[nombreEnfermedad];
-                }
-
-                // Recargar lista de enfermedades
-                fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}&posSolicitud=${window.posSolicitudActual}`)
-                    .then(r => r.json())
-                    .then(dd => {
-                        if (dd.success) {
-                            window.enfermedadesActuales = dd.enfermedades;
-                            const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
-                            renderizarEnfermedades(tipo);
-                        }
-                    });
-            } else {
-                alert('❌ Error: ' + (data.message || 'No se pudo eliminar'));
-            }
-        })
-        .catch(e => {
-            console.error(e);
-            alert('❌ Error de conexión');
-        });
+            })
+            .catch(e => {
+                console.error(e);
+                if (typeof SwalAlert === 'function') SwalAlert('Error de conexión', 'error'); else alert('❌ Error de conexión');
+            });
+    });
 }
 
 // ============================================
@@ -2945,9 +2920,11 @@ function filtrarEnfermedadesCatalogo() {
 }
 
 function agregarEnfermedadASolicitud(codigo, nombre) {
-    if (!confirm(`¿Agregar "${nombre}" a la solicitud ${window.codigoEnvioActual} (Pos: ${window.posSolicitudActual})?`)) return;
-
-    const codRef = document.getElementById('edadAves_display').value;
+    var msgAgr = '¿Agregar "' + nombre + '" a la solicitud ' + window.codigoEnvioActual + ' (Pos: ' + window.posSolicitudActual + ')?';
+    var promAgr = (typeof SwalConfirm === 'function') ? SwalConfirm(msgAgr, 'Confirmar') : Promise.resolve(confirm(msgAgr));
+    promAgr.then(function(confirmed) {
+        if (!confirmed) return;
+    var codRef = document.getElementById('edadAves_display').value;
     //const fecToma = document.getElementById('fechaToma').value;
 
     const fd = new FormData();
@@ -2969,7 +2946,7 @@ function agregarEnfermedadASolicitud(codigo, nombre) {
             try {
                 const data = JSON.parse(text);
                 if (data.success) {
-                    alert('✅ Enfermedad agregada');
+                    if (typeof SwalAlert === 'function') SwalAlert('Enfermedad agregada', 'success'); else alert('✅ Enfermedad agregada');
                     cerrarModalAgregarEnfermedad();
 
                     /* CODIGO ANTERIOR (no incluía posSolicitud en la consulta)
@@ -3042,17 +3019,18 @@ function agregarEnfermedadASolicitud(codigo, nombre) {
                             }
                         });
                 } else {
-                    alert('❌ Error: ' + data.message);
+                    if (typeof SwalAlert === 'function') SwalAlert(data.message, 'error'); else alert('❌ Error: ' + data.message);
                 }
             } catch (err) {
                 console.error('Respuesta no JSON:', text);
-                alert('Respuesta inesperada del servidor. Revisa la consola (F12).');
+                if (typeof SwalAlert === 'function') SwalAlert('Respuesta inesperada del servidor. Revisa la consola (F12).', 'error'); else alert('Respuesta inesperada del servidor. Revisa la consola (F12).');
             }
         })
         .catch(e => {
             console.error('Error fetch:', e);
-            alert('❌ Error de conexión: ' + e.message);
+            if (typeof SwalAlert === 'function') SwalAlert('Error de conexión: ' + e.message, 'error'); else alert('❌ Error de conexión: ' + e.message);
         });
+    });
 }
 
 
@@ -3114,12 +3092,12 @@ if (inputPDFCuanti) {
 
         for (let file of inputPDFCuanti.files) {
             if (!allowedTypes.includes(file.type)) {
-                alert(`❌ Archivo no permitido: ${file.name}`);
-                continue;
-            }
+            if (typeof SwalAlert === 'function') SwalAlert('Archivo no permitido: ' + file.name, 'error'); else alert('❌ Archivo no permitido: ' + file.name);
+            continue;
+        }
 
-            if (file.size > MAX_SIZE) {
-                alert(`❌ ${file.name} pesa ${(file.size / 1024 / 1024).toFixed(2)}MB (máx. 10MB)`);
+        if (file.size > MAX_SIZE) {
+                if (typeof SwalAlert === 'function') SwalAlert(file.name + ' pesa ' + (file.size / 1024 / 1024).toFixed(2) + 'MB (máx. 10MB)', 'error'); else alert('❌ ' + file.name + ' pesa ' + (file.size / 1024 / 1024).toFixed(2) + 'MB (máx. 10MB)');
                 continue;
             }
 

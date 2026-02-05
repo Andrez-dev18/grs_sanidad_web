@@ -1,7 +1,7 @@
 <?php
 session_start();
 if (empty($_SESSION['active'])) {
-    header('Location: login.php');
+    echo '<script>var u="../../../login.php";if(window.top!==window.self){window.top.location.href=u;}else{window.location.href=u;}</script>';
     exit();
 }
 

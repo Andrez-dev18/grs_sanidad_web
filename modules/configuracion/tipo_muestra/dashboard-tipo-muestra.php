@@ -38,6 +38,8 @@ if (!$conexion) {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
      <style>
         /* Tus estilos existentes */

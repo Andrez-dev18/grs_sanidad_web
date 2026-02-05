@@ -2,7 +2,7 @@
 
 session_start();
 if (empty($_SESSION['active'])) {
-    header('Location: login.php');
+    echo '<script>var u="../../login.php";if(window.top!==window.self){window.top.location.href=u;}else{window.location.href=u;}</script>';
     exit();
 }
 
@@ -443,14 +443,8 @@ if (!$conn) {
 
                     <!-- Tabs (estilo registro) -->
                     <div class="mb-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
-                        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-3 border-b border-gray-200 flex flex-wrap items-center justify-between gap-2">
-                            <label class="text-sm font-semibold text-gray-700">Evaluación por sistemas</label>
-                            <button type="button" id="btnAnadirFilaNecropsia" class="px-3 py-1.5 text-sm font-medium rounded-lg border border-green-300 text-green-700 bg-white hover:bg-green-50 transition flex-shrink-0">
-                                <i class="fas fa-plus mr-1"></i>Añadir fila
-                            </button>
-                        </div>
                     <div class="border-b border-gray-200 p-2 sm:p-4 necropsia-tabs-nav overflow-x-auto">
-                        <nav class="-mb-px flex space-x-4 sm:space-x-8">
+                        <nav class="-mb-px flex flex-nowrap space-x-4 sm:space-x-8" role="tablist">
                             <button type="button" class="tab-button py-3 px-1 border-b-4 border-green-600 text-green-600 font-semibold" data-tab="inmunologico">
                                 Sistema Inmunológico
                             </button>
@@ -1064,10 +1058,12 @@ if (!$conn) {
                                 </tr>
                             </tbody>
                         </table>
+                        </div>
                     </div>
 
                     <!-- sistema respiratorio-->
                     <div class="tab-content hidden" id="respiratorio">
+                        <div class="overflow-x-auto rounded-lg border border-gray-200">
                         <table class="w-full table-auto border-collapse text-sm">
                             <thead class="bg-green-100">
                                 <tr>
@@ -1376,10 +1372,11 @@ if (!$conn) {
                     </div>
                     </div>
                     </div>
-                    <!-- /Card Evaluación por sistemas -->
+                    </div>
+                    <!-- /Card Tabs -->
 
                     <!-- Botones al final -->
-                    <div class="dashboard-modal-actions necropsia-modal-actions flex flex-wrap justify-end mt-6 sm:mt-8 gap-3 sm:gap-4 pt-4 border-t border-gray-200">
+                    <div class="dashboard-modal-actions necropsia-modal-actions flex flex-wrap justify-end mt-6 sm:mt-8 gap-3 sm:gap-4 pt-4 pb-4 sm:pb-6 px-4 sm:px-6 border-t border-gray-200 bg-white rounded-b-2xl flex-shrink-0">
                         <button type="button" id="closeModalBtn" class="px-4 sm:px-6 py-2.5 sm:py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition w-full sm:w-auto flex-shrink-0 min-w-0">
                             Cancelar
                         </button>
@@ -1524,7 +1521,28 @@ if (!$conn) {
     </div>
 
     <script>
-        // Helpers
+        // Helpers (SweetAlert: evita desbordes con contenido scrollable)
+        function SwalAlert(mensaje, tipo) {
+            var icono = (tipo === 'error') ? 'error' : (tipo === 'success') ? 'success' : (tipo === 'warning') ? 'warning' : 'info';
+            return Swal.fire({
+                icon: icono,
+                title: tipo === 'error' ? 'Error' : tipo === 'success' ? 'Éxito' : tipo === 'warning' ? 'Aviso' : 'Información',
+                html: '<div class="text-left max-h-[60vh] overflow-y-auto px-1">' + (typeof mensaje === 'string' ? mensaje.replace(/</g, '&lt;').replace(/>/g, '&gt;') : mensaje) + '</div>',
+                confirmButtonText: 'Aceptar',
+                customClass: { htmlContainer: 'text-left' }
+            });
+        }
+        function SwalConfirm(mensaje, titulo) {
+            return Swal.fire({
+                title: titulo || 'Confirmar',
+                html: '<div class="text-left max-h-[50vh] overflow-y-auto">' + (typeof mensaje === 'string' ? mensaje.replace(/</g, '&lt;').replace(/>/g, '&gt;') : mensaje) + '</div>',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí',
+                cancelButtonText: 'Cancelar',
+                customClass: { htmlContainer: 'text-left' }
+            }).then(function(r) { return r.isConfirmed; });
+        }
         function getFechaSeleccionada() {
             const f = document.getElementById('fectra')?.value;
             if (f) return f;
@@ -1760,10 +1778,14 @@ if (!$conn) {
                         '<div class="card-contenido">' +
                         '<div class="card-codigo">N°Reg ' + $('<div>').text(row.tnumreg || '').html() + '</div>' +
                         '<div class="card-campos">' +
-                        '<div class="card-row"><span class="label">Fecha:</span> ' + $('<div>').text(row.tfectra || '').html() + '</div>' +
-                        '<div class="card-row"><span class="label">Granja:</span> ' + $('<div>').text(row.granja || '').html() + '</div>' +
-                        '<div class="card-row"><span class="label">Galpón:</span> ' + $('<div>').text(row.tgalpon || '').html() + '</div>' +
+                        '<div class="card-row"><span class="label">Fecha necropsia:</span> ' + $('<div>').text(row.tfectra || '').html() + '</div>' +
+                        '<div class="card-row"><span class="label">Granja:</span> ' + $('<div>').text(row.tgranja || row.granja || '').html() + '</div>' +
+                        '<div class="card-row"><span class="label">Nombre:</span> ' + $('<div>').text(row.nombre || row.tcencos || '').html() + '</div>' +
                         '<div class="card-row"><span class="label">Campaña:</span> ' + $('<div>').text(row.campania || '').html() + '</div>' +
+                        '<div class="card-row"><span class="label">Galpón:</span> ' + $('<div>').text(row.tgalpon || '').html() + '</div>' +
+                        '<div class="card-row"><span class="label">Edad:</span> ' + $('<div>').text((row.tedad != null && row.tedad !== '') ? row.tedad + ' días' : '-').html() + '</div>' +
+                        '<div class="card-row"><span class="label">Usuario:</span> ' + $('<div>').text(row.tuser || '-').html() + '</div>' +
+                        '<div class="card-row"><span class="label">Fecha registro:</span> ' + $('<div>').text(row.fecha_registro || row.tdate || '-').html() + '</div>' +
                         '</div>' +
                         '<div class="card-acciones">' + acciones + '</div></div></div>';
                     cont.append(card);
@@ -1896,15 +1918,12 @@ if (!$conn) {
             const btnGuardar = document.getElementById('btnGuardarNecropsia');
             if (btnGuardar) btnGuardar.textContent = 'Actualizar Necropsia';
 
-            // Abrir modal
-            document.getElementById('modalNecropsia').classList.remove('hidden');
-
             try {
                 const response = await fetch(`cargar_necropsia_editar.php?granja=${encodeURIComponent(granja)}&numreg=${numreg}&fectra=${fectra}`);
                 const result = await response.json();
 
                 if (!result.success) {
-                    alert('Error al cargar datos: ' + result.message);
+                    SwalAlert('Error al cargar datos: ' + result.message, 'error');
                     return;
                 }
 
@@ -1920,27 +1939,27 @@ if (!$conn) {
                 // Granja (select) - cargar opciones primero si es necesario
                 const granjaSelect = document.getElementById('granja');
                 if (granjaSelect) {
-                    // Asegurarse de que las opciones estén cargadas
                     await cargarGranjasParaEdicion();
                     granjaSelect.value = result.granja || granja;
-                    // Trigger change para cargar galpones
+                    // Al editar no recalcular edad: usamos datos ya guardados; solo cargar galpones
+                    window._loadingEditNecropsia = true;
                     granjaSelect.dispatchEvent(new Event('change'));
                 }
 
-                // Esperar un poco para que se carguen los galpones
+                // Esperar a que se carguen los galpones
                 await new Promise(resolve => setTimeout(resolve, 500));
 
-                // Galpón (select)
+                // Galpón, campaña y edad desde datos guardados (no desde recálculo dinámico)
                 const galponSelect = document.getElementById('galpon');
                 if (galponSelect) galponSelect.value = result.galpon || '';
 
-                // Campaña (input readonly)
                 const campaniaInput = document.getElementById('campania');
                 if (campaniaInput) campaniaInput.value = result.campania || '';
 
-                // Edad (input readonly)
                 const edadInput = document.getElementById('edad');
                 if (edadInput) edadInput.value = result.edad || '';
+
+                window._loadingEditNecropsia = false;
 
                 // === PROCESAR REGISTROS ===
                 const registros = result.registros;
@@ -1957,22 +1976,29 @@ if (!$conn) {
                         };
                     }
 
-                    // Agregar parámetro con sus checkboxes
-                    const parametro = reg.tparametro.trim();
+                    // Agregar parámetro con sus checkboxes (leer porcentajes tolerando string o número y posibles variantes de nombre)
+                    const parametro = (reg.tparametro || '').trim();
+                    const getP = (r, key) => Number(r[key] ?? r[key.replace(/^t/, 'T')] ?? 0);
                     registrosPorNivel[nivel].parametros[parametro] = {
-                        p1: reg.tporcentaje1 || 0,
-                        p2: reg.tporcentaje2 || 0,
-                        p3: reg.tporcentaje3 || 0,
-                        p4: reg.tporcentaje4 || 0,
-                        p5: reg.tporcentaje5 || 0,
-                        total: reg.tporcentajetotal || 0
+                        p1: getP(reg, 'tporcentaje1'),
+                        p2: getP(reg, 'tporcentaje2'),
+                        p3: getP(reg, 'tporcentaje3'),
+                        p4: getP(reg, 'tporcentaje4'),
+                        p5: getP(reg, 'tporcentaje5'),
+                        total: Number(reg.tporcentajetotal ?? reg.Tporcentajetotal ?? 0) || 0
                     };
                 });
 
-                // Mapeo de nivel a obsId base (debe coincidir EXACTAMENTE con los IDs en el HTML)
+                // Normalizar nivel para mapeo (BD puede devolver HÍGADO, VESÍCULA, EROSIÓN, etc.)
+                function normalizarNivelParaMapa(nivel) {
+                    if (!nivel || typeof nivel !== 'string') return nivel || '';
+                    return nivel.normalize('NFD').replace(/\p{Diacritic}/gu, '').trim();
+                }
+
+                // Mapeo de nivel a obsId base (debe coincidir con los IDs en el HTML; se usa clave sin acentos)
                 const mapeoObsId = {
-                    'INDICE BURSAL': 'indice_bursal', // ← CORREGIDO
-                    'MUCOSA DE LA BURSA': 'mucosa_bursa', // ← CORREGIDO
+                    'INDICE BURSAL': 'indice_bursal',
+                    'MUCOSA DE LA BURSA': 'mucosa_bursa',
                     'TIMOS': 'timos',
                     'HIGADO': 'higados',
                     'VESICULA BILIAR': 'vesicula',
@@ -2012,6 +2038,7 @@ if (!$conn) {
                     'Color Claro': '_color_claro',
                     'Tam. Normal': '_tam_normal',
                     'Atrofiado': '_atrofiado',
+                    'Hipertrofiado': '_hipertrofiado',
                     // EROSIÓN
                     'Grado 1': '_grado1',
                     'Grado 2': '_grado2',
@@ -2056,10 +2083,11 @@ if (!$conn) {
                 // Llenar datos por nivel
                 Object.keys(registrosPorNivel).forEach(nivelKey => {
                     const datos = registrosPorNivel[nivelKey];
-                    const obsIdBase = mapeoObsId[nivelKey];
+                    const nivelNorm = normalizarNivelParaMapa(nivelKey);
+                    const obsIdBase = mapeoObsId[nivelKey] || mapeoObsId[nivelNorm];
 
                     if (!obsIdBase) {
-                        console.warn('Nivel no mapeado:', nivelKey);
+                        console.warn('Nivel no mapeado:', nivelKey, '(normalizado:', nivelNorm, ')');
                         return;
                     }
 
@@ -2071,15 +2099,16 @@ if (!$conn) {
                     Object.keys(datos.parametros).forEach(parametro => {
                         const valores = datos.parametros[parametro];
 
-                        // Construir idGrupo - casos especiales para ÍNDICE BURSAL y MUCOSA DE LA BURSA
+                        // Construir idGrupo - casos especiales para ÍNDICE BURSAL y MUCOSA DE LA BURSA (usar nivel normalizado)
                         let idGrupo;
+                        const nivelNorm = normalizarNivelParaMapa(nivelKey);
 
-                        if (nivelKey === 'INDICE BURSAL') {
+                        if (nivelNorm === 'INDICE BURSAL') {
                             // Los IDs son: indice_normal, indice_atrofia, indice_severa_atrofia
                             if (parametro === 'Normal') idGrupo = 'indice_normal';
                             else if (parametro === 'Atrofia') idGrupo = 'indice_atrofia';
                             else if (parametro === 'Severa Atrofia') idGrupo = 'indice_severa_atrofia';
-                        } else if (nivelKey === 'MUCOSA DE LA BURSA') {
+                        } else if (nivelNorm === 'MUCOSA DE LA BURSA') {
                             // Los IDs son: mucosa_normal, mucosa_petequias, mucosa_hemorragia
                             if (parametro === 'Normal') idGrupo = 'mucosa_normal';
                             else if (parametro === 'Petequias') idGrupo = 'mucosa_petequias';
@@ -2102,11 +2131,17 @@ if (!$conn) {
                             return;
                         }
 
-                        // Marcar checkboxes (5 aves)
+                        // Marcar checkboxes (5 aves) — asegurar porcentajes como número por si el backend envía string
+                        const porcentajes = [
+                            Number(valores.p1) || 0,
+                            Number(valores.p2) || 0,
+                            Number(valores.p3) || 0,
+                            Number(valores.p4) || 0,
+                            Number(valores.p5) || 0
+                        ];
                         const checkboxes = document.querySelectorAll(`input[onchange*="('${idGrupo}')"]`);
                         checkboxes.forEach((cb, index) => {
-                            const porcentaje = [valores.p1, valores.p2, valores.p3, valores.p4, valores.p5][index] || 0;
-                            cb.checked = porcentaje > 0;
+                            cb.checked = (porcentajes[index] || 0) > 0;
                         });
 
                         // Actualizar porcentaje visual
@@ -2157,9 +2192,12 @@ if (!$conn) {
                     // ...
                 });
 
+                // Abrir modal solo después de tener todos los datos cargados (evita desincronización en producción)
+                document.getElementById('modalNecropsia').classList.remove('hidden');
+
             } catch (err) {
                 console.error('Error en editarNecropsia:', err);
-                alert('Error al cargar datos para edición: ' + err.message);
+                SwalAlert('Error al cargar datos para edición: ' + err.message, 'error');
             }
         }
 
@@ -2211,7 +2249,7 @@ if (!$conn) {
             }
         });
 
-        // Tabs (igual que antes)
+        // Tabs (misma lógica que dashboard-necropsias-registro.php)
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', () => {
                 document.querySelectorAll('.tab-button').forEach(btn => {
@@ -2221,7 +2259,8 @@ if (!$conn) {
                 document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
                 button.classList.remove('border-transparent', 'text-gray-500');
                 button.classList.add('border-green-600', 'text-green-600');
-                document.getElementById(button.dataset.tab).classList.remove('hidden');
+                var panel = document.getElementById(button.getAttribute('data-tab'));
+                if (panel) panel.classList.remove('hidden');
             });
         });
 
@@ -2265,12 +2304,12 @@ if (!$conn) {
 
             // Validación básica
             if (!codigoGranja || !galpon || !fectra) {
-                alert('Por favor complete todos los campos de la cabecera');
+                SwalAlert('Por favor complete todos los campos de la cabecera', 'warning');
                 return;
             }
 
             if (!diagpresuntivo) {
-                alert('Por favor es importante que llene el diagnostico presuntivo');
+                SwalAlert('Por favor es importante que llene el diagnostico presuntivo', 'warning');
                 return;
             }
 
@@ -2577,17 +2616,17 @@ if (!$conn) {
                 document.getElementById('modalCarga').classList.add('hidden');
 
                 if (result.success) {
-                    alert('¡Necropsia registrada con éxito!');
+                    SwalAlert('¡Necropsia registrada con éxito!', 'success');
                     document.getElementById('modalNecropsia').classList.add('hidden');
                     limpiarFormularioNecropsia();
                     $('#tabla').DataTable().ajax.reload();
                 } else {
-                    alert('Error: ' + result.message);
+                    SwalAlert('Error: ' + result.message, 'error');
                 }
             } catch (err) {
                 document.getElementById('modalCarga').classList.add('hidden');
                 console.error(err);
-                alert('Error de conexión. Intenta nuevamente.');
+                SwalAlert('Error de conexión. Intenta nuevamente.', 'error');
             }
         }
     </script>
@@ -2608,40 +2647,40 @@ if (!$conn) {
         document.getElementById('granja').addEventListener('change', async function() {
             const codigo = this.value;
             const option = this.options[this.selectedIndex];
+            const loadingEdit = !!window._loadingEditNecropsia;
 
-            // Limpiar campos dependientes
-            document.getElementById('campania').value = '';
-            document.getElementById('edad').value = '';
+            // Limpiar campos dependientes solo si no estamos cargando para edición (ahí usamos valores guardados)
+            if (!loadingEdit) {
+                document.getElementById('campania').value = '';
+                document.getElementById('edad').value = '';
+            }
             const selectGalpon = document.getElementById('galpon');
             selectGalpon.innerHTML = '<option value="">Cargando galpones...</option>';
             selectGalpon.disabled = true;
 
             if (!codigo) return;
 
-            // Rellenar edad
-            const edadStr = option.dataset.edad || '';
-            const edadNum = parseInt(edadStr, 10);
-            if (!isNaN(edadNum) && edadNum <= 0) {
-                // Fecha inválida (antes del ingreso): pedir corregir
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Fecha inválida',
-                    text: 'La edad calculada es negativa. Seleccione una fecha válida para esta granja.',
-                    confirmButtonText: 'Aceptar'
-                });
-
-                // Resetear selección y dependencias
-                this.value = '';
-                document.getElementById('campania').value = '';
-                document.getElementById('edad').value = '';
-                selectGalpon.innerHTML = '<option value="">Seleccione granja primero</option>';
-                selectGalpon.disabled = true;
-                return;
+            // Al editar usamos edad/campaña ya guardados; no recalcular ni mostrar Swal
+            if (!loadingEdit) {
+                const edadStr = option.dataset.edad || '';
+                const edadNum = parseInt(edadStr, 10);
+                if (!isNaN(edadNum) && edadNum <= 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Fecha inválida',
+                        text: 'La edad calculada es negativa. Seleccione una fecha válida para esta granja.',
+                        confirmButtonText: 'Aceptar'
+                    });
+                    this.value = '';
+                    document.getElementById('campania').value = '';
+                    document.getElementById('edad').value = '';
+                    selectGalpon.innerHTML = '<option value="">Seleccione granja primero</option>';
+                    selectGalpon.disabled = true;
+                    return;
+                }
+                document.getElementById('edad').value = edadStr;
+                document.getElementById('campania').value = codigo.slice(-3);
             }
-            document.getElementById('edad').value = edadStr;
-
-            // Campaña: últimos 3 dígitos del código de granja (tgranja)
-            document.getElementById('campania').value = codigo.slice(-3);
 
             // Cargar galpones
             try {
@@ -2666,8 +2705,8 @@ if (!$conn) {
                     }
                 });
 
-                // Autoseleccionar el galpón mayor
-                if (maxOption) {
+                // Autoseleccionar el galpón mayor solo en registro nuevo (al editar se usa el valor guardado)
+                if (!loadingEdit && maxOption) {
                     maxOption.selected = true;
                 }
 
@@ -2692,7 +2731,7 @@ if (!$conn) {
                 const total = evidencias[obsId].length + newFiles.length;
 
                 if (total > 3) {
-                    alert('Máximo 3 imágenes por nivel. Se agregarán solo hasta completar 3.');
+                    SwalAlert('Máximo 3 imágenes por nivel. Se agregarán solo hasta completar 3.', 'warning');
                     newFiles.splice(3 - evidencias[obsId].length);
                 }
 
@@ -2887,7 +2926,7 @@ if (!$conn) {
 
             // VALIDACIÓN IMPORTANTE: Usamos los datos globales de edición para asegurar integridad
             if (!loteEditando.granja || !loteEditando.numreg) {
-                alert("Error de estado: No se identificó la necropsia a editar.");
+                SwalAlert("Error de estado: No se identificó la necropsia a editar.", "error");
                 return;
             }
 
@@ -3233,7 +3272,7 @@ if (!$conn) {
                 document.getElementById('modalCarga').classList.add('hidden');
 
                 if (result.success) {
-                    alert(result.message);
+                    SwalAlert(result.message, result.success ? 'success' : 'error');
                     document.getElementById('modalNecropsia').classList.add('hidden');
                     limpiarFormularioNecropsia();
 
@@ -3245,13 +3284,13 @@ if (!$conn) {
 
                     $('#tabla').DataTable().ajax.reload();
                 } else {
-                    alert('Error: ' + result.message);
+                    SwalAlert('Error: ' + result.message, 'error');
                 }
 
             } catch (err) {
                 document.getElementById('modalCarga').classList.add('hidden');
                 console.error(err);
-                alert('Error de conexión al actualizar.');
+                SwalAlert('Error de conexión al actualizar.', 'error');
             }
         }
 

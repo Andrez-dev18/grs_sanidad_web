@@ -99,6 +99,8 @@ $result = $conexion->query($query);
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../assets/js/sweetalert-helpers.js"></script>
     <link rel="stylesheet" href="../../css/style-rpt-lab.css">
 
     <style>
