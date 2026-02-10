@@ -31,6 +31,7 @@ if (!$conexion) {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <style>
         body {
             background: #f8f9fa;
@@ -124,15 +125,7 @@ if (!$conexion) {
             white-space: nowrap;
         }
 
-        #tablaRespuesta th {
-            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
-            font-weight: 600;
-            color: #ffffff !important;
-        }
-
-        #tablaRespuesta tbody tr:hover {
-            background-color: #eff6ff !important;
-        }
+        /* Cabecera y filas: estilos unificados vía dashboard-config.css (config-table) */
 
         /* Modal interno */
         #respuestasModal table {
@@ -208,13 +201,6 @@ if (!$conexion) {
     background: white;
 }
 
-/* ✅ Cabecera de la tabla: azul con texto blanco */
-#tablaRespuesta thead th {
-    background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
-    color: white !important;
-    font-weight: 600;
-    padding: 0.75rem 1rem;
-}
     </style>
 </head>
 
@@ -231,10 +217,10 @@ if (!$conexion) {
                     <div id="cardsPaginationResp" class="flex items-center justify-between mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
                 </div>
                 <div class="view-lista-wrap table-wrapper">
-                    <table id="tablaRespuesta" class="display" style="width:100%">
+                    <table id="tablaRespuesta" class="display data-table config-table" style="width:100%">
                         <thead>
                             <tr>
-                                <th>Código</th>
+                                <th class="px-4 py-3">Código</th>
                                 <th>Nombre</th>
                                 <th>Acciones</th>
                             </tr>

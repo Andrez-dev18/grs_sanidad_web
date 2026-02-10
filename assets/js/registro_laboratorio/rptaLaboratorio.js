@@ -17,14 +17,19 @@ let nomMuestrasAux = null;
 function loadSidebar(page = 1) {
     currentPage = page;
 
-    // filtros
-    const fechaInicio = encodeURIComponent(document.getElementById("filtroFechaInicio").value || "");
-    const fechaFin = encodeURIComponent(document.getElementById("filtroFechaFin").value || "");
-    const estado = encodeURIComponent(document.getElementById("filtroEstado").value || "pendiente");
-    const filtroLab = encodeURIComponent(document.getElementById("filtroLab").value || "");
-    const q = encodeURIComponent(document.getElementById("searchInput").value.trim() || "");
+    // filtros (periodo: periodoTipo + fechas/meses)
+    const periodoTipo = encodeURIComponent(document.getElementById("periodoTipo")?.value || "TODOS");
+    const fechaUnica = encodeURIComponent(document.getElementById("fechaUnica")?.value || "");
+    const fechaInicio = encodeURIComponent(document.getElementById("fechaInicio")?.value || "");
+    const fechaFin = encodeURIComponent(document.getElementById("fechaFin")?.value || "");
+    const mesUnico = encodeURIComponent(document.getElementById("mesUnico")?.value || "");
+    const mesInicio = encodeURIComponent(document.getElementById("mesInicio")?.value || "");
+    const mesFin = encodeURIComponent(document.getElementById("mesFin")?.value || "");
+    const estado = encodeURIComponent(document.getElementById("filtroEstado")?.value || "pendiente");
+    const filtroLab = encodeURIComponent(document.getElementById("filtroLab")?.value || "");
+    const q = encodeURIComponent(document.getElementById("searchInput")?.value?.trim() || "");
 
-    const url = `get_solicitudes.php?page=${page}&limit=${limit}&fechaInicio=${fechaInicio}&fechaFin=${fechaFin}&estado=${estado}&lab=${filtroLab}&q=${q}`;
+    const url = `get_solicitudes.php?page=${page}&limit=${limit}&periodoTipo=${periodoTipo}&fechaUnica=${fechaUnica}&fechaInicio=${fechaInicio}&fechaFin=${fechaFin}&mesUnico=${mesUnico}&mesInicio=${mesInicio}&mesFin=${mesFin}&estado=${estado}&lab=${filtroLab}&q=${q}`;
 
     fetch(url)
         .then(r => r.json())

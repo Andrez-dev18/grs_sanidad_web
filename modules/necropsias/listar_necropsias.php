@@ -12,9 +12,16 @@ $start = intval($_POST['start']);
 $length = intval($_POST['length']);
 $search = $_POST['search']['value'] ?? '';
 
-// Filtros extra (desde dashboard-necropsias-listado.php)
+// Filtros extra (periodo: si periodoTipo no se envía o es TODOS, no se filtra por fecha)
+$periodoTipo = $_POST['periodoTipo'] ?? '';
+$fechaUnica = $_POST['fechaUnica'] ?? '';
 $fecha_inicio = $_POST['fecha_inicio'] ?? '';
 $fecha_fin = $_POST['fecha_fin'] ?? '';
+$fechaInicio = $_POST['fechaInicio'] ?? '';
+$fechaFin = $_POST['fechaFin'] ?? '';
+$mesUnico = $_POST['mesUnico'] ?? '';
+$mesInicio = $_POST['mesInicio'] ?? '';
+$mesFin = $_POST['mesFin'] ?? '';
 $granja_filtro = $_POST['granja'] ?? '';
 
 // Columnas visibles en la tabla (para ordenar)
@@ -47,17 +54,34 @@ if (!empty($search)) {
     $types .= str_repeat('s', 7);
 }
 
-// Fecha inicio/fin sobre tfectra (Y-m-d)
-if (!empty($fecha_inicio)) {
-    $where[] = "tfectra >= ?";
-    $params[] = $fecha_inicio;
-    $types .= 's';
+// Periodo: convertir a rango o usar fechas directas si ya vienen
+require_once __DIR__ . '/../../includes/filtro_periodo_util.php';
+$rangoPeriodo = null;
+if ($periodoTipo !== '' && $periodoTipo !== 'TODOS') {
+    $rangoPeriodo = periodo_a_rango([
+        'periodoTipo' => $periodoTipo, 'fechaUnica' => $fechaUnica,
+        'fechaInicio' => $fechaInicio ?: $fecha_inicio, 'fechaFin' => $fechaFin ?: $fecha_fin,
+        'mesUnico' => $mesUnico, 'mesInicio' => $mesInicio, 'mesFin' => $mesFin
+    ]);
 }
-
-if (!empty($fecha_fin)) {
-    $where[] = "tfectra <= ?";
-    $params[] = $fecha_fin;
+if ($rangoPeriodo) {
+    $where[] = "tfectra >= ?";
+    $params[] = $rangoPeriodo['desde'];
     $types .= 's';
+    $where[] = "tfectra <= ?";
+    $params[] = $rangoPeriodo['hasta'];
+    $types .= 's';
+} else {
+    if (!empty($fecha_inicio)) {
+        $where[] = "tfectra >= ?";
+        $params[] = $fecha_inicio;
+        $types .= 's';
+    }
+    if (!empty($fecha_fin)) {
+        $where[] = "tfectra <= ?";
+        $params[] = $fecha_fin;
+        $types .= 's';
+    }
 }
 
 // Granja exacta (tgranja suele ser el código completo)

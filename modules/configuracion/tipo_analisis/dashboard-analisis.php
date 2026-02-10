@@ -33,6 +33,7 @@ if (!$conexion) {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
@@ -195,10 +196,6 @@ if (!$conexion) {
             z-index: 10;
         }
 
-        .data-table tbody tr:hover {
-            background-color: #eff6ff !important;
-        }
-
         .dataTables_wrapper .dataTables_length,
         .dataTables_wrapper .dataTables_filter,
         .dataTables_wrapper .dataTables_info,
@@ -256,22 +253,14 @@ if (!$conexion) {
 <body class="bg-gray-50">
     <div class="container mx-auto px-6 py-12">
 
-        <!-- Encabezado con botones y exportar -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div class="flex items-center gap-4">
-
-                <a class="btn-export" href="exportar_analisis_excel.php"">
-                    📊 Exportar Todos
-                </a>
+        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+            <div class="dashboard-actions flex flex-col sm:flex-row justify-end sm:justify-between items-stretch sm:items-center gap-3 px-4 sm:px-6 py-4">
+                <a class="btn-export inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-2 sm:order-1" href="exportar_analisis_excel.php">📊 Exportar a Excel</a>
+                <button type="button" class="btn-secondary inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-1 sm:order-2" onclick="openAnalisisModal('create')">➕ Nuevo Análisis</button>
             </div>
-            <button type=" button" class="btn-secondary" onclick="openAnalisisModal('create')">
-                    Nuevo Analisis
-                    </button>
-            </div>
-            <!-- Tabla de análisis -->
-            <!--div class="card">-->
-          <div class="max-w-full mx-auto mt-6">
-            <div id="tablaAnalisisWrapper" class="border border-gray-300 rounded-2xl bg-white overflow-hidden p-4" data-vista-tabla-iconos data-vista="">
+        </div>
+        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+            <div id="tablaAnalisisWrapper" class="p-4" data-vista-tabla-iconos data-vista="">
                 <div class="view-toggle-group flex items-center gap-2 mb-4">
                     <button type="button" class="view-toggle-btn active" id="btnViewTablaAna" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
                     <button type="button" class="view-toggle-btn" id="btnViewIconosAna" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
@@ -281,10 +270,10 @@ if (!$conexion) {
                     <div id="cardsPaginationAna" class="flex items-center justify-between mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
                 </div>
                 <div class="view-lista-wrap table-wrapper">
-                    <table id="tablaAnalisis" class="data-table display" style="width:100%">
+                    <table id="tablaAnalisis" class="data-table display config-table" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th>Código</th>
+                                    <th class="px-4 py-3">N°</th>
                                     <th>Nombre</th>
                                     <th>Enfermedad</th>
                                     <th>Acciones</th>
@@ -297,10 +286,12 @@ if (!$conexion) {
                                 if (!$result) {
                                     die("Error en consulta: " . mysqli_error($conexion));
                                 }
+                                $idx = 0;
                                 while ($row = mysqli_fetch_assoc($result)) {
+                                    $idx++;
                                     ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars($row['codigo']) ?></td>
+                                    <tr data-codigo="<?= htmlspecialchars($row['codigo']) ?>">
+                                        <td><?= $idx ?></td>
                                         <td><?= htmlspecialchars($row['nombre']) ?></td>
                                         <td><?= htmlspecialchars($row['enfermedad'] ?? '') ?></td>
                                         <td>
@@ -329,9 +320,8 @@ if (!$conexion) {
                         </table>
                 </div>
             </div>
-            </div>
         </div>
-        <!--/div-->
+        </div>
 
         <!-- Modal -->
         <div id="analisisModal" style="display: none;"
@@ -414,7 +404,7 @@ if (!$conexion) {
                     var $row = $(this.node());
                     var cells = $row.find('td');
                     if (cells.length < 3) return;
-                    var codigo = $(cells[0]).text().trim();
+                    var codigo = $row.attr('data-codigo') || $(cells[0]).text().trim();
                     var nombre = $(cells[1]).text().trim();
                     var enfermedad = $(cells[2]).text().trim();
                     var codAttr = (codigo + '').replace(/"/g, '&quot;');
@@ -422,7 +412,6 @@ if (!$conexion) {
                     var enfAttr = (enfermedad + '').replace(/"/g, '&quot;');
                     var card = $('<div class="card-item" data-codigo="' + codAttr + '" data-nombre="' + nomAttr + '" data-enfermedad="' + enfAttr + '">' +
                         '<div class="card-numero-row">#' + numero + '</div>' +
-                        '<div class="card-row"><span class="label">codigo:</span> ' + $('<div>').text(codigo).html() + '</div>' +
                         '<div class="card-row"><span class="label">Nombre:</span> ' + $('<div>').text(nombre).html() + '</div>' +
                         '<div class="card-row"><span class="label">Enfermedad:</span> ' + $('<div>').text(enfermedad).html() + '</div>' +
                         '<div class="card-acciones">' +
@@ -443,6 +432,7 @@ if (!$conexion) {
                     pageLength: 10,
                     lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
                     order: [[0, 'asc']],
+                    columnDefs: [{ orderable: false, targets: [3] }],
                     drawCallback: function() { renderizarTarjetasAna(); }
                 });
                 actualizarVistaInicialAna();

@@ -13,8 +13,13 @@ if (!$conn) {
     die('Error de conexión.');
 }
 
+$periodoTipo = $_GET['periodoTipo'] ?? 'TODOS';
+$fechaUnica = $_GET['fechaUnica'] ?? '';
 $fechaInicio = $_GET['fechaInicio'] ?? '';
 $fechaFin = $_GET['fechaFin'] ?? '';
+$mesUnico = $_GET['mesUnico'] ?? '';
+$mesInicio = $_GET['mesInicio'] ?? '';
+$mesFin = $_GET['mesFin'] ?? '';
 $laboratorio = $_GET['laboratorio'] ?? '';
 $empTrans = $_GET['empTrans'] ?? '';
 $muestra = $_GET['muestra'] ?? '';
@@ -22,16 +27,16 @@ $analisis = $_GET['analisis'] ?? '';
 
 $where = " WHERE 1=1 ";
 
-if ($fechaInicio !== '' && $fechaFin !== '') {
-    $fi = mysqli_real_escape_string($conn, $fechaInicio);
-    $ff = mysqli_real_escape_string($conn, $fechaFin);
+require_once __DIR__ . '/../../includes/filtro_periodo_util.php';
+$rangoPeriodo = periodo_a_rango([
+    'periodoTipo' => $periodoTipo, 'fechaUnica' => $fechaUnica,
+    'fechaInicio' => $fechaInicio, 'fechaFin' => $fechaFin,
+    'mesUnico' => $mesUnico, 'mesInicio' => $mesInicio, 'mesFin' => $mesFin
+]);
+if ($rangoPeriodo) {
+    $fi = mysqli_real_escape_string($conn, $rangoPeriodo['desde']);
+    $ff = mysqli_real_escape_string($conn, $rangoPeriodo['hasta']);
     $where .= " AND a.fecEnvio BETWEEN '$fi' AND '$ff' ";
-} elseif ($fechaInicio !== '' && $fechaFin === '') {
-    $fi = mysqli_real_escape_string($conn, $fechaInicio);
-    $where .= " AND a.fecEnvio >= '$fi' ";
-} elseif ($fechaInicio === '' && $fechaFin !== '') {
-    $ff = mysqli_real_escape_string($conn, $fechaFin);
-    $where .= " AND a.fecEnvio <= '$ff' ";
 }
 
 if ($laboratorio !== '') {

@@ -1,13 +1,29 @@
 <?php
 include_once '../../../conexion_grs_joya/conexion.php';
+require_once __DIR__ . '/../../includes/filtro_periodo_util.php';
 $conn = conectar_joya();
 
 $page  = intval($_GET["page"] ?? 1);
 $limit = intval($_GET["limit"] ?? 10);
 $offset = ($page - 1) * $limit;
 
-$fechaInicio = $_GET['fechaInicio'] ?? null;
-$fechaFin    = $_GET['fechaFin'] ?? null;
+$periodoOpts = [
+    'periodoTipo' => $_GET['periodoTipo'] ?? '',
+    'fechaUnica'  => $_GET['fechaUnica'] ?? '',
+    'fechaInicio' => $_GET['fechaInicio'] ?? '',
+    'fechaFin'    => $_GET['fechaFin'] ?? '',
+    'mesUnico'    => $_GET['mesUnico'] ?? '',
+    'mesInicio'   => $_GET['mesInicio'] ?? '',
+    'mesFin'      => $_GET['mesFin'] ?? '',
+];
+$rangoPeriodo = periodo_a_rango($periodoOpts);
+if ($rangoPeriodo !== null) {
+    $fechaInicio = $rangoPeriodo['desde'];
+    $fechaFin    = $rangoPeriodo['hasta'];
+} else {
+    $fechaInicio = $_GET['fechaInicio'] ?? null;
+    $fechaFin    = $_GET['fechaFin'] ?? null;
+}
 $estado      = $_GET['estado'] ?? "pendiente";
 $nomLab = trim($_GET['lab'] ?? '');
 $qSearch     = trim($_GET['q'] ?? '');

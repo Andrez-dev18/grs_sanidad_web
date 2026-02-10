@@ -53,6 +53,7 @@ if ($codigoUsuario) {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
@@ -309,35 +310,47 @@ if ($codigoUsuario) {
             <!-- CONTENIDO PLEGABLE -->
             <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
 
-                <!-- GRID DE FILTROS -->
+                <!-- Fila 1: Periodo -->
+                <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
+                    <div class="flex-shrink-0" style="width: 100px;">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-alt mr-1 text-blue-600"></i> Periodo</label>
+                        <select id="periodoTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
+                            <option value="TODOS" selected>Todos</option>
+                            <option value="POR_FECHA">Por fecha</option>
+                            <option value="ENTRE_FECHAS">Entre fechas</option>
+                            <option value="POR_MES">Por mes</option>
+                            <option value="ENTRE_MESES">Entre meses</option>
+                            <option value="ULTIMA_SEMANA">Última Semana</option>
+                        </select>
+                    </div>
+                    <div id="periodoPorFecha" class="flex-shrink-0 min-w-[130px] hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-day mr-1 text-blue-600"></i>Fecha</label>
+                        <input id="fechaUnica" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                    <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
+                        <div class="min-w-[120px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Desde</label><input id="fechaInicio" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[120px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label><input id="fechaFin" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                    </div>
+                    <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[130px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
+                        <input id="mesUnico" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                    <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
+                        <div class="min-w-[120px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label><input id="mesInicio" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[120px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label><input id="mesFin" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                    </div>
+                </div>
+                <!-- Fila 2: Ubicación -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-
-                    <!-- Fecha inicio -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
-                        <input type="date" id="filtroFechaInicio"
-                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                    </div>
-
-                    <!-- Fecha fin -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
-                        <input type="date" id="filtroFechaFin"
-                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                    </div>
-
-                    <!-- ubicacion -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Ubicacion</label>
-                        <select id="filtroUbicacion"
-                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-map-marker-alt mr-1 text-blue-600"></i>Ubicación</label>
+                        <select id="filtroUbicacion" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Seleccionar</option>
                             <option value="GRS">GRS</option>
                             <option value="Transporte">Transporte</option>
                             <option value="Laboratorio">Laboratorio</option>
                         </select>
                     </div>
-
                 </div>
 
                 <!-- ACCIONES -->
@@ -391,10 +404,10 @@ if ($codigoUsuario) {
                         <div id="cardsPaginationTrack" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
                     </div>
                     <div class="view-lista-wrap table-wrapper overflow-x-auto">
-                        <table id="tabla" class="data-table w-full text-sm border-collapse">
-                            <thead class="bg-gray-100 sticky top-0 z-10">
+                        <table id="tabla" class="data-table w-full text-sm border-collapse config-table">
+                            <thead>
                                 <tr>
-                                    <th class="px-4 py-3 text-left border-b">#</th>
+                                    <th class="px-4 py-3 text-left">N°</th>
                                     <th class="px-4 py-3 text-left border-b">Código Envío</th>
                                     <th class="px-4 py-3 text-left border-b">Acción</th>
                                     <th class="px-4 py-3 text-left border-b">Comentario</th>
@@ -463,22 +476,24 @@ if ($codigoUsuario) {
                             <h3 class="text-lg font-semibold text-gray-800">Envíos pendientes de acción</h3>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-sm">
-                                <thead class="bg-gray-100">
+                            <table id="tablaPendientes" class="data-table w-full text-sm border-collapse config-table">
+                                <thead>
                                     <tr>
-                                        <th class="px-6 py-3 text-left font-medium text-gray-700">Código de envío</th>
-                                        <th class="px-6 py-3 text-center font-medium text-gray-700">Falta</th>
-                                        <th class="px-6 py-3 text-center font-medium text-gray-700">Acción</th>
+                                        <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
+                                        <th class="px-6 py-4 text-left text-sm font-semibold">Código de envío</th>
+                                        <th class="px-6 py-4 text-center text-sm font-semibold">Falta</th>
+                                        <th class="px-6 py-4 text-center text-sm font-semibold">Acción</th>
                                     </tr>
                                 </thead>
-                                <tbody id="tablaPendientes">
+                                <tbody>
                                     <?php if (empty($pendientes)): ?>
                                         <tr>
-                                            <td colspan="3" class="px-6 py-12 text-center text-gray-500">¡Excelente! No hay envíos pendientes.</td>
+                                            <td colspan="4" class="px-6 py-12 text-center text-gray-500">¡Excelente! No hay envíos pendientes.</td>
                                         </tr>
                                     <?php else: ?>
-                                        <?php foreach ($pendientes as $p): ?>
-                                            <tr class="border-b hover:bg-gray-50">
+                                        <?php foreach ($pendientes as $idx => $p): $n = $idx + 1; ?>
+                                            <tr>
+                                                <td class="px-6 py-4 text-gray-700"><?php echo $n; ?></td>
                                                 <td class="px-6 py-4 font-medium text-blue-600"><?php echo htmlspecialchars($p['codEnvio']); ?></td>
                                                 <td class="px-6 py-4 text-center text-orange-600 font-medium"><?php echo $p['falta']; ?></td>
                                                 <td class="px-6 py-4 text-center">
@@ -668,10 +683,14 @@ if ($codigoUsuario) {
                     url: 'tracking_historial.php', // archivo PHP que devuelve los datos
                     type: 'POST',
                     data: function(d) {
-                        // Enviar filtros adicionales
-                        d.fechaInicio = $('#filtroFechaInicio').val();
-                        d.fechaFin = $('#filtroFechaFin').val();
-                        d.ubicacion = $('#filtroUbicacion').val();
+                        d.periodoTipo = ($('#periodoTipo').val() || 'TODOS').trim();
+                        d.fechaUnica = ($('#fechaUnica').val() || '').trim();
+                        d.fechaInicio = ($('#fechaInicio').val() || '').trim();
+                        d.fechaFin = ($('#fechaFin').val() || '').trim();
+                        d.mesUnico = ($('#mesUnico').val() || '').trim();
+                        d.mesInicio = ($('#mesInicio').val() || '').trim();
+                        d.mesFin = ($('#mesFin').val() || '').trim();
+                        d.ubicacion = ($('#filtroUbicacion').val() || '').trim();
                     }
                 },
                 language: {
@@ -681,10 +700,15 @@ if ($codigoUsuario) {
                 lengthMenu: [10, 25, 50, 100],
                 order: [
                     [7, 'desc']
-                ], // ordenar por fecha registro descendente
+                ], // ordenar por fecha registro descendente (columna 7 = fechaHoraRegistro)
                 columns: [{
-                        data: 'id',
-                        className: 'text-center'
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        render: function(data, type, row, meta) {
+                            return type === 'display' ? (meta.settings._iDisplayStart + meta.row + 1) : '';
+                        }
                     },
                     {
                         data: 'codEnvio',
@@ -859,11 +883,22 @@ if ($codigoUsuario) {
 
             // Limpiar filtros
             $('#btnLimpiarFiltros').on('click', function() {
-                $('#filtroFechaInicio').val('');
-                $('#filtroFechaFin').val('');
+                $('#periodoTipo').val('TODOS');
+                $('#fechaUnica, #fechaInicio, #fechaFin, #mesUnico, #mesInicio, #mesFin').val('');
+                aplicarVisibilidadPeriodoTracking();
                 $('#filtroUbicacion').val('');
                 tabla.ajax.reload();
             });
+            function aplicarVisibilidadPeriodoTracking() {
+                var t = $('#periodoTipo').val() || '';
+                $('#periodoPorFecha, #periodoEntreFechas, #periodoPorMes, #periodoEntreMeses').addClass('hidden');
+                if (t === 'POR_FECHA') $('#periodoPorFecha').removeClass('hidden');
+                else if (t === 'ENTRE_FECHAS') $('#periodoEntreFechas').removeClass('hidden');
+                else if (t === 'POR_MES') $('#periodoPorMes').removeClass('hidden');
+                else if (t === 'ENTRE_MESES') $('#periodoEntreMeses').removeClass('hidden');
+            }
+            $('#periodoTipo').on('change', aplicarVisibilidadPeriodoTracking);
+            aplicarVisibilidadPeriodoTracking();
         });
     </script>
 

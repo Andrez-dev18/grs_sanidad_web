@@ -19,10 +19,13 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
     <link rel="stylesheet" href="../../../css/output.css">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { background: #f8f9fa; font-family: system-ui, sans-serif; }
@@ -43,8 +46,8 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         }
         .data-table tbody tr:hover { background-color: #eff6ff !important; }
         .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate { padding: 1rem; }
-        .bloque-necropsias { display: none; }
-        .bloque-necropsias.visible { display: block; }
+        .bloque-especifico { display: none; }
+        .bloque-especifico.visible { display: block; }
         .modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50;
             display: flex; align-items: center; justify-content: center; padding: 1rem;
@@ -61,6 +64,9 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         #fechasResultado ul { margin: 0; padding-left: 1.25rem; }
         .btn-ver-fechas { padding: 0.25rem 0.5rem; border-radius: 0.375rem; border: 1px solid #93c5fd; color: #2563eb; background: #eff6ff; font-size: 0.75rem; cursor: pointer; }
         .btn-ver-fechas:hover { background: #dbeafe; }
+        #cronoPrograma + .select2-container { width: 100% !important; }
+        #cronoPrograma + .select2-container .select2-selection--single { height: 42px; border-radius: 0.75rem; border: 1px solid #d1d5db; padding: 0.5rem 1rem; }
+        #cronoPrograma + .select2-container .select2-selection__rendered { line-height: 1.5; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -73,14 +79,16 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
                 </button>
             </div>
             <div class="table-wrapper p-4">
-                <table id="tablaCronograma" class="data-table w-full text-sm">
+                <table id="tablaCronograma" class="data-table w-full text-sm config-table">
                     <thead>
                         <tr>
+                            <th class="px-4 py-3 text-left">N°</th>
                             <th class="px-4 py-3 text-left">Granja</th>
                             <th class="px-4 py-3 text-left">Campaña</th>
                             <th class="px-4 py-3 text-left">Galpón</th>
                             <th class="px-4 py-3 text-left">Programa</th>
-                            <th class="px-4 py-3 text-left">Fechas</th>
+                            <th class="px-4 py-3 text-left">Zona</th>
+                            <th class="px-4 py-3 text-left">Detalles</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -89,11 +97,11 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         </div>
     </div>
 
-    <!-- Modal Ver fechas -->
+    <!-- Modal Ver detalles (fechas del cronograma) -->
     <div id="modalVerFechas" class="modal-overlay hidden">
-        <div class="modal-box" style="max-width: 320px;">
+        <div class="modal-box" style="max-width: 380px;">
             <div class="modal-header">
-                <h3 class="text-lg font-semibold text-gray-800">Fechas</h3>
+                <h3 class="text-lg font-semibold text-gray-800">Detalles del cronograma</h3>
                 <button type="button" class="modal-cerrar-ver text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
             <div class="modal-body">
@@ -111,20 +119,42 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             </div>
             <div class="modal-body space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
-                    <select id="cronoTipo" class="form-control">
-                        <option value="">Seleccione tipo...</option>
-                        <option value="NECROPSIAS">NECROPSIAS</option>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Código del programa *</label>
+                    <select id="cronoPrograma" class="form-control" style="width:100%;">
+                        <option value="">Escriba código o nombre...</option>
                     </select>
                 </div>
-                <div id="bloqueCronoNecropsias" class="bloque-necropsias space-y-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de programa</label>
+                        <input type="text" id="cronoTipoDisplay" class="form-control bg-gray-100" readonly placeholder="—">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del programa</label>
+                        <input type="text" id="cronoNomProgramaDisplay" class="form-control bg-gray-100" readonly placeholder="—">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Zona *</label>
+                    <select id="cronoZona" class="form-control">
+                        <option value="">Seleccione zona...</option>
+                        <option value="Específico">Específico</option>
+                    </select>
+                </div>
+                <div id="bloqueEspecifico" class="bloque-especifico space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Año</label>
+                            <select id="cronoAnio" class="form-control"></select>
+                        </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Granja *</label>
                             <select id="cronoGranja" class="form-control">
                                 <option value="">Seleccione...</option>
                             </select>
                         </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Campaña *</label>
                             <select id="cronoCampania" class="form-control" disabled>
@@ -137,12 +167,6 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
                                 <option value="">Primero granja</option>
                             </select>
                         </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Programa *</label>
-                        <select id="cronoPrograma" class="form-control">
-                            <option value="">Seleccione programa...</option>
-                        </select>
                     </div>
                     <button type="button" id="btnAsignar" class="btn-primary w-full sm:w-auto">
                         <i class="fas fa-calendar-check mr-1"></i> Asignar
@@ -160,8 +184,21 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
     </div>
 
     <script>
-        const TIPO_NECROPSIAS = 'NECROPSIAS';
         let fechasAsignadas = [];
+        var programasMap = {};
+
+        function llenarAnios() {
+            var sel = document.getElementById('cronoAnio');
+            var anioActual = new Date().getFullYear();
+            sel.innerHTML = '';
+            for (var a = anioActual; a >= anioActual - 5; a--) {
+                var opt = document.createElement('option');
+                opt.value = a;
+                opt.textContent = a;
+                if (a === anioActual) opt.selected = true;
+                sel.appendChild(opt);
+            }
+        }
 
         function cargarGranjas() {
             fetch('get_granjas.php').then(r => r.json()).then(data => {
@@ -207,24 +244,54 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             }).catch(() => { galp.innerHTML = '<option value="">Error</option>'; galp.disabled = false; });
         });
 
+        function initSelect2CronoPrograma() {
+            if (typeof jQuery === 'undefined' || !jQuery.fn.select2) return;
+            var $sel = jQuery('#cronoPrograma');
+            if ($sel.data('select2')) $sel.select2('destroy');
+            $sel.select2({
+                placeholder: 'Escriba código o nombre...',
+                allowClear: true,
+                width: '100%',
+                language: { noResults: function() { return 'Sin resultados'; }, searching: function() { return 'Buscando...'; } }
+            });
+        }
+
+        function actualizarTipoNombrePrograma() {
+            var cod = (document.getElementById('cronoPrograma').value || '').toString().trim();
+            var info = cod && programasMap[cod] ? programasMap[cod] : { nombre: '', nomTipo: '' };
+            document.getElementById('cronoTipoDisplay').value = info.nomTipo || '';
+            document.getElementById('cronoNomProgramaDisplay').value = info.nombre || '';
+        }
+
         function cargarProgramas() {
+            programasMap = {};
             fetch('get_programas.php').then(r => r.json()).then(res => {
                 if (!res.success) return;
                 var sel = document.getElementById('cronoPrograma');
-                sel.innerHTML = '<option value="">Seleccione programa...</option>';
+                sel.innerHTML = '<option value="">Escriba código o nombre...</option>';
                 (res.data || []).forEach(p => {
+                    var cod = (p.codigo != null) ? String(p.codigo).trim() : '';
+                    if (cod === '') return;
+                    programasMap[cod] = { nombre: (p.nombre != null) ? String(p.nombre) : '', nomTipo: (p.nomTipo != null) ? String(p.nomTipo) : '' };
                     var opt = document.createElement('option');
-                    opt.value = p.codigo;
-                    opt.textContent = p.label || (p.codigo + ' - ' + p.nombre);
-                    opt.dataset.nombre = p.nombre || '';
+                    opt.value = cod;
+                    opt.textContent = p.label || (cod + ' - ' + (p.nombre || ''));
                     sel.appendChild(opt);
+                });
+                initSelect2CronoPrograma();
+                jQuery('#cronoPrograma').off('select2:select').on('select2:select', function() {
+                    actualizarTipoNombrePrograma();
                 });
             }).catch(() => {});
         }
 
-        document.getElementById('cronoTipo').addEventListener('change', function() {
-            var bloque = document.getElementById('bloqueCronoNecropsias');
-            if (this.value === TIPO_NECROPSIAS) bloque.classList.add('visible');
+        document.getElementById('cronoPrograma').addEventListener('change', function() {
+            actualizarTipoNombrePrograma();
+        });
+
+        document.getElementById('cronoZona').addEventListener('change', function() {
+            var bloque = document.getElementById('bloqueEspecifico');
+            if (this.value === 'Específico') bloque.classList.add('visible');
             else bloque.classList.remove('visible');
         });
 
@@ -233,6 +300,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             var campania = document.getElementById('cronoCampania').value.trim();
             var galpon = document.getElementById('cronoGalpon').value.trim();
             var codPrograma = document.getElementById('cronoPrograma').value.trim();
+            var anio = document.getElementById('cronoAnio').value || new Date().getFullYear();
             if (!granja || !campania || !galpon || !codPrograma) {
                 Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Seleccione granja, campaña, galpón y programa.' });
                 return;
@@ -242,6 +310,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             fd.append('campania', campania);
             fd.append('galpon', galpon);
             fd.append('codPrograma', codPrograma);
+            fd.append('anio', anio);
             fetch('calcular_fechas.php', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(res => {
@@ -268,13 +337,13 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             var granja = document.getElementById('cronoGranja').value.trim();
             var campania = document.getElementById('cronoCampania').value.trim();
             var galpon = document.getElementById('cronoGalpon').value.trim();
-            var prog = document.getElementById('cronoPrograma');
-            var codPrograma = prog.value.trim();
-            var nomPrograma = prog.options[prog.selectedIndex] ? (prog.options[prog.selectedIndex].dataset.nombre || '') : '';
+            var zona = document.getElementById('cronoZona').value.trim();
+            var codPrograma = document.getElementById('cronoPrograma').value.trim();
+            var nomPrograma = (programasMap[codPrograma] && programasMap[codPrograma].nombre) ? programasMap[codPrograma].nombre : '';
             fetch('guardar_cronograma.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ granja: granja, campania: campania, galpon: galpon, codPrograma: codPrograma, nomPrograma: nomPrograma, fechas: fechasAsignadas })
+                body: JSON.stringify({ granja: granja, campania: campania, galpon: galpon, codPrograma: codPrograma, nomPrograma: nomPrograma, zona: zona, fechas: fechasAsignadas })
             })
                 .then(r => r.json())
                 .then(res => {
@@ -293,29 +362,39 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
                 if ($.fn.DataTable.isDataTable('#tablaCronograma')) $('#tablaCronograma').DataTable().destroy();
                 var tbody = document.querySelector('#tablaCronograma tbody');
                 tbody.innerHTML = '';
-                (res.data || []).forEach(c => {
+                (res.data || []).forEach((c, idx) => {
+                    var fechas = (c.fechas || '').split(',').map(function(x) { return x.trim(); }).filter(Boolean);
+                    var detalleTexto = fechas.length ? (fechas.length + ' fecha(s): ' + fechas.slice(0, 3).join(', ') + (fechas.length > 3 ? '...' : '')) : 'Sin fechas';
+                    var reporteUrl = 'generar_reporte_cronograma_pdf.php?granja=' + encodeURIComponent(c.granja || '') + '&campania=' + encodeURIComponent(c.campania || '') + '&galpon=' + encodeURIComponent(c.galpon || '') + '&codPrograma=' + encodeURIComponent(c.codPrograma || '');
                     var tr = document.createElement('tr');
                     tr.className = 'border-b border-gray-200';
-                    tr.innerHTML = '<td class="px-4 py-3">' + (c.granja || '') + '</td>' +
-                        '<td class="px-4 py-3">' + (c.campania || '') + '</td>' +
-                        '<td class="px-4 py-3">' + (c.galpon || '') + '</td>' +
-                        '<td class="px-4 py-3">' + (c.codPrograma || '') + ' - ' + (c.nomPrograma || '') + '</td>' +
-                        '<td class="px-4 py-3"><button type="button" class="btn-ver-fechas px-2 py-1 rounded border border-blue-300 text-blue-700 hover:bg-blue-50 text-xs" data-fechas="' + (c.fechas || '').replace(/"/g, '&quot;') + '" data-titulo="' + (c.granja + ' / ' + c.campania + ' / ' + c.galpon + ' - ' + c.codPrograma).replace(/"/g, '&quot;') + '"><i class="fas fa-eye mr-1"></i>Ver</button></td>';
+                    tr.innerHTML = '<td class="px-4 py-3">' + (idx + 1) + '</td>' +
+                        '<td class="px-4 py-3">' + (c.granja || '').replace(/</g, '&lt;') + '</td>' +
+                        '<td class="px-4 py-3">' + (c.campania || '').replace(/</g, '&lt;') + '</td>' +
+                        '<td class="px-4 py-3">' + (c.galpon || '').replace(/</g, '&lt;') + '</td>' +
+                        '<td class="px-4 py-3">' + (c.codPrograma || '').replace(/</g, '&lt;') + ' - ' + (c.nomPrograma || '').replace(/</g, '&lt;') + '</td>' +
+                        '<td class="px-4 py-3">' + (c.zona || '').replace(/</g, '&lt;') + '</td>' +
+                        '<td class="px-4 py-3"><span class="text-gray-700 text-xs">' + detalleTexto.replace(/</g, '&lt;') + '</span> ' +
+                        '<button type="button" class="btn-ver-fechas px-2 py-1 rounded border border-blue-300 text-blue-700 hover:bg-blue-50 text-xs ml-1" data-fechas="' + (c.fechas || '').replace(/"/g, '&quot;') + '"><i class="fas fa-list mr-1"></i>Ver</button> ' +
+                        '<a href="' + reporteUrl + '" target="_blank" rel="noopener" class="inline-flex items-center px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50 text-xs ml-1" title="Reporte PDF"><i class="fas fa-file-pdf mr-1"></i>PDF</a></td>';
                     tbody.appendChild(tr);
                 });
-                $('#tablaCronograma').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' }, order: [[0, 'asc']] });
+                $('#tablaCronograma').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' }, order: [[1, 'asc']] });
             }).catch(() => {});
         }
 
         function abrirModalCrono() {
-            document.getElementById('cronoTipo').value = '';
-            document.getElementById('bloqueCronoNecropsias').classList.remove('visible');
+            document.getElementById('cronoZona').value = '';
+            document.getElementById('bloqueEspecifico').classList.remove('visible');
+            if (jQuery('#cronoPrograma').data('select2')) jQuery('#cronoPrograma').val('').trigger('change'); else document.getElementById('cronoPrograma').value = '';
+            document.getElementById('cronoTipoDisplay').value = '';
+            document.getElementById('cronoNomProgramaDisplay').value = '';
+            llenarAnios();
             document.getElementById('cronoGranja').value = '';
             document.getElementById('cronoCampania').innerHTML = '<option value="">Primero granja</option>';
             document.getElementById('cronoCampania').disabled = true;
             document.getElementById('cronoGalpon').innerHTML = '<option value="">Primero granja</option>';
             document.getElementById('cronoGalpon').disabled = true;
-            document.getElementById('cronoPrograma').value = '';
             document.getElementById('fechasResultado').classList.add('hidden');
             document.getElementById('btnGuardarCrono').disabled = true;
             fechasAsignadas = [];

@@ -261,64 +261,85 @@ $result = $conexion->query($query);
                     </div>
 
                     <!-- CONTENIDO PLEGABLE -->
-                    <div id="filtrosContent"
-                        class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mt-4 transition-all duration-300 origin-top hidden">
-
-                        <!-- FECHA INICIO -->
-                        <div>
-                            <label class="text-xs font-medium text-gray-600 mb-1 block">Fecha Inicio</label>
-                            <input type="date" id="filtroFechaInicio"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
+                    <div id="filtrosContent" class="mt-4 transition-all duration-300 origin-top hidden">
+                        <!-- Fila 1: Periodo -->
+                        <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
+                            <div class="flex-shrink-0" style="width: 100px;">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-calendar-alt mr-1 text-blue-600"></i>Periodo
+                                </label>
+                                <select id="periodoTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
+                                    <option value="TODOS" selected>Todos</option>
+                                    <option value="POR_FECHA">Por fecha</option>
+                                    <option value="ENTRE_FECHAS">Entre fechas</option>
+                                    <option value="POR_MES">Por mes</option>
+                                    <option value="ENTRE_MESES">Entre meses</option>
+                                    <option value="ULTIMA_SEMANA">Última Semana</option>
+                                </select>
+                            </div>
+                            <div id="periodoPorFecha" class="flex-shrink-0 min-w-[130px] hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-day mr-1 text-blue-600"></i>Fecha</label>
+                                <input id="fechaUnica" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            </div>
+                            <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Desde</label>
+                                    <input id="fechaInicio" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label>
+                                    <input id="fechaFin" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                            </div>
+                            <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[130px]">
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
+                                <input id="mesUnico" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            </div>
+                            <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label>
+                                    <input id="mesInicio" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label>
+                                    <input id="mesFin" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                            </div>
                         </div>
-
-                        <!-- FECHA FIN -->
-                        <div>
-                            <label class="text-xs font-medium text-gray-600 mb-1 block">Fecha Fin</label>
-                            <input type="date" id="filtroFechaFin"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
-                        </div>
-
-                        <!-- ESTADO -->
-                        <div>
-                            <label class="text-xs font-medium text-gray-600 mb-1 block">Estado</label>
-                            <select id="filtroEstado"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
-                                <option value="pendiente">Seleccionar</option>
-                                <option value="todos">Todos</option>
-                                <option value="pendiente">Pendientes</option>
-                                <option value="completado">Completados</option>
-                            </select>
-                        </div>
-
-                        <!-- Laboratorio -->
-                        <div>
-                            <label class="text-xs font-medium text-gray-600 mb-1 block">Laboratorio</label>
-                            <select id="filtroLab"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
-                                <option value="">Seleccionar</option>
-                                <?php
-                                $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
-                                $res = $conexion->query($sql);
-
-                                if ($res && $res->num_rows > 0) {
-                                    while ($row = $res->fetch_assoc()) {
-                                        echo '<option value="' . htmlspecialchars($row['nombre']) . '">'
-                                            . htmlspecialchars($row['nombre']) .
-                                            '</option>';
+                        <!-- Fila 2: Estado, Laboratorio, botón -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-tasks mr-1 text-blue-600"></i>Estado</label>
+                                <select id="filtroEstado" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="pendiente">Pendientes</option>
+                                    <option value="todos">Todos</option>
+                                    <option value="completado">Completados</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-flask mr-1 text-blue-600"></i>Laboratorio</label>
+                                <select id="filtroLab" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Seleccionar</option>
+                                    <?php
+                                    $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
+                                    $res = $conexion->query($sql);
+                                    if ($res && $res->num_rows > 0) {
+                                        while ($row = $res->fetch_assoc()) {
+                                            echo '<option value="' . htmlspecialchars($row['nombre']) . '">' . htmlspecialchars($row['nombre']) . '</option>';
+                                        }
                                     }
-                                }
-                                ?>
-                            </select>
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="aplicarFiltros()" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm">
+                                    Filtrar
+                                </button>
+                                <button type="button" onclick="limpiarFiltrosRptaLab()" class="px-5 py-2 border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium">
+                                    Limpiar
+                                </button>
+                            </div>
                         </div>
-
-                        <!-- BOTÓN -->
-                        <div class="flex">
-                            <button onclick="aplicarFiltros()"
-                                class="w-full md:w-auto px-5 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm">
-                                Filtrar
-                            </button>
-                        </div>
-
                     </div>
                 </div>
 
@@ -1038,8 +1059,33 @@ $result = $conexion->query($query);
         </div>
 
         <script>
-            // Actualizar el año dinámicamente
             document.getElementById('currentYear').textContent = new Date().getFullYear();
+            function aplicarVisibilidadPeriodoRptaLab() {
+                var t = document.getElementById('periodoTipo').value || '';
+                document.getElementById('periodoPorFecha').classList.add('hidden');
+                document.getElementById('periodoEntreFechas').classList.add('hidden');
+                document.getElementById('periodoPorMes').classList.add('hidden');
+                document.getElementById('periodoEntreMeses').classList.add('hidden');
+                if (t === 'POR_FECHA') document.getElementById('periodoPorFecha').classList.remove('hidden');
+                else if (t === 'ENTRE_FECHAS') document.getElementById('periodoEntreFechas').classList.remove('hidden');
+                else if (t === 'POR_MES') document.getElementById('periodoPorMes').classList.remove('hidden');
+                else if (t === 'ENTRE_MESES') document.getElementById('periodoEntreMeses').classList.remove('hidden');
+            }
+            document.getElementById('periodoTipo').addEventListener('change', aplicarVisibilidadPeriodoRptaLab);
+            aplicarVisibilidadPeriodoRptaLab();
+            function limpiarFiltrosRptaLab() {
+                document.getElementById('periodoTipo').value = 'TODOS';
+                document.getElementById('fechaUnica').value = '';
+                document.getElementById('fechaInicio').value = '';
+                document.getElementById('fechaFin').value = '';
+                document.getElementById('mesUnico').value = '';
+                document.getElementById('mesInicio').value = '';
+                document.getElementById('mesFin').value = '';
+                document.getElementById('filtroEstado').value = 'pendiente';
+                document.getElementById('filtroLab').value = '';
+                aplicarVisibilidadPeriodoRptaLab();
+                if (typeof loadSidebar === 'function') loadSidebar(1);
+            }
         </script>
 
     </div>

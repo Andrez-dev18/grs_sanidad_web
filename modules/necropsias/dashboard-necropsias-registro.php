@@ -1245,6 +1245,17 @@ if (!$conn) {
             </div>
         </div>
 
+        <!-- Lightbox para ver imagen en grande (igual que en listado/editar) -->
+        <div id="modalImagenLightbox" class="hidden fixed inset-0 flex items-center justify-center p-4" style="z-index: 99999;">
+            <div class="absolute inset-0 bg-black/60" id="lightboxBackdrop" style="cursor: pointer;"></div>
+            <div class="relative z-10 border-4 border-blue-500 rounded-xl bg-sky-50 shadow-2xl p-3 flex flex-col" id="lightboxContenedor" style="cursor: default; width: min(90vw, 600px); max-height: 85vh;">
+                <button type="button" id="lightboxCerrar" class="absolute top-2 right-2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white text-xl font-bold shadow-lg" aria-label="Cerrar">&times;</button>
+                <div class="mt-10 overflow-auto flex items-center justify-center rounded-lg bg-white/80" style="min-height: 200px; max-height: calc(85vh - 4rem);">
+                    <img id="lightboxImg" src="" alt="" class="rounded-lg" style="max-width: 100%; max-height: 70vh; width: auto; height: auto; object-fit: contain; display: block;">
+                </div>
+            </div>
+        </div>
+
         <!-- Footer -->
         <div class="text-center mt-12">
             <p class="text-gray-500 text-sm">
@@ -1371,7 +1382,21 @@ if (!$conn) {
             limpiarFormularioNecropsia();
         });
 
-        // Tabs (igual que antes)
+        function activarPrimeraTabRegistro() {
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('border-green-600', 'text-green-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            const firstTab = document.querySelector('.tab-button');
+            if (firstTab) {
+                firstTab.classList.remove('border-transparent', 'text-gray-500');
+                firstTab.classList.add('border-green-600', 'text-green-600');
+                const panel = document.getElementById(firstTab.getAttribute('data-tab'));
+                if (panel) panel.classList.remove('hidden');
+            }
+        }
+
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', () => {
                 document.querySelectorAll('.tab-button').forEach(btn => {
@@ -1384,6 +1409,8 @@ if (!$conn) {
                 document.getElementById(button.dataset.tab).classList.remove('hidden');
             });
         });
+
+        document.addEventListener('DOMContentLoaded', activarPrimeraTabRegistro);
 
         // Calcular porcentaje: solo los 5 checkboxes de la fila que contiene porc_X (evita mezclar filas)
         function calcularPorcentaje(idGrupo) {
@@ -1812,7 +1839,7 @@ if (!$conn) {
             const edadStr = option.dataset.edad || '';
             const edadNum = parseInt(edadStr, 10);
             if (!isNaN(edadNum) && edadNum <= 0) {
-                // Fecha inválida (antes del ingreso): pedir corregir
+                
                 Swal.fire({
                     icon: 'warning',
                     title: 'Fecha inválida',
@@ -1898,7 +1925,9 @@ if (!$conn) {
 
                         const img = document.createElement('img');
                         img.src = e.target.result;
-                        img.classList.add('h-32', 'w-full', 'object-cover', 'rounded-lg');
+                        img.classList.add('h-32', 'w-full', 'object-cover', 'rounded-lg', 'cursor-pointer', 'hover:opacity-90');
+                        img.alt = 'Evidencia';
+                        img.title = 'Clic para ver en grande';
 
                         const removeBtn = document.createElement('button');
                         removeBtn.innerHTML = '×';
@@ -1923,6 +1952,26 @@ if (!$conn) {
                 this.value = '';
             });
         });
+
+        // Lightbox: al hacer clic en una imagen de preview, mostrarla en grande (igual que en listado/editar)
+        document.getElementById('contenidoNecropsia')?.addEventListener('click', function(e) {
+            if (e.target.tagName === 'IMG' && e.target.closest('div[id^="preview_"]')) {
+                const modal = document.getElementById('modalImagenLightbox');
+                const lightboxImg = document.getElementById('lightboxImg');
+                if (modal && lightboxImg) {
+                    lightboxImg.src = e.target.currentSrc || e.target.src;
+                    lightboxImg.alt = e.target.alt || 'Evidencia';
+                    modal.classList.remove('hidden');
+                }
+            }
+        });
+        function cerrarLightbox() {
+            document.getElementById('modalImagenLightbox')?.classList.add('hidden');
+        }
+        document.getElementById('lightboxCerrar')?.addEventListener('click', cerrarLightbox);
+        document.getElementById('lightboxBackdrop')?.addEventListener('click', cerrarLightbox);
+        document.getElementById('lightboxContenedor')?.addEventListener('click', function(e) { e.stopPropagation(); });
+        document.getElementById('lightboxImg')?.addEventListener('click', function(e) { e.stopPropagation(); });
 
         // === FUNCIÓN PARA LIMPIAR TODO EL FORMULARIO Y RESETEAR ESTADO ===
         function limpiarFormularioNecropsia() {
@@ -1972,11 +2021,11 @@ if (!$conn) {
                 td.textContent = '0%';
             });
 
-            // 9. Limpiar el objeto global de evidencias nuevas
-            // (Importante para que no se suban fotos de la sesión anterior)
             for (const key in evidencias) {
                 delete evidencias[key];
             }
+
+            if (typeof activarPrimeraTabRegistro === 'function') activarPrimeraTabRegistro();
         }
 
         let evidenciasActuales = []; // Array de rutas

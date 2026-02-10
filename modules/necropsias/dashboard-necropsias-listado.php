@@ -33,6 +33,7 @@ if (!$conn) {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
@@ -40,7 +41,6 @@ if (!$conn) {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        /* Tus estilos existentes */
         body {
             background: #f8f9fa;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -174,34 +174,6 @@ if (!$conn) {
             background: #64748b;
         }
 
-        .data-table {
-            width: 100% !important;
-            border-collapse: collapse;
-            min-width: 1200px;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 0.75rem 1rem;
-            text-align: left;
-            font-size: 0.875rem;
-            border-bottom: 1px solid #e5e7eb;
-            white-space: nowrap;
-        }
-
-        .data-table th {
-            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
-            font-weight: 600;
-            color: #ffffff !important;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .data-table tbody tr:hover {
-            background-color: #eff6ff !important;
-        }
-
         .dataTables_wrapper .dataTables_length,
         .dataTables_wrapper .dataTables_filter,
         .dataTables_wrapper .dataTables_info,
@@ -285,12 +257,10 @@ if (!$conn) {
 
                 <?php
                 if ($conn) {
-                    // 1. Ejecutar el SET para evitar errores de GROUP BY
+                    
                     $conn->query("SET sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
 
-                    // 2. Consulta SQL optimizada
-                    // Seleccionamos SOLO codigo y nombre.
-                    // Usamos la lógica de 'edad' (b.edad) SOLO en el WHERE para filtrar, pero no la traemos en el SELECT.
+                  
                     $sqlGranjas = "SELECT codigo, nombre
                    FROM ccos AS a 
                    LEFT JOIN (
@@ -313,23 +283,41 @@ if (!$conn) {
                 }
                 ?>
 
+                <!-- Fila 1: Periodo -->
+                <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
+                    <div class="flex-shrink-0" style="width: 100px;">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-alt mr-1 text-blue-600"></i> Periodo</label>
+                        <select id="periodoTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
+                            <option value="TODOS" selected>Todos</option>
+                            <option value="POR_FECHA">Por fecha</option>
+                            <option value="ENTRE_FECHAS">Entre fechas</option>
+                            <option value="POR_MES">Por mes</option>
+                            <option value="ENTRE_MESES">Entre meses</option>
+                            <option value="ULTIMA_SEMANA">Última Semana</option>
+                        </select>
+                    </div>
+                    <div id="periodoPorFecha" class="flex-shrink-0 min-w-[130px] hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-day mr-1 text-blue-600"></i>Fecha</label>
+                        <input id="fechaUnica" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                    <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
+                        <div class="min-w-[120px]"><label class="block text-sm font-medium text-gray-700 mb-1">Desde</label><input id="fechaInicio" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[120px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label><input id="fechaFin" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                    </div>
+                    <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[130px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
+                        <input id="mesUnico" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                    <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
+                        <div class="min-w-[120px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label><input id="mesInicio" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[120px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label><input id="mesFin" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                    </div>
+                </div>
+                <!-- Fila 2: Granja -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
-                        <input type="date" id="filtroFechaInicio"
-                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
-                        <input type="date" id="filtroFechaFin"
-                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Granja</label>
-                        <select id="filtroGranja" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-warehouse mr-1 text-blue-600"></i>Granja</label>
+                        <select id="filtroGranja" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Seleccionar</option>
 
                             <?php if (isset($resultadoGranjas) && $resultadoGranjas): ?>
@@ -387,52 +375,52 @@ if (!$conn) {
         </div>
 
 
-        <!-- Modal Editar (estilo similar a registro) -->
+        <!-- Modal Editar -->
         <div id="modalNecropsia" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/50 flex items-center justify-center p-2 sm:p-4">
-            <div class="bg-sky-50 rounded-2xl shadow-2xl w-full max-w-7xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden">
-                <!-- Header modal -->
-                <div class="px-4 sm:px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
+                <div class="px-4 sm:px-6 py-4 bg-white border-b border-gray-200 flex items-center justify-between flex-shrink-0">
                     <h2 class="text-lg sm:text-xl font-bold text-gray-800 truncate pr-2">Editar Necropsia</h2>
-                    <button id="closeModal" class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition flex-shrink-0" aria-label="Cerrar">&times;</button>
+                    <button id="closeModal" class="text-gray-600 hover:text-gray-900 text-2xl leading-none transition flex-shrink-0" aria-label="Cerrar">&times;</button>
                 </div>
 
-                <div id="contenidoNecropsia" class="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 min-h-0">
-                    <!-- Card cabecera (estilo registro) -->
-                    <div class="mb-6 rounded-xl border border-gray-200 bg-sky-50 overflow-hidden">
-                        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-3 border-b border-gray-200">
-                            <label class="text-sm font-semibold text-gray-700">Datos del lote</label>
-                        </div>
-                        <div class="p-4">
+                <div id="contenidoNecropsia" class="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 min-h-0 bg-white">
+                    <div class="mb-6 rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+                        <div class="p-4 bg-white">
+                            <div class="flex flex-wrap gap-4 mb-4">
+                                <div class="w-24">
+                                    <label class="block text-sm font-medium text-gray-700">N° Reg</label>
+                                    <input type="text" id="numregDisplay" readonly disabled class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-white cursor-not-allowed text-gray-700 text-sm">
+                                </div>
+                                <div class="w-40">
+                                    <label class="block text-sm font-medium text-gray-700">Usuario</label>
+                                    <input type="text" id="usuarioDisplay" readonly disabled class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-white cursor-not-allowed text-gray-700 text-sm">
+                                </div>
+                            </div>
                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 necropsia-cabecera-grid">
-                        <!-- FECHA NECROPSIA (primero) -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700">FECHA</label>
-                            <input type="date" id="fectra" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+                            <input type="date" id="fectra" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
 
-                        <!-- GRANJA (select más grande) -->
-                        <div class="md:col-span-2 necropsia-granja-cell"> <!-- Ocupa 2 columnas en desktop para más espacio -->
+                        <div class="md:col-span-2 necropsia-granja-cell">
                             <label class="block text-sm font-medium text-gray-700">GRANJA</label>
-                            <select id="granja" required class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                            <select id="granja" required class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                 <option value="">Cargando granjas...</option>
                             </select>
                         </div>
 
-                        <!-- CAMPAÑA (solo lectura) -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700">CAMP.</label>
                             <input type="text" id="campania" readonly class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed">
                         </div>
 
-                        <!-- GALPÓN (se autoselecciona el mayor) -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700">GALPÓN</label>
-                            <select id="galpon" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500" disabled>
+                            <select id="galpon" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" disabled>
                                 <option value="">Seleccione granja primero</option>
                             </select>
                         </div>
 
-                        <!-- EDAD (solo lectura) -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700">EDAD</label>
                             <input type="text" id="edad" readonly class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed">
@@ -441,35 +429,32 @@ if (!$conn) {
                         </div>
                     </div>
 
-                    <!-- Tabs (estilo registro) -->
-                    <div class="mb-6 rounded-xl border border-gray-200 bg-white overflow-hidden">
-                    <div class="border-b border-gray-200 p-2 sm:p-4 necropsia-tabs-nav overflow-x-auto">
+                    <div class="mb-6 rounded-xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+                    <div class="border-b border-gray-200 p-2 sm:p-4 necropsia-tabs-nav overflow-x-auto bg-gray-50">
                         <nav class="-mb-px flex flex-nowrap space-x-4 sm:space-x-8" role="tablist">
-                            <button type="button" class="tab-button py-3 px-1 border-b-4 border-green-600 text-green-600 font-semibold" data-tab="inmunologico">
+                            <button type="button" class="tab-button py-3 px-1 border-b-4 border-blue-600 text-blue-600 font-semibold" data-tab="inmunologico">
                                 Sistema Inmunológico
                             </button>
-                            <button type="button" class="tab-button py-3 px-1 border-b-4 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium" data-tab="digestivo">
+                            <button type="button" class="tab-button py-3 px-1 border-b-4 border-transparent text-gray-500 hover:text-blue-600 hover:border-blue-300 font-medium" data-tab="digestivo">
                                 Sistema Digestivo
                             </button>
-                            <button type="button" class="tab-button py-3 px-1 border-b-4 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium" data-tab="respiratorio">
+                            <button type="button" class="tab-button py-3 px-1 border-b-4 border-transparent text-gray-500 hover:text-blue-600 hover:border-blue-300 font-medium" data-tab="respiratorio">
                                 Sistema Respiratorio
                             </button>
-                            <button type="button" class="tab-button py-3 px-1 border-b-4 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium" data-tab="evaluacion">
+                            <button type="button" class="tab-button py-3 px-1 border-b-4 border-transparent text-gray-500 hover:text-blue-600 hover:border-blue-300 font-medium" data-tab="evaluacion">
                                 Evaluación Física
                             </button>
-                            <button type="button" class="tab-button py-3 px-1 border-b-4 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium" data-tab="diag-presuntivo">
+                            <button type="button" class="tab-button py-3 px-1 border-b-4 border-transparent text-gray-500 hover:text-blue-600 hover:border-blue-300 font-medium" data-tab="diag-presuntivo">
                                 Diag. Presuntivo
                             </button>
                         </nav>
                     </div>
 
-                    <!-- Contenido de los Tabs (estilo registro: tabla con títulos de columnas) -->
-                    <div class="p-4">
-                    <!-- sistema inmunologico -->
+                    <div class="p-4 bg-white">
                     <div class="tab-content" id="inmunologico">
-                        <div class="overflow-x-auto rounded-lg border border-gray-200">
+                        <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white">
                         <table class="w-full table-auto border-collapse text-sm">
-                            <thead class="bg-sky-100 text-xs font-semibold text-gray-700 uppercase">
+                            <thead class="bg-gray-100 text-xs font-semibold text-gray-700 uppercase">
                                 <tr>
                                     <th class="px-4 py-3 text-left font-medium w-48"></th>
                                     <th class="px-4 py-3 text-left font-medium w-32">OPCIÓN</th>
@@ -485,125 +470,125 @@ if (!$conn) {
                             <tbody class="divide-y divide-gray-200">
 
                                 <!-- ÍNDICE BURSAL -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="3">ÍNDICE BURSAL*</td>
                                     <td class="px-4 py-4">Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_indice_normal">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="3">
-                                        <textarea id="obs_indice_bursal" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
+                                        <textarea id="obs_indice_bursal" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_indice_bursal" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_indice_bursal" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_indice_bursal"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Atrofia</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_atrofia')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_atrofia')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_atrofia')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_atrofia')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_atrofia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_atrofia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_atrofia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_atrofia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_atrofia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_atrofia')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_indice_atrofia">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Severa Atrofia</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_severa_atrofia')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_severa_atrofia')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_severa_atrofia')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_severa_atrofia')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('indice_severa_atrofia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_severa_atrofia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_severa_atrofia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_severa_atrofia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_severa_atrofia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('indice_severa_atrofia')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_indice_severa_atrofia">0%</td>
                                 </tr>
 
                                 <!-- MUCOSA DE LA BURSA -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="3">MUCOSA DE LA BURSA</td>
                                     <td class="px-4 py-4">Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_mucosa_normal">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="3">
-                                        <textarea id="obs_mucosa_bursa" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="4"></textarea>
+                                        <textarea id="obs_mucosa_bursa" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="4"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_mucosa_bursa" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_mucosa_bursa" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_mucosa_bursa"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Petequias</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_petequias')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_petequias')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_petequias')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_petequias')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_petequias')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_petequias')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_petequias')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_petequias')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_petequias')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_petequias')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_mucosa_petequias">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Hemorragia</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_hemorragia')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_hemorragia')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_hemorragia')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_hemorragia')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('mucosa_hemorragia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_hemorragia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_hemorragia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_hemorragia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_hemorragia')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('mucosa_hemorragia')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_mucosa_hemorragia">0%</td>
                                 </tr>
 
                                 <!-- TIMOS -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="4">TIMOS</td>
                                     <td class="px-4 py-4">Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_timos_normal">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="4">
-                                        <textarea id="obs_timos" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
+                                        <textarea id="obs_timos" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_timos" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_timos" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_timos"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Atrofiados</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_atrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_atrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_atrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_atrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_atrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_atrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_atrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_atrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_atrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_atrofiado')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_timos_atrofiado">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Aspecto Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_aspecto_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_aspecto_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_aspecto_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_aspecto_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_aspecto_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_aspecto_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_aspecto_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_aspecto_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_aspecto_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_aspecto_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_timos_aspecto_normal">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Congestionado</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_congestionado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_congestionado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_congestionado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_congestionado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('timos_congestionado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_congestionado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_congestionado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_congestionado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_congestionado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('timos_congestionado')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_timos_congestionado">0%</td>
                                 </tr>
                             </tbody>
@@ -615,7 +600,7 @@ if (!$conn) {
                     <div class="tab-content hidden" id="digestivo">
                         <div class="overflow-x-auto rounded-lg border border-gray-200">
                         <table class="w-full table-auto border-collapse text-sm">
-                            <thead class="bg-sky-100 text-xs font-semibold text-gray-700 uppercase">
+                            <thead class="bg-gray-100 text-xs font-semibold text-gray-700 uppercase">
                                 <tr>
                                     <th class="px-4 py-3 text-left font-medium w-48"></th>
                                     <th class="px-4 py-3 text-left font-medium w-32">OPCIÓN</th>
@@ -631,429 +616,429 @@ if (!$conn) {
                             <tbody class="divide-y divide-gray-200">
 
                                 <!-- HÍGADOS -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="4">HÍGADOS</td>
                                     <td class="px-4 py-4">Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_higados_normal">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="4">
-                                        <textarea id="obs_higados" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="4"></textarea>
+                                        <textarea id="obs_higados" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="4"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_higados" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_higados" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_higados"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Esteatósico</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_esteatosico')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_esteatosico')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_esteatosico')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_esteatosico')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_esteatosico')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_esteatosico')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_esteatosico')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_esteatosico')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_esteatosico')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_esteatosico')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_higados_esteatosico">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Tmn. Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_tmnnormal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_tmnnormal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_tmnnormal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_tmnnormal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_tmnnormal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_tmnnormal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_tmnnormal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_tmnnormal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_tmnnormal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_tmnnormal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_higados_tmnnormal">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Hipertrofiado</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_hipertrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_hipertrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_hipertrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_hipertrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('higados_hipertrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_hipertrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_hipertrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_hipertrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_hipertrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('higados_hipertrofiado')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_higados_hipertrofiado">0%</td>
                                 </tr>
 
                                 <!-- VESÍCULA BILIAR -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="5">VESÍCULA BILIAR</td>
                                     <td class="px-4 py-4">Color Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_color_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_color_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_color_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_color_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_color_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_color_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_color_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_color_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_color_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_color_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_vesicula_color_normal">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="5">
-                                        <textarea id="obs_vesicula" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="5"></textarea>
+                                        <textarea id="obs_vesicula" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="5"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_vesicula" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_vesicula" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_vesicula"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Color Claro</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_color_claro')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_color_claro')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_color_claro')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_color_claro')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_color_claro')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_color_claro')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_color_claro')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_color_claro')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_color_claro')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_color_claro')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_vesicula_color_claro">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Tmn. Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_tam_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_tam_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_tam_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_tam_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_tam_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_tam_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_tam_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_tam_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_tam_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_tam_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_vesicula_tam_normal">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Atrofiado</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_atrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_atrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_atrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_atrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_atrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_atrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_atrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_atrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_atrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_atrofiado')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_vesicula_atrofiado">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Hipertrofiado</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_hipertrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_hipertrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_hipertrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_hipertrofiado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('vesicula_hipertrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_hipertrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_hipertrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_hipertrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_hipertrofiado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('vesicula_hipertrofiado')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_vesicula_hipertrofiado">0%</td>
                                 </tr>
 
                                 <!-- EROSIÓN DE LA MOLLEJA -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="5">EROSIÓN DE LA MOLLEJA</td>
                                     <td class="px-4 py-4">Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_erosion_normal">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="5">
-                                        <textarea id="obs_erosion" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="5"></textarea>
+                                        <textarea id="obs_erosion" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="5"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_erosion" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_erosion" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_erosion"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Grado 1</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado1')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado1')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado1')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado1')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado1')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado1')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado1')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado1')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado1')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado1')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_erosion_grado1">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Grado 2</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado2')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado2')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado2')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado2')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado2')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado2')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado2')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado2')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado2')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado2')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_erosion_grado2">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Grado 3</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado3')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado3')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado3')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado3')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado3')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado3')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado3')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado3')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado3')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado3')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_erosion_grado3">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Grado 4</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado4')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado4')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado4')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado4')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('erosion_grado4')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado4')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado4')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado4')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado4')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('erosion_grado4')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_erosion_grado4">0%</td>
                                 </tr>
 
                                 <!-- RETRACCIÓN DEL PÁNCREAS -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="2">RETRACCIÓN DEL PÁNCREAS</td>
                                     <td class="px-4 py-4">Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pancreas_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pancreas_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pancreas_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pancreas_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pancreas_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pancreas_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pancreas_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pancreas_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pancreas_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pancreas_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_pancreas_normal">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="2">
-                                        <textarea id="obs_pancreas" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
+                                        <textarea id="obs_pancreas" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" id="evidencia_pancreas">
+                                            <input type="file" accept="image/*" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" id="evidencia_pancreas">
                                             <div class="mt-2" id="preview_pancreas"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Retraído</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pancreas_retraido')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pancreas_retraido')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pancreas_retraido')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pancreas_retraido')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pancreas_retraido')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pancreas_retraido')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pancreas_retraido')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pancreas_retraido')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pancreas_retraido')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pancreas_retraido')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_pancreas_retraido">0%</td>
                                 </tr>
 
                                 <!-- ABSORCIÓN DEL SACO VITELINO -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="2">ABSORCIÓN DEL SACO VITELINO</td>
                                     <td class="px-4 py-4">Sí</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('saco_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('saco_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('saco_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('saco_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('saco_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('saco_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('saco_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('saco_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('saco_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('saco_si')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_saco_si">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="2">
-                                        <textarea id="obs_saco" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
+                                        <textarea id="obs_saco" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" id="evidencia_saco">
+                                            <input type="file" accept="image/*" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" id="evidencia_saco">
                                             <div class="mt-2" id="preview_saco"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">No</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('saco_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('saco_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('saco_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('saco_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('saco_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('saco_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('saco_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('saco_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('saco_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('saco_no')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_saco_no">0%</td>
                                 </tr>
 
                                 <!-- ENTERITIS -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="4">ENTERITIS</td>
                                     <td class="px-4 py-4">Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_enteritis_normal">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="4">
-                                        <textarea id="obs_enteritis" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="5"></textarea>
+                                        <textarea id="obs_enteritis" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="5"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" id="evidencia_enteritis">
+                                            <input type="file" accept="image/*" multiple class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" id="evidencia_enteritis">
                                             <div class="mt-2" id="preview_enteritis"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Leve</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_leve')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_leve')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_leve')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_leve')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_leve')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_leve')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_leve')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_leve')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_leve')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_leve')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_enteritis_leve">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Moderado</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_moderado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_moderado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_moderado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_moderado')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_moderado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_moderado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_moderado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_moderado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_moderado')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_moderado')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_enteritis_moderado">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Severo</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_severo')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_severo')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_severo')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_severo')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('enteritis_severo')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_severo')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_severo')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_severo')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_severo')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('enteritis_severo')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_enteritis_severo">0%</td>
                                 </tr>
 
                                 <!-- CONTENIDO CECAL -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="3">CONTENIDO CECAL</td>
                                     <td class="px-4 py-4">Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_cecal_normal">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="3">
-                                        <textarea id="obs_cecal" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="4"></textarea>
+                                        <textarea id="obs_cecal" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="4"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_cecal" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_cecal" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_cecal"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Gas</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_gas')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_gas')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_gas')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_gas')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_gas')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_gas')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_gas')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_gas')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_gas')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_gas')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_cecal_gas">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Espuma</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_espuma')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_espuma')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_espuma')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_espuma')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('cecal_espuma')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_espuma')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_espuma')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_espuma')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_espuma')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('cecal_espuma')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_cecal_espuma">0%</td>
                                 </tr>
 
                                 <!-- ALIMENTO SIN DIGERIR -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="2">ALIMENTO SIN DIGERIR</td>
                                     <td class="px-4 py-4">Sí</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('alimento_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('alimento_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('alimento_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('alimento_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('alimento_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('alimento_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('alimento_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('alimento_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('alimento_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('alimento_si')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_alimento_si">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="2">
-                                        <textarea id="obs_alimento" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
+                                        <textarea id="obs_alimento" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_alimento" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_alimento" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_alimento"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">No</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('alimento_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('alimento_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('alimento_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('alimento_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('alimento_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('alimento_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('alimento_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('alimento_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('alimento_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('alimento_no')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_alimento_no">0%</td>
                                 </tr>
 
                                 <!-- HECES ANARANJADAS -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="2">HECES ANARANJADAS</td>
                                     <td class="px-4 py-4">Sí</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('heces_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('heces_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('heces_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('heces_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('heces_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('heces_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('heces_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('heces_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('heces_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('heces_si')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_heces_si">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="2">
-                                        <textarea id="obs_heces" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
+                                        <textarea id="obs_heces" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_heces" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_heces" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_heces"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">No</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('heces_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('heces_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('heces_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('heces_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('heces_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('heces_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('heces_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('heces_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('heces_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('heces_no')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_heces_no">0%</td>
                                 </tr>
 
                                 <!-- LESIÓN ORAL -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="2">LESIÓN ORAL</td>
                                     <td class="px-4 py-4">Sí</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('lesion_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('lesion_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('lesion_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('lesion_si')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('lesion_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('lesion_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('lesion_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('lesion_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('lesion_si')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('lesion_si')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_lesion_si">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="2">
-                                        <textarea id="obs_lesion" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
+                                        <textarea id="obs_lesion" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_lesion" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_lesion" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_lesion"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">No</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('lesion_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('lesion_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('lesion_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('lesion_no')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('lesion_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('lesion_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('lesion_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('lesion_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('lesion_no')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('lesion_no')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_lesion_no">0%</td>
                                 </tr>
 
                                 <!-- TONICIDAD INTESTINAL -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="3">TONICIDAD INTESTINAL</td>
                                     <td class="px-4 py-4">Buena</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_buena')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_buena')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_buena')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_buena')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_buena')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_buena')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_buena')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_buena')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_buena')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_buena')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_tonicidad_buena">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="3">
-                                        <textarea id="obs_tonicidad" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="4"></textarea>
+                                        <textarea id="obs_tonicidad" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="4"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_tonicidad" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_tonicidad" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_tonicidad"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Regular</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_regular')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_regular')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_regular')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_regular')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_regular')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_regular')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_regular')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_regular')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_regular')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_regular')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_tonicidad_regular">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Mala</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_mala')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_mala')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_mala')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_mala')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tonicidad_mala')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_mala')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_mala')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_mala')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_mala')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tonicidad_mala')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_tonicidad_mala">0%</td>
                                 </tr>
                             </tbody>
@@ -1081,116 +1066,116 @@ if (!$conn) {
                             <tbody class="divide-y divide-gray-200">
 
                                 <!-- TRAQUEA -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="4">TRAQUEA</td>
                                     <td class="px-4 py-4">Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_traquea_normal">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="4">
-                                        <textarea id="obs_traquea" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="5"></textarea>
+                                        <textarea id="obs_traquea" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="5"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_traquea" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_traquea" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_traquea"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Leve</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_leve')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_leve')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_leve')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_leve')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_leve')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_leve')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_leve')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_leve')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_leve')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_leve')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_traquea_leve">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Moderada</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_moderada')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_moderada')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_moderada')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_moderada')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_moderada')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_moderada')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_moderada')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_moderada')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_moderada')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_moderada')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_traquea_moderada">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Severa</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_severa')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_severa')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_severa')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_severa')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('traquea_severa')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_severa')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_severa')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_severa')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_severa')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('traquea_severa')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_traquea_severa">0%</td>
                                 </tr>
 
                                 <!-- PULMÓN -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="2">PULMÓN</td>
                                     <td class="px-4 py-4">Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pulmon_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pulmon_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pulmon_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pulmon_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pulmon_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pulmon_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pulmon_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pulmon_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pulmon_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pulmon_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_pulmon_normal">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="2">
-                                        <textarea id="obs_pulmon" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="3"></textarea>
+                                        <textarea id="obs_pulmon" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="3"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_pulmon" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_pulmon" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_pulmon"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Neumónico</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pulmon_neumonico')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pulmon_neumonico')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pulmon_neumonico')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pulmon_neumonico')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pulmon_neumonico')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pulmon_neumonico')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pulmon_neumonico')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pulmon_neumonico')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pulmon_neumonico')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pulmon_neumonico')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_pulmon_neumonico">0%</td>
                                 </tr>
 
                                 <!-- SACOS AÉREOS -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="3">SACOS AÉREOS</td>
                                     <td class="px-4 py-4">Normal</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_normal')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_normal')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_normal')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_sacos_normal">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="3">
-                                        <textarea id="obs_sacos" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="4"></textarea>
+                                        <textarea id="obs_sacos" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="4"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_sacos" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_sacos" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_sacos"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Turbio</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_turbio')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_turbio')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_turbio')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_turbio')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_turbio')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_turbio')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_turbio')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_turbio')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_turbio')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_turbio')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_sacos_turbio">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Material Caseoso</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_caseoso')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_caseoso')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_caseoso')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_caseoso')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('sacos_caseoso')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_caseoso')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_caseoso')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_caseoso')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_caseoso')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('sacos_caseoso')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_sacos_caseoso">0%</td>
                                 </tr>
 
@@ -1203,7 +1188,7 @@ if (!$conn) {
                     <div class="tab-content hidden" id="evaluacion">
                         <div class="overflow-x-auto rounded-lg border border-gray-200">
                         <table class="w-full table-auto border-collapse text-sm">
-                            <thead class="bg-sky-100 text-xs font-semibold text-gray-700 uppercase">
+                            <thead class="bg-gray-100 text-xs font-semibold text-gray-700 uppercase">
                                 <tr>
                                     <th class="px-4 py-3 text-left font-medium w-48"></th>
                                     <th class="px-4 py-3 text-left font-medium w-32">OPCIÓN</th>
@@ -1219,123 +1204,123 @@ if (!$conn) {
                             <tbody class="divide-y divide-gray-200">
 
                                 <!-- PODODERMATITIS -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="5">PODODERMATITIS</td>
                                     <td class="px-4 py-4">Grado 0</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado0')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado0')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado0')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado0')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado0')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado0')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado0')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado0')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado0')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado0')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_pododermatitis_grado0">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="5">
-                                        <textarea id="obs_pododermatitis" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="6"></textarea>
+                                        <textarea id="obs_pododermatitis" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="6"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_pododermatitis" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_pododermatitis" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_pododermatitis"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Grado 1</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado1')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado1')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado1')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado1')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado1')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado1')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado1')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado1')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado1')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado1')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_pododermatitis_grado1">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Grado 2</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado2')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado2')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado2')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado2')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado2')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado2')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado2')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado2')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado2')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado2')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_pododermatitis_grado2">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Grado 3</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado3')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado3')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado3')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado3')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado3')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado3')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado3')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado3')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado3')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado3')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_pododermatitis_grado3">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">Grado 4</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado4')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado4')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado4')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado4')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('pododermatitis_grado4')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado4')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado4')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado4')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado4')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('pododermatitis_grado4')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_pododermatitis_grado4">0%</td>
                                 </tr>
 
                                 <!-- COLOR TARSOS -->
-                                <tr class="bg-sky-50 font-medium">
+                                <tr class="bg-white font-medium">
                                     <td class="px-4 py-4 align-top" rowspan="6">COLOR TARSOS</td>
                                     <td class="px-4 py-4">3.5</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_35')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_35')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_35')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_35')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_35')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_35')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_35')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_35')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_35')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_35')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_tarsos_35">0%</td>
                                     <td class="px-4 py-4 align-top" rowspan="6">
-                                        <textarea id="obs_tarsos" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" rows="7"></textarea>
+                                        <textarea id="obs_tarsos" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" rows="7"></textarea>
                                         <div class="mt-4">
                                             <label class="block text-sm font-medium text-gray-700 mb-2">EVIDENCIA (opcional)</label>
-                                            <input type="file" accept="image/*" multiple id="evidencia_tarsos" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
+                                            <input type="file" accept="image/*" multiple id="evidencia_tarsos" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                                             <div class="mt-2" id="preview_tarsos"></div>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">4.0</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_40')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_40')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_40')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_40')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_40')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_40')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_40')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_40')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_40')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_40')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_tarsos_40">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">4.5</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_45')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_45')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_45')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_45')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_45')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_45')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_45')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_45')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_45')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_45')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_tarsos_45">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">5.0</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_50')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_50')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_50')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_50')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_50')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_50')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_50')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_50')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_50')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_50')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_tarsos_50">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">5.5</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_55')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_55')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_55')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_55')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_55')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_55')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_55')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_55')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_55')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_55')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_tarsos_55">0%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-4">6.0</td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_60')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_60')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_60')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_60')"></td>
-                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-green-600 focus:ring-green-500" onchange="calcularPorcentaje('tarsos_60')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_60')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_60')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_60')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_60')"></td>
+                                    <td class="px-4 py-4 text-center"><input type="checkbox" class="w-5 h-5 text-blue-600 focus:ring-blue-500" onchange="calcularPorcentaje('tarsos_60')"></td>
                                     <td class="px-4 py-4 text-center font-bold text-lg" id="porc_tarsos_60">0%</td>
                                 </tr>
 
@@ -1349,7 +1334,7 @@ if (!$conn) {
                         <div class="">
                             <div class="mb-4">
                                 <label for="txtDiagnosticoPresuntivo" class="block text-sm font-semibold text-gray-800 mb-1 flex items-center gap-2">
-                                    <i class="fas fa-stethoscope text-green-600"></i> Diagnóstico Presuntivo
+                                    <i class="fas fa-stethoscope text-blue-600"></i> Diagnóstico Presuntivo
                                 </label>
                                 <p class="text-xs text-gray-500">
                                     Detalle aquí las conclusiones preliminares basadas en las lesiones observadas durante la necropsia.
@@ -1360,7 +1345,7 @@ if (!$conn) {
                                 <textarea
                                     id="txtDiagnosticoPresuntivo"
                                     name="diagnostico_presuntivo"
-                                    class="w-full h-full min-h-[150px] p-4 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none transition-all outline-none"
+                                    class="w-full h-full min-h-[150px] p-4 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none transition-all outline-none"
                                     placeholder="Escriba su diagnóstico aquí..."></textarea>
 
                                 <div class="absolute bottom-3 right-3 text-xs text-gray-400 pointer-events-none">
@@ -1376,11 +1361,11 @@ if (!$conn) {
                     <!-- /Card Tabs -->
 
                     <!-- Botones al final -->
-                    <div class="dashboard-modal-actions necropsia-modal-actions flex flex-wrap justify-end mt-6 sm:mt-8 gap-3 sm:gap-4 pt-4 pb-4 sm:pb-6 px-4 sm:px-6 border-t border-gray-200 bg-white rounded-b-2xl flex-shrink-0">
+                    <div class="dashboard-modal-actions necropsia-modal-actions flex flex-wrap justify-end mt-6 sm:mt-8 gap-3 sm:gap-4 pt-4 pb-4 sm:pb-6 px-4 sm:px-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex-shrink-0">
                         <button type="button" id="closeModalBtn" class="px-4 sm:px-6 py-2.5 sm:py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition w-full sm:w-auto flex-shrink-0 min-w-0">
                             Cancelar
                         </button>
-                        <button type="button" id="btnGuardarNecropsia" class="px-4 sm:px-6 py-2.5 sm:py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition w-full sm:w-auto flex-shrink-0 min-w-0 whitespace-nowrap overflow-visible">
+                        <button type="button" id="btnGuardarNecropsia" class="px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition w-full sm:w-auto flex-shrink-0 min-w-0 whitespace-nowrap overflow-visible shadow-md">
                             Guardar Necropsia
                         </button>
                     </div>
@@ -1395,7 +1380,17 @@ if (!$conn) {
                 <p class="text-lg font-semibold text-gray-800">Guardando necropsia...</p>
                 <p class="text-sm text-gray-600 mt-2">Por favor espera, estamos procesando los registros y las imágenes</p>
                 <div class="mt-6">
-                    <div class="inline-block w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div class="inline-block w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="modalImagenLightbox" class="hidden fixed inset-0 flex items-center justify-center p-4" style="z-index: 99999;">
+            <div class="absolute inset-0 bg-black/60" id="lightboxBackdrop" style="cursor: pointer;"></div>
+            <div class="relative z-10 border-4 border-blue-500 rounded-xl bg-sky-50 shadow-2xl p-3 flex flex-col" id="lightboxContenedor" style="cursor: default; width: min(90vw, 600px); max-height: 85vh;">
+                <button type="button" id="lightboxCerrar" class="absolute top-2 right-2 z-20 w-10 h-10 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white text-xl font-bold shadow-lg" aria-label="Cerrar">&times;</button>
+                <div class="mt-10 overflow-auto flex items-center justify-center rounded-lg bg-white/80" style="min-height: 200px; max-height: calc(85vh - 4rem);">
+                    <img id="lightboxImg" src="" alt="" class="rounded-lg" style="max-width: 100%; max-height: 70vh; width: auto; height: auto; object-fit: contain; display: block;">
                 </div>
             </div>
         </div>
@@ -1403,12 +1398,11 @@ if (!$conn) {
         <!-- contenedor boton y tabla  -->
         <div class="bg-white rounded-xl shadow-md p-5">
             <?php
-            $codigoUsuario = $_SESSION['usuario'] ?? 'USER';  // Cambia 'usuario' si tu sesión usa otro nombre
-            // Consulta directa, simple
+            $codigoUsuario = $_SESSION['usuario'] ?? 'USER';
             $sql = "SELECT rol_sanidad FROM usuario WHERE codigo = '$codigoUsuario'";
             $res = $conn->query($sql);
 
-            $rol = 'user'; // valor por defecto si no encuentra nada
+            $rol = 'user';
 
             if ($res && $res->num_rows > 0) {
                 $fila = $res->fetch_assoc();
@@ -1416,7 +1410,6 @@ if (!$conn) {
             }
             ?>
 
-            <!-- Este <p> oculto guarda el rol para que JavaScript lo lea -->
             <p id="idRolUser" data-rol="<?= htmlspecialchars($rol) ?>"></p>
 
             <!-- tabla (estilo reportes) -->
@@ -1431,20 +1424,20 @@ if (!$conn) {
                     <div id="cardsPaginationNec" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
                 </div>
                 <div class="view-lista-wrap table-wrapper overflow-x-auto">
-                    <table id="tabla" class="data-table display w-full text-sm border-collapse" style="width:100%">
+                    <table id="tabla" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
                         <thead>
                             <tr>
-                                <th>N°</th>
-                                <th>N°Reg</th>
-                                <th>Fecha Necropsia</th>
-                                <th>Granja</th>
-                                <th>Nombre</th>
-                                <th>Campaña</th>
-                                <th>Galpón</th>
-                                <th>Edad</th>
-                                <th>Usuario</th>
-                                <th>Fecha Registro</th>
-                                <th>Opciones</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">N°Reg</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Fecha Necropsia</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Granja</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Nombre</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Campaña</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Galpón</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Edad</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Usuario</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Fecha Registro</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Opciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1521,7 +1514,6 @@ if (!$conn) {
     </div>
 
     <script>
-        // Helpers (SweetAlert: evita desbordes con contenido scrollable)
         function SwalAlert(mensaje, tipo) {
             var icono = (tipo === 'error') ? 'error' : (tipo === 'success') ? 'success' : (tipo === 'warning') ? 'warning' : 'info';
             return Swal.fire({
@@ -1608,20 +1600,36 @@ if (!$conn) {
 
         $(document).ready(function() {
 
-            // Referencia a los inputs
-            const inputInicio = $('#filtroFechaInicio');
-            const inputFin = $('#filtroFechaFin');
             const selectGranja = $('#filtroGranja');
+
+            function getPeriodoParams() {
+                return {
+                    periodoTipo: ($('#periodoTipo').val() || 'TODOS').trim(),
+                    fechaUnica: ($('#fechaUnica').val() || '').trim(),
+                    fechaInicio: ($('#fechaInicio').val() || '').trim(),
+                    fechaFin: ($('#fechaFin').val() || '').trim(),
+                    mesUnico: ($('#mesUnico').val() || '').trim(),
+                    mesInicio: ($('#mesInicio').val() || '').trim(),
+                    mesFin: ($('#mesFin').val() || '').trim()
+                };
+            }
 
             let tabla = $('#tabla').DataTable({
                 processing: true,
                 serverSide: true,
+                stripeClasses: [],
                 ajax: {
                     url: 'listar_necropsias.php',
                     type: 'POST',
                     data: function(d) {
-                        d.fecha_inicio = inputInicio.val();
-                        d.fecha_fin = inputFin.val();
+                        var p = getPeriodoParams();
+                        d.periodoTipo = p.periodoTipo;
+                        d.fechaUnica = p.fechaUnica;
+                        d.fechaInicio = p.fechaInicio;
+                        d.fechaFin = p.fechaFin;
+                        d.mesUnico = p.mesUnico;
+                        d.mesInicio = p.mesInicio;
+                        d.mesFin = p.mesFin;
                         d.granja = selectGranja.val();
                     }
                 },
@@ -1844,23 +1852,44 @@ if (!$conn) {
 
             // Limpiar filtros
             $('#btnLimpiarFiltros').on('click', function() {
-                $('#filtroFechaInicio').val('');
-                $('#filtroFechaFin').val('');
+                $('#periodoTipo').val('TODOS');
+                $('#fechaUnica, #fechaInicio, #fechaFin, #mesUnico, #mesInicio, #mesFin').val('');
+                aplicarVisibilidadPeriodoNecropsias();
                 $('#filtroGranja').val('');
                 tabla.ajax.reload();
             });
 
+            function aplicarVisibilidadPeriodoNecropsias() {
+                var t = $('#periodoTipo').val() || '';
+                $('#periodoPorFecha, #periodoEntreFechas, #periodoPorMes, #periodoEntreMeses').addClass('hidden');
+                if (t === 'POR_FECHA') $('#periodoPorFecha').removeClass('hidden');
+                else if (t === 'ENTRE_FECHAS') $('#periodoEntreFechas').removeClass('hidden');
+                else if (t === 'POR_MES') $('#periodoPorMes').removeClass('hidden');
+                else if (t === 'ENTRE_MESES') $('#periodoEntreMeses').removeClass('hidden');
+            }
+            $('#periodoTipo').on('change', aplicarVisibilidadPeriodoNecropsias);
+            aplicarVisibilidadPeriodoNecropsias();
         });
     </script>
 
     <script>
         function exportarNecropsiasExcel() {
             const params = new URLSearchParams();
-            const fi = document.getElementById('filtroFechaInicio')?.value || '';
-            const ff = document.getElementById('filtroFechaFin')?.value || '';
+            const pt = document.getElementById('periodoTipo')?.value || '';
+            const fu = document.getElementById('fechaUnica')?.value || '';
+            const fi = document.getElementById('fechaInicio')?.value || '';
+            const ff = document.getElementById('fechaFin')?.value || '';
+            const mu = document.getElementById('mesUnico')?.value || '';
+            const mi = document.getElementById('mesInicio')?.value || '';
+            const mf = document.getElementById('mesFin')?.value || '';
             const granja = document.getElementById('filtroGranja')?.value || '';
-            if (fi) params.set('fecha_inicio', fi);
-            if (ff) params.set('fecha_fin', ff);
+            if (pt) params.set('periodoTipo', pt);
+            if (fu) params.set('fechaUnica', fu);
+            if (fi) params.set('fechaInicio', fi);
+            if (ff) params.set('fechaFin', ff);
+            if (mu) params.set('mesUnico', mu);
+            if (mi) params.set('mesInicio', mi);
+            if (mf) params.set('mesFin', mf);
             if (granja) params.set('granja', granja);
             window.location.href = 'exportar_excel_necropsias.php?' + params.toString();
         }
@@ -1914,7 +1943,6 @@ if (!$conn) {
                 fectra
             };
 
-            // Cambiar botón a "Actualizar"
             const btnGuardar = document.getElementById('btnGuardarNecropsia');
             if (btnGuardar) btnGuardar.textContent = 'Actualizar Necropsia';
 
@@ -1926,12 +1954,15 @@ if (!$conn) {
                     SwalAlert('Error al cargar datos: ' + result.message, 'error');
                     return;
                 }
+                console.log(result);
 
-
-                // === CABECERA ===
-                // Fecha necropsia (setear primero para que get_granjas.php calcule edad con esta fecha)
                 const fectraInput = document.getElementById('fectra');
                 if (fectraInput) fectraInput.value = result.fectra || fectra;
+
+                const numregDisplay = document.getElementById('numregDisplay');
+                if (numregDisplay) numregDisplay.value = result.numreg ?? numreg ?? '';
+                const usuarioDisplay = document.getElementById('usuarioDisplay');
+                if (usuarioDisplay) usuarioDisplay.value = result.tuser ?? '';
 
                 const diagpresuntivo = document.getElementById('txtDiagnosticoPresuntivo');
                 if(diagpresuntivo) diagpresuntivo.value = result.diagpresuntivo || '';
@@ -1941,15 +1972,12 @@ if (!$conn) {
                 if (granjaSelect) {
                     await cargarGranjasParaEdicion();
                     granjaSelect.value = result.granja || granja;
-                    // Al editar no recalcular edad: usamos datos ya guardados; solo cargar galpones
+                    
                     window._loadingEditNecropsia = true;
                     granjaSelect.dispatchEvent(new Event('change'));
                 }
 
-                // Esperar a que se carguen los galpones
                 await new Promise(resolve => setTimeout(resolve, 500));
-
-                // Galpón, campaña y edad desde datos guardados (no desde recálculo dinámico)
                 const galponSelect = document.getElementById('galpon');
                 if (galponSelect) galponSelect.value = result.galpon || '';
 
@@ -1964,7 +1992,6 @@ if (!$conn) {
                 // === PROCESAR REGISTROS ===
                 const registros = result.registros;
 
-                // Agrupar por nivel para evitar duplicados
                 const registrosPorNivel = {};
                 registros.forEach(reg => {
                     const nivel = reg.tnivel.trim().toUpperCase();
@@ -1976,7 +2003,6 @@ if (!$conn) {
                         };
                     }
 
-                    // Agregar parámetro con sus checkboxes (leer porcentajes tolerando string o número y posibles variantes de nombre)
                     const parametro = (reg.tparametro || '').trim();
                     const getP = (r, key) => Number(r[key] ?? r[key.replace(/^t/, 'T')] ?? 0);
                     registrosPorNivel[nivel].parametros[parametro] = {
@@ -1989,109 +2015,113 @@ if (!$conn) {
                     };
                 });
 
-                // Normalizar nivel para mapeo (BD puede devolver HÍGADO, VESÍCULA, EROSIÓN, etc.)
                 function normalizarNivelParaMapa(nivel) {
-                    if (!nivel || typeof nivel !== 'string') return nivel || '';
-                    return nivel.normalize('NFD').replace(/\p{Diacritic}/gu, '').trim();
+                    if (!nivel || typeof nivel !== 'string') return ((nivel + '').trim()).toUpperCase();
+                    var t = (nivel + '').trim();
+                    t = t.replace(/ñ/gi, 'n').replace(/Ñ/g, 'N');
+                    if (typeof t.normalize === 'function') {
+                        t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    } else {
+                        t = t.replace(/[áàäâã]/gi, 'a').replace(/[éèëê]/gi, 'e').replace(/[íìïî]/gi, 'i')
+                             .replace(/[óòöôõ]/gi, 'o').replace(/[úùüû]/gi, 'u').replace(/[ýÿ]/gi, 'y');
+                    }
+                    return t.toUpperCase();
                 }
 
-                // Mapeo de nivel a obsId base (debe coincidir con los IDs en el HTML; se usa clave sin acentos)
+                // Mapeo de nivel a obsId base: incluir TODAS las variantes que puede devolver la BD.
+                // La clave en registrosPorNivel es tnivel.trim().toUpperCase(), p. ej. "VESÍCULA BILIAR" (con tilde).
+                // Incluir tanto claves sin tilde (normalizarNivelParaMapa) como CON tilde por si normalize() falla o no existe.
                 const mapeoObsId = {
                     'INDICE BURSAL': 'indice_bursal',
                     'MUCOSA DE LA BURSA': 'mucosa_bursa',
                     'TIMOS': 'timos',
-                    'HIGADO': 'higados',
-                    'VESICULA BILIAR': 'vesicula',
-                    'EROSION DE LA MOLLEJA': 'erosion',
-                    'RETRACCION DEL PANCREAS': 'pancreas',
-                    'ABSORCION DEL SACO VITELINO': 'saco',
-                    'ENTERITIS': 'enteritis',
-                    'CONTENIDO CECAL': 'cecal',
-                    'ALIMENTO SIN DIGERIR': 'alimento',
+                    // Hígado(s)
+                    'HIGADO': 'higados', 'HIGADOS': 'higados', 'HÍGADO': 'higados', 'HÍGADOS': 'higados',
+                    'Higado': 'higados', 'Higados': 'higados', 'Hígados': 'higados', 'hígados': 'higados', 'Hígado': 'higados', 'hígado': 'higados',
+                    'VESICULA BILIAR': 'vesicula', 'VESÍCULA BILIAR': 'vesicula',
+                    'Vesícula Biliar': 'vesicula', 'Vesícula biliar': 'vesicula', 'vesícula biliar': 'vesicula',
+                    // Erosión de (la) molleja
+                    'EROSION DE LA MOLLEJA': 'erosion', 'EROSION DE MOLLEJA': 'erosion',
+                    'EROSIÓN DE LA MOLLEJA': 'erosion', 'EROSIÓN DE MOLLEJA': 'erosion',
+                    'Erosión de Molleja': 'erosion', 'Erosión de molleja': 'erosion', 'Erosión de la Molleja': 'erosion', 'erosion de molleja': 'erosion',
+                    // Retracción del páncreas
+                    'RETRACCION DEL PANCREAS': 'pancreas', 'RETRACCIÓN DEL PÁNCREAS': 'pancreas', 'RETRACCIÓN DEL PANCREAS': 'pancreas',
+                    'Retracción del páncreas': 'pancreas', 'Retracción del pancreas': 'pancreas', 'retracción del páncreas': 'pancreas',
+                    // Absorción del saco vitelino
+                    'ABSORCION DEL SACO VITELINO': 'saco', 'ABSORCIÓN DEL SACO VITELINO': 'saco',
+                    'Absorción del saco vitelino': 'saco', 'absorción del saco vitelino': 'saco',
+                    'ENTERITIS': 'enteritis', 'CONTENIDO CECAL': 'cecal', 'ALIMENTO SIN DIGERIR': 'alimento',
                     'HECES ANARANJADAS': 'heces',
-                    'LESION ORAL': 'lesion',
+                    // Lesión oral
+                    'LESION ORAL': 'lesion', 'LESIÓN ORAL': 'lesion',
+                    'Lesión oral': 'lesion', 'lesión oral': 'lesion', 'Lesión Oral': 'lesion',
                     'TONICIDAD INTESTINAL': 'tonicidad',
-                    'TRAQUEA': 'traquea',
-                    'PULMON': 'pulmon',
-                    'SACOS AEREOS': 'sacos',
+                    // Tráquea
+                    'TRAQUEA': 'traquea', 'TRÁQUEA': 'traquea',
+                    'tráquea': 'traquea', 'Tráquea': 'traquea', 'Traquea': 'traquea',
+                    // Púlmon / Pulmón
+                    'PULMON': 'pulmon', 'PÚLMON': 'pulmon', 'PULMÓN': 'pulmon',
+                    'Púlmon': 'pulmon', 'Pulmón': 'pulmon', 'pulmon': 'pulmon', 'púlmon': 'pulmon',
+                    // Sacos aéreos
+                    'SACOS AEREOS': 'sacos', 'SACOS AÉREOS': 'sacos',
+                    'Sacos aéreos': 'sacos', 'sacos aéreos': 'sacos', 'Sacos Aéreos': 'sacos',
                     'PODODERMATITIS': 'pododermatitis',
-                    'COLOR TARSOS': 'tarsos'
+                    // Color (de) tarsos
+                    'COLOR TARSOS': 'tarsos', 'COLOR DE TARSOS': 'tarsos', 'Color de tarsos': 'tarsos',
+                    'Color Tarsos': 'tarsos', 'color de tarsos': 'tarsos'
                 };
 
-                // Mapeo de parámetro a sufijo de idGrupo (para niveles que NO son ÍNDICE BURSAL ni MUCOSA)
+                function normalizarParametro(s) {
+                    if (!s || typeof s !== 'string') return '';
+                    var t = (s + '').trim();
+                    t = t.replace(/ñ/gi, 'n').replace(/Ñ/g, 'N');
+                    if (typeof t.normalize === 'function') {
+                        t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    } else {
+                        t = t.replace(/[áàäâã]/gi, 'a').replace(/[éèëê]/gi, 'e').replace(/[íìïî]/gi, 'i')
+                             .replace(/[óòöôõ]/gi, 'o').replace(/[úùüû]/gi, 'u').replace(/[ýÿ]/gi, 'y');
+                    }
+                    return t.trim();
+                }
                 const mapeoParametroASufijo = {
-                    // TIMOS
                     'Normal': '_normal',
-                    'Atrofiado': '_atrofiado',
-                    'Aspecto Normal': '_aspecto_normal',
-                    'Congestionado': '_congestionado',
-                    // TIMOS
-                    'Atrofiado': '_atrofiado',
-                    'Aspecto Normal': '_aspecto_normal',
-                    'Congestionado': '_congestionado',
-                    // HÍGADO
-                    'Esteatosico': '_esteatosico',
-                    'Tmn. Normal': '_tmnnormal',
+                    'Atrofiado': '_atrofiado', 'Atrofiados': '_atrofiado', 'Atrofia': '_atrofiado',
+                    'Aspecto Normal': '_aspecto_normal', 'Congestionado': '_congestionado',
+                    // Tmño Normal / Tmn. Normal
+                    'Tmño Normal': '_tmnnormal', 'Tmn. Normal': '_tmnnormal', 'Tmno Normal': '_tmnnormal', 'Tamaño Normal': '_tmnnormal',
+                    'Tam. Normal': '_tam_normal', 'Color Normal': '_color_normal', 'Color Claro': '_color_claro',
                     'Hipertrofiado': '_hipertrofiado',
-                    // VESÍCULA
-                    'Color Normal': '_color_normal',
-                    'Color Claro': '_color_claro',
-                    'Tam. Normal': '_tam_normal',
-                    'Atrofiado': '_atrofiado',
-                    'Hipertrofiado': '_hipertrofiado',
-                    // EROSIÓN
-                    'Grado 1': '_grado1',
-                    'Grado 2': '_grado2',
-                    'Grado 3': '_grado3',
-                    'Grado 4': '_grado4',
-                    // PÁNCREAS
-                    'Normal': '_normal',
-                    'Retraido': '_retraido',
-                    // SACO/ALIMENTO/HECES/LESIÓN
-                    'Sí': '_si',
-                    'No': '_no',
-                    // ENTERITIS
-                    'Leve': '_leve',
-                    'Moderado': '_moderado',
-                    'Severo': '_severo',
-                    // CECAL
-                    'Gas': '_gas',
-                    'Espuma': '_espuma',
-                    // TONICIDAD
-                    'Buena': '_buena',
-                    'Regular': '_regular',
-                    'Mala': '_mala',
-                    // TRÁQUEA
-                    'Moderada': '_moderada',
-                    'Severa': '_severa',
-                    // PULMÓN
-                    'Neumonico': '_neumonico',
-                    // SACOS
-                    'Turbio': '_turbio',
-                    'Material Caseoso': '_caseoso',
-                    // PODODERMATITIS
-                    'Grado 0': '_grado0',
-                    // TARSOS
-                    '3.5': '_35',
-                    '4.0': '_40',
-                    '4.5': '_45',
-                    '5.0': '_50',
-                    '5.5': '_55',
-                    '6.0': '_60'
+                    'Grado 1': '_grado1', 'Grado 2': '_grado2', 'Grado 3': '_grado3', 'Grado 4': '_grado4',
+                    // Retraído / Retraido
+                    'Retraido': '_retraido', 'Retraído': '_retraido',
+                    // Sí / Si
+                    'Sí': '_si', 'Si': '_si',
+                    'No': '_no', 'Leve': '_leve', 'Moderado': '_moderado', 'Severo': '_severo',
+                    'Gas': '_gas', 'Espuma': '_espuma', 'Buena': '_buena', 'Regular': '_regular', 'Mala': '_mala',
+                    'Moderada': '_moderada', 'Severa': '_severa',
+                    // Neumónico / Neumonico
+                    'Neumonico': '_neumonico', 'Neumónico': '_neumonico',
+                    // Esteatósico / Esteatosico
+                    'Esteatosico': '_esteatosico', 'Esteatósico': '_esteatosico',
+                    'Turbio': '_turbio', 'Material Caseoso': '_caseoso', 'Grado 0': '_grado0',
+                    '3.5': '_35', '4.0': '_40', '4.5': '_45', '5.0': '_50', '5.5': '_55', '6.0': '_60'
                 };
+                const mapeoParametroNorm = {};
+                Object.keys(mapeoParametroASufijo).forEach(k => {
+                    const n = normalizarParametro(k);
+                    if (n && !mapeoParametroNorm[n]) mapeoParametroNorm[n] = mapeoParametroASufijo[k];
+                });
 
-                // Llenar datos por nivel
                 Object.keys(registrosPorNivel).forEach(nivelKey => {
                     const datos = registrosPorNivel[nivelKey];
                     const nivelNorm = normalizarNivelParaMapa(nivelKey);
-                    const obsIdBase = mapeoObsId[nivelKey] || mapeoObsId[nivelNorm];
+                    const obsIdBase = mapeoObsId[nivelKey] || mapeoObsId[nivelNorm] || mapeoObsId[nivelKey.trim()] || mapeoObsId[nivelNorm.trim()];
 
                     if (!obsIdBase) {
                         console.warn('Nivel no mapeado:', nivelKey, '(normalizado:', nivelNorm, ')');
                         return;
                     }
 
-                    // Observación
                     const textarea = document.getElementById('obs_' + obsIdBase);
                     if (textarea) textarea.value = datos.observacion;
 
@@ -2099,12 +2129,10 @@ if (!$conn) {
                     Object.keys(datos.parametros).forEach(parametro => {
                         const valores = datos.parametros[parametro];
 
-                        // Construir idGrupo - casos especiales para ÍNDICE BURSAL y MUCOSA DE LA BURSA (usar nivel normalizado)
                         let idGrupo;
                         const nivelNorm = normalizarNivelParaMapa(nivelKey);
 
                         if (nivelNorm === 'INDICE BURSAL') {
-                            // Los IDs son: indice_normal, indice_atrofia, indice_severa_atrofia
                             if (parametro === 'Normal') idGrupo = 'indice_normal';
                             else if (parametro === 'Atrofia') idGrupo = 'indice_atrofia';
                             else if (parametro === 'Severa Atrofia') idGrupo = 'indice_severa_atrofia';
@@ -2114,9 +2142,9 @@ if (!$conn) {
                             else if (parametro === 'Petequias') idGrupo = 'mucosa_petequias';
                             else if (parametro === 'Hemorragia') idGrupo = 'mucosa_hemorragia';
                         } else {
-                            // Para el resto, usar el mapeo normal
-                            let sufijo = mapeoParametroASufijo[parametro];
-                            if (!sufijo && parametro === 'Normal') sufijo = '_normal'; // Fallback
+                            var paramTrim = (parametro || '').trim();
+                            let sufijo = mapeoParametroASufijo[paramTrim] || mapeoParametroASufijo[parametro] || mapeoParametroNorm[normalizarParametro(paramTrim)] || mapeoParametroNorm[normalizarParametro(parametro)];
+                            if (!sufijo && (paramTrim === 'Normal' || parametro === 'Normal' || normalizarParametro(paramTrim) === 'NORMAL')) sufijo = '_normal';
 
                             if (!sufijo) {
                                 console.warn('Parámetro sin mapeo:', parametro, 'en nivel', nivelKey);
@@ -2124,6 +2152,7 @@ if (!$conn) {
                             }
 
                             idGrupo = obsIdBase + sufijo;
+                            if (obsIdBase === 'vesicula' && sufijo === '_tmnnormal') idGrupo = 'vesicula_tam_normal';
                         }
 
                         if (!idGrupo) {
@@ -2163,9 +2192,9 @@ if (!$conn) {
 
                                 // Imagen
                                 const img = document.createElement('img');
-                                img.src = '../../' + ruta; // Ruta visual
-                                img.dataset.serverPath = ruta; // IMPORTANTE: Guardamos la ruta original del servidor
-                                img.classList.add('h-32', 'w-32', 'object-cover', 'rounded-lg', 'shadow-md');
+                                img.src = '../../' + ruta;
+                                img.dataset.serverPath = ruta;
+                                img.classList.add('h-32', 'w-32', 'object-cover', 'rounded-lg', 'shadow-md', 'cursor-pointer', 'hover:opacity-90');
 
                                 // Botón Eliminar (Unificado)
                                 const removeBtn = document.createElement('button');
@@ -2192,8 +2221,20 @@ if (!$conn) {
                     // ...
                 });
 
-                // Abrir modal solo después de tener todos los datos cargados (evita desincronización en producción)
                 document.getElementById('modalNecropsia').classList.remove('hidden');
+
+                document.querySelectorAll('#modalNecropsia .tab-button').forEach(btn => {
+                    btn.classList.remove('border-blue-600', 'text-blue-600');
+                    btn.classList.add('border-transparent', 'text-gray-500');
+                });
+                document.querySelectorAll('#modalNecropsia .tab-content').forEach(c => c.classList.add('hidden'));
+                const firstTab = document.querySelector('#modalNecropsia .tab-button');
+                if (firstTab) {
+                    firstTab.classList.remove('border-transparent', 'text-gray-500');
+                    firstTab.classList.add('border-blue-600', 'text-blue-600');
+                    const panel = document.getElementById(firstTab.getAttribute('data-tab'));
+                    if (panel) panel.classList.remove('hidden');
+                }
 
             } catch (err) {
                 console.error('Error en editarNecropsia:', err);
@@ -2237,8 +2278,32 @@ if (!$conn) {
             limpiarFormularioNecropsia();
         });
 
+        document.getElementById('contenidoNecropsia')?.addEventListener('click', function(e) {
+            if (e.target.tagName === 'IMG' && e.target.closest('div[id^="preview_"]')) {
+                const modal = document.getElementById('modalImagenLightbox');
+                const lightboxImg = document.getElementById('lightboxImg');
+                if (modal && lightboxImg) {
+                    lightboxImg.src = e.target.currentSrc || e.target.src;
+                    lightboxImg.alt = e.target.alt || 'Evidencia';
+                    modal.classList.remove('hidden');
+                }
+            }
+        });
+
+        function cerrarLightbox() {
+            document.getElementById('modalImagenLightbox')?.classList.add('hidden');
+        }
+        document.getElementById('lightboxCerrar')?.addEventListener('click', cerrarLightbox);
+        document.getElementById('lightboxBackdrop')?.addEventListener('click', cerrarLightbox);
+        document.getElementById('lightboxContenedor')?.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        document.getElementById('lightboxImg')?.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
         document.getElementById('btnAnadirFilaNecropsia')?.addEventListener('click', () => {
-            const tabActivo = document.querySelector('.tab-button.border-green-600');
+            const tabActivo = document.querySelector('.tab-button.border-blue-600');
             if (tabActivo) {
                 const tabId = tabActivo.dataset.tab;
                 const tabContent = document.getElementById(tabId);
@@ -2253,12 +2318,12 @@ if (!$conn) {
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', () => {
                 document.querySelectorAll('.tab-button').forEach(btn => {
-                    btn.classList.remove('border-green-600', 'text-green-600');
+                    btn.classList.remove('border-blue-600', 'text-blue-600');
                     btn.classList.add('border-transparent', 'text-gray-500');
                 });
                 document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
                 button.classList.remove('border-transparent', 'text-gray-500');
-                button.classList.add('border-green-600', 'text-green-600');
+                button.classList.add('border-blue-600', 'text-blue-600');
                 var panel = document.getElementById(button.getAttribute('data-tab'));
                 if (panel) panel.classList.remove('hidden');
             });
@@ -2282,8 +2347,6 @@ if (!$conn) {
                 // Lógica separada para actualizar
                 actualizarNecropsia();
             } else {
-                // Lógica original para guardar (Debes asegurarte de que tu función anterior de guardar
-                // esté envuelta en una función llamada guardarNecropsia() o pegar aquí el código de guardar)
                 guardarNecropsia();
             }
         });
@@ -2334,7 +2397,7 @@ if (!$conn) {
                 diagpresuntivo: diagpresuntivo,
                 fechaHoraInicio: fechaHoraInicio,
                 fechaHoraFin: fechaHoraFin,
-                registros: [] // Aquí van los parámetros como antes
+                registros: []
             };
 
             //Definir todos los parámetros y sus opciones (exactamente como en la BD)
@@ -2466,7 +2529,6 @@ if (!$conn) {
                 param.opciones.forEach(opcion => {
                     let idGrupo = '';
 
-                    // === SISTEMA INMUNOLÓGICO (ya perfecto) ===
                     if (param.nivel === 'INDICE BURSAL') {
                         if (opcion === 'Normal') idGrupo = 'indice_normal';
                         else if (opcion === 'Atrofia') idGrupo = 'indice_atrofia';
@@ -2482,7 +2544,6 @@ if (!$conn) {
                         else if (opcion === 'Congestionado') idGrupo = 'timos_congestionado';
                     }
 
-                    // === SISTEMA DIGESTIVO (100% corregido según tu HTML y capturas) ===
                     else if (param.nivel === 'HIGADO') {
                         if (opcion === 'Normal') idGrupo = 'higados_normal';
                         else if (opcion === 'Esteatosico') idGrupo = 'higados_esteatosico';
@@ -2529,7 +2590,6 @@ if (!$conn) {
                         else if (opcion === 'Regular') idGrupo = 'tonicidad_regular';
                         else if (opcion === 'Mala') idGrupo = 'tonicidad_mala';
                     }
-                    // === SISTEMA RESPIRATORIO (nuevo y perfecto según tu HTML y capturas) ===
                     else if (param.nivel === 'TRAQUEA') {
                         if (opcion === 'Normal') idGrupo = 'traquea_normal';
                         else if (opcion === 'Leve') idGrupo = 'traquea_leve';
@@ -2544,7 +2604,6 @@ if (!$conn) {
                         else if (opcion === 'Material Caseoso') idGrupo = 'sacos_caseoso';
                     }
 
-                    // === EVALUACIÓN FÍSICA (última sección, perfecta según tu HTML y capturas) ===
                     else if (param.nivel === 'PODODERMATITIS') {
                         if (opcion === 'Grado 0') idGrupo = 'pododermatitis_grado0';
                         else if (opcion === 'Grado 1') idGrupo = 'pododermatitis_grado1';
@@ -2560,7 +2619,6 @@ if (!$conn) {
                         else if (opcion === '6.0') idGrupo = 'tarsos_60';
                     }
 
-                    // === Seguridad final (nunca debería llegar aquí) ===
                     else {
                         console.warn('ID no mapeado:', param.nivel, opcion);
                         idGrupo = 'unknown';
@@ -2745,7 +2803,7 @@ if (!$conn) {
 
                         const img = document.createElement('img');
                         img.src = e.target.result;
-                        img.classList.add('h-32', 'w-full', 'object-cover', 'rounded-lg');
+                        img.classList.add('h-32', 'w-full', 'object-cover', 'rounded-lg', 'cursor-pointer', 'hover:opacity-90');
 
                         const removeBtn = document.createElement('button');
                         removeBtn.innerHTML = '×';
@@ -2771,7 +2829,6 @@ if (!$conn) {
             });
         });
 
-        // === FUNCIÓN PARA LIMPIAR TODO EL FORMULARIO Y RESETEAR ESTADO ===
         function limpiarFormularioNecropsia() {
             // 1. Resetear variables globales de control
             isEditMode = false;
@@ -2782,8 +2839,8 @@ if (!$conn) {
             const btnGuardar = document.getElementById('btnGuardarNecropsia');
             if (btnGuardar) {
                 btnGuardar.textContent = 'Registrar Necropsia';
-                btnGuardar.classList.remove('bg-yellow-500', 'hover:bg-yellow-600'); // Quitar color de edición (opcional)
-                btnGuardar.classList.add('bg-green-600', 'hover:bg-green-700'); // Volver al verde original
+                btnGuardar.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+                btnGuardar.classList.add('bg-blue-600', 'hover:bg-blue-700');
             }
 
             // 3. Habilitar campos que se bloquean al editar (si los hubiera)
@@ -2816,8 +2873,13 @@ if (!$conn) {
             });
 
             document.querySelectorAll('div[id^="preview_"]').forEach(preview => {
-                preview.innerHTML = ''; // Esto borra tanto las fotos nuevas como las viejas cargadas
+                preview.innerHTML = '';
             });
+
+            const numregDisplay = document.getElementById('numregDisplay');
+            if (numregDisplay) numregDisplay.value = '';
+            const usuarioDisplay = document.getElementById('usuarioDisplay');
+            if (usuarioDisplay) usuarioDisplay.value = '';
 
             // 8. Resetear los porcentajes visuales a 0%
             document.querySelectorAll('td[id^="porc_"]').forEach(td => {
@@ -2825,7 +2887,6 @@ if (!$conn) {
             });
 
             // 9. Limpiar el objeto global de evidencias nuevas
-            // (Importante para que no se suban fotos de la sesión anterior)
             for (const key in evidencias) {
                 delete evidencias[key];
             }
@@ -2908,9 +2969,8 @@ if (!$conn) {
     </script>
 
     <script>
-        // === FUNCIÓN EXCLUSIVA PARA ACTUALIZAR ===
         async function actualizarNecropsia() {
-            // 1. Recolección de Datos de Cabecera (Igual que guardar, pero usamos datos fijos de edición)
+            // 1. Recolección de datos de cabecera
             const granjaSelect = document.getElementById('granja');
             const galponSelect = document.getElementById('galpon');
 
@@ -2924,13 +2984,12 @@ if (!$conn) {
             const fectra = document.getElementById('fectra').value;
             const diagpresuntivo = document.getElementById('txtDiagnosticoPresuntivo').value;
 
-            // VALIDACIÓN IMPORTANTE: Usamos los datos globales de edición para asegurar integridad
             if (!loteEditando.granja || !loteEditando.numreg) {
                 SwalAlert("Error de estado: No se identificó la necropsia a editar.", "error");
                 return;
             }
 
-            // 2. RECOPILAR IMÁGENES ANTIGUAS (SCRAPING DEL DOM)
+            // 2. Recopilar imágenes antiguas del DOM
             // Buscamos qué imágenes siguen vivas en los divs 'preview_'
             const imagenesExistentes = {};
 
@@ -3124,21 +3183,16 @@ if (!$conn) {
                 }
             ];
 
-            // 4. Recolección de Filas (Tu misma lógica de barrido de parámetros)
-            // NOTA: Asegúrate que la variable 'parametros' (el array grande) es accesible aquí.
+            // 4. Recolección de Filas
             parametros.forEach(param => {
                 param.opciones.forEach(opcion => {
                     let idGrupo = '';
 
-                    // --- COPIA AQUÍ TU BLOQUE GIGANTE DE IF/ELSE IF PARA idGrupo ---
-                    // (El mismo que usas en el guardar, para no hacer la respuesta infinita no lo pego todo)
-                    // Ejemplo:
                     if (param.nivel === 'INDICE BURSAL') {
                         if (opcion === 'Normal') idGrupo = 'indice_normal';
                         else if (opcion === 'Atrofia') idGrupo = 'indice_atrofia';
                         else if (opcion === 'Severa Atrofia') idGrupo = 'indice_severa_atrofia';
                     }
-                    // ... resto de ifs ...
                     else if (param.nivel === 'COLOR TARSOS') {
                         if (opcion === '3.5') idGrupo = 'tarsos_35';
                         else if (opcion === '4.0') idGrupo = 'tarsos_40';
@@ -3373,7 +3427,8 @@ if (!$conn) {
         }
     </script>
 
-
+    <!-- Tabla: estilos unificados al final para ganar a DataTables -->
+    <link rel="stylesheet" href="../../css/dashboard-config.css">
 </body>
 
 </html>

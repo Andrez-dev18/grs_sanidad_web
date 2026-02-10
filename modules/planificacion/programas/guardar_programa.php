@@ -20,33 +20,26 @@ $codigo = trim($input['codigo'] ?? '');
 $nombre = trim($input['nombre'] ?? '');
 $codTipo = (int)($input['codTipo'] ?? 0);
 $nomTipo = trim($input['nomTipo'] ?? '');
-$edadesRaw = $input['edades'] ?? ''; // puede ser "21,22,23" o array [21,22,23]
+$zona = trim($input['zona'] ?? '');
+$despliegue = trim($input['despliegue'] ?? '');
+$descripcion = trim($input['descripcion'] ?? '');
+$detalles = isset($input['detalles']) && is_array($input['detalles']) ? $input['detalles'] : [];
 
 if (empty($codigo) || empty($nombre) || $codTipo <= 0) {
+    $conn->close();
     echo json_encode(['success' => false, 'message' => 'Faltan código, nombre o tipo.']);
     exit;
 }
 
-// Parsear edades: string "21, 22, 23" o array
-$edades = [];
-if (is_array($edadesRaw)) {
-    $edades = array_map('intval', array_filter($edadesRaw));
-} else {
-    $partes = preg_split('/[\s,;]+/', (string)$edadesRaw, -1, PREG_SPLIT_NO_EMPTY);
-    foreach ($partes as $p) {
-        $n = (int) trim($p);
-        if ($n > 0 && $n < 999) $edades[] = $n;
-    }
-}
-$edades = array_unique($edades);
-if (empty($edades)) {
-    echo json_encode(['success' => false, 'message' => 'Indique al menos una edad (días).']);
+if (empty($detalles)) {
+    $conn->close();
+    echo json_encode(['success' => false, 'message' => 'Debe agregar al menos una fila al detalle.']);
     exit;
 }
 
-// Obtener nombre del tipo si no vino
+// Nombre del tipo si no vino
 if (empty($nomTipo)) {
-    $st = $conn->prepare("SELECT nombre FROM san_tipo_programa WHERE codigo = ?");
+    $st = $conn->prepare("SELECT nombre FROM san_dim_tipo_programa WHERE codigo = ?");
     $st->bind_param("i", $codTipo);
     $st->execute();
     $r = $st->get_result();
@@ -56,18 +49,95 @@ if (empty($nomTipo)) {
 
 $usuarioRegistro = $_SESSION['usuario'] ?? 'WEB';
 
-$stmt = $conn->prepare("INSERT INTO san_plan_programa (codigo, nombre, codTipo, nomTipo, edad, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, NOW(), ?)");
-$stmt->bind_param("ssisis", $codigo, $nombre, $codTipo, $nomTipo, $edad, $usuarioRegistro);
+// Cabecera: tipo, código, nombre, zona, despliegue (si existe), descripción. Edad en detalle si existe columna.
+$chkEdadCab = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'edad'");
+$tieneEdadCab = $chkEdadCab && $chkEdadCab->fetch_assoc();
+$chkDespliegueCab = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'despliegue'");
+$tieneDespliegueCab = $chkDespliegueCab && $chkDespliegueCab->fetch_assoc();
+if ($tieneEdadCab && $tieneDespliegueCab) {
+    $edadCab = (count($detalles) > 0 && isset($detalles[0]['edad'])) ? (int)$detalles[0]['edad'] : 0;
+    $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, edad, zona, despliegue, descripcion, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+    if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
+    $stmtCab->bind_param("ssisissss", $codigo, $nombre, $codTipo, $nomTipo, $edadCab, $zona, $despliegue, $descripcion, $usuarioRegistro);
+} elseif ($tieneDespliegueCab) {
+    $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, zona, despliegue, descripcion, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+    if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
+    $stmtCab->bind_param("ssisssss", $codigo, $nombre, $codTipo, $nomTipo, $zona, $despliegue, $descripcion, $usuarioRegistro);
+} elseif ($tieneEdadCab) {
+    $edadCab = (count($detalles) > 0 && isset($detalles[0]['edad'])) ? (int)$detalles[0]['edad'] : 0;
+    $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, edad, zona, descripcion, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+    if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
+    $stmtCab->bind_param("ssisisss", $codigo, $nombre, $codTipo, $nomTipo, $edadCab, $zona, $descripcion, $usuarioRegistro);
+} else {
+    $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, zona, descripcion, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)");
+    if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
+    $stmtCab->bind_param("ssissss", $codigo, $nombre, $codTipo, $nomTipo, $zona, $descripcion, $usuarioRegistro);
+}
+if (!$stmtCab->execute()) {
+    $stmtCab->close();
+    $conn->close();
+    echo json_encode(['success' => false, 'message' => 'Error al guardar cabecera: ' . $conn->error]);
+    exit;
+}
+$stmtCab->close();
 
-foreach ($edades as $edad) {
-    if (!$stmt->execute()) {
-        $stmt->close();
+// Detalle: una fila por cada elemento en detalles (incl. descripcionVacuna, areaGalpon, cantidadPorGalpon)
+$chkCols = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'descripcionVacuna'");
+$tieneExtras = $chkCols && $chkCols->fetch_assoc();
+if ($tieneExtras) {
+    $stmtDet = $conn->prepare("INSERT INTO san_fact_programa_det (codPrograma, nomPrograma, codProducto, nomProducto, codProveedor, nomProveedor, ubicacion, unidades, dosis, unidadDosis, numeroFrascos, edad, descripcionVacuna, areaGalpon, cantidadPorGalpon) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+} else {
+    $stmtDet = $conn->prepare("INSERT INTO san_fact_programa_det (codPrograma, nomPrograma, codProducto, nomProducto, codProveedor, nomProveedor, ubicacion, unidades, dosis, unidadDosis, numeroFrascos, edad) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+}
+if (!$stmtDet) {
+    $conn->close();
+    echo json_encode(['success' => false, 'message' => 'Error al preparar detalle: ' . $conn->error]);
+    exit;
+}
+
+foreach ($detalles as $d) {
+    $ubicacion = trim($d['ubicacion'] ?? '');
+    $codProducto = trim($d['codProducto'] ?? '');
+    $nomProducto = trim($d['nomProducto'] ?? '');
+    $codProveedor = trim($d['codProveedor'] ?? '');
+    $nomProveedor = trim($d['nomProveedor'] ?? '');
+    $unidades = trim($d['unidades'] ?? '');
+    $dosis = trim($d['dosis'] ?? '');
+    $unidadDosis = trim($d['unidadDosis'] ?? '');
+    $numeroFrascos = trim($d['numeroFrascos'] ?? '');
+    $edad = isset($d['edad']) ? (int)$d['edad'] : 0;
+    if ($edad < 0) $edad = 0;
+    if ($edad > 45) $edad = 45;
+    $descripcionVacuna = trim($d['descripcionVacuna'] ?? '');
+    // descripcionVacuna solo si el producto es vacuna (san_rel_vacuna_enfermedad: codVacuna = mitm.codigo o codProducto)
+    if ($descripcionVacuna !== '' && $codProducto !== '') {
+        $chkColVac = @$conn->query("SHOW COLUMNS FROM san_rel_vacuna_enfermedad LIKE 'codVacuna'");
+        $colVacuna = ($chkColVac && $chkColVac->fetch_assoc()) ? 'codVacuna' : 'codProducto';
+        $chkVac = $conn->prepare("SELECT 1 FROM san_rel_vacuna_enfermedad WHERE " . $colVacuna . " = ? LIMIT 1");
+        if ($chkVac) {
+            $chkVac->bind_param("s", $codProducto);
+            $chkVac->execute();
+            $rV = $chkVac->get_result();
+            if (!$rV || !$rV->fetch_assoc()) $descripcionVacuna = '';
+            $chkVac->close();
+        }
+    }
+    $areaGalpon = isset($d['areaGalpon']) && $d['areaGalpon'] !== '' && $d['areaGalpon'] !== null ? (int)$d['areaGalpon'] : null;
+    $cantidadPorGalpon = isset($d['cantidadPorGalpon']) && $d['cantidadPorGalpon'] !== '' && $d['cantidadPorGalpon'] !== null ? (int)$d['cantidadPorGalpon'] : null;
+
+    if ($tieneExtras) {
+        $stmtDet->bind_param("sssssssssssisii", $codigo, $nombre, $codProducto, $nomProducto, $codProveedor, $nomProveedor, $ubicacion, $unidades, $dosis, $unidadDosis, $numeroFrascos, $edad, $descripcionVacuna, $areaGalpon, $cantidadPorGalpon);
+    } else {
+        $stmtDet->bind_param("sssssssssssi", $codigo, $nombre, $codProducto, $nomProducto, $codProveedor, $nomProveedor, $ubicacion, $unidades, $dosis, $unidadDosis, $numeroFrascos, $edad);
+    }
+    if (!$stmtDet->execute()) {
+        $stmtDet->close();
         $conn->close();
-        echo json_encode(['success' => false, 'message' => 'Error al guardar: ' . $conn->error]);
+        echo json_encode(['success' => false, 'message' => 'Error al guardar detalle: ' . $conn->error]);
         exit;
     }
 }
 
-$stmt->close();
-$conn->close();
+$stmtDet->close();
 echo json_encode(['success' => true, 'message' => 'Programa registrado correctamente.']);
+$conn->close();

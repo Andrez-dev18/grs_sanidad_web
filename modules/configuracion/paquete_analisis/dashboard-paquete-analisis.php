@@ -32,6 +32,7 @@ if (!$conexion) {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
@@ -138,41 +139,6 @@ if (!$conexion) {
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
         }
 
-        /* --- Badges de tipo de muestra --- */
-        .tipo-muestra-badge {
-            display: inline-flex;
-            flex-direction: column;
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border: 1px solid #bae6fd;
-            border-radius: 0.75rem;
-            min-width: 180px;
-            height: 56px;
-            justify-content: center;
-            align-items: center;
-            padding: 0.5rem 0.75rem;
-            box-sizing: border-box;
-        }
-
-        .tipo-codigo {
-            font-size: 0.7rem;
-            color: #0369a1;
-            font-weight: 600;
-            margin-bottom: 2px;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .tipo-nombre {
-            font-size: 0.8rem;
-            color: #0c4a6e;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
         /* --- Scrollbar personalizada --- */
         .table-wrapper {
             overflow-x: auto;
@@ -237,22 +203,7 @@ if (!$conexion) {
             background: white;
         }
 
-        /* ✅ Cabecera de la tabla: azul con texto blanco */
-        #tablaPaquetes thead th {
-            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
-            color: white !important;
-            font-weight: 600;
-            padding: 0.75rem 1rem;
-        }
-
-        #tablaPaquetes tbody tr {
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        #tablaPaquetes tbody tr:hover {
-            background-color: #eff6ff !important;
-        }
-
+        /* Cabecera y filas: estilos unificados vía dashboard-config.css (config-table) */
         .dataTables_wrapper .dataTables_paginate .paginate_button {
             padding: 0.5rem 1rem !important;
             margin: 0 0.25rem;
@@ -317,23 +268,16 @@ if (!$conexion) {
 <body class="bg-gray-50">
     <div class="container mx-auto px-6 py-12">
 
-        <!-- Encabezado con botones y exportar -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div class="flex items-center gap-4">
-
-                <a class="btn-export" href="exportar_paquetes.php"">
-                    📊 Exportar Todos
-                </a>
+        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+            <div class="dashboard-actions flex flex-col sm:flex-row justify-end sm:justify-between items-stretch sm:items-center gap-3 px-4 sm:px-6 py-4">
+                <a href="exportar_paquetes.php" class="btn-export inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-2 sm:order-1">📊 Exportar a Excel</a>
+                <button type="button" class="btn-secondary inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-1 sm:order-2" onclick="openPaqueteMuestraModal('create')">➕ Nuevo Paquete</button>
             </div>
-            <button type=" button" class="btn-secondary" onclick="openPaqueteMuestraModal('create')">
-                    Nuevo Paquete
-                    </button>
-            </div>
+        </div>
 
-            <!-- Tabla de paquetes -->
-
-            <div class="max-w-full mx-auto mt-6">
-                <div id="tablaPaquetesWrapper" class="border border-gray-300 rounded-2xl bg-white overflow-hidden p-4" data-vista-tabla-iconos data-vista="">
+        <!-- Tabla de paquetes -->
+        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+            <div id="tablaPaquetesWrapper" class="p-4" data-vista-tabla-iconos data-vista="">
                     <div class="view-toggle-group flex items-center gap-2 mb-4">
                         <button type="button" class="view-toggle-btn active" id="btnViewTablaPaq" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
                         <button type="button" class="view-toggle-btn" id="btnViewIconosPaq" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
@@ -343,13 +287,12 @@ if (!$conexion) {
                         <div id="cardsPaginationPaq" class="flex items-center justify-between mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
                     </div>
                     <div class="view-lista-wrap table-wrapper">
-                        <table id="tablaPaquetes" class="data-table display" style="width:100%">
+                        <table id="tablaPaquetes" class="data-table display config-table" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th>Código</th>
+                                    <th class="px-4 py-3">N°</th>
                                     <th>Nombre del Paquete</th>
                                     <th>Tipo de Muestra</th>
-                                    <!--<th>N° Análisis</th>-->
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -371,18 +314,13 @@ if (!$conexion) {
                                 if (!$result) {
                                     die("Error en consulta: " . mysqli_error($conexion));
                                 }
+                                $idx = 0;
                                 while ($row = mysqli_fetch_assoc($result)) {
-                                    $tipoMuestraHtml = '';
-                                    if ($row['tipo_muestra_nombre'] && $row['tipo_muestra_codigo']) {
-                                        $tipoMuestraHtml = '<div class="tipo-muestra-badge">
-                                <div class="tipo-codigo">Código: ' . htmlspecialchars($row['tipo_muestra_codigo']) . '</div>
-                                <div class="tipo-nombre">Nombre: ' . htmlspecialchars($row['tipo_muestra_nombre']) . '</div>
-                            </div>';
-                                    } else {
-                                        $tipoMuestraHtml = '<span class="text-gray-400 italic">Sin tipo</span>';
-                                    }
+                                    $idx++;
+                                    $tipoMuestraHtml = ($row['tipo_muestra_nombre'] ?? '') !== ''
+                                        ? htmlspecialchars($row['tipo_muestra_nombre'])
+                                        : '<span class="text-gray-400 italic">Sin tipo</span>';
 
-                                    // Obtener análisis asociados para el modal de edición
                                     $analisisRes = mysqli_query($conexion, "SELECT analisis FROM san_dim_analisis_paquete WHERE paquete = " . (int) $row['codigo']);
                                     $analisisList = [];
                                     while ($a = mysqli_fetch_assoc($analisisRes)) {
@@ -390,8 +328,8 @@ if (!$conexion) {
                                     }
                                     $analisisJson = json_encode($analisisList);
                                     ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars($row['codigo']) ?></td>
+                                    <tr data-codigo="<?= (int)$row['codigo'] ?>">
+                                        <td><?= $idx ?></td>
                                         <td><?= htmlspecialchars($row['nombre']) ?></td>
                                         <td><?= $tipoMuestraHtml ?></td>
                                         <td>
@@ -418,10 +356,9 @@ if (!$conexion) {
                         </table>
                     </div>
                 </div>
-            </div>
+        </div>
 
-
-            <!-- Modal para Crear/Editar Paquete de Muestra -->
+        <!-- Modal para Crear/Editar Paquete de Muestra -->
             <div id="paqueteMuestraModal" style="display: none;"
                 class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                 <div
@@ -465,7 +402,7 @@ if (!$conexion) {
                                         $result_tipos = mysqli_query($conexion, $query_tipos);
                                         while ($tipo = mysqli_fetch_assoc($result_tipos)) {
                                             echo '<option value="' . htmlspecialchars($tipo['codigo']) . '">' .
-                                                htmlspecialchars($tipo['codigo'] . ' - ' . $tipo['nombre']) . '</option>';
+                                                htmlspecialchars($tipo['nombre']) . '</option>';
                                         }
                                         ?>
                                     </select>
@@ -476,7 +413,7 @@ if (!$conexion) {
                             <div class="mb-4">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Buscar análisis</label>
                                 <div class="relative" style="width: 280px;">
-                                    <input type="text" id="buscadorAnalisis" placeholder="Nombre o código..."
+                                    <input type="text" id="buscadorAnalisis" placeholder="Buscar por nombre..."
                                         class="w-full px-3 py-1.5 pr-8 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <span id="iconoLimpiar"
                                         style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: none; cursor: pointer; color: #9ca3af; font-weight: bold;"
@@ -570,14 +507,13 @@ if (!$conexion) {
                     var $row = $(this.node());
                     var cells = $row.find('td');
                     if (cells.length < 4) return;
-                    var codigo = $(cells[0]).text().trim();
+                    var codigo = $row.attr('data-codigo') || $(cells[0]).text().trim();
                     var nombre = $(cells[1]).text().trim();
                     var tipoMuestra = $(cells[2]).text().trim();
                     var codAttr = (codigo + '').replace(/"/g, '&quot;');
                     var nomAttr = (nombre + '').replace(/"/g, '&quot;');
                     var card = $('<div class="card-item" data-codigo="' + codAttr + '" data-nombre="' + nomAttr + '">' +
                         '<div class="card-numero-row">#' + numero + '</div>' +
-                        '<div class="card-row"><span class="label">codigo:</span> ' + $('<div>').text(codigo).html() + '</div>' +
                         '<div class="card-row"><span class="label">Nombre:</span> ' + $('<div>').text(nombre).html() + '</div>' +
                         '<div class="card-row"><span class="label">Tipo muestra:</span> ' + $('<div>').text(tipoMuestra).html() + '</div>' +
                         '<div class="card-acciones">' +
@@ -597,6 +533,7 @@ if (!$conexion) {
                 pageLength: 10,
                 lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
                 order: [[0, 'asc']],
+                columnDefs: [{ orderable: false, targets: [3] }],
                 drawCallback: function() { renderizarTarjetasPaq(); }
             });
             actualizarVistaInicialPaq();
@@ -617,7 +554,7 @@ if (!$conexion) {
             $(document).on('click', '.btn-editar-card-paq', function() {
                 var cod = $(this).attr('data-codigo');
                 tablePaquetes.$('tr').each(function() {
-                    if ($(this).find('td:first').text().trim() == cod) {
+                    if ($(this).attr('data-codigo') == cod) {
                         $(this).find('button[title="Editar"]').first().click();
                         return false;
                     }

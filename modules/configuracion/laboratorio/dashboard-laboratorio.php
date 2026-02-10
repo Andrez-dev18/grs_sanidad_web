@@ -57,6 +57,7 @@ if ($codigoUsuario) {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../../css/dashboard-config.css">
 
     <style>
         /* Tus estilos existentes */
@@ -283,27 +284,16 @@ if ($codigoUsuario) {
 
 
             <div class="form-container max-w-7xl mx-auto">
-                <!-- Botones de acción -->
-                <div class="dashboard-actions mb-6 flex justify-between items-center flex-wrap gap-3">
-                    <button type="button"
-                        class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
-                        onclick="exportarLaboratorios()"
-                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);"
-                        onmouseover="this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'"
-                        onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
-                        📊 Exportar a Excel
-                    </button>
-                    <button type="button"
-                        class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
-                        onclick="openLaboratorioModal('create')">
-                        ➕ Nuevo Laboratorio
-                    </button>
+                <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+                    <div class="dashboard-actions flex flex-col sm:flex-row justify-end sm:justify-between items-stretch sm:items-center gap-3 px-4 sm:px-6 py-4">
+                        <a href="exportar_laboratorios.php" class="btn-export inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-2 sm:order-1">📊 Exportar a Excel</a>
+                        <button type="button" class="btn-secondary inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-1 sm:order-2" onclick="openLaboratorioModal('create')">➕ Nuevo Laboratorio</button>
+                    </div>
                 </div>
-
                 <!-- Rol para mostrar/ocultar Eliminar (solo admin) -->
                 <p id="idRolUserLab" data-rol="<?= htmlspecialchars($rolLab) ?>" class="hidden"></p>
-                <!-- Tabla de laboratorios -->
-                <div id="tablaLaboratorioWrapper" class="border border-gray-300 rounded-2xl bg-white overflow-x-auto p-4" data-vista-tabla-iconos data-vista="">
+                <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+                <div id="tablaLaboratorioWrapper" class="p-4" data-vista-tabla-iconos data-vista="">
                     <div class="view-toggle-group flex items-center gap-2 mb-4">
                         <button type="button" class="view-toggle-btn active" id="btnViewTablaLab" title="Lista">
                             <i class="fas fa-list mr-1"></i> Lista
@@ -317,12 +307,12 @@ if ($codigoUsuario) {
                         <div id="cardsPaginationLab" class="flex items-center justify-between mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
                     </div>
                     <div class="view-lista-wrap table-container overflow-x-auto">
-                    <table id="tabla" class="data-table w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
+                    <table id="tabla" class="data-table w-full config-table">
+                        <thead>
                             <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Código</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Nombre</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Acciones</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Nombre</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="laboratorioTableBody" class="divide-y divide-gray-200">
@@ -330,9 +320,11 @@ if ($codigoUsuario) {
                             $query = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY codigo";
                             $result = mysqli_query($conexion, $query);
                             if ($result && mysqli_num_rows($result) > 0) {
+                                $idx = 0;
                                 while ($row = mysqli_fetch_assoc($result)) {
+                                    $idx++;
                                     echo '<tr class="hover:bg-gray-50 transition">';
-                                    echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['codigo']) . '</td>';
+                                    echo '<td class="px-6 py-4 text-gray-700">' . $idx . '</td>';
                                     echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['nombre']) . '</td>';
                                     echo '<td class="px-6 py-4 flex gap-2">
                             <button class="btn-icon p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition" title="Editar" onclick="openLaboratorioModal(\'update\', ' . (int) $row['codigo'] . ', \'' . addslashes(htmlspecialchars($row['nombre'])) . '\')">
@@ -349,14 +341,13 @@ if ($codigoUsuario) {
                             } else {
                                 echo '<tr>';
                                 echo '<td colspan="3" class="px-6 py-8 text-center text-gray-500">No hay laboratorios registrados</td>';
-                                echo '</tr>';
                             }
                             ?>
                         </tbody>
                     </table>
                     </div>
                 </div>
-
+                </div>
             </div>
         </div>
 

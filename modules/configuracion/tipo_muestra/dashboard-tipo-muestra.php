@@ -38,10 +38,11 @@ if (!$conexion) {
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
-     <style>
+    <style>
         /* Tus estilos existentes */
         body {
             background: #f8f9fa;
@@ -266,65 +267,56 @@ if (!$conexion) {
 
 
             <div class="form-container max-w-7xl mx-auto">
-                <!-- Botones de acción -->
-                <div class="dashboard-actions mb-6 flex justify-between items-center flex-wrap gap-3">
-                    <button type="button"
-                        class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
-                        onclick="exportarTiposMuestra()"
-                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);"
-                        onmouseover="this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'"
-                        onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
-                        📊 Exportar a Excel
-                    </button>
-                    <button type="button"
-                        class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
-                        onclick="openTipoMuestraModal('create')">
-                        ➕ Nuevo Tipo de Muestra
-                    </button>
+                <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+                    <div class="dashboard-actions flex flex-col sm:flex-row justify-end sm:justify-between items-stretch sm:items-center gap-3 px-4 sm:px-6 py-4">
+                        <a href="exportar_tipo_muestra.php" class="btn-export inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-2 sm:order-1">📊 Exportar a Excel</a>
+                        <button type="button" class="btn-secondary inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-1 sm:order-2" onclick="openTipoMuestraModal('create')">➕ Nuevo Tipo de Muestra</button>
+                    </div>
                 </div>
+                <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+                    <div id="tablaTipoMuestraWrapper" class="p-4" data-vista-tabla-iconos data-vista="">
+                        <div class="view-toggle-group flex items-center gap-2 mb-4">
+                            <button type="button" class="view-toggle-btn active" id="btnViewTablaTM" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                            <button type="button" class="view-toggle-btn" id="btnViewIconosTM" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                        </div>
+                        <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasTM">
+                            <div id="cardsContainerTM" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
+                            <div id="cardsPaginationTM" class="flex items-center justify-between mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
+                        </div>
+                        <div class="view-lista-wrap table-container overflow-x-auto">
+                            <table id="tabla" class="data-table w-full config-table">
+                                <thead>
+                                    <tr>
+                                        <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
+                                        <th class="px-6 py-4 text-left text-sm font-semibold">Nombre</th>
+                                        <th class="px-6 py-4 text-left text-sm font-semibold">Descripción</th>
+                                        <th class="px-6 py-4 text-center text-sm font-semibold">Long. Código</th>
+                                        <th class="px-6 py-4 text-left text-sm font-semibold">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tipoMuestraTableBody" class="divide-y divide-gray-200">
+                                    <?php
+                                    $query = "SELECT codigo, nombre, descripcion, lonCod FROM san_dim_tipo_muestra ORDER BY codigo";
+                                    $result = mysqli_query($conexion, $query);
+                                    if ($result && mysqli_num_rows($result) > 0) {
+                                        $idx = 0;
+                                        while ($row = mysqli_fetch_assoc($result)) {
+                                            $idx++;
+                                            $descripcion = htmlspecialchars($row['descripcion'] ?? '');
+                                            $descripcion_corta = strlen($descripcion) > 50 ? substr($descripcion, 0, 50) . '...' : $descripcion;
 
-                <!-- Tabla de tipos de muestra -->
-                <div id="tablaTipoMuestraWrapper" class="border border-gray-300 rounded-2xl bg-white overflow-x-auto p-4" data-vista-tabla-iconos data-vista="">
-                    <div class="view-toggle-group flex items-center gap-2 mb-4">
-                        <button type="button" class="view-toggle-btn active" id="btnViewTablaTM" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
-                        <button type="button" class="view-toggle-btn" id="btnViewIconosTM" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
-                    </div>
-                    <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasTM">
-                        <div id="cardsContainerTM" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
-                        <div id="cardsPaginationTM" class="flex items-center justify-between mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
-                    </div>
-                    <div class="view-lista-wrap table-container overflow-x-auto">
-                    <table id="tabla" class="data-table w-full">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Código</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Nombre</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Descripción</th>
-                                <th class="px-6 py-4 text-center text-sm font-semibold text-gray-800">Long. Código</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tipoMuestraTableBody" class="divide-y divide-gray-200">
-                            <?php
-                            $query = "SELECT codigo, nombre, descripcion, lonCod FROM san_dim_tipo_muestra ORDER BY codigo";
-                            $result = mysqli_query($conexion, $query);
-                            if ($result && mysqli_num_rows($result) > 0) {
-                                while ($row = mysqli_fetch_assoc($result)) {
-                                    $descripcion = htmlspecialchars($row['descripcion'] ?? '');
-                                    $descripcion_corta = strlen($descripcion) > 50 ? substr($descripcion, 0, 50) . '...' : $descripcion;
-
-                                    echo '<tr class="hover:bg-gray-50 transition">';
-                                    echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['codigo']) . '</td>';
-                                    echo '<td class="px-6 py-4 text-gray-700 font-medium">' . htmlspecialchars($row['nombre']) . '</td>';
-                                    echo '<td class="px-6 py-4 text-gray-600 text-sm" title="' . $descripcion . '">' . $descripcion_corta . '</td>';
-                                    echo '<td class="px-6 py-4 text-center text-gray-700">' . htmlspecialchars($row['lonCod']) . '</td>';
-                                    echo '<td class="px-6 py-4 flex gap-2">
+                                            echo '<tr class="hover:bg-gray-50 transition" data-codigo="' . (int)$row['codigo'] . '">';
+                                            echo '<td class="px-6 py-4 text-gray-700">' . $idx . '</td>';
+                                            echo '<td class="px-6 py-4 text-gray-700 font-medium">' . htmlspecialchars($row['nombre']) . '</td>';
+                                            echo '<td class="px-6 py-4 text-gray-600 text-sm" title="' . $descripcion . '">' . $descripcion_corta . '</td>';
+                                            echo '<td class="px-6 py-4 text-center text-gray-700">' . htmlspecialchars($row['lonCod']) . '</td>';
+                                            echo '<td class="px-6 py-4 flex gap-2">
                                         <button class="btn-icon p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition" 
                                                 title="Editar" 
                                                 onclick="openTipoMuestraModal(\'edit\', ' . (int) $row['codigo'] . ', \'' .
-                                        addslashes(htmlspecialchars($row['nombre'])) . '\', \'' .
-                                        addslashes(htmlspecialchars($row['descripcion'] ?? '')) . '\', ' .
-                                        (int) $row['lonCod'] . ')">
+                                                addslashes(htmlspecialchars($row['nombre'])) . '\', \'' .
+                                                addslashes(htmlspecialchars($row['descripcion'] ?? '')) . '\', ' .
+                                                (int) $row['lonCod'] . ')">
                                             <i class="fa-solid fa-edit"></i>
                                         </button>
                                         <button class="btn-icon p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition" 
@@ -333,16 +325,17 @@ if (!$conexion) {
                                             <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </td>';
-                                    echo '</tr>';
-                                }
-                            } else {
-                                echo '<tr>';
-                                echo '<td colspan="5" class="px-6 py-8 text-center text-gray-500">No hay tipos de muestra registrados</td>';
-                                echo '</tr>';
-                            }
-                            ?>
-                        </tbody>
-                    </table>
+                                            echo '</tr>';
+                                        }
+                                    } else {
+                                        echo '<tr>';
+                                        echo '<td colspan="5" class="px-6 py-8 text-center text-gray-500">No hay tipos de muestra registrados</td>';
+                                        echo '</tr>';
+                                    }
+                                    ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -437,6 +430,7 @@ if (!$conexion) {
 
     <script>
         var tableTipoMuestra;
+
         function actualizarVistaInicialTM() {
             var w = $(window).width();
             var w$ = $('#tablaTipoMuestraWrapper');
@@ -446,6 +440,7 @@ if (!$conexion) {
                 $('#btnViewTablaTM').toggleClass('active', w$.attr('data-vista') === 'tabla');
             }
         }
+
         function renderizarTarjetasTM() {
             if (!tableTipoMuestra) return;
             var api = tableTipoMuestra;
@@ -453,13 +448,15 @@ if (!$conexion) {
             cont.empty();
             var info = api.page.info();
             var rowIndex = 0;
-            api.rows({ page: 'current' }).every(function() {
+            api.rows({
+                page: 'current'
+            }).every(function() {
                 rowIndex++;
                 var numero = info.start + rowIndex;
                 var $row = $(this.node());
                 var cells = $row.find('td');
-                if (cells.length < 4) return;
-                var codigo = $(cells[0]).text().trim();
+                if (cells.length < 5) return;
+                var codigo = $row.attr('data-codigo') || $(cells[0]).text().trim();
                 var nombre = $(cells[1]).text().trim();
                 var desc = $(cells[2]).text().trim();
                 var lonCod = $(cells[3]).text().trim();
@@ -468,7 +465,6 @@ if (!$conexion) {
                 var descAttr = (desc + '').replace(/"/g, '&quot;');
                 var card = $('<div class="card-item" data-codigo="' + codAttr + '" data-nombre="' + nomAttr + '" data-descripcion="' + descAttr + '" data-loncod="' + (lonCod + '').replace(/"/g, '&quot;') + '">' +
                     '<div class="card-numero-row">#' + numero + '</div>' +
-                    '<div class="card-row"><span class="label">codigo:</span> ' + $('<div>').text(codigo).html() + '</div>' +
                     '<div class="card-row"><span class="label">Nombre:</span> ' + $('<div>').text(nombre).html() + '</div>' +
                     '<div class="card-row"><span class="label">Descripción:</span> ' + $('<div>').text(desc).html() + '</div>' +
                     '<div class="card-row"><span class="label">Long. Código:</span> ' + $('<div>').text(lonCod).html() + '</div>' +
@@ -486,11 +482,19 @@ if (!$conexion) {
         }
         $(document).ready(function() {
             tableTipoMuestra = $('#tabla').DataTable({
-                language: { url: '../../../assets/i18n/es-ES.json' },
+                language: {
+                    url: '../../../assets/i18n/es-ES.json'
+                },
                 pageLength: 10,
-                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+                lengthMenu: [
+                    [10, 25, 50, -1],
+                    [10, 25, 50, "Todos"]
+                ],
                 order: [[0, 'asc']],
-                drawCallback: function() { renderizarTarjetasTM(); }
+                columnDefs: [{ orderable: false, targets: [4] }],
+                drawCallback: function() {
+                    renderizarTarjetasTM();
+                }
             });
             actualizarVistaInicialTM();
             $('#btnViewIconosTM').on('click', function() {

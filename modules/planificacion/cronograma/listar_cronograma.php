@@ -12,23 +12,48 @@ if (!$conn) {
     echo json_encode(['success' => false, 'data' => []]);
     exit;
 }
-$sql = "SELECT granja, campania, galpon, codPrograma, nomPrograma, GROUP_CONCAT(fecha ORDER BY fecha ASC) AS fechas 
-        FROM san_plan_cronograma 
-        GROUP BY granja, campania, galpon, codPrograma, nomPrograma 
-        ORDER BY granja, campania, galpon, codPrograma";
+
+// Una fila por registro de cronograma (incl. nomGranja y edad para calendario/leyenda)
+$tieneFechaHora = false;
+$tieneNomGranja = false;
+$tieneEdad = false;
+$chk = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'fechaHoraRegistro'");
+if ($chk && $chk->num_rows > 0) $tieneFechaHora = true;
+$chk2 = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'nomGranja'");
+if ($chk2 && $chk2->num_rows > 0) $tieneNomGranja = true;
+$chk3 = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'edad'");
+if ($chk3 && $chk3->num_rows > 0) $tieneEdad = true;
+
+$sql = "SELECT c.id, c.codPrograma, c.nomPrograma, c.granja, c.campania, c.galpon, c.fechaCarga, c.fechaEjecucion";
+if ($tieneFechaHora) $sql .= ", c.fechaHoraRegistro";
+if ($tieneNomGranja) $sql .= ", c.nomGranja";
+if ($tieneEdad) $sql .= ", c.edad";
+$sql .= " FROM san_fact_cronograma c ORDER BY c.codPrograma, c.granja, c.campania, c.galpon, c.fechaEjecucion ASC";
+
 $res = $conn->query($sql);
+if ($res === false) {
+    echo json_encode(['success' => false, 'data' => [], 'message' => 'Error en consulta: ' . $conn->error]);
+    $conn->close();
+    exit;
+}
 $lista = [];
-if ($res) {
-    while ($row = $res->fetch_assoc()) {
-        $lista[] = [
-            'granja' => $row['granja'],
-            'campania' => $row['campania'],
-            'galpon' => $row['galpon'],
-            'codPrograma' => $row['codPrograma'],
-            'nomPrograma' => $row['nomPrograma'],
-            'fechas' => $row['fechas']
-        ];
-    }
+$num = 0;
+while ($row = $res->fetch_assoc()) {
+    $num++;
+    $lista[] = [
+        'num' => $num,
+        'id' => (int)($row['id'] ?? 0),
+        'codPrograma' => $row['codPrograma'] ?? '',
+        'nomPrograma' => $row['nomPrograma'] ?? '',
+        'fechaHoraRegistro' => $tieneFechaHora ? ($row['fechaHoraRegistro'] ?? '') : ($row['fechaCarga'] ?? ''),
+        'granja' => $row['granja'] ?? '',
+        'nomGranja' => $tieneNomGranja ? ($row['nomGranja'] ?? '') : '',
+        'campania' => $row['campania'] ?? '',
+        'galpon' => $row['galpon'] ?? '',
+        'fechaCarga' => $row['fechaCarga'] ?? '',
+        'fechaEjecucion' => $row['fechaEjecucion'] ?? '',
+        'edad' => $tieneEdad ? ($row['edad'] ?? '') : ''
+    ];
 }
 echo json_encode(['success' => true, 'data' => $lista]);
 $conn->close();

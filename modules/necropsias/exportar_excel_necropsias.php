@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
 include_once __DIR__ . '/../../../conexion_grs_joya/conexion.php';
+require_once __DIR__ . '/../../includes/filtro_periodo_util.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -11,8 +12,18 @@ if (!$conn) {
     die('Error de conexión.');
 }
 
-$fecha_inicio = $_GET['fecha_inicio'] ?? '';
-$fecha_fin = $_GET['fecha_fin'] ?? '';
+$periodoOpts = [
+    'periodoTipo'  => $_GET['periodoTipo'] ?? '',
+    'fechaUnica'   => $_GET['fechaUnica'] ?? '',
+    'fechaInicio'  => $_GET['fechaInicio'] ?? '',
+    'fechaFin'     => $_GET['fechaFin'] ?? '',
+    'mesUnico'     => $_GET['mesUnico'] ?? '',
+    'mesInicio'    => $_GET['mesInicio'] ?? '',
+    'mesFin'       => $_GET['mesFin'] ?? '',
+];
+$rangoPeriodo = periodo_a_rango($periodoOpts);
+$fecha_inicio = $rangoPeriodo['desde'] ?? '';
+$fecha_fin = $rangoPeriodo['hasta'] ?? '';
 $granja = $_GET['granja'] ?? '';
 
 $where = [];

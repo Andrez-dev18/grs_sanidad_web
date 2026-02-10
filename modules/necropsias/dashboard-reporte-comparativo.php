@@ -143,26 +143,52 @@ if (!$conexion) {
 
         <!-- CONTENIDO PLEGABLE -->
         <div id="contenidoFiltros" class="px-6 pb-6 pt-4">
-            <!-- GRID DE FILTROS -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Fecha inicio -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Fecha Desde <span class="text-red-500">*</span></label>
-                    <input type="date" id="filtroFechaInicio" required
-                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 form-control">
+            <!-- Fila 1: Periodo -->
+            <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
+                <div class="flex-shrink-0" style="width: 100px;">
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-alt mr-1 text-blue-600"></i>Periodo</label>
+                    <select id="periodoTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
+                        <option value="TODOS" selected>Todos</option>
+                        <option value="POR_FECHA">Por fecha</option>
+                        <option value="ENTRE_FECHAS">Entre fechas</option>
+                        <option value="POR_MES">Por mes</option>
+                        <option value="ENTRE_MESES">Entre meses</option>
+                        <option value="ULTIMA_SEMANA">Última Semana</option>
+                    </select>
                 </div>
-
-                <!-- Fecha fin -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Fecha Hasta <span class="text-red-500">*</span></label>
-                    <input type="date" id="filtroFechaFin" required
-                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 form-control">
+                <div id="periodoPorFecha" class="flex-shrink-0 min-w-[130px] hidden">
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-day mr-1 text-blue-600"></i>Fecha</label>
+                    <input id="fechaUnica" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                </div>
+                <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
+                    <div class="min-w-[120px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Desde</label>
+                        <input id="fechaInicio" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                    <div class="min-w-[120px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label>
+                        <input id="fechaFin" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                </div>
+                <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[130px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
+                    <input id="mesUnico" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                </div>
+                <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
+                    <div class="min-w-[120px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label>
+                        <input id="mesInicio" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                    <div class="min-w-[120px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label>
+                        <input id="mesFin" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
                 </div>
             </div>
 
             <!-- CENCOS -->
             <div class="mt-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">CENCOS</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><i class="fas fa-warehouse mr-1 text-blue-600"></i>CENCOS</label>
                 
                 <!-- Radio buttons: Todos, Activos, Escoger -->
                 <div class="mb-3">
@@ -188,7 +214,7 @@ if (!$conexion) {
 
             <!-- GALPONES (Dinámico según filtro de CENCOS) -->
             <div id="seccionGalpones" class="mt-6 hidden">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Galpones</label>
+                <label class="block text-sm font-medium text-gray-700 mb-2"><i class="fas fa-door-open mr-1 text-blue-600"></i>Galpones</label>
 
                 <!-- Selector: Todos / Escoger -->
                 <div class="mb-3">
@@ -210,8 +236,8 @@ if (!$conexion) {
 
             <!-- FORMATO -->
             <div class="mt-6">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Formato de Reporte</label>
-                <select id="filtroFormato" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 form-control">
+                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-file-export mr-1 text-blue-600"></i>Formato de Reporte</label>
+                <select id="filtroFormato" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 form-control focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <option value="pdf">PDF</option>
                     <option value="excel">Excel</option>
                 </select>
@@ -757,10 +783,28 @@ if (!$conexion) {
             actualizarEstadoTodosPorCenco();
         }
 
+        function aplicarVisibilidadPeriodoComparativo() {
+            const t = document.getElementById('periodoTipo').value || '';
+            ['periodoPorFecha','periodoEntreFechas','periodoPorMes','periodoEntreMeses'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            if (t === 'POR_FECHA') document.getElementById('periodoPorFecha').classList.remove('hidden');
+            else if (t === 'ENTRE_FECHAS') document.getElementById('periodoEntreFechas').classList.remove('hidden');
+            else if (t === 'POR_MES') document.getElementById('periodoPorMes').classList.remove('hidden');
+            else if (t === 'ENTRE_MESES') document.getElementById('periodoEntreMeses').classList.remove('hidden');
+        }
+
         // Limpiar filtros
         function limpiarFiltros() {
-            document.getElementById('filtroFechaInicio').value = '';
-            document.getElementById('filtroFechaFin').value = '';
+            document.getElementById('periodoTipo').value = 'TODOS';
+            document.getElementById('fechaUnica').value = '';
+            document.getElementById('fechaInicio').value = '';
+            document.getElementById('fechaFin').value = '';
+            document.getElementById('mesUnico').value = '';
+            document.getElementById('mesInicio').value = '';
+            document.getElementById('mesFin').value = '';
+            aplicarVisibilidadPeriodoComparativo();
             document.getElementById('filtroFormato').value = 'pdf';
             
             // Deseleccionar radio buttons de CENCOS
@@ -781,26 +825,36 @@ if (!$conexion) {
             document.getElementById('containerGalpones').classList.add('hidden');
         }
 
-        // Generar reporte
+        // Generar reporte (periodo: se envían params de periodo; si TODOS, el backend no filtra por fecha)
         async function generarReporte() {
-            const fechaInicio = document.getElementById('filtroFechaInicio').value;
-            const fechaFin = document.getElementById('filtroFechaFin').value;
+            const periodoTipo = document.getElementById('periodoTipo').value || 'TODOS';
+            const fechaUnica = document.getElementById('fechaUnica').value || '';
+            const fechaInicio = document.getElementById('fechaInicio').value || '';
+            const fechaFin = document.getElementById('fechaFin').value || '';
+            const mesUnico = document.getElementById('mesUnico').value || '';
+            const mesInicio = document.getElementById('mesInicio').value || '';
+            const mesFin = document.getElementById('mesFin').value || '';
             const formato = document.getElementById('filtroFormato').value;
 
-            if (!fechaInicio || !fechaFin) {
-                Swal.fire('Validación', 'Debe seleccionar las fechas de inicio y fin', 'warning');
-                return;
+            if (periodoTipo !== 'TODOS') {
+                if (periodoTipo === 'ENTRE_FECHAS' && (!fechaInicio || !fechaFin)) {
+                    Swal.fire('Validación', 'Debe seleccionar las fechas Desde y Hasta', 'warning');
+                    return;
+                }
+                if (periodoTipo === 'ENTRE_FECHAS' && fechaInicio > fechaFin) {
+                    Swal.fire('Validación', 'La fecha Desde debe ser menor o igual a la fecha Hasta', 'warning');
+                    return;
+                }
             }
 
-            if (fechaInicio > fechaFin) {
-                Swal.fire('Validación', 'La fecha inicio debe ser menor o igual a la fecha fin', 'warning');
-                return;
-            }
-
-            // Construir parámetros
             const params = new URLSearchParams();
-            params.append('fecha_inicio', fechaInicio);
-            params.append('fecha_fin', fechaFin);
+            params.append('periodoTipo', periodoTipo);
+            params.append('fechaUnica', fechaUnica);
+            params.append('fechaInicio', fechaInicio);
+            params.append('fechaFin', fechaFin);
+            params.append('mesUnico', mesUnico);
+            params.append('mesInicio', mesInicio);
+            params.append('mesFin', mesFin);
             params.append('formato', formato);
 
             // CENCOS
@@ -864,20 +918,20 @@ if (!$conexion) {
         document.getElementById('btnGenerarReporte').addEventListener('click', generarReporte);
         document.getElementById('btnLimpiarFiltros').addEventListener('click', limpiarFiltros);
 
-        // Defaults: fechas del mes actual (solo si están vacías)
-        (function setFechasMesActualPorDefecto() {
-            const inputInicio = document.getElementById('filtroFechaInicio');
-            const inputFin = document.getElementById('filtroFechaFin');
-            if (!inputInicio || !inputFin) return;
+        document.getElementById('periodoTipo').addEventListener('change', aplicarVisibilidadPeriodoComparativo);
+        aplicarVisibilidadPeriodoComparativo();
 
-            // No pisar si el usuario ya tiene valores (por ejemplo, si el navegador los recuerda)
+        // Defaults: fechas del mes actual para ENTRE_FECHAS (solo si están vacías)
+        (function setFechasMesActualPorDefecto() {
+            const inputInicio = document.getElementById('fechaInicio');
+            const inputFin = document.getElementById('fechaFin');
+            if (!inputInicio || !inputFin) return;
             if (inputInicio.value && inputFin.value) return;
 
             const hoy = new Date();
             const yyyy = hoy.getFullYear();
             const mm = String(hoy.getMonth() + 1).padStart(2, '0');
             const dd = String(hoy.getDate()).padStart(2, '0');
-
             const primerDiaMes = `${yyyy}-${mm}-01`;
             const hoyStr = `${yyyy}-${mm}-${dd}`;
 

@@ -428,6 +428,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../css/dashboard-config.css">
 
 
 
@@ -714,28 +715,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     <!-- CONTENIDO PLEGABLE -->
                     <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
 
-                        <!-- GRID DE FILTROS -->
+                        <!-- Fila 1: Periodo -->
+                        <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
+                            <div class="flex-shrink-0" style="width: 100px;">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-calendar-alt mr-1 text-blue-600"></i>
+                                    Periodo
+                                </label>
+                                <select id="periodoTipo"
+                                    class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
+                                    <option value="TODOS" selected>Todos</option>
+                                    <option value="POR_FECHA">Por fecha</option>
+                                    <option value="ENTRE_FECHAS">Entre fechas</option>
+                                    <option value="POR_MES">Por mes</option>
+                                    <option value="ENTRE_MESES">Entre meses</option>
+                                    <option value="ULTIMA_SEMANA">Última Semana</option>
+                                </select>
+                            </div>
+                            <div id="periodoPorFecha" class="flex-shrink-0 min-w-[130px] hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-calendar-day mr-1 text-blue-600"></i>
+                                    Fecha
+                                </label>
+                                <input id="fechaUnica" type="date"
+                                    class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            </div>
+                            <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Desde</label>
+                                    <input id="fechaInicio" type="date"
+                                        class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
+                                    <input id="fechaFin" type="date"
+                                        class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                            </div>
+                            <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[130px]">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Mes</label>
+                                <input id="mesUnico" type="month"
+                                    class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            </div>
+                            <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Mes Inicio</label>
+                                    <input id="mesInicio" type="month"
+                                        class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Mes Fin</label>
+                                    <input id="mesFin" type="month"
+                                        class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fila 2: Resto de filtros -->
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-
-                            <!-- Fecha inicio -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
-                                <input type="date" id="filtroFechaInicio"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                            </div>
-
-                            <!-- Fecha fin -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
-                                <input type="date" id="filtroFechaFin"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                            </div>
 
                             <!-- Estado -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-tasks mr-1 text-blue-600"></i>Estado</label>
                                 <select id="filtroEstado"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Seleccionar</option>
                                     <option value="Completado">Completado</option>
                                     <option value="Pendiente">Pendiente</option>
@@ -744,9 +787,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                             <!-- Laboratorio -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Laboratorio</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-flask mr-1 text-blue-600"></i>Laboratorio</label>
                                 <select id="filtroLaboratorio"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Seleccionar</option>
                                     <?php
                                     $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
@@ -766,20 +809,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             <!-- Tipo análisis (autocomplete) -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Tipo de análisis
+                                    <i class="fas fa-microscope mr-1 text-blue-600"></i>Tipo de análisis
                                 </label>
-
                                 <select id="filtroTipoAnalisis"
-                                    class="w-full text-sm rounded-lg border border-gray-300">
+                                    class="w-full text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 </select>
                             </div>
 
-
                             <!-- Tipo muestra -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de muestra</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-vial mr-1 text-blue-600"></i>Tipo de muestra</label>
                                 <select id="filtroTipoMuestra"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Seleccionar</option>
                                     <?php
                                     $sql = "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY nombre ASC";
@@ -798,7 +839,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                             <!-- Granja -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Granja(s)</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-warehouse mr-1 text-blue-600"></i>Granja(s)</label>
 
                                 <div class="relative">
                                     <button type="button" id="dropdownGranjaBtn"
@@ -849,9 +890,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                             <!-- Galpón -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Galpón</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-door-open mr-1 text-blue-600"></i>Galpón</label>
                                 <select id="filtroGalpon"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Seleccionar</option>
                                     <?php
                                     for ($i = 1; $i <= 13; $i++) {
@@ -864,14 +905,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                             <!-- Edad -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Edad</label>
-
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-week mr-1 text-blue-600"></i>Edad</label>
                                 <div class="flex gap-2">
                                     <input type="number" id="filtroEdadDesde" placeholder="Desde" min="0"
-                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-
+                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <input type="number" id="filtroEdadHasta" placeholder="Hasta" min="0"
-                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 </div>
                             </div>
 
@@ -938,9 +977,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 </div>
                 <div class="view-lista-wrap" id="viewListaSeg">
                     <div class="table-wrapper overflow-x-auto">
-                        <table id="tablaResultados" class="data-table display w-full text-sm border-collapse" style="width:100%">
+                        <table id="tablaResultados" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
                             <thead>
                                 <tr>
+                                    <th class="px-4 py-3">N°</th>
                                     <th>Cod. Envío</th>
                                     <th>Fecha Envio</th>
                                     <th>Nom. Lab</th>
@@ -952,7 +992,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                     <th>Analisis</th>
                                     <th>Estado</th>
                                     <th>Obs</th>
-                                    <th>Detalle</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Detalles</th>
                                     <th>Seguimiento</th>
                                     <th>PDF</th>
                                 </tr>
@@ -1609,8 +1649,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             }
 
             // Obtener valores de los filtros
-            var fechaInicio = $('#filtroFechaInicio').val();
-            var fechaFin = $('#filtroFechaFin').val();
+            var periodoTipo = ($('#periodoTipo').val() || 'TODOS').trim();
+            var fechaUnica = ($('#fechaUnica').val() || '').trim();
+            var fechaInicio = ($('#fechaInicio').val() || '').trim();
+            var fechaFin = ($('#fechaFin').val() || '').trim();
+            var mesUnico = ($('#mesUnico').val() || '').trim();
+            var mesInicio = ($('#mesInicio').val() || '').trim();
+            var mesFin = ($('#mesFin').val() || '').trim();
             var estado = $('#filtroEstado').val();
             var laboratorio = $('#filtroLaboratorio').val();
             var muestra = $('#filtroTipoMuestra').val();
@@ -1649,8 +1694,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     url: 'listar_cab_filtros.php',
                     type: 'POST',
                     data: {
+                        periodoTipo: periodoTipo,
+                        fechaUnica: fechaUnica,
                         fechaInicio: fechaInicio,
                         fechaFin: fechaFin,
+                        mesUnico: mesUnico,
+                        mesInicio: mesInicio,
+                        mesFin: mesFin,
                         estado: estado,
                         laboratorio: laboratorio,
                         muestra: muestra,
@@ -1662,6 +1712,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     }
                 },
                 columns: [{
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center',
+                    render: function (data, type, row, meta) {
+                        return type === 'display' ? (meta.settings._iDisplayStart + meta.row + 1) : '';
+                    }
+                },
+                {
                     data: 'codEnvio'
                 },
                 {
@@ -1827,7 +1886,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 ],
                 columnDefs: [
                     { targets: '_all', className: 'px-6 py-4 text-sm text-gray-700' },
-                    { targets: [7, 8, 10, 11], visible: false }
+                    { orderable: false, targets: [0] },
+                    { targets: [8, 9, 11], visible: false }
                 ],
                 rowCallback: function (row, data) {
                     $(row).addClass('hover:bg-gray-50 transition');
@@ -1965,8 +2025,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             });
 
             $('#btnLimpiar').click(function () {
-                $('#filtroFechaInicio').val('');
-                $('#filtroFechaFin').val('');
+                $('#periodoTipo').val('TODOS');
+                $('#fechaUnica').val('');
+                $('#fechaInicio').val('');
+                $('#fechaFin').val('');
+                $('#mesUnico').val('');
+                $('#mesInicio').val('');
+                $('#mesFin').val('');
                 $('#filtroEstado').val('');
                 $('#filtroLaboratorio').val('');
                 $('#filtroTipoMuestra').val('');
@@ -1997,9 +2062,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     dropdownMenu.classList.add('hidden');
                 }
 
+                if (typeof aplicarVisibilidadPeriodoSeguimiento === 'function') aplicarVisibilidadPeriodoSeguimiento();
                 // Recargar la tabla con filtros limpios
                 cargarTabla();
             });
+
+            function aplicarVisibilidadPeriodoSeguimiento() {
+                var t = $('#periodoTipo').val() || '';
+                $('#periodoPorFecha, #periodoEntreFechas, #periodoPorMes, #periodoEntreMeses').addClass('hidden');
+                if (t === 'POR_FECHA') $('#periodoPorFecha').removeClass('hidden');
+                else if (t === 'ENTRE_FECHAS') $('#periodoEntreFechas').removeClass('hidden');
+                else if (t === 'POR_MES') $('#periodoPorMes').removeClass('hidden');
+                else if (t === 'ENTRE_MESES') $('#periodoEntreMeses').removeClass('hidden');
+            }
+            $('#periodoTipo').on('change', aplicarVisibilidadPeriodoSeguimiento);
+            aplicarVisibilidadPeriodoSeguimiento();
 
             // Permitir abrir edición desde otro módulo (ej: listado/reportes)
             // Ejemplo: dashboard-seguimiento.php?edit=ABC123
@@ -2474,41 +2551,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
 
         function aplicarFiltros() {
-            const fechaInicio = document.getElementById('filtroFechaInicio').value;
-            const fechaFin = document.getElementById('filtroFechaFin').value;
-            const estado = document.getElementById('filtroEstado').value.toLowerCase();
+            const fechaInicio = (document.getElementById('fechaInicio') && document.getElementById('fechaInicio').value) || '';
+            const fechaFin = (document.getElementById('fechaFin') && document.getElementById('fechaFin').value) || '';
+            const estado = (document.getElementById('filtroEstado') && document.getElementById('filtroEstado').value) || '';
+            const estadoLower = estado.toLowerCase();
 
             const filas = document.querySelectorAll('#tablaResultados tbody tr');
 
             filas.forEach(fila => {
-                const fechaFila = fila.children[3].innerText.trim(); // fecToma
-                const estadoFila = fila.children[10].innerText.trim().toLowerCase();
+                const cols = fila.children;
+                const fechaFila = cols.length > 2 ? cols[2].innerText.trim() : ''; // fecEnvio (índice 2 con N°)
+                const estadoFila = cols.length > 11 ? cols[11].innerText.trim().toLowerCase() : '';
 
                 let mostrar = true;
-
-                if (fechaInicio && fechaFila < fechaInicio) {
-                    mostrar = false;
-                }
-
-                if (fechaFin && fechaFila > fechaFin) {
-                    mostrar = false;
-                }
-
-                if (estado && estadoFila !== estado) {
-                    mostrar = false;
-                }
-
+                if (fechaInicio && fechaFila < fechaInicio) mostrar = false;
+                if (fechaFin && fechaFila > fechaFin) mostrar = false;
+                if (estadoLower && estadoFila !== estadoLower) mostrar = false;
                 fila.style.display = mostrar ? '' : 'none';
             });
         }
 
         function limpiarFiltros() {
-            document.getElementById('filtroFechaInicio').value = '';
-            document.getElementById('filtroFechaFin').value = '';
-            document.getElementById('filtroEstado').value = '';
-
-            document.querySelectorAll('#tablaResultados tbody tr')
-                .forEach(fila => fila.style.display = '');
+            if (document.getElementById('fechaInicio')) document.getElementById('fechaInicio').value = '';
+            if (document.getElementById('fechaFin')) document.getElementById('fechaFin').value = '';
+            if (document.getElementById('filtroEstado')) document.getElementById('filtroEstado').value = '';
+            document.querySelectorAll('#tablaResultados tbody tr').forEach(fila => fila.style.display = '');
         }
     </script>
 

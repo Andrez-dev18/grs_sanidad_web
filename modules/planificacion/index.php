@@ -60,7 +60,7 @@ if (!$conn) {
                 <h3>Programas</h3>
                 <p>Gestionar programas (tipos, códigos, edades).</p>
             </a>
-            <a href="#" onclick="parent.loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma.php', '📅 Cronograma', 'Cronograma de planificación'); return false;"
+            <a href="#" onclick="parent.loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma.php', '📅 Asignación', 'Cronograma de planificación'); return false;"
                class="card-link">
                 <i class="fas fa-calendar-days"></i>
                 <h3>Cronograma</h3>

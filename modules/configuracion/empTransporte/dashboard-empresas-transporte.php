@@ -36,6 +36,8 @@ if (!$conexion) {
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../../css/dashboard-config.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
@@ -93,25 +95,14 @@ if (!$conexion) {
         <div id="viewEmpresasTransporte" class="content-view">
             
             <div class="form-container max-w-7xl mx-auto">
-                <!-- Botones de acción -->
-                <div class="dashboard-actions mb-6 flex justify-between items-center flex-wrap gap-3">
-                    <button type="button"
-                        class="px-6 py-2.5 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
-                        onclick="exportarEmpresasTransporte()"
-                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);"
-                        onmouseover="this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'"
-                        onmouseout="this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
-                        📊 Exportar a Excel
-                    </button>
-                    <button type="button"
-                        class="btn btn-primary px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2"
-                        onclick="openModal('create')">
-                        ➕ Nueva Empresa
-                    </button>
+                <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+                    <div class="dashboard-actions flex flex-col sm:flex-row justify-end sm:justify-between items-stretch sm:items-center gap-3 px-4 sm:px-6 py-4">
+                        <a href="exportar_empresas_transporte.php" class="btn-export inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-2 sm:order-1">📊 Exportar a Excel</a>
+                        <button type="button" class="btn-secondary inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-1 sm:order-2" onclick="openModal('create')">➕ Nueva Empresa</button>
+                    </div>
                 </div>
-
-                <!-- Tabla de empresas: Lista / Iconos -->
-                <div id="tablaEmpTransWrapper" class="border border-gray-300 rounded-2xl bg-white overflow-x-auto p-4" data-vista-tabla-iconos data-vista="tabla">
+                <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+                <div id="tablaEmpTransWrapper" class="p-4" data-vista-tabla-iconos data-vista="tabla">
                     <div class="view-toggle-group flex items-center gap-2 mb-4">
                         <button type="button" class="view-toggle-btn active" id="btnViewTablaEmpTrans" title="Lista">
                             <i class="fas fa-list mr-1"></i> Lista
@@ -124,12 +115,12 @@ if (!$conexion) {
                         <div id="cardsContainerEmpTrans" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
                     </div>
                     <div class="view-lista-wrap table-container overflow-x-auto">
-                        <table class="data-table w-full">
-                            <thead class="bg-gray-50 border-b border-gray-200">
+                        <table id="tablaEmpTrans" class="data-table w-full config-table">
+                            <thead>
                                 <tr>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Código</th>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Nombre de la Empresa</th>
-                                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Acciones</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Nombre de la Empresa</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="empTransTableBody" class="divide-y divide-gray-200">
@@ -144,7 +135,7 @@ if (!$conexion) {
                                         $nom = htmlspecialchars($row['nombre']);
                                         $nomAttr = htmlspecialchars($row['nombre'], ENT_QUOTES, 'UTF-8');
                                         echo '<tr class="hover:bg-gray-50 transition" data-codigo="' . $cod . '" data-nombre="' . $nomAttr . '" data-index="' . $idx . '">';
-                                        echo '<td class="px-6 py-4 text-gray-700">' . htmlspecialchars($row['codigo']) . '</td>';
+                                        echo '<td class="px-6 py-4 text-gray-700">' . $idx . '</td>';
                                         echo '<td class="px-6 py-4 text-gray-700 font-medium">' . $nom . '</td>';
                                         echo '<td class="px-6 py-4 flex gap-2">
                                         <button class="btn-icon p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition" title="Editar" onclick="openModal(\'edit\', ' . $cod . ', \'' . addslashes($row['nombre']) . '\')">
@@ -165,6 +156,7 @@ if (!$conexion) {
                             </tbody>
                         </table>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -230,7 +222,24 @@ if (!$conexion) {
 
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="../../../assets/js/configuracion/empresas_transporte.js"></script>
+    <script>
+    (function() {
+        if (typeof jQuery === 'undefined' || !jQuery.fn.DataTable) return;
+        var $t = jQuery('#tablaEmpTrans');
+        if ($t.length && !$t.hasClass('dataTable')) {
+            $t.DataTable({
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'Todos']],
+                language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+                order: [[1, 'asc']],
+                columnDefs: [{ orderable: false, targets: [0, 2] }]
+            });
+        }
+    })();
+    </script>
 
 </body>
 

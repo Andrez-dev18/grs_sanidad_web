@@ -14,10 +14,26 @@ $search = $_POST['search']['value'] ?? '';
 $orderColumnIndex = $_POST['order'][0]['column'] ?? 0;
 $orderDir = $_POST['order'][0]['dir'] ?? 'asc';
 
-// Filtros personalizados
+// Filtros personalizados (periodo: si periodoTipo no se envía o es TODOS, no se filtra por fecha)
+$periodoTipo = $_POST['periodoTipo'] ?? '';
+$fechaUnica = $_POST['fechaUnica'] ?? '';
 $fechaInicio = $_POST['fechaInicio'] ?? '';
 $fechaFin = $_POST['fechaFin'] ?? '';
+$mesUnico = $_POST['mesUnico'] ?? '';
+$mesInicio = $_POST['mesInicio'] ?? '';
+$mesFin = $_POST['mesFin'] ?? '';
 $ubicacionFiltro = $_POST['ubicacion'] ?? '';
+
+require_once __DIR__ . '/../../../includes/filtro_periodo_util.php';
+$rangoPeriodo = periodo_a_rango([
+    'periodoTipo' => $periodoTipo, 'fechaUnica' => $fechaUnica,
+    'fechaInicio' => $fechaInicio, 'fechaFin' => $fechaFin,
+    'mesUnico' => $mesUnico, 'mesInicio' => $mesInicio, 'mesFin' => $mesFin
+]);
+if ($rangoPeriodo) {
+    $fechaInicio = $rangoPeriodo['desde'];
+    $fechaFin = $rangoPeriodo['hasta'];
+}
 
 // === OBTENER SOLO ENVÍOS QUE TENGAN AL MENOS UN REGISTRO EN GRS ===
 $enviosValidosSql = "SELECT DISTINCT codEnvio FROM san_dim_historial_resultados WHERE ubicacion = 'GRS'";

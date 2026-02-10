@@ -507,7 +507,7 @@ if ($codigoUsuario) {
 
                     </div>
 
-                    <!--div class="menu-group">
+                    <div class="menu-group">
                         <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                             onclick="toggleSubmenu('submenu-planificacion')">
                             <span class="flex items-center gap-3">
@@ -517,15 +517,22 @@ if ($codigoUsuario) {
                             <i class="fas fa-chevron-down text-sm"></i>
                         </button>
                         <div id="submenu-planificacion" class="submenu hidden pl-10 mt-2 space-y-2">
-                           
+                            <div class="text-gray-500 text-xs font-semibold uppercase tracking-wider mt-2 first:mt-0">Programa</div>
                             <a href="#"
-                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/programas/dashboard-programas.php', '📋 Programas', 'Gestión de programas de planificación')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Programas</a>
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/programas/dashboard-programas-registro.php', '📋 Programas - Registro', 'Registro de programas de planificación')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Registro</a>
                             <a href="#"
-                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma.php', '📅 Cronograma', 'Cronograma de planificación')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Cronograma</a>
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/programas/dashboard-programas-listado.php', '📋 Programas - Listado', 'Filtros y listado de programas')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Listado</a>
+                            <div class="text-gray-500 text-xs font-semibold uppercase tracking-wider mt-2">Asignación</div>
+                            <a href="#"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma-registro.php', '📅 Asignación - Registro', 'Registro de cronograma')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Registro</a>
+                            <a href="#"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma-listado.php', '📅 Asignación - Listado', 'Listado de cronogramas')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Listado</a>
                         </div>
-                    </div-->
+                    </div>
                     
                     <div class="menu-group">
                         <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
@@ -630,6 +637,21 @@ if ($codigoUsuario) {
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/correo_contacto/dashboard-correo-contactos.php','📧 Correo y Contactos', 'Administre  tu cuenta de correo y tus contactos para envío de ')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white">Correo y Contactos</a>
+
+                            <div class="border-t border-gray-600 my-2 pt-2"></div>
+
+                            <a href="#"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipoPrograma/dashboard-tipo-programa.php','📋 Tipos de Programa', 'Administre los tipos de programa')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">Tipos de Programa</a>
+                            <a href="#"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/proveedor/dashboard-proveedor.php','📦 Proveedor', 'Administre proveedores')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">Proveedor</a>
+                            <a href="#"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/productos/dashboard-productos.php','📦 Productos', 'Asigne proveedores a productos')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">Productos</a>
+                            <a href="#"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/enfermedades/dashboard-enfermedades.php','🩺 Enfermedades', 'Gestione las enfermedades')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">Enfermedades</a>
                         </div>
                     </div>
                 </div>

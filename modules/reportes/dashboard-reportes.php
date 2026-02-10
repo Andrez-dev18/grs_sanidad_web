@@ -53,6 +53,7 @@ if ($codigoUsuario) {
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="../../css/dashboard-vista-tabla-iconos.css">
 <link rel="stylesheet" href="../../css/dashboard-responsive.css">
+<link rel="stylesheet" href="../../css/dashboard-config.css">
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
@@ -192,34 +193,6 @@ if ($codigoUsuario) {
 
         .table-wrapper::-webkit-scrollbar-thumb:hover {
             background: #64748b;
-        }
-
-        .data-table {
-            width: 100% !important;
-            border-collapse: collapse;
-            min-width: 1200px;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 0.75rem 1rem;
-            text-align: left;
-            font-size: 0.875rem;
-            border-bottom: 1px solid #e5e7eb;
-            white-space: nowrap;
-        }
-
-        .data-table th {
-            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
-            font-weight: 600;
-            color: #ffffff !important;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .data-table tbody tr:hover {
-            background-color: #eff6ff !important;
         }
 
         .dataTables_wrapper .dataTables_length,
@@ -383,18 +356,83 @@ if ($codigoUsuario) {
 
             <!-- CONTENIDO PLEGABLE -->
             <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
-                        <input type="date" id="filtroFechaInicio" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                <!-- Fila 1: Periodo -->
+                <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
+                    <div class="flex-shrink-0" style="width: 100px;">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-calendar-alt mr-1 text-blue-600"></i>
+                            Periodo
+                        </label>
+                        <select id="periodoTipo"
+                            class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
+                            <option value="TODOS" selected>Todos</option>
+                            <option value="POR_FECHA">Por fecha</option>
+                            <option value="ENTRE_FECHAS">Entre fechas</option>
+                            <option value="POR_MES">Por mes</option>
+                            <option value="ENTRE_MESES">Entre meses</option>
+                            <option value="ULTIMA_SEMANA">Última Semana</option>
+                        </select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
-                        <input type="date" id="filtroFechaFin" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                    <div id="periodoPorFecha" class="flex-shrink-0 min-w-[130px] hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-calendar-day mr-1 text-blue-600"></i>
+                            Fecha
+                        </label>
+                        <input id="fechaUnica" type="date"
+                            class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     </div>
+                    <div id="periodoEntreFechas" class="hidden periodo-dos-inputs flex-shrink-0 flex items-end gap-2">
+                        <div class="min-w-[120px]">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-hourglass-start mr-1 text-blue-600"></i>
+                                Desde
+                            </label>
+                            <input id="fechaInicio" type="date"
+                                class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        </div>
+                        <div class="min-w-[120px]">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-hourglass-end mr-1 text-blue-600"></i>
+                                Hasta
+                            </label>
+                            <input id="fechaFin" type="date"
+                                class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        </div>
+                    </div>
+                    <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[130px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-calendar mr-1 text-blue-600"></i>
+                            Mes
+                        </label>
+                        <input id="mesUnico" type="month"
+                            class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                    <div id="periodoEntreMeses" class="hidden periodo-dos-inputs flex-shrink-0 flex items-end gap-2">
+                        <div class="min-w-[120px]">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-hourglass-start mr-1 text-blue-600"></i>
+                                Mes Inicio
+                            </label>
+                            <input id="mesInicio" type="month"
+                                class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        </div>
+                        <div class="min-w-[120px]">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-hourglass-end mr-1 text-blue-600"></i>
+                                Mes Fin
+                            </label>
+                            <input id="mesFin" type="month"
+                                class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        </div>
+                    </div>
+                </div>
+                <!-- Fila 2: Resto de filtros -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Laboratorio</label>
-                        <select id="filtroLaboratorio" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-flask mr-1 text-blue-600"></i>Laboratorio
+                        </label>
+                        <select id="filtroLaboratorio" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Seleccionar</option>
                             <?php
                             $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
@@ -408,8 +446,10 @@ if ($codigoUsuario) {
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Emp. transporte</label>
-                        <select id="filtroEmpTrans" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-truck mr-1 text-blue-600"></i>Emp. transporte
+                        </label>
+                        <select id="filtroEmpTrans" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Seleccionar</option>
                             <?php
                             $sql = "SELECT DISTINCT nomEmpTrans AS nombre
@@ -426,8 +466,10 @@ if ($codigoUsuario) {
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo muestra</label>
-                        <select id="filtroTipoMuestra" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            <i class="fas fa-vial mr-1 text-blue-600"></i>Tipo muestra
+                        </label>
+                        <select id="filtroTipoMuestra" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Seleccionar</option>
                             <?php
                             $sql = "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY nombre ASC";
@@ -482,18 +524,19 @@ if ($codigoUsuario) {
 
                 <div class="view-lista-wrap" id="viewLista">
                 <div class="table-wrapper overflow-x-auto">
-                    <table id="tablaReportes" class="data-table display w-full text-sm border-collapse" style="width:100%">
+                    <table id="tablaReportes" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
                         <thead>
                             <tr>
-                                <th>Cod. Envío</th>
-                                <th>Fecha Envio</th>
-                                <th>Laboratorio</th>
-                                <th>Emp. Trans.</th>
-                                <th>U. Reg.</th>
-                                <th>U. Resp.</th>
-                                <th>Aut. Por</th>
-                                <th>Detalles</th>
-                                <th>Opciones</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Cod. Envío</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Fecha Envio</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Laboratorio</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Emp. Trans.</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">U. Reg.</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">U. Resp.</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Aut. Por</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Detalles</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold">Opciones</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -823,14 +866,24 @@ if ($codigoUsuario) {
 
         function exportarReporteExcel() {
             const params = new URLSearchParams();
-            const fechaInicio = $('#filtroFechaInicio').val();
-            const fechaFin = $('#filtroFechaFin').val();
-            const laboratorio = $('#filtroLaboratorio').val();
-            const muestra = $('#filtroTipoMuestra').val();
-            const empTrans = $('#filtroEmpTrans').val();
+            const periodoTipo = $('#periodoTipo').val() || 'TODOS';
+            const fechaUnica = $('#fechaUnica').val() || '';
+            const fechaInicio = $('#fechaInicio').val() || '';
+            const fechaFin = $('#fechaFin').val() || '';
+            const mesUnico = $('#mesUnico').val() || '';
+            const mesInicio = $('#mesInicio').val() || '';
+            const mesFin = $('#mesFin').val() || '';
+            const laboratorio = $('#filtroLaboratorio').val() || '';
+            const muestra = $('#filtroTipoMuestra').val() || '';
+            const empTrans = $('#filtroEmpTrans').val() || '';
 
+            params.set('periodoTipo', periodoTipo);
+            if (fechaUnica) params.set('fechaUnica', fechaUnica);
             if (fechaInicio) params.set('fechaInicio', fechaInicio);
             if (fechaFin) params.set('fechaFin', fechaFin);
+            if (mesUnico) params.set('mesUnico', mesUnico);
+            if (mesInicio) params.set('mesInicio', mesInicio);
+            if (mesFin) params.set('mesFin', mesFin);
             if (laboratorio) params.set('laboratorio', laboratorio);
             if (muestra) params.set('muestra', muestra);
             if (empTrans) params.set('empTrans', empTrans);
@@ -1514,7 +1567,7 @@ if ($codigoUsuario) {
                 return `${dd}/${mm}/${yyyy}`;
             }
 
-            // Si ya viene como dd/mm/yyyy
+         
             if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) return raw;
 
             return escapeHtml(raw);
@@ -1728,17 +1781,23 @@ if ($codigoUsuario) {
         function cargarTablaReportes() {
             if (tableReportes) tableReportes.destroy();
 
-            const fechaInicio = $('#filtroFechaInicio').val();
-            const fechaFin = $('#filtroFechaFin').val();
-            const laboratorio = $('#filtroLaboratorio').val();
-            const muestra = $('#filtroTipoMuestra').val();
-            const empTrans = $('#filtroEmpTrans').val();
+            var periodoTipo = ($('#periodoTipo').val() || 'TODOS').trim();
+            var fechaUnica = ($('#fechaUnica').val() || '').trim();
+            var fechaInicio = ($('#fechaInicio').val() || '').trim();
+            var fechaFin = ($('#fechaFin').val() || '').trim();
+            var mesUnico = ($('#mesUnico').val() || '').trim();
+            var mesInicio = ($('#mesInicio').val() || '').trim();
+            var mesFin = ($('#mesFin').val() || '').trim();
+            var laboratorio = ($('#filtroLaboratorio').val() || '').trim();
+            var muestra = ($('#filtroTipoMuestra').val() || '').trim();
+            var empTrans = ($('#filtroEmpTrans').val() || '').trim();
 
             tableReportes = $('#tablaReportes').DataTable({
                 processing: true,
                 serverSide: true,
                 scrollX: false,
                 autoWidth: false,
+                stripeClasses: [],
                 drawCallback: function () {
                     renderizarTarjetas();
                 },
@@ -1749,8 +1808,13 @@ if ($codigoUsuario) {
                     url: '../seguimiento/listar_cab_filtros.php',
                     type: 'POST',
                     data: {
+                        periodoTipo,
+                        fechaUnica,
                         fechaInicio,
                         fechaFin,
+                        mesUnico,
+                        mesInicio,
+                        mesFin,
                         laboratorio,
                         muestra,
                         empTrans,
@@ -1761,6 +1825,15 @@ if ($codigoUsuario) {
                     }
                 },
                 columns: [
+                    {
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        render: function (data, type, row, meta) {
+                            return type === 'display' ? (meta.settings._iDisplayStart + meta.row + 1) : '';
+                        }
+                    },
                     { data: 'codEnvio' },
                     {
                         data: 'fecEnvio',
@@ -1832,6 +1905,7 @@ if ($codigoUsuario) {
                         }
                     }
                 ],
+                columnDefs: [{ orderable: false, targets: [0, 8, 9] }],
                 language: { url: '../../assets/i18n/es-ES.json' },
                 pageLength: 10,
                 lengthMenu: [[10, 25, 50], [10, 25, 50]]
@@ -1882,19 +1956,37 @@ if ($codigoUsuario) {
             });
 
             $('#btnLimpiar').click(function () {
-                $('#filtroFechaInicio').val('');
-                $('#filtroFechaFin').val('');
+                $('#periodoTipo').val('TODOS');
+                $('#fechaUnica').val('');
+                $('#fechaInicio').val('');
+                $('#fechaFin').val('');
+                $('#mesUnico').val('');
+                $('#mesInicio').val('');
+                $('#mesFin').val('');
                 $('#filtroLaboratorio').val('');
                 $('#filtroTipoMuestra').val('');
                 $('#filtroEmpTrans').val('');
+                aplicarVisibilidadPeriodoReportes();
                 cargarTablaReportes();
             });
 
+            function aplicarVisibilidadPeriodoReportes() {
+                var t = $('#periodoTipo').val() || '';
+                $('#periodoPorFecha, #periodoEntreFechas, #periodoPorMes, #periodoEntreMeses').addClass('hidden');
+                if (t === 'POR_FECHA') $('#periodoPorFecha').removeClass('hidden');
+                else if (t === 'ENTRE_FECHAS') $('#periodoEntreFechas').removeClass('hidden');
+                else if (t === 'POR_MES') $('#periodoPorMes').removeClass('hidden');
+                else if (t === 'ENTRE_MESES') $('#periodoEntreMeses').removeClass('hidden');
+            }
+            $('#periodoTipo').on('change', aplicarVisibilidadPeriodoReportes);
+            aplicarVisibilidadPeriodoReportes();
         });
     </script>
 
     <!-- JS existente para modal de correo-->
     <script src="../../assets/js/reportes/reportes.js"></script>
+    <!-- Tabla: estilos unificados al final para ganar a DataTables -->
+    <link rel="stylesheet" href="../../css/dashboard-config.css">
 </body>
 
 </html>

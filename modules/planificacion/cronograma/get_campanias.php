@@ -12,14 +12,18 @@ if (!$conn) {
     echo json_encode([]);
     exit;
 }
-$granja = trim($_GET['granja'] ?? '');
-if (strlen($granja) !== 3) {
+$granja = str_pad(trim($_GET['granja'] ?? ''), 3, '0', STR_PAD_LEFT);
+if (strlen($granja) > 3) {
+    $granja = substr($granja, 0, 3);
+}
+$galpon = trim($_GET['galpon'] ?? '');
+if ($granja === '' || $galpon === '') {
     echo json_encode([]);
     exit;
 }
-// Campaña = últimos 3 dígitos del codigo (tcencos) en cargapollo_proyeccion para esta granja
-$stmt = $conn->prepare("SELECT DISTINCT RIGHT(tcencos, 3) AS campania FROM cargapollo_proyeccion WHERE LEFT(tcencos, 3) = ? ORDER BY campania");
-$stmt->bind_param("s", $granja);
+// Campaña = últimos 3 dígitos de tcencos; granja = LEFT(tcencos,3), galpon = tcodint
+$stmt = $conn->prepare("SELECT DISTINCT RIGHT(tcencos, 3) AS campania FROM cargapollo_proyeccion WHERE LEFT(tcencos, 3) = ? AND tcodint = ? ORDER BY campania");
+$stmt->bind_param("ss", $granja, $galpon);
 $stmt->execute();
 $res = $stmt->get_result();
 $data = [];

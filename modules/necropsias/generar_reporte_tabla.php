@@ -253,8 +253,7 @@ body {
         $html .= '</table>';
     
         // === Tabla de información ===
-        // Formatear fecha tdate a dd/mm/yyyy
-        $tdate = $cabecera['tdate'] ?? '';
+               $tdate = $cabecera['tdate'] ?? '';
         $tdateFormatted = '--/--/----';
         if (!empty($tdate)) {
             try {
@@ -372,7 +371,7 @@ body {
             
                     if ($i === 0) {
                         // Primera fila: Nivel + Parámetro + % + Observaciones (con rowspan)
-                        $html .= '<td class="nivel-cell" rowspan="' . $rowspan . '">' . htmlspecialchars(strtoupper($nivel)) . '</td>';
+                        $html .= '<td class="nivel-cell" rowspan="' . $rowspan . '">' . htmlspecialchars(mb_strtoupper($nivel, 'UTF-8')) . '</td>';
                         $html .= '<td class="param-cell">' . htmlspecialchars($item['tparametro'] ?? '') . '</td>';
                         $html .= '<td class="porc-cell">' . number_format((float)($item['tporcentajetotal'] ?? 0), 2) . '%</td>';
                         $html .= '<td class="obs-cell" rowspan="' . $rowspan . '">' . nl2br(htmlspecialchars($observacionNivel)) . '</td>';

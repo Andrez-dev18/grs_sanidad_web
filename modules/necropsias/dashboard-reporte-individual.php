@@ -89,8 +89,7 @@
                     } else {
                         result.data.forEach(lote => {
                             const codigoLote = String(lote.tnumreg).padStart(6, '0');
-                            // tfectra viene ya formateado como DD/MM/YYYY desde el backend.
-                            // Evitar new Date("DD/MM/YYYY") porque en JS es ambiguo y puede dar "Invalid Date".
+                         
                             const fechaNecropsia = lote.tfectra || '-';
                             const fechaRegistro = lote.fecha_registro || '-';
                             const horaRegistro = (lote.ttime ? String(lote.ttime).substring(0, 5) : '-');

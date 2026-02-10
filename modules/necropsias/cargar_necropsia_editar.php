@@ -1,7 +1,10 @@
 <?php
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 include_once '../../../conexion_grs_joya/conexion.php';
 $conn = conectar_joya();
+if ($conn) {
+    mysqli_set_charset($conn, 'utf8mb4');
+}
 
 $granja = $_GET['granja'] ?? '';
 $numreg = (int)($_GET['numreg'] ?? 0);
@@ -88,8 +91,11 @@ foreach ($registros as &$reg) {
 }
 unset($reg);
 
+$firstRow = $registros[0] ?? [];
 echo json_encode([
     'success' => true,
+    'numreg' => $firstRow['tnumreg'] ?? $numreg,
+    'tuser' => $firstRow['tuser'] ?? '',
     'granja' => $infoLote['granja'] ?? '',
     'campania' => $infoLote['campania'] ?? '',
     'galpon' => $infoLote['galpon'] ?? '',

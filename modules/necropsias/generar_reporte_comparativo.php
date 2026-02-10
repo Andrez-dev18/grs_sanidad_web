@@ -9,6 +9,7 @@ $tzLima = new DateTimeZone('America/Lima');
 
 ob_start();
 include_once '../../../conexion_grs_joya/conexion.php';
+require_once __DIR__ . '/../../includes/filtro_periodo_util.php';
 $conn = conectar_joya();
 ob_end_clean();
 
@@ -20,9 +21,25 @@ if (!$conn) {
 $cencos = isset($_POST['cencos']) ? $_POST['cencos'] : (isset($_GET['cencos']) ? $_GET['cencos'] : 'todos');
 $galpones = isset($_POST['galpones']) ? $_POST['galpones'] : (isset($_GET['galpones']) ? $_GET['galpones'] : 'todos');
 $galpones_pares = isset($_POST['galpones_pares']) ? $_POST['galpones_pares'] : (isset($_GET['galpones_pares']) ? $_GET['galpones_pares'] : '');
-$fecha_inicio = isset($_POST['fecha_inicio']) ? $_POST['fecha_inicio'] : (isset($_GET['fecha_inicio']) ? $_GET['fecha_inicio'] : '');
-$fecha_fin = isset($_POST['fecha_fin']) ? $_POST['fecha_fin'] : (isset($_GET['fecha_fin']) ? $_GET['fecha_fin'] : '');
 $formato = isset($_POST['formato']) ? $_POST['formato'] : (isset($_GET['formato']) ? $_GET['formato'] : 'pdf');
+
+$periodoOpts = [
+    'periodoTipo' => $_GET['periodoTipo'] ?? $_POST['periodoTipo'] ?? '',
+    'fechaUnica'  => $_GET['fechaUnica'] ?? $_POST['fechaUnica'] ?? '',
+    'fechaInicio' => $_GET['fechaInicio'] ?? $_POST['fechaInicio'] ?? '',
+    'fechaFin'    => $_GET['fechaFin'] ?? $_POST['fechaFin'] ?? '',
+    'mesUnico'    => $_GET['mesUnico'] ?? $_POST['mesUnico'] ?? '',
+    'mesInicio'   => $_GET['mesInicio'] ?? $_POST['mesInicio'] ?? '',
+    'mesFin'      => $_GET['mesFin'] ?? $_POST['mesFin'] ?? '',
+];
+$rangoPeriodo = periodo_a_rango($periodoOpts);
+if ($rangoPeriodo !== null) {
+    $fecha_inicio = $rangoPeriodo['desde'];
+    $fecha_fin = $rangoPeriodo['hasta'];
+} else {
+    $fecha_inicio = isset($_POST['fecha_inicio']) ? $_POST['fecha_inicio'] : (isset($_GET['fecha_inicio']) ? $_GET['fecha_inicio'] : '');
+    $fecha_fin = isset($_POST['fecha_fin']) ? $_POST['fecha_fin'] : (isset($_GET['fecha_fin']) ? $_GET['fecha_fin'] : '');
+}
 
 $dataJson = file_get_contents('php://input');
 if (!empty($dataJson)) {
@@ -31,15 +48,31 @@ if (!empty($dataJson)) {
         $cencos = $input['cencos'] ?? $cencos;
         $galpones = $input['galpones'] ?? $galpones;
         $galpones_pares = $input['galpones_pares'] ?? $galpones_pares;
-        $fecha_inicio = $input['fecha_inicio'] ?? $fecha_inicio;
-        $fecha_fin = $input['fecha_fin'] ?? $fecha_fin;
         $formato = $input['formato'] ?? $formato;
+        $periodoOpts = [
+            'periodoTipo' => $input['periodoTipo'] ?? '',
+            'fechaUnica'  => $input['fechaUnica'] ?? '',
+            'fechaInicio' => $input['fechaInicio'] ?? '',
+            'fechaFin'    => $input['fechaFin'] ?? '',
+            'mesUnico'    => $input['mesUnico'] ?? '',
+            'mesInicio'   => $input['mesInicio'] ?? '',
+            'mesFin'      => $input['mesFin'] ?? '',
+        ];
+        $rangoPeriodo = periodo_a_rango($periodoOpts);
+        if ($rangoPeriodo !== null) {
+            $fecha_inicio = $rangoPeriodo['desde'];
+            $fecha_fin = $rangoPeriodo['hasta'];
+        } else {
+            $fecha_inicio = $input['fecha_inicio'] ?? $fecha_inicio;
+            $fecha_fin = $input['fecha_fin'] ?? $fecha_fin;
+        }
     }
 }
 
-
-if (empty($fecha_inicio) || empty($fecha_fin)) {
-    die('Debe especificar fecha de inicio y fecha de fin');
+if (empty($fecha_inicio) && empty($fecha_fin)) {
+    // Periodo TODOS: no filtrar por fecha (se permitirá)
+} elseif (empty($fecha_inicio) || empty($fecha_fin)) {
+    die('Debe especificar fecha de inicio y fecha de fin, o usar un periodo que genere rango');
 }
 
 
@@ -72,15 +105,19 @@ $sql = "SELECT
     tcencos, tgranja, tgalpon, tedad, tsistema, tnivel, tparametro, 
     tporcentajetotal, tobservacion, tdate, tfectra, tnumreg, tcampania
 FROM t_regnecropsia 
-WHERE tdate >= ? AND tdate <= ?
+WHERE 1=1
     AND tgalpon IS NOT NULL 
     AND tgalpon != '' 
     AND tgalpon != '0'";
 
 $params = [];
-$types = "ss";
-$params[] = $fecha_inicio;
-$params[] = $fecha_fin;
+$types = "";
+if (!empty($fecha_inicio) && !empty($fecha_fin)) {
+    $sql .= " AND tdate >= ? AND tdate <= ?";
+    $types .= "ss";
+    $params[] = $fecha_inicio;
+    $params[] = $fecha_fin;
+}
 
 // Filtrar por CENCOS
 if ($cencos !== 'todos' && is_array($cencos) && !empty($cencos)) {
@@ -130,12 +167,14 @@ if (!$stmt) {
     die('Error preparando consulta: ' . $conn->error);
 }
 
-$bindParams = array_merge(array($types), $params);
-$refs = array();
-foreach ($bindParams as $key => $value) {
-    $refs[$key] = &$bindParams[$key];
+if ($types !== '' && count($params) > 0) {
+    $bindParams = array_merge(array($types), $params);
+    $refs = array();
+    foreach ($bindParams as $key => $value) {
+        $refs[$key] = &$bindParams[$key];
+    }
+    call_user_func_array(array($stmt, 'bind_param'), $refs);
 }
-call_user_func_array(array($stmt, 'bind_param'), $refs);
 
 $stmt->execute();
 $result = $stmt->get_result();
@@ -336,7 +375,7 @@ function _generarPDF($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComp
             'tempDir' => $tempDir,
         ]);
 
-        $html = _generarHTMLReporte(
+        $parts = _generarHTMLReporte(
             $bloques, 
             $fecha_inicio, 
             $fecha_fin, 
@@ -346,8 +385,12 @@ function _generarPDF($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esComp
             $galponesUnicos,
             $galponesPorCenco 
         );
-        
-        $mpdf->WriteHTML($html);
+        // Escribir en fragmentos para evitar "pcre.backtrack_limit" con muchos registros
+        $mpdf->WriteHTML($parts['initial']);
+        foreach ($parts['chunks'] as $chunk) {
+            $mpdf->WriteHTML($chunk);
+        }
+        $mpdf->WriteHTML('</body></html>');
      // Limpiar cualquier salida (por ejemplo Notices) antes de imprimir el PDF
         if (ob_get_level() > 0) {
             ob_clean();
@@ -509,9 +552,10 @@ function _generarExcel($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos, $esCo
     $row++;
     
     // === Período ===
-    $fecha_inicio_formatted = date('d/m/Y', strtotime($fecha_inicio));
-    $fecha_fin_formatted = date('d/m/Y', strtotime($fecha_fin));
-    $sheet->setCellValue('A' . $row, 'Período: ' . $fecha_inicio_formatted . ' - ' . $fecha_fin_formatted);
+    $textoPeriodo = (empty($fecha_inicio) && empty($fecha_fin))
+        ? 'Período: Todos'
+        : 'Período: ' . date('d/m/Y', strtotime($fecha_inicio)) . ' - ' . date('d/m/Y', strtotime($fecha_fin));
+    $sheet->setCellValue('A' . $row, $textoPeriodo);
         $sheet->mergeCells('A' . $row . ':' . $lastCol . $row);
         $sheet->getStyle('A' . $row)->applyFromArray([
         'font' => ['bold' => true, 'size' => 10, 'color' => ['rgb' => '1E3A8A']],
@@ -1371,9 +1415,10 @@ function _generarHTMLReporte($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos,
     $html .= '</table>';
     
     // === Período ===
-    $fecha_inicio_formatted = date('d/m/Y', strtotime($fecha_inicio));
-    $fecha_fin_formatted = date('d/m/Y', strtotime($fecha_fin));
-    $html .= '<div class="periodo">Período: ' . htmlspecialchars($fecha_inicio_formatted) . ' - ' . htmlspecialchars($fecha_fin_formatted) . '</div>';
+    $textoPeriodo = (empty($fecha_inicio) && empty($fecha_fin))
+        ? 'Período: Todos'
+        : 'Período: ' . htmlspecialchars(date('d/m/Y', strtotime($fecha_inicio)) . ' - ' . date('d/m/Y', strtotime($fecha_fin)));
+    $html .= '<div class="periodo">' . $textoPeriodo . '</div>';
 
     // === Colores por CENCO  ===
 
@@ -1637,19 +1682,21 @@ function _generarHTMLReporte($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos,
         ];
     }
 
-    // === Por cada sistema ===
+    // === Por cada sistema: generar un fragmento HTML por tabla (evita pcre.backtrack_limit en WriteHTML) ===
+    $chunks = [];
     foreach ($final as $sistema => $niveles) {
-        $html .= '<div style="page-break-after: avoid;">';
-        $html .= '<div class="sistema-header">' . htmlspecialchars(strtoupper($sistema)) . '</div>';
+        $chunk = '';
+        $chunk .= '<div style="page-break-after: avoid;">';
+        $chunk .= '<div class="sistema-header">' . htmlspecialchars(strtoupper($sistema)) . '</div>';
 
-        $html .= '<table class="data-table">';
-        $html .= '<thead>';
+        $chunk .= '<table class="data-table">';
+        $chunk .= '<thead>';
 
         // === Fila 1: Agrupación por CENCO (sin fechas) ===
         if (count($galponesPorCenco) > 1) {
-    $html .= '<tr>';
-    $html .= '<th rowspan="3">Nivel</th>';
-    $html .= '<th rowspan="3">Parámetro</th>';
+    $chunk .= '<tr>';
+    $chunk .= '<th rowspan="3">Nivel</th>';
+    $chunk .= '<th rowspan="3">Parámetro</th>';
             foreach ($galponesPorCenco as $cenco => $info) {
                 $color = isset($coloresPorCenco[$cenco]) ? $coloresPorCenco[$cenco] : '#3b82f6';
                 // Calcular columnas considerando bloques del CENCO
@@ -1659,16 +1706,16 @@ function _generarHTMLReporte($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos,
                 // Construir texto del CENCO (sin fechas)
                 $cencoText = 'CENCO ' . htmlspecialchars($cenco) . '<br><small>' . htmlspecialchars($info['granja']) . '</small>';
                 
-                $html .= '<th class="cenco-group-header" colspan="' . $numCols . '" style="background-color:' . $color . ';">';
-                $html .= $cencoText;
-                $html .= '</th>';
+                $chunk .= '<th class="cenco-group-header" colspan="' . $numCols . '" style="background-color:' . $color . ';">';
+                $chunk .= $cencoText;
+                $chunk .= '</th>';
     }
-    $html .= '</tr>';
+    $chunk .= '</tr>';
         }
     
         // === Fila 2: Fechas por bloque (celdas que abarcan cada par % y Obs) ===
         if (count($galponesPorCenco) > 1) {
-    $html .= '<tr>';
+    $chunk .= '<tr>';
             foreach ($galponesPorCenco as $cenco => $info) {
                 $color = isset($coloresPorCenco[$cenco]) ? $coloresPorCenco[$cenco] : '#3b82f6';
                 // Iterar sobre los bloques del CENCO directamente
@@ -1681,20 +1728,20 @@ function _generarHTMLReporte($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos,
                             $edad = $bloque['tedad'] ?? '0';
                             $fechasText = "Reg: $tdateFormatted | Nec: $tfectraFormatted | Edad: $edad días";
                             
-                            $html .= '<th class="cenco-group-header" colspan="2" style="background-color:' . $color . ';">';
-                            $html .= htmlspecialchars($fechasText);
-                            $html .= '</th>';
+                            $chunk .= '<th class="cenco-group-header" colspan="2" style="background-color:' . $color . ';">';
+                            $chunk .= htmlspecialchars($fechasText);
+                            $chunk .= '</th>';
                         }
                     }
                 }
     }
-    $html .= '</tr>';
+    $chunk .= '</tr>';
         }
     
         // === Fila 3: Encabezados individuales (% y Obs)===
-    $html .= '<tr>';
+    $chunk .= '<tr>';
         if (count($galponesPorCenco) <= 1) {
-            $html .= '<th>Nivel</th><th>Parámetro</th>';
+            $chunk .= '<th>Nivel</th><th>Parámetro</th>';
         }
         foreach ($galponesPorCenco as $cenco => $info) {
             $color = isset($coloresPorCenco[$cenco]) ? $coloresPorCenco[$cenco] : '#3b82f6';
@@ -1709,30 +1756,30 @@ function _generarHTMLReporte($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos,
                         
                         // % Galpón (sin fechas, solo número de galpón)
                         $headerText = '% Galpón ' . htmlspecialchars($galpon);
-                        $html .= '<th class="galpon-col-porc" style="background-color:' . $bgColor . ';">' . $headerText . '</th>';
+                        $chunk .= '<th class="galpon-col-porc" style="background-color:' . $bgColor . ';">' . $headerText . '</th>';
                         // Obs Galpón (sin fechas, solo número de galpón)
                         $obsHeaderText = 'Obs Galpón ' . htmlspecialchars($galpon);
-                        $html .= '<th class="galpon-col-obs" style="background-color:' . $bgColor . ';">' . $obsHeaderText . '</th>';
+                        $chunk .= '<th class="galpon-col-obs" style="background-color:' . $bgColor . ';">' . $obsHeaderText . '</th>';
                     }
                 }
             }
         }
-        $html .= '</tr>';
-        $html .= '</thead><tbody>';
+        $chunk .= '</tr>';
+        $chunk .= '</thead><tbody>';
         
         foreach ($niveles as $nivel => $parametros) {
             $totalFilas = count($parametros);
             
             foreach ($parametros as $i => $parametro) {
-                $html .= '<tr>';
+                $chunk .= '<tr>';
             
                 // Celda de Nivel (con rowspan)
                 if ($i === 0) {
-                    $html .= '<td rowspan="' . $totalFilas . '">' . htmlspecialchars($nivel) . '</td>';
+                    $chunk .= '<td rowspan="' . $totalFilas . '">' . htmlspecialchars($nivel) . '</td>';
                 }
             
                 // Celda de Parámetro
-                $html .= '<td>' . htmlspecialchars($parametro) . '</td>';
+                $chunk .= '<td>' . htmlspecialchars($parametro) . '</td>';
                 
                 // Datos por CENCO (iterar sobre bloques directamente)
                 foreach ($galponesPorCenco as $cenco => $info) {
@@ -1761,23 +1808,27 @@ function _generarHTMLReporte($bloques, $fecha_inicio, $fecha_fin, $cencosUnicos,
                             }
             
                             if ($i === 0) {
-                                $html .= '<td>' . htmlspecialchars($porc) . '</td>';
-                                $html .= '<td rowspan="' . $totalFilas . '">' . nl2br(htmlspecialchars($obsPrimero)) . '</td>';
+                                $chunk .= '<td>' . htmlspecialchars($porc) . '</td>';
+                                $chunk .= '<td rowspan="' . $totalFilas . '">' . nl2br(htmlspecialchars($obsPrimero)) . '</td>';
                             } else {
-                                $html .= '<td>' . htmlspecialchars($porc) . '</td>';
+                                $chunk .= '<td>' . htmlspecialchars($porc) . '</td>';
                             }
                         }
                     }
                 }
                 
-                $html .= '</tr>';
+                $chunk .= '</tr>';
             }
         }
-        $html .= '</tbody></table>';
-        $html .= '</div>';
+        $chunk .= '</tbody></table>';
+        $chunk .= '</div>';
+        $chunks[] = $chunk;
     }
     
-    $html .= '</body></html>';
-    return $html;
+    // Devolver inicio del documento (sin cierre) y fragmentos para escribir por partes y evitar pcre.backtrack_limit
+    return [
+        'initial' => $html,
+        'chunks'  => $chunks,
+    ];
 }
 
