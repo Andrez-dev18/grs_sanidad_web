@@ -95,10 +95,12 @@ $result = $conexion->query($query);
     <title>Dashboard - Respuesta lab</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../css/output.css" rel="stylesheet">
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../assets/js/sweetalert-helpers.js"></script>
     <link rel="stylesheet" href="../../css/style-rpt-lab.css">
 
     <style>
@@ -179,6 +181,45 @@ $result = $conexion->query($query);
             grid-template-columns: repeat(13, 1fr);
         }
 
+        /* Pantallas chicas: una fila de tarjetas, scroll horizontal */
+        @media (max-width: 767px) {
+            .panel-solicitudes-fila {
+                max-height: 280px;
+                overflow: hidden;
+            }
+            .pending-orders-row {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                overflow-y: hidden;
+                gap: 0.75rem;
+                -webkit-overflow-scrolling: touch;
+            }
+            .pending-orders-row .solicitud-card {
+                flex-shrink: 0;
+                width: 260px;
+                min-width: 260px;
+            }
+        }
+        /* Pantallas grandes: estilo original - sidebar con lista vertical */
+        @media (min-width: 768px) {
+            .panel-solicitudes-fila {
+                max-height: none;
+            }
+            .pending-orders-row {
+                flex-direction: column;
+                flex-wrap: nowrap;
+                overflow-x: hidden;
+                overflow-y: auto;
+                gap: 0;
+            }
+            .pending-orders-row .solicitud-card {
+                width: 100%;
+                min-width: 0;
+                flex-shrink: 0;
+            }
+        }
+
         #modalAgregarEnfermedad {
             animation: fadeIn 0.2s ease-in;
         }
@@ -195,13 +236,13 @@ $result = $conexion->query($query);
     </style>
 </head>
 
-<body class="bg-gray-50">
-    <div class="container mx-auto px-3 py-6">
+<body class="bg-gray-50 overflow-x-hidden">
+    <div class="w-full max-w-full py-4 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
 
-        <div class="flex flex-col h-screen">
+        <div class="flex flex-col h-screen overflow-hidden">
 
             <!-- HEADER -->
-            <header class=" bg-white p-4 rounded-xl shadow-sm border border-[#e5e7eb]">
+            <header class="flex-shrink-0 bg-white p-4 rounded-xl shadow-sm border border-[#e5e7eb]">
 
                 <!-- FILTROS -->
                 <div class="mt-2 bg-white">
@@ -220,93 +261,109 @@ $result = $conexion->query($query);
                     </div>
 
                     <!-- CONTENIDO PLEGABLE -->
-                    <div id="filtrosContent"
-                        class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end mt-4 transition-all duration-300 origin-top hidden">
-
-                        <!-- FECHA INICIO -->
-                        <div>
-                            <label class="text-xs font-medium text-gray-600 mb-1 block">Fecha Inicio</label>
-                            <input type="date" id="filtroFechaInicio"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
+                    <div id="filtrosContent" class="mt-4 transition-all duration-300 origin-top hidden">
+                        <!-- Fila 1: Periodo -->
+                        <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
+                            <div class="flex-shrink-0" style="width: 100px;">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-calendar-alt mr-1 text-blue-600"></i>Periodo
+                                </label>
+                                <select id="periodoTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
+                                    <option value="TODOS" selected>Todos</option>
+                                    <option value="POR_FECHA">Por fecha</option>
+                                    <option value="ENTRE_FECHAS">Entre fechas</option>
+                                    <option value="POR_MES">Por mes</option>
+                                    <option value="ENTRE_MESES">Entre meses</option>
+                                    <option value="ULTIMA_SEMANA">Última Semana</option>
+                                </select>
+                            </div>
+                            <div id="periodoPorFecha" class="flex-shrink-0 min-w-[130px] hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-day mr-1 text-blue-600"></i>Fecha</label>
+                                <input id="fechaUnica" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            </div>
+                            <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Desde</label>
+                                    <input id="fechaInicio" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label>
+                                    <input id="fechaFin" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                            </div>
+                            <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[130px]">
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
+                                <input id="mesUnico" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            </div>
+                            <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label>
+                                    <input id="mesInicio" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label>
+                                    <input id="mesFin" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                            </div>
                         </div>
-
-                        <!-- FECHA FIN -->
-                        <div>
-                            <label class="text-xs font-medium text-gray-600 mb-1 block">Fecha Fin</label>
-                            <input type="date" id="filtroFechaFin"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
-                        </div>
-
-                        <!-- ESTADO -->
-                        <div>
-                            <label class="text-xs font-medium text-gray-600 mb-1 block">Estado</label>
-                            <select id="filtroEstado"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
-                                <option value="pendiente">Seleccionar</option>
-                                <option value="todos">Todos</option>
-                                <option value="pendiente">Pendientes</option>
-                                <option value="completado">Completados</option>
-                            </select>
-                        </div>
-
-                        <!-- Laboratorio -->
-                        <div>
-                            <label class="text-xs font-medium text-gray-600 mb-1 block">Laboratorio</label>
-                            <select id="filtroLab"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-600 focus:border-blue-600">
-                                <option value="">Seleccionar</option>
-                                <?php
-                                $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
-                                $res = $conexion->query($sql);
-
-                                if ($res && $res->num_rows > 0) {
-                                    while ($row = $res->fetch_assoc()) {
-                                        echo '<option value="' . htmlspecialchars($row['nombre']) . '">'
-                                            . htmlspecialchars($row['nombre']) .
-                                            '</option>';
+                        <!-- Fila 2: Estado, Laboratorio, botón -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-tasks mr-1 text-blue-600"></i>Estado</label>
+                                <select id="filtroEstado" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="pendiente">Pendientes</option>
+                                    <option value="todos">Todos</option>
+                                    <option value="completado">Completados</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-flask mr-1 text-blue-600"></i>Laboratorio</label>
+                                <select id="filtroLab" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Seleccionar</option>
+                                    <?php
+                                    $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
+                                    $res = $conexion->query($sql);
+                                    if ($res && $res->num_rows > 0) {
+                                        while ($row = $res->fetch_assoc()) {
+                                            echo '<option value="' . htmlspecialchars($row['nombre']) . '">' . htmlspecialchars($row['nombre']) . '</option>';
+                                        }
                                     }
-                                }
-                                ?>
-                            </select>
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="aplicarFiltros()" class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-sm">
+                                    Filtrar
+                                </button>
+                                <button type="button" onclick="limpiarFiltrosRptaLab()" class="px-5 py-2 border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium">
+                                    Limpiar
+                                </button>
+                            </div>
                         </div>
-
-                        <!-- BOTÓN -->
-                        <div class="flex">
-                            <button onclick="aplicarFiltros()"
-                                class="w-full md:w-auto px-5 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 shadow-sm">
-                                Filtrar
-                            </button>
-                        </div>
-
                     </div>
                 </div>
 
 
             </header>
 
-            <div class="flex flex-1 overflow-hidden flex-col md:flex-row">
+            <!-- Pantallas chicas: columna (fila de tarjetas arriba, detalle abajo). Pantallas grandes: fila (sidebar izquierdo, detalle derecha) -->
+            <div class="flex flex-1 min-h-0 overflow-hidden flex-col md:flex-row">
 
-                <!-- SIDEBAR -->
-                <aside
-                    class="bg-white w-full md:w-[300px] rounded-xl shadow-sm border border-[#e5e7eb] mt-4 mr-3 flex flex-col">
-                    <div class="px-6 py-5 border-b border-[#e5e7eb]">
+                <!-- Sidebar solicitudes: en chicas una fila con scroll horizontal; en grandes columna con scroll vertical -->
+                <aside id="panelSolicitudes"
+                    class="panel-solicitudes-fila flex-shrink-0 bg-white w-full md:w-[300px] md:flex-shrink-0 md:mr-3 rounded-xl shadow-sm border border-[#e5e7eb] mt-4 flex flex-col min-h-0 min-w-0">
+                    <div class="px-4 py-3 md:px-6 md:py-5 border-b border-[#e5e7eb] flex-shrink-0 flex flex-wrap items-center gap-3">
                         <h3 class="text-base font-semibold text-[#2c3e50]">Solicitudes</h3>
-
-                        <input id="searchInput" type="text" placeholder="Buscar..." class="mt-3 w-full px-3 py-2 border border-[#d0d7de] rounded-md text-sm placeholder-[#a0aec0]
-                                focus:outline-none focus:ring-2 focus:ring-[#0066cc]/30">
+                        <input id="searchInput" type="text" placeholder="Buscar..." class="flex-1 min-w-[120px] max-w-xs md:mt-0 md:w-full px-3 py-2 border border-[#d0d7de] rounded-md text-sm placeholder-[#a0aec0] focus:outline-none focus:ring-2 focus:ring-[#0066cc]/30">
                     </div>
-
-                    <!-- Lista de solicitudes -->
-                    <div id="pendingOrdersList" class="flex-1 overflow-y-auto p-4 space-y-3">
-
+                    <div id="pendingOrdersList" class="pending-orders-row flex flex-1 min-h-0 p-4 md:space-y-3">
                     </div>
-                    <div id="paginationControls" class="p-4 flex justify-between text-sm text-gray-600"></div>
-
+                    <div id="paginationControls" class="p-3 md:p-4 flex justify-between text-sm text-gray-600 flex-shrink-0 border-t border-[#e5e7eb]"></div>
                 </aside>
 
-                <!-- MAIN CONTENT -->
-                <main
-                    class="flex-1 overflow-y-auto mt-4 bg-white rounded-xl shadow-sm border border-[#e5e7eb] p-6 md:p-10">
+                <!-- Panel detalle: en chicas abajo con scroll propio; en grandes a la derecha -->
+                <main id="panelDetalle"
+                    class="flex-1 min-h-0 min-w-0 overflow-auto mt-4 bg-white rounded-xl shadow-sm border border-[#e5e7eb] p-6 md:p-10">
 
                     <!-- EMPTY STATE (lo que se ve al inicio) -->
                     <div id="emptyStatePanel" class="mx-auto max-w-6xl">
@@ -993,12 +1050,43 @@ $result = $conexion->query($query);
             </div>
         </div>
 
-        <!-- Footer -->
+        <!-- Footer dinámico -->
         <div class="text-center mt-12">
             <p class="text-gray-500 text-sm">
-                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025
+                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
+                © <span id="currentYear"></span>
             </p>
         </div>
+
+        <script>
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+            function aplicarVisibilidadPeriodoRptaLab() {
+                var t = document.getElementById('periodoTipo').value || '';
+                document.getElementById('periodoPorFecha').classList.add('hidden');
+                document.getElementById('periodoEntreFechas').classList.add('hidden');
+                document.getElementById('periodoPorMes').classList.add('hidden');
+                document.getElementById('periodoEntreMeses').classList.add('hidden');
+                if (t === 'POR_FECHA') document.getElementById('periodoPorFecha').classList.remove('hidden');
+                else if (t === 'ENTRE_FECHAS') document.getElementById('periodoEntreFechas').classList.remove('hidden');
+                else if (t === 'POR_MES') document.getElementById('periodoPorMes').classList.remove('hidden');
+                else if (t === 'ENTRE_MESES') document.getElementById('periodoEntreMeses').classList.remove('hidden');
+            }
+            document.getElementById('periodoTipo').addEventListener('change', aplicarVisibilidadPeriodoRptaLab);
+            aplicarVisibilidadPeriodoRptaLab();
+            function limpiarFiltrosRptaLab() {
+                document.getElementById('periodoTipo').value = 'TODOS';
+                document.getElementById('fechaUnica').value = '';
+                document.getElementById('fechaInicio').value = '';
+                document.getElementById('fechaFin').value = '';
+                document.getElementById('mesUnico').value = '';
+                document.getElementById('mesInicio').value = '';
+                document.getElementById('mesFin').value = '';
+                document.getElementById('filtroEstado').value = 'pendiente';
+                document.getElementById('filtroLab').value = '';
+                aplicarVisibilidadPeriodoRptaLab();
+                if (typeof loadSidebar === 'function') loadSidebar(1);
+            }
+        </script>
 
     </div>
 

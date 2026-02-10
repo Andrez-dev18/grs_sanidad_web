@@ -420,12 +420,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     <title>Dashboard - Resultado de lab</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../css/output.css" rel="stylesheet">
 
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
 
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../../css/dashboard-vista-tabla-iconos.css">
+    <link rel="stylesheet" href="../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../css/dashboard-config.css">
 
 
 
@@ -508,7 +511,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         .data-table th,
         .data-table td {
             padding: 0.75rem 1rem;
-            text-align: center;
+            text-align: left;
             font-size: 0.875rem;
             border-bottom: 1px solid #e5e7eb;
             white-space: nowrap;
@@ -579,6 +582,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             overflow-x: visible !important;
         }
 
+        /* Vista tarjetas (iconos) - mismo estilo que reportes */
+        .view-toggle-group {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+        }
+        .view-toggle-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        .view-toggle-btn:hover {
+            background: #f3f4f6;
+        }
+        .view-toggle-btn.active {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border-color: #1d4ed8;
+        }
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            padding: 0.5rem 0;
+        }
+        .card-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 1rem;
+            padding: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: box-shadow 0.2s;
+        }
+        .card-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .card-item .card-codigo {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+        }
+        .card-item .card-row {
+            font-size: 0.8rem;
+            color: #4b5563;
+            margin-bottom: 0.25rem;
+        }
+        .card-item .card-row span.label { color: #6b7280; }
+        .card-item .card-acciones {
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #f3f4f6;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .card-item .card-acciones a,
+        .card-item .card-acciones button {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 0.375rem;
+        }
+        @media (max-width: 767px) {
+            #tablaSeguimientoWrapper .view-tarjetas-wrap { display: block; }
+            #tablaSeguimientoWrapper .view-lista-wrap { display: none; }
+            #tablaSeguimientoWrapper[data-vista="lista"] .view-tarjetas-wrap { display: none !important; }
+            #tablaSeguimientoWrapper[data-vista="lista"] .view-lista-wrap { display: block !important; }
+        }
+        @media (min-width: 768px) {
+            #tablaSeguimientoWrapper .view-lista-wrap { display: block; }
+            #tablaSeguimientoWrapper .view-tarjetas-wrap { display: none; }
+            #tablaSeguimientoWrapper[data-vista="iconos"] .view-lista-wrap { display: none !important; }
+            #tablaSeguimientoWrapper[data-vista="iconos"] .view-tarjetas-wrap { display: block !important; }
+        }
 
         /* Select2 estilo Tailwind */
         .select2-container .select2-selection--single {
@@ -608,14 +689,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 </head>
 
 <body class="bg-gray-50">
-    <div class="container mx-auto px-6 py-12">
+    <div class="w-full max-w-full py-4 px-4 sm:px-6 lg:px-8 box-border">
 
-        <!--  -->
-        <div id="" class="content-view">
-
-            <div class="form-container w-full">
-                <!-- CARD FILTROS PLEGABLE -->
-                <div class="mb-6 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <!-- CARD FILTROS PLEGABLE (mismo estilo que reportes) -->
+        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
 
                     <!-- HEADER -->
                     <button type="button" onclick="toggleFiltros()"
@@ -638,28 +715,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     <!-- CONTENIDO PLEGABLE -->
                     <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
 
-                        <!-- GRID DE FILTROS -->
+                        <!-- Fila 1: Periodo -->
+                        <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
+                            <div class="flex-shrink-0" style="width: 100px;">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-calendar-alt mr-1 text-blue-600"></i>
+                                    Periodo
+                                </label>
+                                <select id="periodoTipo"
+                                    class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
+                                    <option value="TODOS" selected>Todos</option>
+                                    <option value="POR_FECHA">Por fecha</option>
+                                    <option value="ENTRE_FECHAS">Entre fechas</option>
+                                    <option value="POR_MES">Por mes</option>
+                                    <option value="ENTRE_MESES">Entre meses</option>
+                                    <option value="ULTIMA_SEMANA">Última Semana</option>
+                                </select>
+                            </div>
+                            <div id="periodoPorFecha" class="flex-shrink-0 min-w-[130px] hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-calendar-day mr-1 text-blue-600"></i>
+                                    Fecha
+                                </label>
+                                <input id="fechaUnica" type="date"
+                                    class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            </div>
+                            <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Desde</label>
+                                    <input id="fechaInicio" type="date"
+                                        class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
+                                    <input id="fechaFin" type="date"
+                                        class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                            </div>
+                            <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[130px]">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Mes</label>
+                                <input id="mesUnico" type="month"
+                                    class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            </div>
+                            <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Mes Inicio</label>
+                                    <input id="mesInicio" type="month"
+                                        class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                                <div class="min-w-[120px]">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Mes Fin</label>
+                                    <input id="mesFin" type="month"
+                                        class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Fila 2: Resto de filtros -->
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-
-                            <!-- Fecha inicio -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
-                                <input type="date" id="filtroFechaInicio"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                            </div>
-
-                            <!-- Fecha fin -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
-                                <input type="date" id="filtroFechaFin"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                            </div>
 
                             <!-- Estado -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-tasks mr-1 text-blue-600"></i>Estado</label>
                                 <select id="filtroEstado"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Seleccionar</option>
                                     <option value="Completado">Completado</option>
                                     <option value="Pendiente">Pendiente</option>
@@ -668,9 +787,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                             <!-- Laboratorio -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Laboratorio</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-flask mr-1 text-blue-600"></i>Laboratorio</label>
                                 <select id="filtroLaboratorio"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Seleccionar</option>
                                     <?php
                                     $sql = "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre ASC";
@@ -690,20 +809,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             <!-- Tipo análisis (autocomplete) -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                                    Tipo de análisis
+                                    <i class="fas fa-microscope mr-1 text-blue-600"></i>Tipo de análisis
                                 </label>
-
                                 <select id="filtroTipoAnalisis"
-                                    class="w-full text-sm rounded-lg border border-gray-300">
+                                    class="w-full text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 </select>
                             </div>
 
-
                             <!-- Tipo muestra -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de muestra</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-vial mr-1 text-blue-600"></i>Tipo de muestra</label>
                                 <select id="filtroTipoMuestra"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Seleccionar</option>
                                     <?php
                                     $sql = "SELECT codigo, nombre FROM san_dim_tipo_muestra ORDER BY nombre ASC";
@@ -722,7 +839,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                             <!-- Granja -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Granja(s)</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-warehouse mr-1 text-blue-600"></i>Granja(s)</label>
 
                                 <div class="relative">
                                     <button type="button" id="dropdownGranjaBtn"
@@ -773,9 +890,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                             <!-- Galpón -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Galpón</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-door-open mr-1 text-blue-600"></i>Galpón</label>
                                 <select id="filtroGalpon"
-                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Seleccionar</option>
                                     <?php
                                     for ($i = 1; $i <= 13; $i++) {
@@ -788,21 +905,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                             <!-- Edad -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Edad</label>
-
+                                <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-week mr-1 text-blue-600"></i>Edad</label>
                                 <div class="flex gap-2">
                                     <input type="number" id="filtroEdadDesde" placeholder="Desde" min="0"
-                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-
+                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                     <input type="number" id="filtroEdadHasta" placeholder="Hasta" min="0"
-                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                        class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                                 </div>
                             </div>
 
                         </div>
 
                         <!-- ACCIONES -->
-                        <div class="mt-8 mb-4 flex flex-wrap justify-end gap-4">
+                        <div class="dashboard-actions mt-6 flex flex-wrap justify-end gap-4">
 
                             <button type="button" id="btnFiltrar"
                                 class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
@@ -845,43 +960,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 }
                 ?>
 
-                <!-- Este <p> oculto guarda el rol para que JavaScript lo lea -->
-                <p id="idRolUser" data-rol="<?= htmlspecialchars($rol) ?>"></p>
+        <!-- Rol (oculto, para JS) -->
+        <p id="idRolUser" data-rol="<?= htmlspecialchars($rol) ?>" class="hidden"></p>
 
-                <!-- Tabla  -->
-                <div class="max-w-full mx-auto mt-6">
-                    <div class="border border-gray-300 rounded-2xl bg-white overflow-hidden">
-                        <div class="table-wrapper">
-                            <table id="tablaResultados" class="data-table display" style="width:100%">
-                                <thead>
-                                    <tr>
-                                        <th class="">Cod. Envío</th>
-
-                                        <th class="">Fecha Envio</th>
-                                        <th class="">Nom. Lab</th>
-                                        <th class="">Nom. EmpTrans</th>
-                                        <th class="">Usuario Registrador</th>
-                                        <th class="">Usuario Responsable</th>
-                                        <th class="">Autorizado Por</th>
-                                        <th class="">Muestra</th>
-                                        <th class="">Analisis</th>
-                                        <th class="">Estado</th>
-                                        <th class="">Obs</th>
-                                        <!-- NUEVAS COLUMNAS -->
-                                        <th class="">Detalle</th>
-                                        <th class="">Seguimiento</th>
-                                        <th class="">PDF</th>
-                                        <th class="">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-
-                                </tbody>
-                            </table>
-                        </div>
+        <!-- Tabla (mismo estilo que dashboard-reportes) -->
+        <div class="bg-white rounded-xl shadow-md p-5" id="tablaSeguimientoWrapper" data-vista-tabla-iconos data-vista="">
+            <div class="card-body p-0 mt-5">
+                <div class="view-toggle-group flex items-center gap-2 mb-4">
+                    <button type="button" class="view-toggle-btn active" id="btnViewTablaSeg" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                    <button type="button" class="view-toggle-btn" id="btnViewIconosSeg" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                </div>
+                <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasSeg">
+                    <div id="cardsControlsTopSeg" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
+                    <div id="cardsContainerSeg" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
+                    <div id="cardsPaginationSeg" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
+                </div>
+                <div class="view-lista-wrap" id="viewListaSeg">
+                    <div class="table-wrapper overflow-x-auto">
+                        <table id="tablaResultados" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th class="px-4 py-3">N°</th>
+                                    <th>Cod. Envío</th>
+                                    <th>Fecha Envio</th>
+                                    <th>Nom. Lab</th>
+                                    <th>Nom. EmpTrans</th>
+                                    <th>U. Reg.</th>
+                                    <th>U. Resp.</th>
+                                    <th>Aut Por</th>
+                                    <th>Muestra</th>
+                                    <th>Analisis</th>
+                                    <th>Estado</th>
+                                    <th>Obs</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Detalles</th>
+                                    <th>Seguimiento</th>
+                                    <th>PDF</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
-
             </div>
         </div>
 
@@ -1176,7 +1295,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 </div>
 
                 <!-- Footer del Modal -->
-                <div class="border-t border-gray-200 px-6 py-4 flex justify-end gap-3 bg-gray-50">
+                <div class="dashboard-modal-actions border-t border-gray-200 px-6 py-4 flex flex-wrap justify-end gap-3 bg-gray-50">
                     <button onclick="cerrarModalDetalle()"
                         class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded transition">
                         Cerrar
@@ -1236,7 +1355,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 </div>
 
                 <!-- Footer -->
-                <div class="border-t border-gray-200 px-6 py-4 bg-gray-50 flex justify-end">
+                <div class="dashboard-modal-actions border-t border-gray-200 px-6 py-4 bg-gray-50 flex flex-wrap justify-end">
                     <button onclick="cerrarModalTracking()"
                         class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold rounded transition">
                         Cerrar
@@ -1309,18 +1428,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 </div>
             </div>
         </div>
-        <!-- Modal de Edición -->
-        <div class="modal fade" id="modalEditarEnvio" tabindex="-1" aria-labelledby="modalEditarEnvioLabel"
-            aria-hidden="true">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content">
-                    <div class="modal-header bg-blue-50">
-                        <h5 class="modal-title" id="modalEditarEnvioLabel">Editar Envío</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <!-- Modal de Advertencia - No se puede editar -->
+        <div id="modalAdvertenciaEdicion" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+                <div class="bg-red-50 border-b border-red-200 px-6 py-4 rounded-t-lg">
+                    <div class="flex items-center justify-between">
+                        <h5 class="text-lg font-semibold text-red-700" id="modalAdvertenciaEdicionLabel">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                            No se puede editar este envío
+                        </h5>
+                        <button type="button" onclick="cerrarModalAdvertencia()" class="text-red-500 hover:text-red-700 text-2xl leading-none transition">
+                            ×
+                        </button>
                     </div>
-                    <div class="modal-body">
-                        <!-- Aquí irá el formulario -->
-                        <form id="formEditarEnvio">
+                </div>
+                <div class="px-6 py-4">
+                    <div class="flex items-start gap-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                                <i class="fas fa-ban text-red-600 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-gray-700 mb-3">
+                                Este envío no puede ser editado por las siguientes razones:
+                            </p>
+                            <ul id="listaRazones" class="list-disc list-inside space-y-2 text-gray-600">
+                                <!-- Las razones se cargarán aquí -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="dashboard-modal-actions bg-gray-50 px-6 py-4 rounded-b-lg flex flex-wrap justify-end">
+                    <button type="button" onclick="cerrarModalAdvertencia()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200">
+                        Entendido
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Edición -->
+        <div id="modalEditarEnvio" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-7xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                <div class="bg-blue-50 px-6 py-4 border-b border-blue-200">
+                    <div class="flex items-center justify-between">
+                        <h5 class="text-lg font-semibold text-gray-800" id="modalEditarEnvioLabel">Editar Envío</h5>
+                        <button type="button" onclick="cerrarModalEditar()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none transition">
+                            ×
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto px-6 py-4">
+                    <!-- Aquí irá el formulario -->
+                    <form id="formEditarEnvio">
                             <!-- INFORMACIÓN DE REGISTRO Y ENVÍO -->
                             <div class="form-section mb-6">
                                 <div class="dual-group-container grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
@@ -1447,31 +1607,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                 </div>
                             </div>
                         </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" id="btnGuardarEdicion">Guardar Cambios</button>
-                    </div>
+                </div>
+                <div class="dashboard-modal-actions bg-gray-50 px-6 py-4 border-t border-gray-200 flex flex-wrap justify-end gap-3">
+                    <button type="button" onclick="cerrarModalEditar()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium rounded-lg transition duration-200">
+                        Cancelar
+                    </button>
+                    <button type="button" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-200" id="btnGuardarEdicion">Guardar Cambios</button>
                 </div>
             </div>
         </div>
 
-        <!-- Footer -->
+        <!-- Footer dinámico -->
         <div class="text-center mt-12">
             <p class="text-gray-500 text-sm">
-                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025
+                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
+                © <span id="currentYear"></span>
             </p>
         </div>
 
-    </div>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <script>
+            // Actualizar el año dinámicamente
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+        </script>
 
-    <!-- Bootstrap 5 JS (requiere Popper) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    </div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../assets/js/sweetalert-helpers.js"></script>
 
     <script>
         var table; // Variable global
@@ -1485,8 +1649,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             }
 
             // Obtener valores de los filtros
-            var fechaInicio = $('#filtroFechaInicio').val();
-            var fechaFin = $('#filtroFechaFin').val();
+            var periodoTipo = ($('#periodoTipo').val() || 'TODOS').trim();
+            var fechaUnica = ($('#fechaUnica').val() || '').trim();
+            var fechaInicio = ($('#fechaInicio').val() || '').trim();
+            var fechaFin = ($('#fechaFin').val() || '').trim();
+            var mesUnico = ($('#mesUnico').val() || '').trim();
+            var mesInicio = ($('#mesInicio').val() || '').trim();
+            var mesFin = ($('#mesFin').val() || '').trim();
             var estado = $('#filtroEstado').val();
             var laboratorio = $('#filtroLaboratorio').val();
             var muestra = $('#filtroTipoMuestra').val();
@@ -1525,8 +1694,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     url: 'listar_cab_filtros.php',
                     type: 'POST',
                     data: {
+                        periodoTipo: periodoTipo,
+                        fechaUnica: fechaUnica,
                         fechaInicio: fechaInicio,
                         fechaFin: fechaFin,
+                        mesUnico: mesUnico,
+                        mesInicio: mesInicio,
+                        mesFin: mesFin,
                         estado: estado,
                         laboratorio: laboratorio,
                         muestra: muestra,
@@ -1538,6 +1712,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     }
                 },
                 columns: [{
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-center',
+                    render: function (data, type, row, meta) {
+                        return type === 'display' ? (meta.settings._iDisplayStart + meta.row + 1) : '';
+                    }
+                },
+                {
                     data: 'codEnvio'
                 },
                 {
@@ -1699,55 +1882,137 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             <i class="fa-solid fa-file-pdf"></i>
                         </button>`;
                     }
-                },
-                {
-                    data: null,
-                    className: 'text-center',
-                    orderable: false,
-                    render: function (data, type, row) {
-                        const rolUser = (document.getElementById('idRolUser')?.textContent.trim().toLowerCase() ||
-                            document.getElementById('idRolUser')?.dataset.rol?.toLowerCase() ||
-                            '');
-
-                        let buttons = '';
-
-                        buttons += `<button 
-                            class="btn-editar text-blue-600 hover:text-blue-800 transition mr-2"
-                            title="Editar solicitud"
-                            data-codenvio="${row.codEnvio}">
-                            <i class="fa-solid fa-edit"></i>
-                        </button>`;
-
-                        if (rolUser === 'admin') {
-                            buttons += `<button 
-                                class="btn-borrar text-red-600 hover:text-red-800 transition"
-                                title="Eliminar solicitud"
-                                data-codenvio="${row.codEnvio}">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>`;
-                        }
-
-                        return buttons;
-                    }
                 }
                 ],
-                columnDefs: [{
-                    targets: '_all',
-                    className: 'px-6 py-4 text-sm text-gray-700'
-                }],
+                columnDefs: [
+                    { targets: '_all', className: 'px-6 py-4 text-sm text-gray-700' },
+                    { orderable: false, targets: [0] },
+                    { targets: [8, 9, 11], visible: false }
+                ],
                 rowCallback: function (row, data) {
                     $(row).addClass('hover:bg-gray-50 transition');
                 },
                 language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+                    url: '../../assets/i18n/es-ES.json'
                 },
                 pageLength: 5,
                 lengthMenu: [
                     [5, 10, 15, 20, 25],
                     [5, 10, 15, 20, 25]
                 ],
+                drawCallback: function () {
+                    if (typeof renderizarTarjetasSeguimiento === 'function') renderizarTarjetasSeguimiento();
+                }
             });
 
+            function aplicarVisibilidadVistaSeg(vista) {
+                var esLista = (vista === 'lista');
+                $('#tablaSeguimientoWrapper').attr('data-vista', vista);
+                if (esLista) {
+                    $('#viewTarjetasSeg').addClass('hidden').css('display', 'none');
+                    $('#tablaSeguimientoWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
+                } else {
+                    $('#tablaSeguimientoWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
+                    $('#viewTarjetasSeg').removeClass('hidden').css('display', 'block');
+                    $('#cardsContainerSeg').attr('data-vista-cards', 'iconos');
+                }
+            }
+            function actualizarVistaInicialSeg() {
+                var w = $(window).width();
+                var w$ = $('#tablaSeguimientoWrapper');
+                if (!w$.attr('data-vista')) {
+                    var vistaInicial = w < 768 ? 'iconos' : 'lista';
+                    w$.attr('data-vista', vistaInicial);
+                    $('#btnViewTablaSeg').toggleClass('active', vistaInicial === 'lista');
+                    $('#btnViewIconosSeg').toggleClass('active', vistaInicial === 'iconos');
+                    $('#cardsContainerSeg').attr('data-vista-cards', 'iconos');
+                    aplicarVisibilidadVistaSeg(vistaInicial);
+                }
+            }
+            function formatearFechaDMY(val) {
+                if (!val) return '';
+                var d = new Date(val);
+                if (isNaN(d.getTime())) return val;
+                var day = ('0' + d.getDate()).slice(-2);
+                var month = ('0' + (d.getMonth() + 1)).slice(-2);
+                var year = d.getFullYear();
+                return day + '/' + month + '/' + year;
+            }
+            function escapeHtmlSeg(str) {
+                if (str == null || str === undefined) return '';
+                var div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+            function renderizarTarjetasSeguimiento() {
+                if (!table) return;
+                var api = table;
+                var cont = $('#cardsContainerSeg');
+                cont.empty();
+                var info = api.page.info();
+                var rowIndex = 0;
+                api.rows({ page: 'current' }).every(function () {
+                    rowIndex++;
+                    var numero = info.start + rowIndex;
+                    var row = this.data();
+                    var cod = escapeHtmlSeg(row.codEnvio || '');
+                    var codRaw = (row.codEnvio || '').replace(/'/g, "\\'");
+                    var fec = formatearFechaDMY(row.fecEnvio);
+                    var card = '<div class="card-item">' +
+                        '<div class="card-numero-row">#' + numero + '</div>' +
+                        '<div class="card-contenido">' +
+                        '<div class="card-codigo">' + cod + '</div>' +
+                        '<div class="card-campos">' +
+                        '<div class="card-row"><span class="label">Fecha:</span> ' + fec + '</div>' +
+                        '<div class="card-row"><span class="label">Lab:</span> ' + escapeHtmlSeg(row.nomLab || '') + '</div>' +
+                        '<div class="card-row"><span class="label">Emp.Trans:</span> ' + escapeHtmlSeg(row.nomEmpTrans || '') + '</div>' +
+                        '<div class="card-row"><span class="label">U.Reg:</span> ' + escapeHtmlSeg(row.usuarioRegistrador || '') + '</div>' +
+                        '<div class="card-row"><span class="label">U.Resp:</span> ' + escapeHtmlSeg(row.usuarioResponsable || '') + '</div>' +
+                        '<div class="card-row"><span class="label">Aut Por:</span> ' + escapeHtmlSeg(row.autorizadoPor || '') + '</div>' +
+                        '<div class="card-row"><span class="label">Estado:</span> ' + escapeHtmlSeg(row.estado || '') + '</div>' +
+                        '</div>' +
+                        '<div class="card-acciones">' +
+                        '<button type="button" class="text-blue-600 hover:text-blue-800 transition" title="Detalle" onclick="verDetalle(\'' + codRaw + '\')"><i class="fas fa-eye"></i></button>' +
+                        '<button type="button" class="text-amber-600 hover:text-amber-800 transition" title="Historial" onclick="verHistorial(\'' + codRaw + '\')"><i class="fa-solid fa-clock-rotate-left"></i></button>' +
+                        '<button type="button" class="text-indigo-600 hover:text-indigo-800 transition" title="Editar" onclick="verificarYEditar(\'' + codRaw + '\')"><i class="fa-solid fa-edit"></i></button>' +
+                        '<button type="button" class="text-red-600 hover:text-red-800 transition" title="PDF" onclick="generarReportePDF(\'' + codRaw + '\')"><i class="fa-solid fa-file-pdf"></i></button>' +
+                        '</div></div></div>';
+                    cont.append(card);
+                });
+                var len = api.page.len();
+                var lengthOptions = [5, 10, 15, 20, 25];
+                var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select px-2 py-1 border border-gray-300 rounded-md text-sm">' +
+                    lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
+                    '</select><span>registros</span></label>';
+                var navBtns = '<div class="flex items-center gap-3 flex-wrap">' +
+                    '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' +
+                    '<div class="flex gap-2">' +
+                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaResultados\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
+                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaResultados\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
+                    '</div></div>';
+                var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + navBtns + '</div>';
+                $('#cardsControlsTopSeg').html(controlsHtml);
+                $('#cardsPaginationSeg').html(controlsHtml);
+                $('#cardsControlsTopSeg .cards-length-select, #cardsPaginationSeg .cards-length-select').on('change', function() {
+                    var val = parseInt($(this).val(), 10);
+                    if (table) table.page.len(val).draw(false);
+                });
+            }
+            actualizarVistaInicialSeg();
+            $('#btnViewTablaSeg').on('click', function () {
+                aplicarVisibilidadVistaSeg('lista');
+                $('#btnViewTablaSeg').addClass('active');
+                $('#btnViewIconosSeg').removeClass('active');
+            });
+            $('#btnViewIconosSeg').on('click', function () {
+                aplicarVisibilidadVistaSeg('iconos');
+                $('#btnViewIconosSeg').addClass('active');
+                $('#btnViewTablaSeg').removeClass('active');
+            });
+            $(window).on('resize', function () {
+                if (!$('#tablaSeguimientoWrapper').attr('data-vista')) return;
+                actualizarVistaInicialSeg();
+            });
         }
 
         // Cargar tabla al iniciar la página
@@ -1760,8 +2025,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             });
 
             $('#btnLimpiar').click(function () {
-                $('#filtroFechaInicio').val('');
-                $('#filtroFechaFin').val('');
+                $('#periodoTipo').val('TODOS');
+                $('#fechaUnica').val('');
+                $('#fechaInicio').val('');
+                $('#fechaFin').val('');
+                $('#mesUnico').val('');
+                $('#mesInicio').val('');
+                $('#mesFin').val('');
                 $('#filtroEstado').val('');
                 $('#filtroLaboratorio').val('');
                 $('#filtroTipoMuestra').val('');
@@ -1792,9 +2062,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     dropdownMenu.classList.add('hidden');
                 }
 
+                if (typeof aplicarVisibilidadPeriodoSeguimiento === 'function') aplicarVisibilidadPeriodoSeguimiento();
                 // Recargar la tabla con filtros limpios
                 cargarTabla();
             });
+
+            function aplicarVisibilidadPeriodoSeguimiento() {
+                var t = $('#periodoTipo').val() || '';
+                $('#periodoPorFecha, #periodoEntreFechas, #periodoPorMes, #periodoEntreMeses').addClass('hidden');
+                if (t === 'POR_FECHA') $('#periodoPorFecha').removeClass('hidden');
+                else if (t === 'ENTRE_FECHAS') $('#periodoEntreFechas').removeClass('hidden');
+                else if (t === 'POR_MES') $('#periodoPorMes').removeClass('hidden');
+                else if (t === 'ENTRE_MESES') $('#periodoEntreMeses').removeClass('hidden');
+            }
+            $('#periodoTipo').on('change', aplicarVisibilidadPeriodoSeguimiento);
+            aplicarVisibilidadPeriodoSeguimiento();
+
+            // Permitir abrir edición desde otro módulo (ej: listado/reportes)
+            // Ejemplo: dashboard-seguimiento.php?edit=ABC123
+            const params = new URLSearchParams(window.location.search);
+            const codEditar = params.get('edit');
+            if (codEditar) {
+                verificarYEditar(codEditar);
+            }
         });
 
 
@@ -1865,24 +2155,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         function cerrarModalHistorial() {
             document.getElementById('modalHistorial').classList.add('hidden');
         }
+
+        // Funciones para manejar modales con Tailwind
+        function abrirModalAdvertencia() {
+            const modal = document.getElementById('modalAdvertenciaEdicion');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+        }
+
+        function cerrarModalAdvertencia() {
+            const modal = document.getElementById('modalAdvertenciaEdicion');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = ''; // Restaurar scroll del body
+        }
+
+        function abrirModalEditar() {
+            const modal = document.getElementById('modalEditarEnvio');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden'; // Prevenir scroll del body
+        }
+
+        function cerrarModalEditar() {
+            const modal = document.getElementById('modalEditarEnvio');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = ''; // Restaurar scroll del body
+        }
+
+        // Cerrar modales al hacer clic fuera de ellos
+        document.addEventListener('click', function(e) {
+            const modalAdvertencia = document.getElementById('modalAdvertenciaEdicion');
+            const modalEditar = document.getElementById('modalEditarEnvio');
+            
+            if (e.target === modalAdvertencia) {
+                cerrarModalAdvertencia();
+            }
+            if (e.target === modalEditar) {
+                cerrarModalEditar();
+            }
+        });
+
+        // Cerrar modales con ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                cerrarModalAdvertencia();
+                cerrarModalEditar();
+            }
+        });
     </script>
 
     <script>
         function generarReportePDF(codEnvio) {
             if (!codEnvio) {
-                alert('Seleccione una solicitud primero');
+                SwalAlert('Seleccione una solicitud primero', 'warning');
                 return;
             }
             window.open(`reporteSeguimientoMuestrasPdf.php?codEnvio=${codEnvio}`, '_blank');
         }
 
-        function borrarRegistros(codEnvio) {
-            // Confirmación simple y clara
-            if (!confirm(`¿Estás COMPLETAMENTE seguro de eliminar el envío "${codEnvio}"?\n\nEsta acción:\n• Eliminará todos los resultados, archivos y detalles asociados\n• NO se puede deshacer\n\n¿Continuar?`)) {
-                return; // Cancela si dice "No"
-            }
+        async function borrarRegistros(codEnvio) {
+            var ok = await SwalConfirm('¿Estás COMPLETAMENTE seguro de eliminar el envío "' + codEnvio + '"?\n\nEsta acción:\n• Eliminará todos los resultados, archivos y detalles asociados\n• NO se puede deshacer\n\n¿Continuar?', 'Confirmar eliminación');
+            if (!ok) return;
 
-            // Enviar al PHP
             fetch('borrarSolicitudCompleto.php', {
                 method: 'POST',
                 headers: {
@@ -1893,16 +2230,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        alert('✅ Envío eliminado correctamente');
-                        // Recargar la tabla
+                        SwalAlert('Envío eliminado correctamente', 'success');
                         if (table) table.ajax.reload();
                     } else {
-                        alert('❌ Error: ' + data.message);
+                        SwalAlert('Error: ' + data.message, 'error');
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('❌ Error de conexión');
+                    SwalAlert('Error de conexión', 'error');
                 });
         }
     </script>
@@ -1984,7 +2320,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             if (tab === 3) {
                 cargarCuantitativos();
             }
-            if (tab = 4) {
+            if (tab === 4) {
                 cargarDocumentosDetalle();
             }
         }
@@ -2215,41 +2551,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
 
         function aplicarFiltros() {
-            const fechaInicio = document.getElementById('filtroFechaInicio').value;
-            const fechaFin = document.getElementById('filtroFechaFin').value;
-            const estado = document.getElementById('filtroEstado').value.toLowerCase();
+            const fechaInicio = (document.getElementById('fechaInicio') && document.getElementById('fechaInicio').value) || '';
+            const fechaFin = (document.getElementById('fechaFin') && document.getElementById('fechaFin').value) || '';
+            const estado = (document.getElementById('filtroEstado') && document.getElementById('filtroEstado').value) || '';
+            const estadoLower = estado.toLowerCase();
 
             const filas = document.querySelectorAll('#tablaResultados tbody tr');
 
             filas.forEach(fila => {
-                const fechaFila = fila.children[3].innerText.trim(); // fecToma
-                const estadoFila = fila.children[10].innerText.trim().toLowerCase();
+                const cols = fila.children;
+                const fechaFila = cols.length > 2 ? cols[2].innerText.trim() : ''; // fecEnvio (índice 2 con N°)
+                const estadoFila = cols.length > 11 ? cols[11].innerText.trim().toLowerCase() : '';
 
                 let mostrar = true;
-
-                if (fechaInicio && fechaFila < fechaInicio) {
-                    mostrar = false;
-                }
-
-                if (fechaFin && fechaFila > fechaFin) {
-                    mostrar = false;
-                }
-
-                if (estado && estadoFila !== estado) {
-                    mostrar = false;
-                }
-
+                if (fechaInicio && fechaFila < fechaInicio) mostrar = false;
+                if (fechaFin && fechaFila > fechaFin) mostrar = false;
+                if (estadoLower && estadoFila !== estadoLower) mostrar = false;
                 fila.style.display = mostrar ? '' : 'none';
             });
         }
 
         function limpiarFiltros() {
-            document.getElementById('filtroFechaInicio').value = '';
-            document.getElementById('filtroFechaFin').value = '';
-            document.getElementById('filtroEstado').value = '';
-
-            document.querySelectorAll('#tablaResultados tbody tr')
-                .forEach(fila => fila.style.display = '');
+            if (document.getElementById('fechaInicio')) document.getElementById('fechaInicio').value = '';
+            if (document.getElementById('fechaFin')) document.getElementById('fechaFin').value = '';
+            if (document.getElementById('filtroEstado')) document.getElementById('filtroEstado').value = '';
+            document.querySelectorAll('#tablaResultados tbody tr').forEach(fila => fila.style.display = '');
         }
     </script>
 
@@ -2336,10 +2662,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
     <script>
         let currentSolicitudCount = 0;
+        let datosOriginales = { cabecera: null, detalles: {} }; // Para detectar cambios
+
         document.addEventListener('click', function (e) {
             if (e.target.closest('.btn-editar')) {
                 const codEnvio = e.target.closest('.btn-editar').dataset.codenvio;
-                editarRegistro(codEnvio); // ahora sí, aunque esté en un bloque
+                verificarYEditar(codEnvio);
             }
 
             if (e.target.closest('.btn-borrar')) {
@@ -2347,16 +2675,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 borrarRegistros(codEnvio);
             }
         });
-        function editarRegistro(codEnvio) {
 
-            $('#modalEditarEnvio').modal('show');
+        // Función para verificar si se puede editar antes de abrir el modal
+        async function verificarYEditar(codEnvio) {
+            try {
+                const res = await fetch(`verificar_editable.php?codEnvio=${encodeURIComponent(codEnvio)}`);
+                const data = await res.json();
+                
+                if (data.error) {
+                    alert('Error al verificar: ' + data.error);
+                    return;
+                }
+
+                if (!data.puedeEditar) {
+                    // Mostrar modal de advertencia
+                    const listaRazones = document.getElementById('listaRazones');
+                    listaRazones.innerHTML = '';
+                    data.razones.forEach(razon => {
+                        const li = document.createElement('li');
+                        li.textContent = razon;
+                        li.className = 'text-red-600 font-medium';
+                        listaRazones.appendChild(li);
+                    });
+                    
+                    abrirModalAdvertencia();
+                    return;
+                }
+
+                // Si se puede editar, proceder normalmente
+                editarRegistro(codEnvio);
+            } catch (err) {
+                console.error('Error al verificar si se puede editar:', err);
+                SwalAlert('Error al verificar si se puede editar el envío', 'error');
+            }
+        }
+
+        function editarRegistro(codEnvio) {
+            abrirModalEditar();
             $('#tablaSolicitudes').empty();
+            datosOriginales = { cabecera: null, detalles: {} };
 
             // 1. Cargar cabecera
             fetch(`get_cabecera_envio.php?codEnvio=${encodeURIComponent(codEnvio)}`)
                 .then(res => res.json())
                 .then(cab => {
                     if (cab.error) throw new Error(cab.error);
+
+                    // Guardar datos originales
+                    datosOriginales.cabecera = {
+                        codEnvio: cab.codEnvio,
+                        fecEnvio: cab.fecEnvio,
+                        horaEnvio: cab.horaEnvio,
+                        codLab: cab.codLab,
+                        codEmpTrans: cab.codEmpTrans,
+                        usuarioRegistrador: cab.usuarioRegistrador,
+                        usuarioResponsable: cab.usuarioResponsable,
+                        autorizadoPor: cab.autorizadoPor
+                    };
 
                     document.getElementById('codigoEnvio').value = cab.codEnvio;
                     document.getElementById('fechaEnvio').value = cab.fecEnvio;
@@ -2369,7 +2744,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('Error al cargar la cabecera: ' + err.message);
+                    SwalAlert('Error al cargar la cabecera: ' + err.message, 'error');
                 });
 
             // 2. Cargar detalles y contar posSolicitud únicos
@@ -2387,18 +2762,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         if (!grupos[item.posSolicitud]) grupos[item.posSolicitud] = [];
                         grupos[item.posSolicitud].push(item);
                     });
-                    console.log('grupos', grupos);
+
+                    // Guardar datos originales de detalles
+                    Object.keys(grupos).forEach(pos => {
+                        datosOriginales.detalles[pos] = grupos[pos].map(item => ({
+                            codMuestra: item.codMuestra,
+                            nomMuestra: item.nomMuestra,
+                            codRef: item.codRef,
+                            fecToma: item.fecToma,
+                            numMuestras: item.numMuestras,
+                            obs: item.obs || '',
+                            codAnalisis: item.codAnalisis,
+                            nomAnalisis: item.nomAnalisis,
+                            codPaquete: item.codPaquete,
+                            nomPaquete: item.nomPaquete
+                        }));
+                    });
+
                     // Renderizar filas
                     renderizarFilasDeSolicitudes(grupos);
-                    //const total = Object.keys(grupos).length;
                     currentSolicitudCount = total;
-                    //document.getElementById('numeroSolicitudes').value = total;
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('Error al cargar los detalles: ' + err.message);
+                    SwalAlert('Error al cargar los detalles: ' + err.message, 'error');
                 });
-
         }
         function renderizarFilasDeSolicitudes(grupos) {
             const contenedor = document.getElementById('tablaSolicitudes');
@@ -2418,9 +2806,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 const items = grupos[pos];
                 const primerItem = items[0];
 
+                // Preparar análisis iniciales desde los datos cargados
+                const analisisIniciales = items.map(item => ({
+                    codigo: item.codAnalisis,
+                    nombre: item.nomAnalisis,
+                    paquete_codigo: item.codPaquete || null,
+                    paquete_nombre: item.nomPaquete || null
+                }));
+
                 const div = document.createElement('div');
                 div.id = `fila-solicitud-${pos}`;
                 div.className = 'border rounded-lg p-4 bg-gray-50';
+                // Almacenar análisis en atributo data
+                div.setAttribute('data-analisis', JSON.stringify(analisisIniciales));
                 div.innerHTML = `
       <h6 class="font-bold mb-3">Solicitud #${pos}</h6>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
@@ -2433,7 +2831,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         <div>
           <label class="text-xs text-gray-600">Cód. Referencia</label>
           <input type="text" class="w-full text-sm px-2 py-1 border rounded cod-ref" 
-                 value="${primerItem.codRef}" data-pos="${pos}">
+                 value="${primerItem.codRef || ''}" data-pos="${pos}">
         </div>
         <div>
           <label class="text-xs text-gray-600">Núm. Muestras</label>
@@ -2444,14 +2842,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         <div>
           <label class="text-xs text-gray-600">Fecha Toma</label>
           <input type="date" class="w-full text-sm px-2 py-1 border rounded fecha-toma" 
-                 value="${primerItem.fecToma}" data-pos="${pos}">
+                 value="${primerItem.fecToma || ''}" data-pos="${pos}">
         </div>
       </div>
       <div class="mb-2">
         <label class="text-xs text-gray-600">Observaciones</label>
         <textarea class="w-full text-sm px-2 py-1 border rounded obs" data-pos="${pos}" rows="2">${primerItem.obs || ''}</textarea>
       </div>
-      <button type="button" class="btn btn-sm btn-outline-primary ver-analisis" data-pos="${pos}">Ver Análisis</button>
+      <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border-2 border-sky-400 bg-white text-sky-500 hover:bg-sky-500 hover:text-white transition duration-200 ver-analisis-toggle" data-pos="${pos}">
+        <span class="toggle-text">Ver Análisis</span>
+      </button>
       <div class="mt-3 analisis-container hidden" id="analisis-container-${pos}"></div>
     `;
                 contenedor.appendChild(div);
@@ -2468,216 +2868,336 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     });
                 });
 
-                // Evento "Ver Análisis"
-                div.querySelector('.ver-analisis').addEventListener('click', async function () {
+                // Cargar análisis iniciales si ya hay datos
+                if (analisisIniciales.length > 0) {
+                    cargarAnalisisEnContenedor(pos, primerItem.codMuestra, analisisIniciales, div);
+                }
+
+                // Evento toggle "Ver Análisis"
+                div.querySelector('.ver-analisis-toggle').addEventListener('click', async function () {
                     const posActual = this.dataset.pos;
                     const tipoId = div.querySelector('.tipo-muestra').value;
                     if (!tipoId) {
-                        alert('Seleccione primero el tipo de muestra');
+                        SwalAlert('Seleccione primero el tipo de muestra', 'warning');
                         return;
                     }
 
                     const container = document.getElementById(`analisis-container-${posActual}`);
-                    container.classList.remove('hidden');
-                    container.innerHTML = '<p>Cargando análisis...</p>';
+                    const toggleText = this.querySelector('.toggle-text');
+                    
+                    // Toggle mostrar/ocultar
+                    if (container.classList.contains('hidden')) {
+                        // Mostrar
+                        if (container.innerHTML.trim() === '' || container.innerHTML.includes('Cargando')) {
+                            container.innerHTML = '<p>Cargando análisis...</p>';
+                            await cargarAnalisisEnContenedor(posActual, tipoId, null, div);
+                        }
+                        container.classList.remove('hidden');
+                        toggleText.textContent = 'Ocultar Análisis';
+                    } else {
+                        // Ocultar
+                        container.classList.add('hidden');
+                        toggleText.textContent = 'Ver Análisis';
+                    }
+                });
+            }
+        }
 
-                    try {
-                        const res = await fetch(`../../includes/get_config_muestra.php?tipo=${encodeURIComponent(tipoId)}`);
-                        const data = await res.json();
-                        if (data.error) throw new Error(data.error);
+        // Función auxiliar para cargar análisis en el contenedor
+        async function cargarAnalisisEnContenedor(pos, tipoId, analisisIniciales, filaDiv) {
+            const container = document.getElementById(`analisis-container-${pos}`);
+            
+            try {
+                const res = await fetch(`../../includes/get_config_muestra.php?tipo=${encodeURIComponent(tipoId)}`);
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
 
-                        // Agrupar análisis por paquete
-                        const analisisPorPaquete = {};
-                        const sinPaquete = [];
-                        data.analisis.forEach(a => {
-                            if (a.paquete) {
-                                if (!analisisPorPaquete[a.paquete]) analisisPorPaquete[a.paquete] = [];
-                                analisisPorPaquete[a.paquete].push(a);
-                            } else {
-                                sinPaquete.push(a);
-                            }
-                        });
+                // Guardar longitud_codigo en la fila
+                if (filaDiv && data.tipo_muestra && data.tipo_muestra.longitud_codigo) {
+                    filaDiv.setAttribute('data-longitud-codigo', data.tipo_muestra.longitud_codigo);
+                }
 
-                        // Determinar qué análisis están ya seleccionados (del grupo actual)
-                        const codigosSeleccionados = new Set(items.map(i => String(i.codAnalisis)));
+                // Agrupar análisis por paquete
+                const analisisPorPaquete = {};
+                const sinPaquete = [];
+                data.analisis.forEach(a => {
+                    if (a.paquete) {
+                        if (!analisisPorPaquete[a.paquete]) analisisPorPaquete[a.paquete] = [];
+                        analisisPorPaquete[a.paquete].push(a);
+                    } else {
+                        sinPaquete.push(a);
+                    }
+                });
 
-                        let html = '';
+                // Determinar qué análisis están seleccionados
+                let codigosSeleccionados = new Set();
+                if (analisisIniciales) {
+                    // Usar análisis iniciales
+                    codigosSeleccionados = new Set(analisisIniciales.map(a => String(a.codigo)));
+                } else {
+                    // Leer del atributo data-analisis de la fila
+                    const analisisData = filaDiv.getAttribute('data-analisis');
+                    if (analisisData) {
+                        const analisis = JSON.parse(analisisData);
+                        codigosSeleccionados = new Set(analisis.map(a => String(a.codigo)));
+                    }
+                }
 
-                        // Paquetes
-                        data.paquetes.forEach(p => {
-                            const analisisDelPaquete = analisisPorPaquete[p.codigo] || [];
-                            const todosSel = analisisDelPaquete.length > 0 && analisisDelPaquete.every(a => codigosSeleccionados.has(String(a.codigo)));
-                            html += `
-            <div class="mb-2">
-              <div class="form-check">
-                <input class="form-check-input paquete-check" type="checkbox"
-                  data-pos="${posActual}" data-paquete="${p.codigo}" ${todosSel ? 'checked' : ''}>
-                <label class="form-check-label fw-bold">${p.nombre}</label>
+                let html = '';
+
+                // Paquetes
+                data.paquetes.forEach(p => {
+                    const analisisDelPaquete = analisisPorPaquete[p.codigo] || [];
+                    const todosSel = analisisDelPaquete.length > 0 && analisisDelPaquete.every(a => codigosSeleccionados.has(String(a.codigo)));
+                    html += `
+            <div class="mb-4">
+              <div class="flex items-center mb-2">
+                <input class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 paquete-check" type="checkbox"
+                  data-pos="${pos}" data-paquete="${p.codigo}" ${todosSel ? 'checked' : ''}>
+                <label class="ml-2 text-sm font-bold text-gray-700">${p.nombre}</label>
               </div>
-              <div class="ms-3 mt-1">
+              <div class="ml-6 mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                 ${analisisDelPaquete.map(a => `
-                  <div class="form-check form-check-inline me-2">
-                    <input class="form-check-input analisis-check" type="checkbox"
-                      data-pos="${posActual}" data-paquete="${p.codigo}" value="${a.codigo}"
+                  <div class="flex items-center">
+                    <input class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 analisis-check" type="checkbox"
+                      data-pos="${pos}" data-paquete="${p.codigo}" value="${a.codigo}"
+                      data-nombre="${a.nombre}"
+                      data-paquete-nombre="${p.nombre}"
                       ${codigosSeleccionados.has(String(a.codigo)) ? 'checked' : ''}>
-                    <label class="form-check-label">${a.nombre}</label>
+                    <label class="ml-2 text-sm text-gray-700">${a.nombre}</label>
                   </div>
                 `).join('')}
               </div>
             </div>
           `;
-                        });
-
-                        // Sin paquete
-                        if (sinPaquete.length > 0) {
-                            html += `<div class="mt-2 pt-2 border-t"><strong>Otros análisis:</strong> `;
-                            html += sinPaquete.map(a => `
-            <div class="form-check form-check-inline me-2">
-              <input class="form-check-input analisis-check" type="checkbox"
-                data-pos="${posActual}" value="${a.codigo}"
-                ${codigosSeleccionados.has(String(a.codigo)) ? 'checked' : ''}>
-              <label class="form-check-label">${a.nombre}</label>
-            </div>
-          `).join('');
-                            html += '</div>';
-                        }
-
-                        container.innerHTML = html;
-
-                        // Eventos checkboxes
-                        container.querySelectorAll('.analisis-check').forEach(cb => {
-                            cb.addEventListener('change', function () {
-                                // Puedes opcionalmente guardar el estado en un objeto global si necesitas validación
-                            });
-                        });
-
-                        container.querySelectorAll('.paquete-check').forEach(cb => {
-                            cb.addEventListener('change', function () {
-                                const paqueteId = this.dataset.paquete;
-                                const pos = this.dataset.pos;
-                                const checks = container.querySelectorAll(`.analisis-check[data-pos="${pos}"][data-paquete="${paqueteId}"]`);
-                                checks.forEach(c => c.checked = this.checked);
-                            });
-                        });
-
-                    } catch (err) {
-                        container.innerHTML = `<div class="text-danger">Error: ${err.message}</div>`;
-                    }
                 });
+
+                // Sin paquete
+                if (sinPaquete.length > 0) {
+                    html += `<div class="mt-4 pt-4 border-t border-gray-300">
+                      <strong class="text-sm font-bold text-gray-700 mb-2 block">Otros análisis:</strong>
+                      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                    `;
+                    html += sinPaquete.map(a => `
+                      <div class="flex items-center">
+                        <input class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 analisis-check" type="checkbox"
+                          data-pos="${pos}" value="${a.codigo}"
+                          data-nombre="${a.nombre}"
+                          ${codigosSeleccionados.has(String(a.codigo)) ? 'checked' : ''}>
+                        <label class="ml-2 text-sm text-gray-700">${a.nombre}</label>
+                      </div>
+                    `).join('');
+                    html += '</div></div>';
+                }
+
+                container.innerHTML = html;
+
+                // Eventos checkboxes - actualizar data-analisis cuando cambien
+                container.querySelectorAll('.analisis-check').forEach(cb => {
+                    cb.addEventListener('change', function () {
+                        actualizarAnalisisEnFila(pos);
+                    });
+                });
+
+                container.querySelectorAll('.paquete-check').forEach(cb => {
+                    cb.addEventListener('change', function () {
+                        const paqueteId = this.dataset.paquete;
+                        const pos = this.dataset.pos;
+                        const checks = container.querySelectorAll(`.analisis-check[data-pos="${pos}"][data-paquete="${paqueteId}"]`);
+                        checks.forEach(c => c.checked = this.checked);
+                        actualizarAnalisisEnFila(pos);
+                    });
+                });
+
+                // Actualizar data-analisis inicialmente
+                actualizarAnalisisEnFila(pos);
+
+            } catch (err) {
+                container.innerHTML = `<div class="text-danger">Error: ${err.message}</div>`;
             }
         }
+
+        // Función para actualizar el atributo data-analisis de una fila
+        function actualizarAnalisisEnFila(pos) {
+            const fila = document.getElementById(`fila-solicitud-${pos}`);
+            if (!fila) return;
+
+            const analisisSeleccionados = [];
+            const container = document.getElementById(`analisis-container-${pos}`);
+            
+            if (container) {
+                container.querySelectorAll('.analisis-check:checked').forEach(cb => {
+                    analisisSeleccionados.push({
+                        codigo: cb.value,
+                        nombre: cb.dataset.nombre || cb.nextElementSibling.textContent.trim(),
+                        paquete_codigo: cb.dataset.paquete || null,
+                        paquete_nombre: cb.dataset.paqueteNombre || null
+                    });
+                });
+            }
+
+            fila.setAttribute('data-analisis', JSON.stringify(analisisSeleccionados));
+        }
         document.getElementById('btnGuardarEdicion').addEventListener('click', async function () {
-            /*
-                        const errores = [];
-            
-                        // === 1. Validar campos fijos de la cabecera ===
-                        const fixedFields = [
-                            { id: 'fechaEnvio', name: 'Fecha de envío' },
-                            { id: 'horaEnvio', name: 'Hora de envío' },
-                            { id: 'laboratorio', name: 'Laboratorio' },
-                            { id: 'empresa_transporte', name: 'Empresa de transporte' },
-                            { id: 'autorizado_por', name: 'Autorizado por' },
-                            { id: 'usuario_responsable', name: 'Usuario responsable' }
-                        ];
-            
-                        for (const { id, name } of fixedFields) {
-                            const el = document.getElementById(id);
-                            if (!el?.value?.trim()) {
-                                errores.push(`- ${name} es obligatorio.`);
-                            }
-                        }
-            
-                        // Validar número de solicitudes (debe coincidir con filas visibles, pero al menos 1)
-                        const filas = document.querySelectorAll('#tablaSolicitudes > div[id^="fila-solicitud-"]');
-                        if (filas.length === 0) {
-                             errores.push('- Debe haber al menos una solicitud.');
-                         }
-            
-                        // === 2. Validar cada fila visible ===
-                        const filasOrdenadas = Array.from(filas).sort((a, b) => {
-                            const posA = parseInt(a.id.split('-').pop());
-                            const posB = parseInt(b.id.split('-').pop());
-                            return posA - posB;
-                        });
-            
-                        filasOrdenadas.forEach((fila, idx) => {
-                            const pos = parseInt(fila.id.split('-').pop());
-                            const prefix = `Solicitud #${pos}:`;
-            
-                            const tipoMuestra = fila.querySelector('.tipo-muestra')?.value?.trim();
-                            const fechaToma = fila.querySelector('.fecha-toma')?.value?.trim();
-                            const codRef = fila.querySelector('.cod-ref')?.value?.trim();
-            
-                            if (!tipoMuestra) errores.push(`${prefix} Tipo de muestra es obligatorio.`);
-                            if (!fechaToma) errores.push(`${prefix} Fecha de toma es obligatoria.`);
-                            if (!codRef) errores.push(`${prefix} Código de referencia es obligatorio.`);
-            
-                            // Validar al menos un análisis seleccionado
-                            const analisisCheckeds = fila.querySelectorAll('.analisis-check:checked');
-                            if (analisisCheckeds.length === 0) {
-                                errores.push(`${prefix} Debe seleccionar al menos un análisis.`);
-                            }
-                        });
-            
-                        // === 3. Mostrar errores si existen ===
-                        if (errores.length > 0) {
-                            alert("❌ Por favor, corrija los siguientes errores:\n\n" + errores.join('\n'));
-                            return;
-                        }
-            */
-            //////////////////////////////////////////////////////
+            const errores = [];
+
+            // === 1. Validar campos fijos de la cabecera ===
+            const fixedFields = [
+                { id: 'fechaEnvio', name: 'Fecha de envío' },
+                { id: 'horaEnvio', name: 'Hora de envío' },
+                { id: 'laboratorio', name: 'Laboratorio' },
+                { id: 'empresa_transporte', name: 'Empresa de transporte' },
+                { id: 'autorizado_por', name: 'Autorizado por' },
+                { id: 'usuario_responsable', name: 'Usuario responsable' }
+            ];
+
+            for (const { id, name } of fixedFields) {
+                const el = document.getElementById(id);
+                if (!el?.value?.trim()) {
+                    errores.push(`- ${name} es obligatorio.`);
+                }
+            }
+
+            // Validar número de solicitudes
+            const numeroSolicitudes = parseInt(document.getElementById('numeroSolicitudes').value) || 0;
+            if (numeroSolicitudes < 1) {
+                errores.push('- Debe haber al menos una solicitud.');
+            }
+
+            // === 2. Validar cada fila visible ===
+            const filas = document.querySelectorAll('#tablaSolicitudes > div[id^="fila-solicitud-"]');
+            if (filas.length === 0) {
+                errores.push('- Debe haber al menos una solicitud.');
+            }
+
+            const filasOrdenadas = Array.from(filas).sort((a, b) => {
+                const posA = parseInt(a.id.split('-').pop());
+                const posB = parseInt(b.id.split('-').pop());
+                return posA - posB;
+            });
+
+            filasOrdenadas.forEach((fila) => {
+                const pos = parseInt(fila.id.split('-').pop());
+                const prefix = `Solicitud #${pos}:`;
+
+                const tipoMuestra = fila.querySelector('.tipo-muestra')?.value?.trim();
+                const fechaToma = fila.querySelector('.fecha-toma')?.value?.trim();
+                const codRef = fila.querySelector('.cod-ref')?.value?.trim();
+
+                if (!tipoMuestra) errores.push(`${prefix} Tipo de muestra es obligatorio.`);
+                if (!fechaToma) errores.push(`${prefix} Fecha de toma es obligatoria.`);
+                if (!codRef) errores.push(`${prefix} Código de referencia es obligatorio.`);
+
+                // Validar longitud del código de referencia
+                const longitudCodigo = fila.getAttribute('data-longitud-codigo');
+                if (longitudCodigo && codRef) {
+                    const longitudRequerida = parseInt(longitudCodigo);
+                    if (!isNaN(longitudRequerida) && codRef.length !== longitudRequerida) {
+                        errores.push(`${prefix} El código de referencia debe tener exactamente ${longitudRequerida} caracteres (actual: ${codRef.length}).`);
+                    }
+                }
+
+                // Validar al menos un análisis seleccionado (leer desde data-analisis)
+                const analisisData = fila.getAttribute('data-analisis');
+                let analisisSeleccionados = [];
+                try {
+                    analisisSeleccionados = analisisData ? JSON.parse(analisisData) : [];
+                } catch (e) {
+                    console.error('Error al parsear análisis:', e);
+                }
+
+                if (analisisSeleccionados.length === 0) {
+                    errores.push(`${prefix} Debe seleccionar al menos un análisis.`);
+                }
+            });
+
+            // === 3. Mostrar errores si existen ===
+            if (errores.length > 0) {
+                SwalAlert("Por favor, corrija los siguientes errores:\n\n" + errores.join('\n'), 'error');
+                return;
+            }
+
+            // === 4. Detectar cambios ===
             const codEnvio = document.getElementById('codigoEnvio').value;
-            const numeroSolicitudes = parseInt(document.getElementById('numeroSolicitudes').value);
+            
+            // Verificar que los datos originales estén cargados
+            if (!datosOriginales.cabecera || Object.keys(datosOriginales.detalles).length === 0) {
+                console.warn('Datos originales no cargados completamente');
+                // Si no hay datos originales, asumir que hay cambios (por seguridad)
+            }
+            
+            const cabeceraModificada = detectarCambiosCabecera();
+            const detallesModificados = detectarCambiosDetalles();
 
-            // Validar
-            if (numeroSolicitudes < 1) return alert('Número de solicitudes inválido');
+            console.log('Detección de cambios:', {
+                cabeceraModificada,
+                detallesModificados: detallesModificados.length,
+                hayCabeceraOriginal: !!datosOriginales.cabecera,
+                hayDetallesOriginales: Object.keys(datosOriginales.detalles).length
+            });
 
+            // Si no hay cambios, informar y salir
+            if (!cabeceraModificada && detallesModificados.length === 0) {
+                SwalAlert('No se detectaron cambios para guardar.', 'info');
+                return;
+            }
+
+            // === 5. Preparar datos para enviar ===
             const formData = new FormData();
 
-            // Campos fijos
+            // Campos fijos de cabecera
             const fields = [
                 'fechaEnvio', 'horaEnvio', 'laboratorio', 'empresa_transporte',
                 'usuario_registrador', 'usuario_responsable', 'autorizado_por', 'codigoEnvio'
             ];
             fields.forEach(f => formData.append(f, document.getElementById(f)?.value || ''));
 
-            // Para cada solicitud (posSolicitud = i+1)
-            for (let i = 1; i <= numeroSolicitudes; i++) {
-                const pos = i;
-                const contenedor = document.querySelector(`.analisis-container[data-pos="${pos}"]`); // no usado aquí
+            // Indicar si se modificó la cabecera
+            formData.append('cabecera_modificada', cabeceraModificada ? '1' : '0');
+            
+            // IMPORTANTE: Siempre enviar TODOS los detalles cuando hay cambios
+            // porque el backend elimina todos y reinserta. Si solo enviamos los modificados,
+            // perderíamos los que no cambiaron.
+            const solicitudesAEnviar = filasOrdenadas.map(f => parseInt(f.id.split('-').pop()));
 
-                // Obtener valores de la fila
-                const tipoMuestraEl = document.querySelector(`.tipo-muestra[data-pos="${pos}"]`);
+            // Para cada solicitud (enviar todas)
+            for (let i = 0; i < solicitudesAEnviar.length; i++) {
+                const pos = solicitudesAEnviar[i];
+                const fila = document.getElementById(`fila-solicitud-${pos}`);
+                if (!fila) continue;
+
+                const tipoMuestraEl = fila.querySelector('.tipo-muestra');
                 const nombreTipoMuestra = tipoMuestraEl?.selectedOptions[0]?.text || '';
-                const codRefEl = document.querySelector(`.cod-ref[data-pos="${pos}"]`);
-                const numMuestrasEl = document.querySelector(`.num-muestras[data-pos="${pos}"]`);
-                const fechaTomaEl = document.querySelector(`.fecha-toma[data-pos="${pos}"]`);
-                const obsEl = document.querySelector(`.obs[data-pos="${pos}"]`);
+                const codRefEl = fila.querySelector('.cod-ref');
+                const numMuestrasEl = fila.querySelector('.num-muestras');
+                const fechaTomaEl = fila.querySelector('.fecha-toma');
+                const obsEl = fila.querySelector('.obs');
 
-                formData.append(`fechaToma_${i}`, fechaTomaEl?.value || '');
-                formData.append(`tipoMuestra_${i}`, tipoMuestraEl?.value || '');
-                formData.append(`tipoMuestraNombre_${i}`, nombreTipoMuestra || '');
-                formData.append(`codigoReferenciaValue_${i}`, codRefEl?.value || '');
-                formData.append(`numeroMuestras_${i}`, numMuestrasEl?.value || '');
-                formData.append(`observaciones_${i}`, obsEl?.value || '');
+                // Leer análisis desde data-analisis
+                const analisisData = fila.getAttribute('data-analisis');
+                let analisisSeleccionados = [];
+                try {
+                    analisisSeleccionados = analisisData ? JSON.parse(analisisData) : [];
+                } catch (e) {
+                    console.error('Error al parsear análisis:', e);
+                }
 
-                // Recoger análisis seleccionados para esta posición
-                const analisisSeleccionados = [];
-                document.querySelectorAll(`.analisis-check[data-pos="${pos}"]:checked`).forEach(cb => {
-                    // Buscar nombre y paquete desde el DOM o cache (aquí simplificado)
-                    const label = cb.nextElementSibling?.textContent || '';
-                    const paquete = cb.dataset.paquete || null;
-                    analisisSeleccionados.push({
-                        codigo: cb.value,
-                        nombre: label,
-                        paquete_codigo: paquete,
-                        paquete_nombre: paquete ? document.querySelector(`.paquete-check[data-paquete="${paquete}"]`)?.nextElementSibling?.textContent : null
-                    });
-                });
-                formData.append(`analisis_completos_${i}`, JSON.stringify(analisisSeleccionados));
+                // Usar índice secuencial para el backend (1, 2, 3...)
+                const indice = i + 1;
+                formData.append(`fechaToma_${indice}`, fechaTomaEl?.value || '');
+                formData.append(`tipoMuestra_${indice}`, tipoMuestraEl?.value || '');
+                formData.append(`tipoMuestraNombre_${indice}`, nombreTipoMuestra || '');
+                formData.append(`codigoReferenciaValue_${indice}`, codRefEl?.value || '');
+                formData.append(`numeroMuestras_${indice}`, numMuestrasEl?.value || '1');
+                formData.append(`observaciones_${indice}`, obsEl?.value || '');
+                formData.append(`analisis_completos_${indice}`, JSON.stringify(analisisSeleccionados));
+                formData.append(`posSolicitud_original_${indice}`, pos); // Guardar posición original
             }
 
-            // Enviar
+            // Indicar número total de solicitudes a procesar
+            formData.append('numeroSolicitudes', solicitudesAEnviar.length);
+
+            // === 6. Enviar ===
             try {
                 const res = await fetch('actualizar_muestra.php', {
                     method: 'POST',
@@ -2685,17 +3205,143 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    alert('¡Cambios guardados exitosamente!');
-                    $('#modalEditarEnvio').modal('hide');
+                    SwalAlert('¡Cambios guardados exitosamente!', 'success');
+                    cerrarModalEditar();
                     if (table) table.ajax.reload();
                 } else {
-                    alert('Error: ' + (data.error || 'No se pudo guardar'));
+                    SwalAlert('Error: ' + (data.error || 'No se pudo guardar'), 'error');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Error de red al guardar');
+                SwalAlert('Error de red al guardar', 'error');
             }
         });
+
+        // Función para detectar cambios en la cabecera
+        function detectarCambiosCabecera() {
+            if (!datosOriginales.cabecera) return true; // Si no hay originales, asumir modificado
+
+            // Normalizar valores (convertir null/undefined a string vacío y trim)
+            const normalizar = (val) => String(val || '').trim();
+
+            const actual = {
+                codEnvio: normalizar(document.getElementById('codigoEnvio')?.value),
+                fecEnvio: normalizar(document.getElementById('fechaEnvio')?.value),
+                horaEnvio: normalizar(document.getElementById('horaEnvio')?.value),
+                codLab: normalizar(document.getElementById('laboratorio')?.value),
+                codEmpTrans: normalizar(document.getElementById('empresa_transporte')?.value),
+                usuarioRegistrador: normalizar(document.getElementById('usuario_registrador')?.value),
+                usuarioResponsable: normalizar(document.getElementById('usuario_responsable')?.value),
+                autorizadoPor: normalizar(document.getElementById('autorizado_por')?.value)
+            };
+
+            const original = {
+                codEnvio: normalizar(datosOriginales.cabecera.codEnvio),
+                fecEnvio: normalizar(datosOriginales.cabecera.fecEnvio),
+                horaEnvio: normalizar(datosOriginales.cabecera.horaEnvio),
+                codLab: normalizar(datosOriginales.cabecera.codLab),
+                codEmpTrans: normalizar(datosOriginales.cabecera.codEmpTrans),
+                usuarioRegistrador: normalizar(datosOriginales.cabecera.usuarioRegistrador),
+                usuarioResponsable: normalizar(datosOriginales.cabecera.usuarioResponsable),
+                autorizadoPor: normalizar(datosOriginales.cabecera.autorizadoPor)
+            };
+
+            return JSON.stringify(actual) !== JSON.stringify(original);
+        }
+
+        // Función para detectar cambios en los detalles
+        function detectarCambiosDetalles() {
+            const filas = document.querySelectorAll('#tablaSolicitudes > div[id^="fila-solicitud-"]');
+            const modificados = [];
+
+            filas.forEach(fila => {
+                const pos = parseInt(fila.id.split('-').pop());
+                const original = datosOriginales.detalles[pos];
+                
+                if (!original) {
+                    // Nueva solicitud
+                    modificados.push(pos);
+                    return;
+                }
+
+                // Normalizar valores para comparación
+                const normalizar = (val) => String(val || '').trim();
+
+                // Comparar datos actuales con originales
+                const actual = {
+                    codMuestra: normalizar(fila.querySelector('.tipo-muestra')?.value),
+                    codRef: normalizar(fila.querySelector('.cod-ref')?.value),
+                    fecToma: normalizar(fila.querySelector('.fecha-toma')?.value),
+                    numMuestras: normalizar(fila.querySelector('.num-muestras')?.value || '1'),
+                    obs: normalizar(fila.querySelector('.obs')?.value)
+                };
+
+                const originalPrimerItem = original[0] || {};
+                const originalComparable = {
+                    codMuestra: normalizar(originalPrimerItem.codMuestra),
+                    codRef: normalizar(originalPrimerItem.codRef),
+                    fecToma: normalizar(originalPrimerItem.fecToma),
+                    numMuestras: normalizar(originalPrimerItem.numMuestras || '1'),
+                    obs: normalizar(originalPrimerItem.obs)
+                };
+
+                // Comparar análisis
+                const analisisData = fila.getAttribute('data-analisis');
+                let analisisActualesRaw = [];
+                try {
+                    analisisActualesRaw = analisisData ? JSON.parse(analisisData) : [];
+                } catch (e) {
+                    console.error('Error al parsear análisis:', e);
+                }
+
+                // Normalizar análisis actuales
+                const analisisActuales = analisisActualesRaw.map(item => ({
+                    codigo: String(item.codigo || ''),
+                    nombre: String(item.nombre || ''),
+                    paquete_codigo: item.paquete_codigo ? String(item.paquete_codigo) : null,
+                    paquete_nombre: item.paquete_nombre ? String(item.paquete_nombre) : null
+                }));
+
+                // Normalizar análisis originales
+                const analisisOriginales = original.map(item => ({
+                    codigo: String(item.codAnalisis || ''),
+                    nombre: String(item.nomAnalisis || ''),
+                    paquete_codigo: item.codPaquete ? String(item.codPaquete) : null,
+                    paquete_nombre: item.nomPaquete ? String(item.nomPaquete) : null
+                }));
+
+                // Comparar si hay cambios
+                const datosCambiaron = JSON.stringify(actual) !== JSON.stringify(originalComparable);
+                
+                // Función de ordenamiento que compara por paquete_codigo primero, luego por codigo
+                const ordenarAnalisis = (a, b) => {
+                    const paqueteA = String(a.paquete_codigo || '');
+                    const paqueteB = String(b.paquete_codigo || '');
+                    const codigoA = String(a.codigo || '');
+                    const codigoB = String(b.codigo || '');
+                    
+                    // Comparar primero por paquete
+                    const comparacionPaquete = paqueteA.localeCompare(paqueteB);
+                    if (comparacionPaquete !== 0) return comparacionPaquete;
+                    
+                    // Si los paquetes son iguales, comparar por código
+                    return codigoA.localeCompare(codigoB);
+                };
+                
+                // Crear copias ordenadas para comparar
+                const analisisActualesOrdenados = [...analisisActuales].sort(ordenarAnalisis);
+                const analisisOriginalesOrdenados = [...analisisOriginales].sort(ordenarAnalisis);
+                
+                const analisisCambiaron = JSON.stringify(analisisActualesOrdenados) !== 
+                                         JSON.stringify(analisisOriginalesOrdenados);
+
+                if (datosCambiaron || analisisCambiaron) {
+                    modificados.push(pos);
+                }
+            });
+
+            return modificados;
+        }
 
         //manejo de numero de solicitudes
         document.getElementById('numeroSolicitudes').addEventListener('change', function () {
@@ -2741,6 +3387,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             const div = document.createElement('div');
             div.id = `fila-solicitud-${pos}`;
             div.className = 'border rounded-lg p-4 bg-gray-50';
+            // Inicializar con array vacío de análisis
+            div.setAttribute('data-analisis', JSON.stringify([]));
             div.innerHTML = `
     <h6 class="font-bold mb-3">Solicitud #${pos}</h6>
     <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
@@ -2770,90 +3418,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
       <label class="text-xs text-gray-600">Observaciones</label>
       <textarea class="w-full text-sm px-2 py-1 border rounded obs" data-pos="${pos}" rows="2"></textarea>
     </div>
-    <button type="button" class="btn btn-sm btn-outline-primary ver-analisis" data-pos="${pos}">Ver Análisis</button>
+    <button type="button" class="px-4 py-2 text-sm font-medium rounded-lg border-2 border-sky-400 bg-white text-sky-500 hover:bg-sky-500 hover:text-white transition duration-200 ver-analisis-toggle" data-pos="${pos}">
+      <span class="toggle-text">Ver Análisis</span>
+    </button>
     <div class="mt-3 analisis-container hidden" id="analisis-container-${pos}"></div>
   `;
             contenedor.appendChild(div);
 
-            // Evento para "Ver Análisis"
-            div.querySelector('.ver-analisis').addEventListener('click', async function () {
+            // Evento toggle para "Ver Análisis"
+            div.querySelector('.ver-analisis-toggle').addEventListener('click', async function () {
                 const posActual = this.dataset.pos;
                 const tipoId = div.querySelector('.tipo-muestra').value;
                 if (!tipoId) {
-                    alert('Seleccione primero el tipo de muestra');
+                    SwalAlert('Seleccione primero el tipo de muestra', 'warning');
                     return;
                 }
 
                 const container = document.getElementById(`analisis-container-${posActual}`);
-                container.classList.remove('hidden');
-                container.innerHTML = '<p>Cargando análisis...</p>';
-
-                try {
-                    const res = await fetch(`../../includes/get_config_muestra.php?tipo=${encodeURIComponent(tipoId)}`);
-                    const data = await res.json();
-                    if (data.error) throw new Error(data.error);
-
-                    const analisisPorPaquete = {};
-                    const sinPaquete = [];
-                    data.analisis.forEach(a => {
-                        if (a.paquete) {
-                            if (!analisisPorPaquete[a.paquete]) analisisPorPaquete[a.paquete] = [];
-                            analisisPorPaquete[a.paquete].push(a);
-                        } else {
-                            sinPaquete.push(a);
-                        }
-                    });
-
-                    // No hay análisis previos (es nueva), así que nada está seleccionado
-                    let html = '';
-
-                    data.paquetes.forEach(p => {
-                        const analisisDelPaquete = analisisPorPaquete[p.codigo] || [];
-                        html += `
-          <div class="mb-2">
-            <div class="form-check">
-              <input class="form-check-input paquete-check" type="checkbox"
-                data-pos="${posActual}" data-paquete="${p.codigo}">
-              <label class="form-check-label fw-bold">${p.nombre}</label>
-            </div>
-            <div class="ms-3 mt-1">
-              ${analisisDelPaquete.map(a => `
-                <div class="form-check form-check-inline me-2">
-                  <input class="form-check-input analisis-check" type="checkbox"
-                    data-pos="${posActual}" data-paquete="${p.codigo}" value="${a.codigo}">
-                  <label class="form-check-label">${a.nombre}</label>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `;
-                    });
-
-                    if (sinPaquete.length > 0) {
-                        html += `<div class="mt-2 pt-2 border-t"><strong>Otros análisis:</strong> `;
-                        html += sinPaquete.map(a => `
-          <div class="form-check form-check-inline me-2">
-            <input class="form-check-input analisis-check" type="checkbox"
-              data-pos="${posActual}" value="${a.codigo}">
-            <label class="form-check-label">${a.nombre}</label>
-          </div>
-        `).join('');
-                        html += '</div>';
+                const toggleText = this.querySelector('.toggle-text');
+                
+                // Toggle mostrar/ocultar
+                if (container.classList.contains('hidden')) {
+                    // Mostrar
+                    if (container.innerHTML.trim() === '' || container.innerHTML.includes('Cargando')) {
+                        container.innerHTML = '<p>Cargando análisis...</p>';
+                        await cargarAnalisisEnContenedor(posActual, tipoId, null, div);
                     }
-
-                    container.innerHTML = html;
-
-                    container.querySelectorAll('.paquete-check').forEach(cb => {
-                        cb.addEventListener('change', function () {
-                            const paqueteId = this.dataset.paquete;
-                            const pos = this.dataset.pos;
-                            const checks = container.querySelectorAll(`.analisis-check[data-pos="${pos}"][data-paquete="${paqueteId}"]`);
-                            checks.forEach(c => c.checked = this.checked);
-                        });
-                    });
-
-                } catch (err) {
-                    container.innerHTML = `<div class="text-danger">Error: ${err.message}</div>`;
+                    container.classList.remove('hidden');
+                    toggleText.textContent = 'Ocultar Análisis';
+                } else {
+                    // Ocultar
+                    container.classList.add('hidden');
+                    toggleText.textContent = 'Ver Análisis';
                 }
             });
         }
@@ -2866,24 +3462,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             const pos = selectTipo.dataset.pos;
             const tipoId = selectTipo.value;
 
-            if (!tipoId) return;
+            if (!tipoId) {
+                // Si se deselecciona el tipo, limpiar análisis
+                const fila = document.getElementById(`fila-solicitud-${pos}`);
+                if (fila) {
+                    fila.setAttribute('data-analisis', JSON.stringify([]));
+                    const container = document.getElementById(`analisis-container-${pos}`);
+                    if (container) {
+                        container.innerHTML = '';
+                        container.classList.add('hidden');
+                    }
+                    const toggleText = fila.querySelector('.toggle-text');
+                    if (toggleText) toggleText.textContent = 'Ver Análisis';
+                }
+                return;
+            }
 
             // Buscar el contenedor de análisis para esta posición
             const container = document.getElementById(`analisis-container-${pos}`);
-            if (!container || !container.classList.contains('hidden')) {
-
-                if (container) {
-                    await cargarAnalisisParaPos(pos, tipoId, container);
+            const fila = document.getElementById(`fila-solicitud-${pos}`);
+            
+            if (container && fila) {
+                // Si el contenedor está visible o si no tiene contenido, cargar análisis
+                if (!container.classList.contains('hidden') || container.innerHTML.trim() === '') {
+                    await cargarAnalisisParaPos(pos, tipoId, container, fila);
+                } else {
+                    // Si está oculto, solo actualizar el data-analisis (limpiar porque cambió el tipo)
+                    fila.setAttribute('data-analisis', JSON.stringify([]));
                 }
             }
         });
-        async function cargarAnalisisParaPos(pos, tipoId, container) {
+
+        async function cargarAnalisisParaPos(pos, tipoId, container, fila) {
             container.innerHTML = '<p class="text-sm text-gray-500">Actualizando análisis...</p>';
 
             try {
                 const res = await fetch(`../../includes/get_config_muestra.php?tipo=${encodeURIComponent(tipoId)}`);
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
+
+                // Guardar longitud_codigo en la fila
+                if (fila && data.tipo_muestra && data.tipo_muestra.longitud_codigo) {
+                    fila.setAttribute('data-longitud-codigo', data.tipo_muestra.longitud_codigo);
+                }
 
                 // Agrupar análisis por paquete
                 const analisisPorPaquete = {};
@@ -2914,7 +3535,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             ${analisisDelPaquete.map(a => `
               <div class="form-check form-check-inline me-2">
                 <input class="form-check-input analisis-check" type="checkbox"
-                  data-pos="${pos}" data-paquete="${p.codigo}" value="${a.codigo}">
+                  data-pos="${pos}" data-paquete="${p.codigo}" value="${a.codigo}"
+                  data-nombre="${a.nombre}"
+                  data-paquete-nombre="${p.nombre}">
                 <label class="form-check-label">${a.nombre}</label>
               </div>
             `).join('')}
@@ -2929,7 +3552,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     html += sinPaquete.map(a => `
         <div class="form-check form-check-inline me-2">
           <input class="form-check-input analisis-check" type="checkbox"
-            data-pos="${pos}" value="${a.codigo}">
+            data-pos="${pos}" value="${a.codigo}"
+            data-nombre="${a.nombre}">
           <label class="form-check-label">${a.nombre}</label>
         </div>
       `).join('');
@@ -2938,10 +3562,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                 container.innerHTML = html;
 
+                // Limpiar análisis al cambiar tipo
+                if (fila) {
+                    fila.setAttribute('data-analisis', JSON.stringify([]));
+                }
+
                 // Volver a enlazar eventos de checkboxes (paquetes y análisis)
                 container.querySelectorAll('.analisis-check').forEach(cb => {
                     cb.addEventListener('change', function () {
-                        // Si en el futuro necesitas guardar estado, puedes hacerlo aquí
+                        actualizarAnalisisEnFila(pos);
                     });
                 });
 
@@ -2951,6 +3580,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         const pos = this.dataset.pos;
                         const checks = container.querySelectorAll(`.analisis-check[data-pos="${pos}"][data-paquete="${paqueteId}"]`);
                         checks.forEach(c => c.checked = this.checked);
+                        actualizarAnalisisEnFila(pos);
                     });
                 });
 

@@ -1,9 +1,9 @@
 <?php
 // pdf_generador.php
 
-require_once __DIR__ . '/../../vendor/autoload.php';
+require_once  '../../vendor/autoload.php';
+include_once '../../includes/funciones.php';
 use Mpdf\Mpdf;
-
 function generarPDFReporte($codigoEnvio, $conexion)
 {
 
@@ -195,7 +195,7 @@ function generarPDFReporte($codigoEnvio, $conexion)
     $html .= '<tr>';
     $html .= '<td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Fecha de envío</strong></td>';
     $html .= '<td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>';
-    $html .= '<td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">' . htmlspecialchars($cab['fechaEnvio']) . '</td>';
+    $html .= '<td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">' . formatearFecha(htmlspecialchars($cab['fechaEnvio'])) . '</td>';
     $html .= '</tr>';
     $html .= '<tr>';
     $html .= '<td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Hora de envío</strong></td>';
@@ -246,7 +246,7 @@ function generarPDFReporte($codigoEnvio, $conexion)
     foreach ($detalles_agrupados as $d) {
         $html .= '<tr>';
         $html .= '<td style="border:1px solid #000; padding:3px; text-align:center;">' . htmlspecialchars($d['codRef']) . '</td>';
-        $html .= '<td style="border:1px solid #000; padding:3px; text-align:center;">' . htmlspecialchars($d['fecToma']) . '</td>';
+        $html .= '<td style="border:1px solid #000; padding:3px; text-align:center;">' . formatearFecha(($d['fecToma'])). '</td>';
         $html .= '<td style="border:1px solid #000; padding:3px; text-align:center;">' . htmlspecialchars($d['numMuestras']) . '</td>';
 
         foreach ($tipos_muestra as $tm) {

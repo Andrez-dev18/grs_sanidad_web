@@ -1,0 +1,4 @@
+# Bloquear acceso directo por URL a scripts SQL
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>

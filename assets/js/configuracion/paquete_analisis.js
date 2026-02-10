@@ -37,10 +37,7 @@ function renderizarCheckboxes(filtro = '') {
             <input type="checkbox" id="analisis_${a.codigo}" value="${a.codigo}" 
                 ${analisisSeleccionadosGlobal.includes(a.codigo) ? 'checked' : ''} 
                 class="mr-2 h-4 w-4 text-blue-600 rounded">
-            <label for="analisis_${a.codigo}" class="text-xs leading-tight">
-                <span class="font-mono bg-blue-50 px-1 py-0.5 rounded text-blue-700 text-[10px]">${a.codigo}</span>
-                <span class="ml-1">${a.nombre}</span>
-            </label>
+            <label for="analisis_${a.codigo}" class="text-xs leading-tight">${(a.nombre || '').replace(/</g, '&lt;').replace(/&/g, '&amp;')}</label>
         </div>
     `).join('');
 
@@ -141,12 +138,12 @@ function savePaqueteMuestra(event) {
 
     // Validaciones reforzadas
     if (!nombre) {
-        alert('⚠️ El nombre del paquete es obligatorio.');
+        if (typeof SwalAlert === 'function') SwalAlert('El nombre del paquete es obligatorio.', 'warning'); else alert('⚠️ El nombre del paquete es obligatorio.');
         document.getElementById('paqueteMuestraModalNombre').focus();
         return;
     }
     if (!tipoMuestra) {
-        alert('⚠️ Debe seleccionar un tipo de muestra.');
+        if (typeof SwalAlert === 'function') SwalAlert('Debe seleccionar un tipo de muestra.', 'warning'); else alert('⚠️ Debe seleccionar un tipo de muestra.');
         document.getElementById('paqueteMuestraModalTipoMuestra').focus();
         return;
     }
@@ -173,16 +170,15 @@ function savePaqueteMuestra(event) {
         btn.innerHTML = orig;
         btn.disabled = false;
         if (data.success) {
-            alert('✅ ' + data.message);
-            location.reload();
+            if (typeof SwalAlert === 'function') SwalAlert(data.message, 'success').then(function() { location.reload(); }); else { alert('✅ ' + data.message); location.reload(); }
         } else {
-            alert('❌ ' + data.message);
+            if (typeof SwalAlert === 'function') SwalAlert(data.message, 'error'); else alert('❌ ' + data.message);
         }
     })
     .catch(err => {
         btn.innerHTML = orig;
         btn.disabled = false;
-        alert('Error de red: ' + err.message);
+        if (typeof SwalAlert === 'function') SwalAlert('Error de red: ' + err.message, 'error'); else alert('Error de red: ' + err.message);
     });
 }
 
@@ -240,14 +236,14 @@ window.exportarPaquetesMuestra = function() {
     // 1. Obtener la tabla
     const table = document.getElementById('tablaPaquetes');
     if (!table) {
-        alert('⚠️ No se encontró la tabla de paquetes.');
+        if (typeof SwalAlert === 'function') SwalAlert('No se encontró la tabla de paquetes.', 'warning'); else alert('⚠️ No se encontró la tabla de paquetes.');
         return;
     }
 
     // 2. Obtener todas las filas del cuerpo
     const rows = table.querySelectorAll('tbody tr');
     if (rows.length === 0 || (rows.length === 1 && rows[0].querySelector('td')?.textContent?.includes('No hay paquetes'))) {
-        alert('⚠️ No hay datos para exportar.');
+        if (typeof SwalAlert === 'function') SwalAlert('No hay datos para exportar.', 'warning'); else alert('⚠️ No hay datos para exportar.');
         return;
     }
 
@@ -268,30 +264,12 @@ window.exportarPaquetesMuestra = function() {
         const cells = row.querySelectorAll('td');
         if (cells.length < 4) return;
 
-        // Celda 0: Código (ej: <span>COD01</span>)
-        const codigoSpan = cells[0].querySelector('span');
-        const codigo = codigoSpan ? codigoSpan.textContent.trim() : cells[0].textContent.trim();
-
-        // Celda 1: Nombre del paquete
+        const codigo = row.getAttribute('data-codigo') || '';
         const nombrePaquete = cells[1].textContent.trim();
+        const nombreTipo = cells[2].textContent.trim();
 
-        // Celda 2: Tipo de muestra (badge con código y nombre)
-        let codigoTipo = '';
-        let nombreTipo = '';
-        const badge = cells[2].querySelector('.tipo-muestra-badge');
-        if (badge) {
-            const codigoLinea = badge.querySelector('.tipo-codigo')?.textContent || '';
-            const nombreLinea = badge.querySelector('.tipo-nombre')?.textContent || '';
-            codigoTipo = codigoLinea.replace('Código:', '').trim();
-            nombreTipo = nombreLinea.replace('Nombre:', '').trim();
-        }
-
-        // Celda 3: Número de análisis (si la columna existe)
-        const numAnalisis = cells.length > 3 ? cells[3].textContent.trim() : '0';
-
-        // Validar que sea un registro válido
         if (nombrePaquete && nombrePaquete !== 'No hay paquetes de muestra registrados') {
-            csv += `"${codigo}","${nombrePaquete}","${codigoTipo}","${nombreTipo}",${numAnalisis}\n`;
+            csv += `"${codigo}","${nombrePaquete}","","${nombreTipo}",0\n`;
             count++;
         }
     });
@@ -301,7 +279,7 @@ window.exportarPaquetesMuestra = function() {
     csv += `Total de Paquetes:,${count},\n`;
 
     if (count === 0) {
-        alert('⚠️ No hay datos válidos para exportar.');
+        if (typeof SwalAlert === 'function') SwalAlert('No hay datos válidos para exportar.', 'warning'); else alert('⚠️ No hay datos válidos para exportar.');
         return;
     }
 
@@ -319,5 +297,5 @@ window.exportarPaquetesMuestra = function() {
     link.click();
     document.body.removeChild(link);
 
-    alert(`✅ Se exportaron ${count} paquete(s) correctamente.`);
+    if (typeof SwalAlert === 'function') SwalAlert('Se exportaron ' + count + ' paquete(s) correctamente.', 'success'); else alert('✅ Se exportaron ' + count + ' paquete(s) correctamente.');
 }

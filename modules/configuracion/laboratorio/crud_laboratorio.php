@@ -6,6 +6,7 @@ if (empty($_SESSION['active'])) {
 }
 
 include_once '../conexion_grs_joya/conexion.php';
+include_once '../../../includes/historial_acciones.php';
 $conexion = conectar_joya();
 if (!$conexion) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
@@ -24,6 +25,9 @@ if (($action === 'create' || $action === 'update') && empty($nombre)) {
 }
 
 mysqli_begin_transaction($conexion);
+
+// Variables para historial
+$nombre_previo = '';
 
 try {
     if ($action === 'create') {
@@ -64,6 +68,17 @@ try {
             throw new Exception('Código no válido.');
         }
 
+        // Obtener datos previos antes de eliminar
+        $check_prev = mysqli_prepare($conexion, "SELECT nombre FROM san_dim_laboratorio WHERE codigo = ?");
+        mysqli_stmt_bind_param($check_prev, "i", $codigo);
+        mysqli_stmt_execute($check_prev);
+        $result_prev = mysqli_stmt_get_result($check_prev);
+        $nombre_previo = '';
+        if ($row_prev = mysqli_fetch_assoc($result_prev)) {
+            $nombre_previo = $row_prev['nombre'];
+        }
+        mysqli_stmt_close($check_prev);
+
         $stmt = mysqli_prepare($conexion, "DELETE FROM san_dim_laboratorio WHERE codigo = ?");
         mysqli_stmt_bind_param($stmt, "i", $codigo);
 
@@ -75,7 +90,66 @@ try {
         throw new Exception('Error al ejecutar la operación en la base de datos.');
     }
 
+    // Obtener código generado o usado
+    $codigo_usado = null;
+    if ($action === 'create') {
+        $codigo_usado = mysqli_insert_id($conexion);
+    } elseif ($action === 'update' || $action === 'delete') {
+        $codigo_usado = $codigo;
+    }
+
     mysqli_commit($conexion);
+
+    // Registrar en historial de acciones
+    $usuario = $_SESSION['usuario'] ?? 'sistema';
+    $nom_usuario = $_SESSION['nombre'] ?? $usuario;
+    
+    try {
+        if ($action === 'create') {
+            $datos_nuevos = json_encode(['codigo' => $codigo_usado, 'nombre' => $nombre], JSON_UNESCAPED_UNICODE);
+            registrarAccion(
+                $usuario,
+                $nom_usuario,
+                'INSERT',
+                'san_dim_laboratorio',
+                $codigo_usado,
+                null,
+                $datos_nuevos,
+                'Se creo un nuevo laboratorio',
+                null
+            );
+        } elseif ($action === 'update') {
+            // Obtener datos previos (ya tenemos el nombre anterior si lo necesitamos)
+            $datos_previos = null; // Podríamos obtenerlo antes del update si es necesario
+            $datos_nuevos = json_encode(['codigo' => $codigo_usado, 'nombre' => $nombre], JSON_UNESCAPED_UNICODE);
+            registrarAccion(
+                $usuario,
+                $nom_usuario,
+                'UPDATE',
+                'san_dim_laboratorio',
+                $codigo_usado,
+                $datos_previos,
+                $datos_nuevos,
+                'Se actualizo un laboratorio',
+                null
+            );
+        } elseif ($action === 'delete') {
+            $datos_previos = json_encode(['codigo' => $codigo_usado, 'nombre' => $nombre_previo], JSON_UNESCAPED_UNICODE);
+            registrarAccion(
+                $usuario,
+                $nom_usuario,
+                'DELETE',
+                'san_dim_laboratorio',
+                $codigo_usado,
+                $datos_previos,
+                null,
+                'Se elimino un laboratorio',
+                null
+            );
+        }
+    } catch (Exception $e) {
+        error_log("Error al registrar historial de acciones: " . $e->getMessage());
+    }
 
     // Reemplazar match por switch (PHP 7.2 compatible)
     switch ($action) {

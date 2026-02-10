@@ -22,10 +22,11 @@ if (empty($_SESSION['active'])) {
     <title>Dashboard - Configuración de Correo</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../../css/output.css" rel="stylesheet">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
 
     <style>
         body {
@@ -75,7 +76,7 @@ if (empty($_SESSION['active'])) {
                             <input type="password" id="correoPass" required
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
                         </div>
-                        <div class="mt-6 flex justify-end">
+                        <div class="dashboard-actions mt-6 flex flex-wrap justify-end">
                             <button type="submit"
                                 class="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2 text-sm">
                                 💾 Guardar Mis Datos
@@ -88,7 +89,7 @@ if (empty($_SESSION['active'])) {
             <!-- VISTA: CONTACTOS -->
             <div id="viewContactos" class="space-y-6 hidden">
                 <!-- Acciones -->
-                <div class="flex justify-between items-center flex-wrap gap-3">
+                <div class="dashboard-actions flex justify-between items-center flex-wrap gap-3">
                     <h2 class="text-xl font-semibold text-gray-800">Mis contactos</h2>
                     <button type="button" onclick="openContactModal('create')"
                         class="px-6 py-2.5 bg-gradient-to-r from-green-500 to-green-700 text-white font-medium rounded-lg">
@@ -114,13 +115,17 @@ if (empty($_SESSION['active'])) {
             </div>
 
         </div>
-
-        <!-- FOOTER -->
-        <div class="text-center mt-12">
-            <p class="text-gray-500 text-sm">
-                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025
+        <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-3 z-10">
+            <p class="text-gray-500 text-sm text-center">
+                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
+                © <span id="currentYear"></span>
             </p>
-        </div>
+        </footer>
+
+        <script>
+            // Actualizar el año dinámicamente
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+        </script>
 
     </div>
 
@@ -147,7 +152,7 @@ if (empty($_SESSION['active'])) {
                         <input type="email" id="contactoEmail" required
                             class="w-full px-4 py-2.5 border border-gray-300 rounded-lg">
                     </div>
-                    <div class="flex gap-3 justify-end">
+                    <div class="dashboard-modal-actions flex flex-wrap gap-3 justify-end">
                         <button type="button" onclick="closeContactModal()"
                             class="px-4 py-2 bg-gray-200 rounded-lg">Cancelar</button>
                         <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-lg">💾 Guardar</button>
@@ -157,6 +162,8 @@ if (empty($_SESSION['active'])) {
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../../assets/js/sweetalert-helpers.js"></script>
     <script>
         // --- Navegación por tabs ---
         function showTab(tab) {
@@ -180,16 +187,18 @@ if (empty($_SESSION['active'])) {
             const pass = document.getElementById('correoPass').value;
 
             fetch('correo_config.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `correo=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`
-            })
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `correo=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`
+                })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        alert('✅ Configuración guardada correctamente');
+                        if (typeof SwalAlert === 'function') SwalAlert('Configuración guardada correctamente', 'success'); else alert('✅ Configuración guardada correctamente');
                     } else {
-                        alert('❌ Error: ' + (data.message || 'No se pudo guardar'));
+                        if (typeof SwalAlert === 'function') SwalAlert(data.message || 'No se pudo guardar', 'error'); else alert('❌ Error: ' + (data.message || 'No se pudo guardar'));
                     }
                 });
         }
@@ -209,8 +218,18 @@ if (empty($_SESSION['active'])) {
                             <td class="px-6 py-4 font-medium">${c.contacto}</td>
                             <td class="px-6 py-4">${c.correo}</td>
                             <td class="px-6 py-4 flex gap-2">
-                                <button onclick="openContactModal('edit', ${c.id}, '${c.contacto.replace(/'/g, "\\'")}', '${c.correo}')" class="text-blue-600 hover:text-blue-800">✏️</button>
-                                <button onclick="eliminarContacto(${c.id})" class="text-red-600 hover:text-red-800">🗑️</button>
+                                <button
+                                    title="Editar"
+                                    onclick="openContactModal('edit', ${c.id}, '${c.contacto.replace(/'/g, "\\'")}', '${c.correo}')"
+                                    class="text-blue-600 hover:text-blue-800 transition">
+                                    <i class="fa-solid fa-edit"></i>
+                                </button>
+                                <button
+                                    title="Eliminar"
+                                    onclick="eliminarContacto(${c.id})"
+                                    class="text-red-600 hover:text-red-800 transition">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
                             </td>
                         </tr>
                     `).join('');
@@ -223,7 +242,7 @@ if (empty($_SESSION['active'])) {
                 document.getElementById('contactoId').value = id;
                 document.getElementById('contactoNombre').value = nombre;
                 document.getElementById('contactoEmail').value = email;
-                document.getElementById('contactoModalTitle').textContent = '✏️ Editar contacto';
+                document.getElementById('contactoModalTitle').textContent = 'Editar contacto';
             } else {
                 document.getElementById('contactoId').value = '';
                 document.getElementById('contactoNombre').value = '';
@@ -245,10 +264,12 @@ if (empty($_SESSION['active'])) {
             const email = document.getElementById('contactoEmail').value;
 
             fetch('contactos_crud.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=${action}&id=${id}&contacto=${encodeURIComponent(nombre)}&correo=${encodeURIComponent(email)}`
-            })
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `action=${action}&id=${id}&contacto=${encodeURIComponent(nombre)}&correo=${encodeURIComponent(email)}`
+                })
                 .then(r => r.json())
                 .then(data => {
                     if (data.success) {
@@ -261,12 +282,16 @@ if (empty($_SESSION['active'])) {
         }
 
         function eliminarContacto(id) {
-            if (!confirm('¿Estás seguro de eliminar este contacto?')) return;
-            fetch('contactos_crud.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `action=delete&id=${id}`
-            }).then(() => cargarContactos());
+            var msg = '¿Estás seguro de eliminar este contacto?';
+            var prom = (typeof SwalConfirm === 'function') ? SwalConfirm(msg, 'Confirmar eliminación') : Promise.resolve(confirm(msg));
+            prom.then(function(ok) {
+                if (!ok) return;
+                fetch('contactos_crud.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'action=delete&id=' + id
+                }).then(function() { cargarContactos(); });
+            });
         }
 
         // Cargar configuración al inicio

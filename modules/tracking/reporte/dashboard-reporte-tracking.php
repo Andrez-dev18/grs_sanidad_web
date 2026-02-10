@@ -20,6 +20,24 @@ if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
 
+// === OBTENER ROL DEL USUARIO (ocultar Eliminar si es transportista) ===
+$codigoUsuario = $_SESSION['usuario'] ?? null;
+$isTransportista = false;
+if ($codigoUsuario) {
+    $sql = "SELECT rol_sanidad FROM usuario WHERE codigo = ? AND estado = 'A'";
+    $stmt = $conexion->prepare($sql);
+    if ($stmt) {
+        $stmt->bind_param("s", $codigoUsuario);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $rol = trim($row['rol_sanidad'] ?? 'user');
+            $isTransportista = ($rol === 'TRANSPORTE');
+        }
+        $stmt->close();
+    }
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -30,9 +48,12 @@ if (!$conexion) {
     <title>Tracking</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../../css/output.css" rel="stylesheet">
     <!-- DataTables -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
+    <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 
@@ -250,6 +271,14 @@ if (!$conexion) {
         .dataTables_wrapper {
             overflow-x: visible !important;
         }
+
+        /* Comentario: varias líneas */
+        #tabla td.comentario-cell {
+            white-space: normal !important;
+            word-wrap: break-word;
+            max-width: 280px;
+            vertical-align: top;
+        }
     </style>
 </head>
 
@@ -281,39 +310,51 @@ if (!$conexion) {
             <!-- CONTENIDO PLEGABLE -->
             <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
 
-                <!-- GRID DE FILTROS -->
+                <!-- Fila 1: Periodo -->
+                <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
+                    <div class="flex-shrink-0" style="width: 100px;">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-alt mr-1 text-blue-600"></i> Periodo</label>
+                        <select id="periodoTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
+                            <option value="TODOS" selected>Todos</option>
+                            <option value="POR_FECHA">Por fecha</option>
+                            <option value="ENTRE_FECHAS">Entre fechas</option>
+                            <option value="POR_MES">Por mes</option>
+                            <option value="ENTRE_MESES">Entre meses</option>
+                            <option value="ULTIMA_SEMANA">Última Semana</option>
+                        </select>
+                    </div>
+                    <div id="periodoPorFecha" class="flex-shrink-0 min-w-[130px] hidden">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-day mr-1 text-blue-600"></i>Fecha</label>
+                        <input id="fechaUnica" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                    <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
+                        <div class="min-w-[120px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Desde</label><input id="fechaInicio" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[120px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label><input id="fechaFin" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                    </div>
+                    <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[130px]">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
+                        <input id="mesUnico" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                    <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
+                        <div class="min-w-[120px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label><input id="mesInicio" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[120px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label><input id="mesFin" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                    </div>
+                </div>
+                <!-- Fila 2: Ubicación -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-
-                    <!-- Fecha inicio -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha inicio</label>
-                        <input type="date" id="filtroFechaInicio"
-                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                    </div>
-
-                    <!-- Fecha fin -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha fin</label>
-                        <input type="date" id="filtroFechaFin"
-                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                    </div>
-
-                    <!-- ubicacion -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Ubicacion</label>
-                        <select id="filtroUbicacion"
-                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-map-marker-alt mr-1 text-blue-600"></i>Ubicación</label>
+                        <select id="filtroUbicacion" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Seleccionar</option>
                             <option value="GRS">GRS</option>
                             <option value="Transporte">Transporte</option>
                             <option value="Laboratorio">Laboratorio</option>
                         </select>
                     </div>
-
                 </div>
 
                 <!-- ACCIONES -->
-                <div class="mt-6 flex flex-wrap justify-end gap-4">
+                <div class="dashboard-actions mt-6 flex flex-wrap justify-end gap-4">
 
                     <button type="button" id="btnAplicarFiltros"
                         class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
@@ -352,12 +393,21 @@ if (!$conexion) {
             </div>
             <!-- CONTENIDO DE TABS -->
             <div id="contenidoTodos" class="tab-content">
-                <div class="card-body p-0">
-                    <div class="table-wrapper overflow-x-auto">
-                        <table id="tabla" class="data-table w-full text-sm border-collapse">
-                            <thead class="bg-gray-100 sticky top-0 z-10">
+                <div id="tablaTrackingWrapper" class="card-body p-4" data-vista-tabla-iconos data-vista="">
+                    <div class="view-toggle-group flex items-center gap-2 mb-4">
+                        <button type="button" class="view-toggle-btn active" id="btnViewTablaTrack" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                        <button type="button" class="view-toggle-btn" id="btnViewIconosTrack" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                    </div>
+                    <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasTrack">
+                        <div id="cardsControlsTopTrack" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
+                        <div id="cardsContainerTrack" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
+                        <div id="cardsPaginationTrack" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
+                    </div>
+                    <div class="view-lista-wrap table-wrapper overflow-x-auto">
+                        <table id="tabla" class="data-table w-full text-sm border-collapse config-table">
+                            <thead>
                                 <tr>
-                                    <th class="px-4 py-3 text-left border-b">#</th>
+                                    <th class="px-4 py-3 text-left">N°</th>
                                     <th class="px-4 py-3 text-left border-b">Código Envío</th>
                                     <th class="px-4 py-3 text-left border-b">Acción</th>
                                     <th class="px-4 py-3 text-left border-b">Comentario</th>
@@ -368,84 +418,96 @@ if (!$conexion) {
                                     <th class="px-4 py-3 text-center border-b">Acciones</th>
                                 </tr>
                             </thead>
-                            <tbody>
-
-                            </tbody>
+                            <tbody></tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
             <div id="contenidoPendientes" class="tab-content hidden">
-                <!-- TABLA SIMPLE DE PENDIENTES -->
-                <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                    <div class="bg-gray-50 px-6 py-4 border-b">
-                        <h3 class="text-lg font-semibold text-gray-800">
-                            Envíos pendientes de acción
-                        </h3>
+                <?php
+                // Obtener envíos que tienen GRS
+                $enviosGRS = $conexion->query("SELECT DISTINCT codEnvio FROM san_dim_historial_resultados WHERE ubicacion = 'GRS'");
+                $pendientes = [];
+                while ($row = $enviosGRS->fetch_assoc()) {
+                    $cod = $row['codEnvio'];
+                    $tieneTransporte = $conexion->query("SELECT 1 FROM san_dim_historial_resultados WHERE codEnvio = '$cod' AND ubicacion = 'Transporte' LIMIT 1")->num_rows > 0;
+                    $tieneLaboratorio = $conexion->query("SELECT 1 FROM san_dim_historial_resultados WHERE codEnvio = '$cod' AND ubicacion = 'Laboratorio' LIMIT 1")->num_rows > 0;
+                    if (!$tieneTransporte || !$tieneLaboratorio) {
+                        $falta = [];
+                        if (!$tieneTransporte) $falta[] = 'Recoger por transportista';
+                        if (!$tieneLaboratorio) $falta[] = 'Recepción en laboratorio';
+                        $pendientes[] = [ 'codEnvio' => $cod, 'falta' => implode(' y ', $falta) ];
+                    }
+                }
+                ?>
+                <div id="pendientesWrapper" class="card-body p-4" data-vista-tabla-iconos data-vista="">
+                    <div class="view-toggle-group flex items-center gap-2 mb-4">
+                        <button type="button" class="view-toggle-btn active" id="btnViewListaPend" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                        <button type="button" class="view-toggle-btn" id="btnViewIconosPend" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th class="px-6 py-3 text-left font-medium text-gray-700">Código de envío</th>
-                                    <th class="px-6 py-3 text-center font-medium text-gray-700">Falta</th>
-                                    <th class="px-6 py-3 text-center font-medium text-gray-700">Acción</th>
-                                </tr>
-                            </thead>
-                            <?php
-                            // Obtener envíos que tienen GRS
-                            $enviosGRS = $conexion->query("SELECT DISTINCT codEnvio FROM san_dim_historial_resultados WHERE ubicacion = 'GRS'");
-
-                            $pendientes = [];
-
-                            while ($row = $enviosGRS->fetch_assoc()) {
-                                $cod = $row['codEnvio'];
-
-                                // Verificar si tiene Transporte y Laboratorio
-                                $tieneTransporte = $conexion->query("SELECT 1 FROM san_dim_historial_resultados WHERE codEnvio = '$cod' AND ubicacion = 'Transporte' LIMIT 1")->num_rows > 0;
-                                $tieneLaboratorio = $conexion->query("SELECT 1 FROM san_dim_historial_resultados WHERE codEnvio = '$cod' AND ubicacion = 'Laboratorio' LIMIT 1")->num_rows > 0;
-
-                                if (!$tieneTransporte || !$tieneLaboratorio) {
-                                    $falta = [];
-                                    if (!$tieneTransporte) $falta[] = 'Recoger por transportista';
-                                    if (!$tieneLaboratorio) $falta[] = 'Recepción en laboratorio';
-
-                                    $pendientes[] = [
-                                        'codEnvio' => $cod,
-                                        'falta' => implode(' y ', $falta)
-                                    ];
-                                }
-                            }
-                            ?>
-                            <tbody id="tablaPendientes">
-                                <?php if (empty($pendientes)): ?>
-                                    <tr>
-                                        <td colspan="3" class="px-6 py-12 text-center text-gray-500">
-                                            ¡Excelente! No hay envíos pendientes.
-                                        </td>
-                                    </tr>
-                                <?php else: ?>
-                                    <?php foreach ($pendientes as $p): ?>
-                                        <tr class="border-b hover:bg-gray-50">
-                                            <td class="px-6 py-4 font-medium text-blue-600">
-                                                <?php echo htmlspecialchars($p['codEnvio']); ?>
-                                            </td>
-                                            <td class="px-6 py-4 text-center text-orange-600 font-medium">
-                                                <?php echo $p['falta']; ?>
-                                            </td>
-                                            <td class="px-6 py-4 text-center">
-                                                <button onclick="cargarEscaneoConCodigo('<?php echo htmlspecialchars($p['codEnvio']); ?>')"
-                                                    class="inline-flex items-center px-5 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition shadow hover:shadow-md">
-                                                    <i class="fa-solid fa-qrcode mr-2"></i>
-                                                    Escanear / Recepcionar
+                    <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden hidden" id="viewTarjetasPend">
+                        <div id="cardsContainerPend" class="cards-grid cards-grid-iconos">
+                            <?php if (empty($pendientes)): ?>
+                                <p class="col-span-full text-center text-gray-500 py-8">¡Excelente! No hay envíos pendientes.</p>
+                            <?php else: ?>
+                                <?php foreach ($pendientes as $idx => $p): $n = $idx + 1; $codSafe = htmlspecialchars($p['codEnvio']); $faltaSafe = htmlspecialchars($p['falta']); $codAttr = htmlspecialchars($p['codEnvio'], ENT_QUOTES, 'UTF-8'); ?>
+                                    <div class="card-item">
+                                        <div class="card-numero-row">#<?php echo $n; ?></div>
+                                        <div class="card-contenido">
+                                            <div class="card-codigo"><?php echo $codSafe; ?></div>
+                                            <div class="card-campos">
+                                                <div class="card-row"><span class="label">Falta:</span> <span class="text-orange-600 font-medium"><?php echo $faltaSafe; ?></span></div>
+                                            </div>
+                                            <div class="card-acciones">
+                                                <button type="button" onclick="cargarEscaneoConCodigo('<?php echo $codAttr; ?>')"
+                                                    class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition">
+                                                    <i class="fa-solid fa-qrcode mr-2"></i> Escanear / Recepcionar
                                                 </button>
-                                            </td>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="view-lista-wrap table-wrapper overflow-x-auto">
+                        <div class="bg-gray-50 px-6 py-4 border-b">
+                            <h3 class="text-lg font-semibold text-gray-800">Envíos pendientes de acción</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table id="tablaPendientes" class="data-table w-full text-sm border-collapse config-table">
+                                <thead>
+                                    <tr>
+                                        <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
+                                        <th class="px-6 py-4 text-left text-sm font-semibold">Código de envío</th>
+                                        <th class="px-6 py-4 text-center text-sm font-semibold">Falta</th>
+                                        <th class="px-6 py-4 text-center text-sm font-semibold">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (empty($pendientes)): ?>
+                                        <tr>
+                                            <td colspan="4" class="px-6 py-12 text-center text-gray-500">¡Excelente! No hay envíos pendientes.</td>
                                         </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
+                                    <?php else: ?>
+                                        <?php foreach ($pendientes as $idx => $p): $n = $idx + 1; ?>
+                                            <tr>
+                                                <td class="px-6 py-4 text-gray-700"><?php echo $n; ?></td>
+                                                <td class="px-6 py-4 font-medium text-blue-600"><?php echo htmlspecialchars($p['codEnvio']); ?></td>
+                                                <td class="px-6 py-4 text-center text-orange-600 font-medium"><?php echo $p['falta']; ?></td>
+                                                <td class="px-6 py-4 text-center">
+                                                    <button onclick="cargarEscaneoConCodigo('<?php echo htmlspecialchars($p['codEnvio']); ?>')"
+                                                        class="inline-flex items-center px-5 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition shadow hover:shadow-md">
+                                                        <i class="fa-solid fa-qrcode mr-2"></i> Escanear / Recepcionar
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -591,7 +653,7 @@ if (!$conexion) {
                 </div>
 
                 <!-- Footer -->
-                <div class="px-6 py-5 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
+                <div class="dashboard-modal-actions px-6 py-5 border-t bg-gray-50 rounded-b-xl flex flex-wrap justify-end gap-3">
                     <button onclick="cerrarModalEditar()"
                         class="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-medium transition">
                         Cancelar
@@ -610,6 +672,7 @@ if (!$conexion) {
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
     <script>
         $(document).ready(function() {
@@ -620,23 +683,32 @@ if (!$conexion) {
                     url: 'tracking_historial.php', // archivo PHP que devuelve los datos
                     type: 'POST',
                     data: function(d) {
-                        // Enviar filtros adicionales
-                        d.fechaInicio = $('#filtroFechaInicio').val();
-                        d.fechaFin = $('#filtroFechaFin').val();
-                        d.ubicacion = $('#filtroUbicacion').val();
+                        d.periodoTipo = ($('#periodoTipo').val() || 'TODOS').trim();
+                        d.fechaUnica = ($('#fechaUnica').val() || '').trim();
+                        d.fechaInicio = ($('#fechaInicio').val() || '').trim();
+                        d.fechaFin = ($('#fechaFin').val() || '').trim();
+                        d.mesUnico = ($('#mesUnico').val() || '').trim();
+                        d.mesInicio = ($('#mesInicio').val() || '').trim();
+                        d.mesFin = ($('#mesFin').val() || '').trim();
+                        d.ubicacion = ($('#filtroUbicacion').val() || '').trim();
                     }
                 },
                 language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json'
+                    url: '../../../assets/i18n/es-ES.json'
                 },
                 pageLength: 10,
                 lengthMenu: [10, 25, 50, 100],
                 order: [
                     [7, 'desc']
-                ], // ordenar por fecha registro descendente
+                ], // ordenar por fecha registro descendente (columna 7 = fechaHoraRegistro)
                 columns: [{
-                        data: 'id',
-                        className: 'text-center'
+                        data: null,
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center',
+                        render: function(data, type, row, meta) {
+                            return type === 'display' ? (meta.settings._iDisplayStart + meta.row + 1) : '';
+                        }
                     },
                     {
                         data: 'codEnvio',
@@ -647,16 +719,22 @@ if (!$conexion) {
                     },
                     {
                         data: 'comentario',
+                        className: 'comentario-cell',
                         render: function(data) {
-                            return data ? data.substring(0, 100) + (data.length > 100 ? '...' : '') : '-';
+                            if (!data) return '<span class="text-gray-400">—</span>';
+                            var esc = (data + '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                            return '<div class="text-wrap whitespace-normal max-w-md">' + esc + '</div>';
                         }
                     },
                     {
                         data: 'evidencia',
                         orderable: false,
                         searchable: false,
+                        className: 'text-center',
                         render: function(data) {
-                            return data ? `<button onclick="abrirModalEvidencia('${data}')" class="text-blue-600 hover:underline">Ver evidencias</button>` : '-';
+                            if (!data) return '<span class="text-gray-400">—</span>';
+                            var esc = (data + '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                            return '<button type="button" onclick="abrirModalEvidencia(\'' + esc + '\')" class="text-blue-600 hover:text-blue-800 transition inline-flex items-center justify-center" title="Ver evidencias"><i class="fa-solid fa-eye text-lg"></i></button>';
                         }
                     },
                     {
@@ -681,19 +759,121 @@ if (!$conexion) {
                         orderable: false,
                         searchable: false,
                         render: function(data, type, row) {
+                            const esTransportista = <?php echo $isTransportista ? 'true' : 'false'; ?>;
+                            let botonEliminar = '';
+                            if (!esTransportista) {
+                                botonEliminar = `<button onclick="eliminarRegistro(${row.id})" class="text-red-600 hover:text-red-800" title="Eliminar">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>`;
+                            }
                             return `
-                    <div class="flex justify-center gap-3">
-                        <button onclick="editarRegistro(${row.id})" class="text-green-600 hover:text-green-800">
-                            <i class="fa-solid fa-edit"></i>
-                        </button>
-                        <button onclick="eliminarRegistro(${row.id})" class="text-red-600 hover:text-red-800">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                    `;
+                            <div class="flex justify-center gap-3">
+                                <button onclick="editarRegistro(${row.id})" class="text-green-600 hover:text-green-800" title="Editar">
+                                    <i class="fa-solid fa-edit"></i>
+                                </button>
+                                ${botonEliminar}
+                            </div>
+                            `;
                         }
                     }
-                ]
+                ],
+                drawCallback: function() {
+                    if (typeof renderizarTarjetasTracking === 'function') renderizarTarjetasTracking();
+                }
+            });
+
+            function aplicarVisibilidadVistaTrack(vista) {
+                var esTabla = (vista === 'tabla');
+                $('#tablaTrackingWrapper').attr('data-vista', vista);
+                if (esTabla) {
+                    $('#viewTarjetasTrack').addClass('hidden').css('display', 'none');
+                    $('#tablaTrackingWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
+                } else {
+                    $('#tablaTrackingWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
+                    $('#viewTarjetasTrack').removeClass('hidden').css('display', 'block');
+                    $('#cardsContainerTrack').attr('data-vista-cards', 'iconos');
+                }
+            }
+            function actualizarVistaInicialTrack() {
+                var w = $(window).width();
+                var w$ = $('#tablaTrackingWrapper');
+                if (!w$.attr('data-vista')) {
+                    var vistaInicial = w < 768 ? 'iconos' : 'tabla';
+                    w$.attr('data-vista', vistaInicial);
+                    $('#btnViewTablaTrack').toggleClass('active', vistaInicial === 'tabla');
+                    $('#btnViewIconosTrack').toggleClass('active', vistaInicial === 'iconos');
+                    $('#cardsContainerTrack').attr('data-vista-cards', 'iconos');
+                    aplicarVisibilidadVistaTrack(vistaInicial);
+                }
+            }
+            function renderizarTarjetasTracking() {
+                if (!tabla) return;
+                var api = tabla;
+                var cont = $('#cardsContainerTrack');
+                cont.empty();
+                var info = api.page.info();
+                var rowIndex = 0;
+                var esTransportista = <?php echo $isTransportista ? 'true' : 'false'; ?>;
+                api.rows({ page: 'current' }).every(function() {
+                    rowIndex++;
+                    var numero = info.start + rowIndex;
+                    var row = this.data();
+                    var fecha = row.fechaHoraRegistro ? (function(d) { var x = new Date(d); return x.toLocaleDateString('es-PE') + ' ' + x.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' }); })(row.fechaHoraRegistro) : '-';
+                    var comentario = (row.comentario || '').substring(0, 80) + ((row.comentario || '').length > 80 ? '...' : '');
+                    var btnEliminar = '';
+                    if (!esTransportista) {
+                        btnEliminar = '<button type="button" class="text-red-600 hover:text-red-800 transition" title="Eliminar" onclick="eliminarRegistro(' + row.id + ')"><i class="fa-solid fa-trash"></i></button>';
+                    }
+                    var card = '<div class="card-item">' +
+                        '<div class="card-numero-row">#' + numero + '</div>' +
+                        '<div class="card-contenido">' +
+                        '<div class="card-codigo">' + $('<div>').text(row.codEnvio || '').html() + '</div>' +
+                        '<div class="card-campos">' +
+                        '<div class="card-row"><span class="label">Acción:</span> ' + $('<div>').text(row.accion || '').html() + '</div>' +
+                        '<div class="card-row"><span class="label">Usuario:</span> ' + $('<div>').text(row.usuario || '').html() + '</div>' +
+                        '<div class="card-row"><span class="label">Ubicación:</span> ' + $('<div>').text(row.ubicacion || '').html() + '</div>' +
+                        '<div class="card-row"><span class="label">Fecha:</span> ' + $('<div>').text(fecha).html() + '</div>' +
+                        '<div class="card-row"><span class="label">Comentario:</span> ' + $('<div>').text(comentario).html() + '</div>' +
+                        '</div>' +
+                        '<div class="card-acciones">' +
+                        '<button type="button" class="text-green-600 hover:text-green-800 transition" title="Editar" onclick="editarRegistro(' + row.id + ')"><i class="fa-solid fa-edit"></i></button>' +
+                        btnEliminar +
+                        '</div></div></div>';
+                    cont.append(card);
+                });
+                var len = api.page.len();
+                var lengthOptions = [10, 25, 50, 100];
+                var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select px-2 py-1 border border-gray-300 rounded-md text-sm">' +
+                    lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
+                    '</select><span>registros</span></label>';
+                var navBtns = '<div class="flex items-center gap-3 flex-wrap">' +
+                    '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' +
+                    '<div class="flex gap-2">' +
+                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
+                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
+                    '</div></div>';
+                var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + navBtns + '</div>';
+                $('#cardsControlsTopTrack').html(controlsHtml);
+                $('#cardsPaginationTrack').html(controlsHtml);
+                $('#cardsControlsTopTrack .cards-length-select, #cardsPaginationTrack .cards-length-select').on('change', function() {
+                    var val = parseInt($(this).val(), 10);
+                    if (tabla) tabla.page.len(val).draw(false);
+                });
+            }
+            actualizarVistaInicialTrack();
+            $('#btnViewTablaTrack').on('click', function() {
+                aplicarVisibilidadVistaTrack('tabla');
+                $('#btnViewTablaTrack').addClass('active');
+                $('#btnViewIconosTrack').removeClass('active');
+            });
+            $('#btnViewIconosTrack').on('click', function() {
+                aplicarVisibilidadVistaTrack('iconos');
+                $('#btnViewIconosTrack').addClass('active');
+                $('#btnViewTablaTrack').removeClass('active');
+            });
+            $(window).on('resize', function() {
+                if (!$('#tablaTrackingWrapper').attr('data-vista')) return;
+                actualizarVistaInicialTrack();
             });
 
             // Aplicar filtros
@@ -703,11 +883,22 @@ if (!$conexion) {
 
             // Limpiar filtros
             $('#btnLimpiarFiltros').on('click', function() {
-                $('#filtroFechaInicio').val('');
-                $('#filtroFechaFin').val('');
+                $('#periodoTipo').val('TODOS');
+                $('#fechaUnica, #fechaInicio, #fechaFin, #mesUnico, #mesInicio, #mesFin').val('');
+                aplicarVisibilidadPeriodoTracking();
                 $('#filtroUbicacion').val('');
                 tabla.ajax.reload();
             });
+            function aplicarVisibilidadPeriodoTracking() {
+                var t = $('#periodoTipo').val() || '';
+                $('#periodoPorFecha, #periodoEntreFechas, #periodoPorMes, #periodoEntreMeses').addClass('hidden');
+                if (t === 'POR_FECHA') $('#periodoPorFecha').removeClass('hidden');
+                else if (t === 'ENTRE_FECHAS') $('#periodoEntreFechas').removeClass('hidden');
+                else if (t === 'POR_MES') $('#periodoPorMes').removeClass('hidden');
+                else if (t === 'ENTRE_MESES') $('#periodoEntreMeses').removeClass('hidden');
+            }
+            $('#periodoTipo').on('change', aplicarVisibilidadPeriodoTracking);
+            aplicarVisibilidadPeriodoTracking();
         });
     </script>
 
@@ -744,6 +935,39 @@ if (!$conexion) {
 
         document.getElementById('tabPendientes').addEventListener('click', function() {
             cambiarTab('tabPendientes', 'tabTodos', 'contenidoPendientes', 'contenidoTodos');
+            actualizarVistaInicialPendientes();
+        });
+
+        function aplicarVisibilidadPendientes(vista) {
+            var esLista = (vista === 'tabla' || vista === 'lista');
+            var wrapper = document.getElementById('pendientesWrapper');
+            if (!wrapper) return;
+            wrapper.setAttribute('data-vista', vista);
+            var viewTarjetas = document.getElementById('viewTarjetasPend');
+            var viewLista = wrapper.querySelector('.view-lista-wrap');
+            if (esLista) {
+                if (viewTarjetas) { viewTarjetas.classList.add('hidden'); viewTarjetas.style.display = 'none'; }
+                if (viewLista) { viewLista.classList.remove('hidden'); viewLista.style.display = 'block'; }
+            } else {
+                if (viewLista) { viewLista.classList.add('hidden'); viewLista.style.display = 'none'; }
+                if (viewTarjetas) { viewTarjetas.classList.remove('hidden'); viewTarjetas.style.display = 'block'; }
+            }
+            document.getElementById('btnViewListaPend').classList.toggle('active', esLista);
+            document.getElementById('btnViewIconosPend').classList.toggle('active', !esLista);
+        }
+        function actualizarVistaInicialPendientes() {
+            var wrapper = document.getElementById('pendientesWrapper');
+            if (!wrapper || wrapper.getAttribute('data-vista')) return;
+            var w = window.innerWidth;
+            var vistaInicial = w < 768 ? 'iconos' : 'tabla';
+            wrapper.setAttribute('data-vista', vistaInicial);
+            aplicarVisibilidadPendientes(vistaInicial);
+        }
+        document.getElementById('btnViewListaPend').addEventListener('click', function() {
+            aplicarVisibilidadPendientes('tabla');
+        });
+        document.getElementById('btnViewIconosPend').addEventListener('click', function() {
+            aplicarVisibilidadPendientes('iconos');
         });
 
         function cargarEscaneoConCodigo(codigoEnvio) {
@@ -756,11 +980,9 @@ if (!$conexion) {
         }
 
 
-        function eliminarRegistro(idRegistro) {
-            // Confirmación simple del navegador
-            if (!confirm('¿Estás seguro de que deseas eliminar este registro?\nEsta acción no se puede deshacer.')) {
-                return;
-            }
+        async function eliminarRegistro(idRegistro) {
+            var ok = await SwalConfirm('¿Estás seguro de que deseas eliminar este registro?\nEsta acción no se puede deshacer.', 'Confirmar eliminación');
+            if (!ok) return;
 
             // Mostrar loading en el botón (opcional, pero recomendado)
             const boton = event.target.closest('button');
@@ -896,10 +1118,18 @@ if (!$conexion) {
 
         function editarRegistro(id) {
             const tabla = $('#tabla').DataTable();
-            const data = tabla.row($(event.target).closest('tr')).data();
+            let data = null;
+            // Obtener datos por id desde la página actual (funciona tanto desde tabla como desde tarjetas)
+            tabla.rows({ page: 'current', search: 'applied' }).every(function() {
+                const d = this.data();
+                if (parseInt(d.id, 10) === parseInt(id, 10)) {
+                    data = d;
+                    return false; // break
+                }
+            });
 
             if (!data) {
-                mostrarAlerta('No se pudo obtener los datos del registro', true);
+                mostrarAlerta('No se pudo obtener los datos del registro. Intente de nuevo desde la lista.', true);
                 return;
             }
 

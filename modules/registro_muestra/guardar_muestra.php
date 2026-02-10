@@ -9,6 +9,7 @@ if (empty($_SESSION['active'])) {
 //ruta relativa a la conexion
 include_once '../../../conexion_grs_joya/conexion.php';
 include_once '../../includes/historial_resultados.php';
+include_once '../../includes/historial_acciones.php';
 $conexion = conectar_joya();
 if (!$conexion) {
     http_response_code(500);
@@ -20,12 +21,13 @@ if (!$conexion) {
 mysqli_autocommit($conexion, FALSE);
 
 try {
-
+    $id =  $_POST['id'] ?? '';
     $fechaEnvio = $_POST['fechaEnvio'] ?? '';
     $horaEnvio = $_POST['horaEnvio'] ?? '';
     $codLab = $_POST['laboratorio'] ?? '';
     $codEmpTrans = $_POST['empresa_transporte'] ?? '';
-    $usuarioRegistrador = $_POST['usuario_registrador'] ?? $_SESSION['usuario'] ?? 'Desconocido';
+    $usuarioRegistrador = $_POST['usuario_registrador'] ?? $_SESSION['usuario'];
+    $usuarioTransferencia = $_SESSION['usuario'];
     $usuarioResponsable = $_POST['usuario_responsable'] ?? '';
     $autorizadoPor = $_POST['autorizado_por'] ?? '';
 
@@ -80,10 +82,6 @@ try {
             throw new Exception("Error generando código: " . $e->getMessage());
         }
     }
-
-
-
-
     function generar_uuid_v4()
     {
         return sprintf(
@@ -105,8 +103,6 @@ try {
     }
 
     $codigoRecibido = $_POST['codigoEnvio'] ?? '';
-
-
 
     $codigoEnvio = generarCodigoEnvio($conexion);
 
@@ -136,14 +132,15 @@ try {
     $nomEmpTrans = $empTrans['nombre'];
 
     $queryCabecera = "INSERT INTO san_fact_solicitud_cab (
-            codEnvio, fecEnvio, horaEnvio, codLab, nomLab, codEmpTrans, nomEmpTrans, 
-            usuarioResponsable, autorizadoPor, fechaHoraRegistro
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+            id, codEnvio, fecEnvio, horaEnvio, codLab, nomLab, codEmpTrans, nomEmpTrans, 
+            usuarioResponsable, autorizadoPor, fechaHoraRegistro, usuarioRegistrador, usuarioTransferencia, fechaHoraTransferencia
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?,  ?, NOW())";
 
     $stmtCabecera = mysqli_prepare($conexion, $queryCabecera);
     mysqli_stmt_bind_param(
         $stmtCabecera,
-        "ssssssssss",
+        "ssssssssssss",
+        $id,
         $codigoEnvio,
         $fechaEnvio,
         $horaEnvio,
@@ -153,7 +150,9 @@ try {
         $nomEmpTrans,
        
         $usuarioResponsable,
-        $autorizadoPor
+        $autorizadoPor,
+        $usuarioRegistrador,
+        $usuarioTransferencia
     );
 
     if (!mysqli_stmt_execute($stmtCabecera)) {
@@ -249,20 +248,84 @@ try {
         throw new Exception('Error al registrar historial del envío');
     }
 
-    $historialOk = insertarHistorial(
-        $conexion,
-        $codigoEnvio,        // codEnvio
-        0,                   // posSolicitud (0 = acción general)
-        'ENVIO_EDITADO',  // acción
-        null,                // tipo_analisis
-        'Se edito el envio de muestra',
-        $usuarioRegistrador,
-        'GRS'
-    );
+    // Registrar en historial de acciones
+    $nom_usuario = $_SESSION['nombre'] ?? $usuarioRegistrador;
 
-    if (!$historialOk) {
-        throw new Exception('Error al registrar historial del envío');
+    // Registrar cabecera
+    $datosCabecera = json_encode([
+        'codEnvio' => $codigoEnvio,
+        'fechaEnvio' => $fechaEnvio,
+        'horaEnvio' => $horaEnvio,
+        'laboratorio' => $nomLab,
+        'empresaTransporte' => $nomEmpTrans,
+        'usuarioResponsable' => $usuarioResponsable,
+        'autorizadoPor' => $autorizadoPor,
+        'numeroSolicitudes' => $numeroSolicitudes
+    ], JSON_UNESCAPED_UNICODE);
+
+    try {
+        registrarAccion(
+            $usuarioRegistrador,
+            $nom_usuario,
+            'INSERT',
+            'san_fact_solicitud_cab',
+            $codigoEnvio,
+            null,
+            $datosCabecera,
+            'Se registro un nuevo envío de muestra',
+            'GRS'
+        );
+    } catch (Exception $e) {
+        error_log("Error al registrar historial de acciones (cabecera): " . $e->getMessage());
     }
+
+    // Registrar detalles - recorrer las solicitudes nuevamente
+    for ($i = 0; $i < $numeroSolicitudes; $i++) {
+        $fechaToma = $_POST["fechaToma_{$i}"] ?? '';
+        $codTipoMuestra = $_POST["tipoMuestra_{$i}"] ?? null;
+        $nomTipoMuestra = $_POST["tipoMuestraNombre_{$i}"] ?? null;
+        $codigoReferencia = $_POST["codigoReferenciaValue_{$i}"] ?? '';
+        $observacionesMuestra = $_POST["observaciones_{$i}"] ?? '';
+        $numeroMuestras = $_POST["numeroMuestras_{$i}"] ?? '';
+        $analisisArray = $_POST["analisis_completos_{$i}"] ?? [];
+        $analisisArray = json_decode($analisisArray, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            continue;
+        }
+
+        $posicionSolicitud = $i + 1;
+        
+        // Datos del detalle
+        $datosDetalle = json_encode([
+            'codEnvio' => $codigoEnvio,
+            'posSolicitud' => $posicionSolicitud,
+            'fechaToma' => $fechaToma,
+            'tipoMuestra' => $nomTipoMuestra,
+            'codigoReferencia' => $codigoReferencia,
+            'numeroMuestras' => $numeroMuestras,
+            'observaciones' => $observacionesMuestra,
+            'analisis' => $analisisArray
+        ], JSON_UNESCAPED_UNICODE);
+
+        try {
+            registrarAccion(
+                $usuarioRegistrador,
+                $nom_usuario,
+                'INSERT',
+                'san_fact_solicitud_det',
+                $codigoEnvio . '-' . $posicionSolicitud,
+                null,
+                $datosDetalle,
+                "Se registro detalle de solicitud #{$posicionSolicitud}",
+                'GRS'
+            );
+        } catch (Exception $e) {
+            error_log("Error al registrar historial de acciones (detalle {$posicionSolicitud}): " . $e->getMessage());
+        }
+    }
+
+    
     mysqli_commit($conexion);
     // mysqli_stmt_close($stmtDetalle);
 

@@ -22,10 +22,12 @@ if (empty($_SESSION['active'])) {
     <title>Dashboard - Reportes</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../css/output.css" rel="stylesheet">
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../assets/js/sweetalert-helpers.js"></script>
 
     <style>
         body {
@@ -164,11 +166,18 @@ if (empty($_SESSION['active'])) {
                 </div>
                 <div id="top-analisis-resumen" class="mt-3 text-sm text-gray-600 text-center"></div>
             </div>
+            <!-- Footer dinámico -->
             <div class="text-center mt-12">
                 <p class="text-gray-500 text-sm">
-                    Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025
+                    Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
+                    © <span id="currentYear"></span>
                 </p>
             </div>
+
+            <script>
+                // Actualizar el año dinámicamente
+                document.getElementById('currentYear').textContent = new Date().getFullYear();
+            </script>
         </div>
 
         <script>
@@ -315,7 +324,7 @@ if (empty($_SESSION['active'])) {
 
                 } catch (err) {
                     console.error('Error al cargar datos:', err);
-                    alert('⚠️ No se pudieron cargar los datos del dashboard.');
+                    SwalAlert('No se pudieron cargar los datos del dashboard.', 'warning');
                 }
             }
 

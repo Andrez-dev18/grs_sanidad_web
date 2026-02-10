@@ -30,6 +30,7 @@ if (!$conexion) {
 // --- Consultas ---
 $laboratorios = mysqli_query($conexion, "SELECT codigo, nombre FROM san_dim_laboratorio ORDER BY nombre DESC");
 $emp_trans = mysqli_query($conexion, "SELECT codigo, nombre FROM san_dim_emptrans ORDER BY nombre DESC");
+$usuarios = mysqli_query($conexion, "SELECT codigo, nombre, libtri FROM usuario WHERE estado = 'A'");
 $muestras = mysqli_query($conexion, "SELECT * FROM san_dim_tipo_muestra ORDER BY codigo ASC");
 $paquetes = mysqli_query($conexion, "SELECT * FROM san_dim_paquete ORDER BY codigo DESC");
 $analisis = mysqli_query($conexion, "SELECT * FROM san_dim_analisis ORDER BY codigo DESC");
@@ -51,6 +52,7 @@ function resultToArray($result)
 $data = [
     'laboratorios' => resultToArray($laboratorios),
     'emp_trans' => resultToArray($emp_trans),
+    'usuarios' => resultToArray($usuarios),
     'muestras' => resultToArray($muestras),
     'paquetes' => resultToArray($paquetes),
     'analisis' => resultToArray($analisis),

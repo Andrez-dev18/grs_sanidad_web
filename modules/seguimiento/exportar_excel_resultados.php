@@ -1,6 +1,6 @@
 <?php
-require 'vendor/autoload.php';
-include_once '../../../conexion_grs_joya/conexion.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
+include_once __DIR__ . '/../../../conexion_grs_joya/conexion.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;

@@ -29,7 +29,7 @@ if (!$conexion) {
     <title>Dashboard - base</title>
 
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../../../css/output.css" rel="stylesheet">
 
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
@@ -269,12 +269,18 @@ if (!$conexion) {
         </div>
 
 
-        <!-- Footer -->
+        <!-- Footer dinámico -->
         <div class="text-center mt-12 mb-5">
             <p class="text-gray-500 text-sm">
-                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025
+                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
+                © <span id="currentYear"></span>
             </p>
         </div>
+
+        <script>
+            // Actualizar el año dinámicamente
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+        </script>
 
     </div>
 

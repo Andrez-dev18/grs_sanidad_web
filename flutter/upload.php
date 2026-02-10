@@ -1,17 +1,22 @@
 <?php
+// --- Encabezados CORS ---
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Authorization, Content-Type");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Authorization, Content-Type, X-Requested-With");
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
-
 header('Content-Type: application/json; charset=utf-8');
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 date_default_timezone_set('America/Lima');
 
 // --- Autenticación ---
 include_once '../../conexion_grs_joya/conexion.php';
+include_once '../includes/historial_resultados.php';
+include_once '../includes/historial_acciones.php';
 /*$authHeader = '';
 
 if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
@@ -32,18 +37,26 @@ if ($authHeader !== "Bearer " . API_TOKEN) {
     exit;
 }
 */
+// --- Conexión ---
 $conexion = conectar_joya();
 if (!$conexion) {
-    echo json_encode(["success" => false, "message" => "Error conexión"]);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Error de conexión a base de datos'
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// --- Leer JSON ---
-$json = file_get_contents('php://input');
-$data = json_decode($json, true);
+$input = file_get_contents('php://input');
+$data = json_decode($input, true);
+
+if (json_last_error() !== JSON_ERROR_NONE) {
+    echo json_encode(['success' => false, 'message' => 'JSON inválido'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 if (!$data || !isset($data['envios_muestras']) || !is_array($data['envios_muestras'])) {
-    echo json_encode(["success" => false, "message" => "Formato inválido"]);
+    echo json_encode(["success" => false, "message" => "Formato inválido: se requiere 'envios_muestras' como array"], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -89,7 +102,8 @@ function procesarEnviosMuestras($conexion, $items)
         try {
             // === Validar datos mínimos ===
             if (empty($item['fechaEnvio']) || empty($item['horaEnvio']) || empty($item['laboratorioCodigo']) || empty($item['empresaTransporteCodigo']) || ($item['numeroSolicitudes'] ?? 0) <= 0) {
-                continue; // O registrar error
+                error_log("Item con ID {$id} rechazado: Faltan datos requeridos");
+                continue;
             }
 
             // === Generar código de envío único ===
@@ -145,12 +159,59 @@ function procesarEnviosMuestras($conexion, $items)
                 'codigoEnvio' => $codigoEnvio
             ];
 
-            // === Insertar detalles ===
+            // === Registrar en historial de resultados ===
+            $historialOk = insertarHistorial(
+                $conexion,
+                $codigoEnvio,
+                0,                   // posSolicitud (0 = acción general)
+                'ENVIO_REGISTRADO',  // acción
+                null,                // tipo_analisis
+                'Se registro el envio de muestra desde app móvil (upload)',
+                $usuarioRegistrador,
+                'Flutter'
+            );
+
+            if (!$historialOk) {
+                error_log("Error al registrar historial de resultados para codEnvio: {$codigoEnvio}");
+                // No lanzamos excepción porque procesamos múltiples items, pero registramos el error
+            }
+
+            // === Registrar en historial de acciones (cabecera) ===
+            $nom_usuario = $item['usuarioNombre'] ?? $usuarioRegistrador ?? 'Usuario Móvil';
             $numeroSolicitudes = (int) $item['numeroSolicitudes'];
+            
+            $datosCabecera = json_encode([
+                'codEnvio' => $codigoEnvio,
+                'fechaEnvio' => $fechaEnvio,
+                'horaEnvio' => $horaEnvio,
+                'laboratorio' => $nomLab,
+                'empresaTransporte' => $nomEmpTrans,
+                'usuarioResponsable' => $usuarioResponsable,
+                'autorizadoPor' => $autorizadoPor,
+                'numeroSolicitudes' => $numeroSolicitudes,
+                'fechaHoraRegistro' => $fechaHoraRegistro,
+                'usuarioTransferencia' => $usuarioTransferencia,
+                'fechaHoraTransferencia' => $fechaHoraTransferencia
+            ], JSON_UNESCAPED_UNICODE);
+
+            try {
+                registrarAccion(
+                    $usuarioRegistrador,
+                    $nom_usuario,
+                    'INSERT',
+                    'san_fact_solicitud_cab',
+                    $codigoEnvio,
+                    null,
+                    $datosCabecera,
+                    'Se registro un nuevo envío de muestra desde app móvil (upload)',
+                    'Flutter'
+                );
+            } catch (Exception $e) {
+                error_log("Error al registrar historial de acciones (cabecera): " . $e->getMessage());
+            }
+
+            // === Insertar detalles ===
             for ($i = 0; $i < $numeroSolicitudes; $i++) {
-
-
-
                 $fechaToma = $item["fechaToma_{$i}"] ?? '';
                 $codTipoMuestra = $item["tipoMuestraCodigo_{$i}"] ?? null;
                 $nomTipoMuestra = $item["tipoMuestraNombre_{$i}"] ?? null;
@@ -159,7 +220,8 @@ function procesarEnviosMuestras($conexion, $items)
                 $numeroMuestras = $item["numeroMuestras_{$i}"] ?? '';
                 $analisisArray = $item["analisisCompletos_{$i}"] ?? [];
 
-                if (empty($codTipoMuestra) || empty($analisisArray)) {
+                if (empty($codTipoMuestra) || empty($analisisArray) || empty($fechaToma)) {
+                    error_log("Solicitud #{$i} del item {$id} rechazada: Faltan datos requeridos (tipoMuestra, analisis o fechaToma)");
                     continue;
                 }
 
@@ -227,12 +289,43 @@ function procesarEnviosMuestras($conexion, $items)
                 }
 
                 mysqli_stmt_close($stmtDet);
+
+                // === Registrar en historial de acciones (detalle) ===
+                if (!empty($analisisArray)) {
+                    $datosDetalle = json_encode([
+                        'codEnvio' => $codigoEnvio,
+                        'posSolicitud' => $posSolicitud,
+                        'fechaToma' => $fechaToma,
+                        'tipoMuestra' => $nomTipoMuestra,
+                        'codigoReferencia' => $codigoReferencia,
+                        'numeroMuestras' => $numeroMuestras,
+                        'observaciones' => $observaciones,
+                        'analisis' => $analisisArray
+                    ], JSON_UNESCAPED_UNICODE);
+
+                    try {
+                        registrarAccion(
+                            $usuarioRegistrador,
+                            $nom_usuario,
+                            'INSERT',
+                            'san_fact_solicitud_det',
+                            $codigoEnvio . '-' . $posSolicitud,
+                            null,
+                            $datosDetalle,
+                            "Se registro detalle de solicitud #{$posSolicitud} desde app móvil (upload)",
+                            'Flutter'
+                        );
+                    } catch (Exception $e) {
+                        error_log("Error al registrar historial de acciones (detalle {$posSolicitud}): " . $e->getMessage());
+                    }
+                }
             }
 
             $insertados++;
 
         } catch (Exception $e) {
             // Si hay error, hacer rollback y continuar con el siguiente envío
+            error_log("Error procesando item con ID {$id}: " . $e->getMessage());
             mysqli_rollback($conexion);
             mysqli_autocommit($conexion, FALSE);
             continue;
@@ -258,25 +351,53 @@ function procesarEnviosMuestras($conexion, $items)
 
 function generarCodigoEnvioSanidad($conexion)
 {
+    // Bloqueamos la tabla para evitar duplicados
     mysqli_query($conexion, "LOCK TABLES san_fact_solicitud_cab WRITE");
-    $anio_actual = date('y');
-    $sql = "SELECT codEnvio FROM san_fact_solicitud_cab WHERE codEnvio LIKE 'SAN-0{$anio_actual}%' ORDER BY codEnvio DESC LIMIT 1";
-    $res = mysqli_query($conexion, $sql);
-    if ($res && mysqli_num_rows($res) > 0) {
-        $row = mysqli_fetch_assoc($res);
-        $ultimo = $row['codEnvio'];
-        $numero = intval(substr($ultimo, -4));
-        $nuevo_numero = $numero + 1;
-    } else {
-        $nuevo_numero = 1;
+
+    try {
+        $anio_actual = date('y');
+
+        // Obtener el último código generado
+        $q = "
+            SELECT codEnvio
+            FROM san_fact_solicitud_cab
+            WHERE codEnvio LIKE 'SAN-0{$anio_actual}%'
+            ORDER BY codEnvio DESC
+            LIMIT 1
+        ";
+
+        $res = mysqli_query($conexion, $q);
+
+        if ($res && mysqli_num_rows($res) > 0) {
+            $row = mysqli_fetch_assoc($res);
+            $ultimo = $row['codEnvio'];   // Ej. SAN-0250002
+
+            // Extraemos el número final
+            $numero = intval(substr($ultimo, -4)); // 0002 → 2
+            $nuevo_numero = $numero + 1;
+        } else {
+            // Si no hay registros este año, empezamos desde 1
+            $nuevo_numero = 1;
+        }
+
+        // Construimos el nuevo código
+        $codigo = "SAN-0{$anio_actual}" . str_pad($nuevo_numero, 4, '0', STR_PAD_LEFT);
+
+        //liberar tabla
+        mysqli_query($conexion, "UNLOCK TABLES");
+
+        return $codigo;
+    } catch (Exception $e) {
+        mysqli_query($conexion, "UNLOCK TABLES");
+        throw new Exception("Error generando código: " . $e->getMessage());
     }
-    mysqli_query($conexion, "UNLOCK TABLES");
-    return "SAN-0{$anio_actual}" . str_pad($nuevo_numero, 4, "0", STR_PAD_LEFT);
 }
 
 echo json_encode([
     "success" => true,
     "message" => "Registros procesados",
-    "detalle" => ["envios_muestras" => $respuesta],
-
+    "detalle" => ["envios_muestras" => $respuesta]
 ], JSON_UNESCAPED_UNICODE);
+
+mysqli_close($conexion);
+?>

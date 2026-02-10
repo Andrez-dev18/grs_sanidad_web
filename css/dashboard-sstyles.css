@@ -1,26 +1,178 @@
 /* ============================================
    DASHBOARD STYLE - Sistema de Gestión
-   Basado en el diseño de Precio Vivo
+   Incluye estilos responsive (tablas, sidebar, modales)
    ============================================ */
 
-/* === TABLA CON SCROLL === */
+/* ========== RESPONSIVE - Contenedores ========== */
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+body:not(.single-scroll) {
+    overflow-x: hidden;
+}
+
+.container,
+.container-fluid {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    box-sizing: border-box;
+}
+
+@media (max-width: 1023px) {
+    .container,
+    .container-fluid {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+}
+
+section,
+header {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ========== TABLAS RESPONSIVAS ========== */
+.table-responsive,
+.table-wrapper,
+.overflow-x-auto {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive::-webkit-scrollbar,
+.table-wrapper::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar {
+    height: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-track,
+.table-wrapper::-webkit-scrollbar-track,
+.overflow-x-auto::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb,
+.table-wrapper::-webkit-scrollbar-thumb,
+.overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 10px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover,
+.table-wrapper::-webkit-scrollbar-thumb:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+#dataTable,
+table.dataTable {
+    width: 100% !important;
+    min-width: 600px;
+}
+
+.dataTables_wrapper {
+    width: 100% !important;
+    overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+    .table-responsive,
+    .table-wrapper {
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+}
+
+/* Modal responsive */
+.modal-dialog,
+.modal .bg-white,
+.modal > div > div {
+    max-width: 95vw !important;
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .modal-dialog,
+    .modal .bg-white,
+    .modal > div > div {
+        max-width: 90vw !important;
+    }
+}
+
+@media (min-width: 1280px) {
+    .modal-dialog.modal-lg,
+    .modal .bg-white,
+    .modal > div > div {
+        max-width: 1152px !important;
+    }
+}
+
+form,
+.grid {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+    .flex.flex-wrap.gap-3,
+    .d-flex.flex-wrap.gap-2,
+    .d-flex.gap-2 {
+        flex-direction: column;
+        align-items: stretch !important;
+    }
+    .flex.flex-wrap.gap-3 button,
+    .d-flex.gap-2 button,
+    .d-flex.gap-2 .btn {
+        width: 100%;
+    }
+}
+
+#dashboardFrame {
+    width: 100%;
+    min-height: calc(100vh - 80px);
+    border: none;
+}
+
+@media (max-width: 1023px) {
+    #dashboardFrame {
+        min-height: calc(100vh - 70px);
+    }
+}
+
+/* === TABLA CON SCROLL - Responsive === */
 .table-scroll {
-    max-height: calc(100vh - 450px);
-    min-height: 650px;
-    overflow-y: auto;
     border: 1px solid #e5e7eb;
     border-radius: 0.5rem;
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: calc(100vh - 400px);
 }
 
 .table-scroll table {
     border-collapse: separate;
     border-spacing: 0;
+    width: 100%;
 }
 
 .table-scroll th {
     position: sticky;
     top: 0;
     z-index: 10;
+    background: linear-gradient(to right, #2563eb, #1d4ed8);
+    color: white;
 }
 
 .table-scroll th,
@@ -31,6 +183,52 @@
 
 .table-scroll tbody tr:hover {
     background-color: #f8fafc;
+}
+
+/* DataTables wrapper - scroll horizontal */
+.dataTables_wrapper,
+.table-scroll,
+.overflow-x-auto:has(#dataTable),
+.overflow-x-auto:has(table.dataTable) {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    max-width: 100%;
+}
+
+/* Data-table genérica */
+.data-table {
+    width: 100% !important;
+    border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.data-table th {
+    background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
+    color: #fff !important;
+    font-weight: 600;
+}
+
+.data-table tbody tr:hover {
+    background-color: #eff6ff !important;
+}
+
+@media (max-width: 768px) {
+    .table-scroll {
+        max-height: calc(100vh - 350px);
+    }
+    
+    .table-scroll th,
+    .table-scroll td {
+        font-size: 0.75rem;
+        padding: 0.5rem;
+    }
 }
 
 /* === SOMBRAS Y EFECTOS === */

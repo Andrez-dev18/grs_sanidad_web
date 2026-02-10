@@ -34,6 +34,7 @@ if (!$conexion) {
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
     <!-- Estilos para el control de navegacion dinamico -->
     <link rel="stylesheet" href="../../css/style-NavigationControls.css">
+    <link rel="stylesheet" href="../../css/dashboard-responsive.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js "></script>
     <style>
         body {
@@ -114,6 +115,13 @@ if (!$conexion) {
         .table-vertical th {
             background-color: #6c5b7b;
             color: white;
+        }
+
+        .plan-enlace-info:not(:empty) {
+            padding: 0.25rem 0.5rem;
+            border: 1px solid #d1e7dd;
+            border-radius: 0.375rem;
+            background: #f0f9f4;
         }
 
         .table-vertical td {
@@ -365,7 +373,7 @@ if (!$conexion) {
                     </div>
 
                     <!-- BOTÓN GUARDAR A LA DERECHA -->
-                    <div class="mt-6 flex justify-end">
+                    <div class="dashboard-actions mt-6 flex flex-wrap justify-end">
                         <button type="submit"
                             class="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition duration-200 inline-flex items-center gap-2 text-sm">
                             Guardar Registro
@@ -398,7 +406,7 @@ if (!$conexion) {
                             </select>
                         </div>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer dashboard-modal-actions">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                         <button type="button" class="btn btn-primary" id="applyConfig">Aplicar</button>
                     </div>
@@ -423,7 +431,7 @@ if (!$conexion) {
                             </select>
                         </div>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer dashboard-modal-actions">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="button" class="btn btn-primary" id="confirmCopyAnalisis">Copiar</button>
                     </div>
@@ -442,7 +450,7 @@ if (!$conexion) {
                         <!-- Aquí va el contenido generado -->
                         <div id="summaryContent"></div>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer dashboard-modal-actions">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="button" class="btn btn-primary" id="btnConfirmSubmit">
                             Confirmar y Guardar
@@ -451,12 +459,18 @@ if (!$conexion) {
                 </div>
             </div>
         </div>
-        <!-- Footer -->
+        <!-- Footer dinámico -->
         <div class="text-center mt-12">
             <p class="text-gray-500 text-sm">
-                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025
+                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
+                © <span id="currentYear"></span>
             </p>
         </div>
+
+        <script>
+            // Actualizar el año dinámicamente
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+        </script>
     </div>
     <!--<!-- Modal de análisis actualizado -->
     <div class="modal fade" id="analisisModal" tabindex="-1" aria-labelledby="analisisModalLabel" aria-hidden="true">
@@ -471,7 +485,7 @@ if (!$conexion) {
                 <div class="modal-body py-3" id="analisisModalBody" style="max-height: 60vh; overflow-y: auto;">
                     <p>Cargando análisis...</p>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer dashboard-modal-actions">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-primary" id="analisisModalSaveBtn">Guardar Selección</button>
                 </div>
@@ -480,6 +494,8 @@ if (!$conexion) {
     </div>
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../assets/js/sweetalert-helpers.js"></script>
     <script>
         let currentFormData = null;
         // === Variables globales ===
@@ -519,16 +535,19 @@ if (!$conexion) {
                     // Actualizar UI
                     document.getElementById(`analisisResumen_${idx}`).innerHTML = '';//'Ninguno';
                     updateCodigoReferencia(idx);
+                } else if (e.target && e.target.matches('input[id^="fechaToma_"]')) {
+                    const idx = parseInt(e.target.dataset.sampleIndex);
                 }
             });
             document.getElementById('samplesTableBody').addEventListener('click', function (e) {
-                const index = e.target.closest('[data-index]')?.dataset.index;
+                const btn = e.target.closest('[data-index]');
+                const index = btn?.dataset?.index;
                 if (index === undefined) return;
                 const i = parseInt(index, 10);
 
-                if (e.target.classList.contains('btn-seleccionar')) {
+                if (e.target.closest('.btn-seleccionar')) {
                     openAnalisisModal(i);
-                } else if (e.target.classList.contains('btn-copiar')) {
+                } else if (e.target.closest('.btn-copiar')) {
                     copyAnalisisTo(i);
                 }
             });
@@ -570,9 +589,7 @@ if (!$conexion) {
                 document.getElementById("codigoEnvio").value = data.codigo_envio;
             } catch (error) {
                 console.error("Error al reservar código:", error);
-                alert(
-                    "⚠️ No se pudo generar el código de envío. Intente recargar la página."
-                );
+                if (typeof SwalAlert === 'function') SwalAlert('No se pudo generar el código de envío. Intente recargar la página.', 'warning'); else alert("⚠️ No se pudo generar el código de envío. Intente recargar la página.");
             }
         }
 
@@ -642,7 +659,7 @@ if (!$conexion) {
                     })
                     .catch(error => {
                         console.error("Error al cargar config:", error);
-                        alert("⚠️ No se pudo cargar la configuración del tipo de muestra.");
+                        if (typeof SwalAlert === 'function') SwalAlert('No se pudo cargar la configuración del tipo de muestra.', 'warning'); else alert("⚠️ No se pudo cargar la configuración del tipo de muestra.");
                         reject(error);
                     });
             });
@@ -705,7 +722,7 @@ if (!$conexion) {
 
             // 3. Fecha de Toma
             const ftCell = document.createElement('td');
-            ftCell.innerHTML = `<input type="date" class="form-control" id="fechaToma_${i}" value="${dateStr}">`;
+            ftCell.innerHTML = `<input type="date" class="form-control" id="fechaToma_${i}" data-sample-index="${i}" value="${dateStr}">`;
             row.appendChild(ftCell);
 
             // 4. Número de Muestras
@@ -717,7 +734,7 @@ if (!$conexion) {
             const anCell = document.createElement('td');
             anCell.innerHTML = `
             <div class="d-flex flex-column">
-                <div class="d-flex gap-1 mb-1">
+                <div class="d-flex gap-1 mb-1 align-items-center">
                     <button type="button" class="btn btn-sm btn-outline-primary btn-seleccionar" data-index="${i}">Seleccionar</button>
                     <button type="button" class="btn btn-sm btn-outline-secondary btn-copiar" data-index="${i}">Copiar</button>
                 </div>
@@ -732,208 +749,7 @@ if (!$conexion) {
 
             return row;
         }
-        function generateTableRows(count) {
-            // A. Guardar datos actuales en caché
-            for (let i = 0; i < totalSamples; i++) {
-                const row = document.getElementById(`sampleRow_${i}`);
-                if (row) {
-                    sampleDataCache[i] = {
-                        tipoMuestra: document.getElementById(`tipoMuestra_${i}`)?.value || '',
-                        codigoReferencia: document.getElementById(`codigoReferenciaValue_${i}`)?.value || '',
-                        fechaToma: document.getElementById(`fechaToma_${i}`)?.value || dateStr,
-                        numeroMuestras: document.getElementById(`numeroMuestras_${i}`)?.value || '1',
-                        analisisSeleccionados: sampleDataCache[i]?.analisisSeleccionados || [],
-                        observaciones: document.getElementById(`observaciones_${i}`)?.value || ''
-                    };
-                }
-            }
 
-            // B. Limpiar tabla
-            tableBody.innerHTML = '';
-            totalSamples = count;
-
-            // C. Generar filas
-            for (let i = 0; i < count; i++) {
-                const row = document.createElement('tr');
-                row.id = `sampleRow_${i}`;
-
-                // 1. Tipo de Muestra - CLON DEL TEMPLATE
-                const tmCell = document.createElement('td');
-                const tmSelect = document.getElementById('templateSelect').cloneNode(true);
-                tmSelect.id = `tipoMuestra_${i}`;
-                tmSelect.name = `tipoMuestra_${i}`;
-                tmSelect.dataset.sampleIndex = i;
-                tmSelect.classList.remove('d-none');        // ← IMPORTANTE
-                tmSelect.innerHTML = optionsMuestraHTML;    // ← Opciones precargadas
-                tmCell.appendChild(tmSelect);
-                row.appendChild(tmCell);
-
-                // 2. Celda Código Referencia
-                const crCell = document.createElement('td');
-                crCell.innerHTML = `<div id="codigoReferenciaContainer_${i}"></div>`;
-                row.appendChild(crCell);
-
-                // 3. Celda Fecha
-                const ftCell = document.createElement('td');
-                ftCell.innerHTML = `<input type="date" class="form-control" id="fechaToma_${i}" value="${dateStr}">`;
-                row.appendChild(ftCell);
-
-                // 4. Celda Número Muestras
-                const nmCell = document.createElement('td');
-                nmCell.innerHTML = `<input type="number" class="form-control" id="numeroMuestras_${i}" min="1" max="20" value="1">`;
-                row.appendChild(nmCell);
-
-                // 5. Celda Análisis
-                const anCell = document.createElement('td');
-                anCell.innerHTML = `
-        <div class="d-flex flex-column">
-            <div class="d-flex gap-1 mb-1">
-                <button type="button" class="btn btn-sm btn-outline-primary btn-seleccionar" data-index="${i}">Seleccionar</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary btn-copiar" data-index="${i}">Copiar</button>
-            </div>
-            <div id="analisisResumen_${i}" style="font-size: 0.85em;">Ninguno</div>
-        </div>
-    `;
-                row.appendChild(anCell);
-
-                // 6. Celda Observaciones
-                const obsCell = document.createElement('td');
-                obsCell.innerHTML = `<textarea class="form-control" id="observaciones_${i}" rows="2"></textarea>`;
-                // Dentro del bucle for (let i = 0; i < count; i++)
-                row.appendChild(obsCell);
-                tableBody.appendChild(row);
-
-                // --- RESTAURAR DATOS ---
-                const cache = sampleDataCache[i];
-                if (cache) {
-                    // 1. Tipo de muestra
-                    if (cache.tipoMuestra) {
-                        document.getElementById(`tipoMuestra_${i}`).value = cache.tipoMuestra;
-                    }
-
-                    // 2. Código de referencia (se restaurará async)
-                    if (cache.tipoMuestra) {
-                        updateCodigoReferencia(i).then(() => {
-                            if (cache.codigoReferencia) {
-                                const boxes = document.querySelectorAll(`#codigoReferenciaBoxes_${i} input`);
-                                const digits = cache.codigoReferencia.split('');
-                                boxes.forEach((box, idx) => {
-                                    if (digits[idx]) box.value = digits[idx];
-                                });
-                                const hidden = document.getElementById(`codigoReferenciaValue_${i}`);
-                                if (hidden) hidden.value = cache.codigoReferencia;
-                            }
-                        });
-                    }
-
-                    // 3. Otros campos simples
-                    if (cache.fechaToma) document.getElementById(`fechaToma_${i}`).value = cache.fechaToma;
-                    if (cache.numeroMuestras) document.getElementById(`numeroMuestras_${i}`).value = cache.numeroMuestras;
-                    if (cache.observaciones) document.getElementById(`observaciones_${i}`).value = cache.observaciones;
-
-                    if (cache.analisisSeleccionados && cache.analisisSeleccionados.length > 0) {
-                        //  Si NO hay HTML bonito, es porque la fila nunca pasó por el modal.
-                        //    En ese caso, NO mostramos nada bonito, pero tampoco destruimos el formato.
-                        //    Simplemente dejamos que updateAnalisisResumen maneje el fallback.
-                        updateAnalisisResumen(i);
-                    }
-                }
-            }
-        }
-
-        async function cargarTodosTiposMuestra(count) {
-            try {
-                // Cargar tipos de muestra una sola vez si no están cargados
-                if (allTiposMuestra.length === 0) {
-                    const res = await fetch("../../includes/get_tipos_muestra.php");
-                    const tipos = await res.json();
-                    if (tipos.error) throw new Error(tipos.error);
-                    allTiposMuestra = tipos;
-                }
-
-                // Llenar todos los selects
-                for (let i = 0; i < count; i++) {
-                    const tmSelect = document.getElementById(`tipoMuestra_${i}`);
-                    if (!tmSelect) continue;
-
-                    // Llenar opciones
-                    tmSelect.innerHTML = '<option value="">Seleccionar...</option>';
-                    allTiposMuestra.forEach((tipo) => {
-                        const option = document.createElement('option');
-                        option.value = tipo.codigo;
-                        option.textContent = tipo.nombre;
-                        tmSelect.appendChild(option);
-                    });
-
-                    // Restaurar datos si existen
-                    const cache = sampleDataCache[i];
-                    if (cache && cache.tipoMuestra) {
-                        tmSelect.value = cache.tipoMuestra;
-
-                        // Restaurar código de referencia y demás campos
-                        await updateCodigoReferencia(i);
-
-                        if (cache.codigoReferencia) {
-                            const boxes = document.querySelectorAll(`#codigoReferenciaBoxes_${i} input`);
-                            const digits = cache.codigoReferencia.split('');
-                            boxes.forEach((box, idx) => {
-                                if (digits[idx]) box.value = digits[idx];
-                            });
-                            const hidden = document.getElementById(`codigoReferenciaValue_${i}`);
-                            if (hidden) hidden.value = cache.codigoReferencia;
-                        }
-                        if (cache.fechaToma) document.getElementById(`fechaToma_${i}`).value = cache.fechaToma;
-                        if (cache.numeroMuestras) document.getElementById(`numeroMuestras_${i}`).value = cache.numeroMuestras;
-                        if (cache.observaciones) document.getElementById(`observaciones_${i}`).value = cache.observaciones;
-                        if (cache.analisisSeleccionados && cache.analisisSeleccionados.length > 0) {
-                            sampleDataCache[i].analisisSeleccionados = cache.analisisSeleccionados;
-                            updateAnalisisResumen(i);
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error("Error al cargar tipos de muestra:", error);
-                alert("⚠️ No se pudieron cargar los tipos de muestra.");
-            }
-        }
-
-        function restoreRowData(index, data) {
-            if (!data || !data.tipoMuestra) return;
-
-            const tmSelect = document.getElementById(`tipoMuestra_${index}`);
-            if (!tmSelect) return;
-
-            // 1. Establecer valor
-            tmSelect.value = data.tipoMuestra;
-
-            // 2. Forzar actualización del código de referencia SIN depender de eventos
-            updateCodigoReferencia(index).then(() => {
-                // 3. Restaurar campos una vez que el código de referencia ya está renderizado
-                if (data.codigoReferencia) {
-                    const boxes = document.querySelectorAll(`#codigoReferenciaBoxes_${index} input`);
-                    const digits = data.codigoReferencia.split('');
-                    boxes.forEach((box, i) => {
-                        if (digits[i]) box.value = digits[i];
-                    });
-                    const hidden = document.getElementById(`codigoReferenciaValue_${index}`);
-                    if (hidden) hidden.value = data.codigoReferencia;
-                }
-
-                if (data.fechaToma) document.getElementById(`fechaToma_${index}`).value = data.fechaToma;
-                if (data.numeroMuestras) document.getElementById(`numeroMuestras_${index}`).value = data.numeroMuestras;
-                if (data.observaciones) document.getElementById(`observaciones_${index}`).value = data.observaciones;
-                if (data.analisisSeleccionados) {
-                    sampleDataCache[index] = sampleDataCache[index] || {};
-                    sampleDataCache[index].analisisSeleccionados = data.analisisSeleccionados;
-                    updateAnalisisResumen(index);
-                }
-            }).catch(err => {
-                console.warn("Error al restaurar código de referencia:", err);
-                // Aún así restaurar otros campos
-                if (data.fechaToma) document.getElementById(`fechaToma_${index}`).value = data.fechaToma;
-                // ... resto igual
-            });
-        }
         // Actualiza el resumen de análisis visualmente
         function updateAnalisisResumen(sampleIndex) {
             const resumenEl = document.getElementById(`analisisResumen_${sampleIndex}`);
@@ -970,7 +786,7 @@ if (!$conexion) {
         function copyAnalisisTo(sourceIndex) {
             const sourceCache = sampleDataCache[sourceIndex];
             if (!sourceCache || !sourceCache.analisisSeleccionados?.length) {
-                alert('No hay análisis seleccionados en la fila origen.');
+                if (typeof SwalAlert === 'function') SwalAlert('No hay análisis seleccionados en la fila origen.', 'warning'); else alert('No hay análisis seleccionados en la fila origen.');
                 return;
             }
 
@@ -994,13 +810,14 @@ if (!$conexion) {
             const modal = new bootstrap.Modal(document.getElementById('copyAnalisisModal'));
             modal.show();
         }
+        // === Modal Enlazar con Planificación (muestras) ===
         // Listener para el botón de copiar en el modal
         document.getElementById('confirmCopyAnalisis').addEventListener('click', function () {
             const sourceIndex = parseInt(this.dataset.sourceIndex);
             const targetIndex = parseInt(document.getElementById('copyTargetSelect').value);
 
             if (isNaN(targetIndex) || targetIndex < 0 || targetIndex >= totalSamples) {
-                alert('Seleccione una solicitud válida.');
+                if (typeof SwalAlert === 'function') SwalAlert('Seleccione una solicitud válida.', 'warning'); else alert('Seleccione una solicitud válida.');
                 return;
             }
 
@@ -1029,14 +846,14 @@ if (!$conexion) {
 
             // 4. Cerrar modal y notificar
             bootstrap.Modal.getInstance(document.getElementById('copyAnalisisModal')).hide();
-            alert(` Análisis copiados a la Solicitud ${targetIndex + 1}.`);
+            if (typeof SwalAlert === 'function') SwalAlert('Análisis copiados a la Solicitud ' + (targetIndex + 1) + '.', 'success'); else alert('Análisis copiados a la Solicitud ' + (targetIndex + 1) + '.');
         });
 
         // === Función para abrir el modal de análisis ===
         window.openAnalisisModal = async function (sampleIndex) {
             const tipoMuestraSelect = document.getElementById(`tipoMuestra_${sampleIndex}`);
             if (!tipoMuestraSelect || tipoMuestraSelect.value === "") {
-                alert("Primero seleccione un tipo de muestra.");
+                if (typeof SwalAlert === 'function') SwalAlert('Primero seleccione un tipo de muestra.', 'warning'); else alert("Primero seleccione un tipo de muestra.");
                 return;
             }
 
@@ -1218,31 +1035,7 @@ if (!$conexion) {
                 document.getElementById("analisisModalBody").innerHTML = "<p class='text-danger'>Error al cargar análisis.</p>";
             }
         };
-        function saveAnalisisToSample(sampleIndex, selectedAnalisis) {
-            // Guardar en caché
-            sampleDataCache[sampleIndex] = sampleDataCache[sampleIndex] || {};
-            sampleDataCache[sampleIndex].analisisSeleccionados = selectedAnalisis;
 
-            // Mostrar resumen en el bloque de muestra
-            const resumenEl = document.querySelector(`.sample-item[data-sample-index="${sampleIndex}"] .analisis-resumen`);
-            if (!resumenEl) {
-                // Crear contenedor de resumen si no existe
-                const bloque = document.querySelector(`.sample-item[data-sample-index="${sampleIndex}"]`);
-                const resumen = document.createElement("div");
-                resumen.className = "analisis-resumen mt-2 text-sm text-gray-700";
-                resumen.style.minHeight = "1.5em";
-                bloque.querySelector("#paquetesContainer_" + sampleIndex).after(resumen);
-            }
-
-            if (selectedAnalisis.length === 0) {
-                document.querySelector(`.analisis-resumen`).textContent = "Ningún análisis seleccionado.";
-            } else {
-                // Agrupar por paquetes (asumiendo que ya tienes los datos de paquetes)
-                // Para simplificar, mostramos solo nombres
-                const nombres = selectedAnalisis.map(a => a.nombre).join(", ");
-                document.querySelector(`.analisis-resumen`).innerHTML = `<strong>Seleccionados:</strong> ${nombres}`;
-            }
-        }
         // === Función para generar el resumen de análisis ===
         function generateAnalisisResumen(selectedAnalisis, paquetes, analisisPorPaquete) {
             if (selectedAnalisis.length === 0) {
@@ -1277,173 +1070,6 @@ if (!$conexion) {
             return resumenHtml;
         }
 
-        // === Función para copiar análisis de una fila a otra ===
-        function copyAnalisisFromRow(sourceIndex) {
-            const sourceAnalisis = document.getElementById(`analisisSelected_${sourceIndex}`);
-            if (!sourceAnalisis) {
-                alert('No hay análisis seleccionados en la fila fuente.');
-                return;
-            }
-
-            const targetIndex = prompt('Ingrese el número de la fila destino (1, 2, 3...):');
-            if (!targetIndex || isNaN(targetIndex) || targetIndex < 1 || targetIndex > totalSamples) {
-                alert('Por favor ingrese un número de fila válido.');
-                return;
-            }
-
-            const targetIndexInt = parseInt(targetIndex) - 1; // Convertir a índice base 0
-            const targetResumen = document.getElementById(`analisisResumen_${targetIndexInt}`);
-
-            // Copiar el resumen y el campo oculto
-            targetResumen.innerHTML = sourceAnalisis.parentNode.innerHTML;
-
-            // Actualizar los IDs de los elementos copiados
-            const targetHiddenField = targetResumen.querySelector('input[type="hidden"]');
-            if (targetHiddenField) {
-                targetHiddenField.id = `analisisSelected_${targetIndexInt}`;
-                targetHiddenField.name = `analisisSelected_${targetIndexInt}`;
-            }
-
-            alert('Análisis copiados correctamente.');
-        }
-
-        // === Función para eliminar una fila ===
-        function deleteRow(index) {
-            if (confirm('¿Está seguro de que desea eliminar esta fila?')) {
-                const row = document.getElementById(`sampleRow_${index}`);
-                if (row) {
-                    row.remove();
-                    // Reordenar los índices
-                    const rows = document.querySelectorAll('#samplesTableBody tr');
-                    rows.forEach((r, i) => {
-                        r.id = `sampleRow_${i}`;
-                        // Actualizar los IDs de los elementos dentro de la fila
-                        r.querySelectorAll('input, select, button').forEach(el => {
-                            const oldId = el.id;
-                            if (oldId) {
-                                const newId = oldId.replace(/_\d+$/, `_${i}`);
-                                el.id = newId;
-                            }
-                        });
-                    });
-                    totalSamples--;
-                    document.getElementById('numeroSolicitudes').value = totalSamples;
-                }
-            }
-        }
-
-        // === Función para generar la previsualización HTML ===
-        function generatePreviewHTML(formData) {
-            const numeroSolicitudes = parseInt(formData.get("numeroSolicitudes"));
-            const fechaEnvio = formData.get("fechaEnvio");
-            const horaEnvio = formData.get("horaEnvio");
-            const laboratorioCodigo = formData.get("laboratorio");
-            const empresaTransporte = formData.get("empresa_transporte");
-            const autorizadoPor = formData.get("autorizadoPor");
-            const usuarioRegistrador = formData.get("usuario_registrador") || "user";
-            const usuarioResponsable = formData.get("usuario_responsable");
-
-            let laboratorioNombre = "No disponible";
-            const laboratorioSelect = document.getElementById("laboratorio");
-            if (laboratorioSelect) {
-                const selectedOption =
-                    laboratorioSelect.options[laboratorioSelect.selectedIndex];
-                laboratorioNombre = selectedOption
-                    ? selectedOption.text
-                    : "No seleccionado";
-            }
-
-            let previewHTML = `
-                    <div class="pdf-preview">
-                        <div class="pdf-header">
-                            REGISTRO DE ENVÍO DE MUESTRAS
-                        </div>
-                        <div style="margin: 15px 0;">
-                            <div><strong>Fecha de envío:</strong> ${fechaEnvio} - Hora: ${horaEnvio.substring(0, 5)}</div>
-                            <div><strong>Código de envío:</strong> <span id="resumenCodigoEnvio"></span></div>
-                            <div><strong>Laboratorio:</strong> ${laboratorioNombre}</div>
-                            <div><strong>Empresa de transporte:</strong> ${empresaTransporte}</div>
-                            <div><strong>Autorizado por:</strong> ${autorizadoPor}</div>
-                            <div><strong>Usuario Registrador:</strong> ${usuarioRegistrador}</div>
-                            <div><strong>Usuario Responsable:</strong> ${usuarioResponsable}</div>
-                            <div><strong>Número de Solicitudes:</strong> ${numeroSolicitudes}</div>
-                        </div>
-                        <table class="pdf-table">
-                            <thead>
-                                <tr>
-                                    <th>Cód. Ref.</th>
-                                    <th>Toma de muestra</th>
-                                    <th>N° muestras</th>
-                                    <th>TIPO DE ANÁLISIS</th>
-                                    <th>Observaciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                `;
-
-            for (let i = 0; i < numeroSolicitudes; i++) {
-                const tipoMuestraRadio = document.getElementById(`tipoMuestra_${i}`);
-                const tipoMuestraNombre = tipoMuestraRadio ? tipoMuestraRadio.options[tipoMuestraRadio.selectedIndex]?.text : "No seleccionado";
-
-                const fechaTomaInput = document.getElementById(`fechaToma_${i}`);
-                const fechaToma = fechaTomaInput ? fechaTomaInput.value : "-";
-
-                const numeroMuestras = formData.get(`numeroMuestras_${i}`) || "1";
-
-                const codigoRefBoxes = document.querySelectorAll(`#codigoReferenciaBoxes_${i} input`);
-                const codigoRef = Array.from(codigoRefBoxes)
-                    .map((box) => box.value || "")
-                    .join("");
-
-                const observacionesTextarea = document.getElementById(`observaciones_${i}`);
-                const observaciones = observacionesTextarea ? observacionesTextarea.value : "Ninguna";
-
-                const analisisSelected = document.getElementById(`analisisSelected_${i}`);
-                let analisisHtml = "Ninguno";
-                if (analisisSelected) {
-                    const selectedAnalisis = JSON.parse(analisisSelected.value);
-                    if (selectedAnalisis.length > 0) {
-                        // Agrupar por paquetes (similar a la lógica del PHP)
-                        const analisisPorPaquete = {};
-                        const sinPaquete = [];
-
-
-
-                        // Simulación de agrupación
-                        const paquetesMap = {}; // Aquí debería estar el mapa de paquetes
-                        const analisisMap = {}; // Aquí debería estar el mapa de análisis
-
-                        // Para este ejemplo, simplemente mostramos los nombres
-                        analisisHtml = selectedAnalisis.map(a => a.nombre).join(", ");
-                    }
-                }
-
-                previewHTML += `
-                                <tr>
-                                    <td>${codigoRef}</td>
-                                    <td>${fechaToma}</td>
-                                    <td>${numeroMuestras}</td>
-                                    <td>${analisisHtml}</td>
-                                    <td>${observaciones}</td>
-                                </tr>
-                    `;
-            }
-
-            previewHTML += `
-                            </tbody>
-                        </table>
-                        <div class="pdf-footer">
-                            <table>
-                                <tr><td>Empresa:</td><td>COMITÉ 4</td></tr>
-                                <tr><td>Autorizado por:</td><td>Dr. Julio Alvan</td></tr>
-                            </table>
-                        </div>
-                    </div>
-                `;
-
-            return previewHTML;
-        }
-
         function handleNumeroSolicitudesChange() {
             let value = this.value.trim();
 
@@ -1476,21 +1102,6 @@ if (!$conexion) {
             adjustTableRows(count);
         }
 
-        function extractRowData(index) {
-            return {
-                tipoMuestra: document.getElementById(`tipoMuestra_${index}`).value,
-                codigoReferencia: document.getElementById(`codigoReferenciaValue_${index}`).value,
-                fechaToma: document.getElementById(`fechaToma_${index}`).value,
-                numeroMuestras: document.getElementById(`numeroMuestras_${index}`).value,
-                analisisSeleccionados: sampleDataCache[index]?.analisisSeleccionados || [],
-                observaciones: document.getElementById(`observaciones_${index}`).value
-            };
-        }
-        // === Función para limpiar las muestras ===
-        function clearSamples() {
-            tableBody.innerHTML = '';
-            totalSamples = 0;
-        }
 
         // === Inicialización ===
         if (numeroInput.value) {
@@ -1543,13 +1154,19 @@ if (!$conexion) {
             }
 
             if (errores.length > 0) {
-                alert("❌ Corrija los siguientes errores:\n" + errores.join('\n'));
+                if (typeof SwalAlert === 'function') SwalAlert('Corrija los siguientes errores:\n' + errores.join('\n'), 'error'); else alert("❌ Corrija los siguientes errores:\n" + errores.join('\n'));
                 return;
             }
 
             generateSummary(new FormData(document.getElementById("sampleForm")));
             document.getElementById("confirmModal").classList.remove('hidden');
         };
+        function formatearFecha(fechaISO) {
+            const partes = fechaISO.split('-');
+            if (partes.length !== 3) return fechaISO;
+            const [anio, mes, dia] = partes;
+            return `${dia}/${mes}/${anio}`;
+        }
         // === Función para generar el resumen ===
         function generateSummary(formData) {
             const numeroSolicitudes = parseInt(formData.get("numeroSolicitudes")) || 0;
@@ -1572,7 +1189,7 @@ if (!$conexion) {
             <table width="100%" style="border-collapse: collapse; border: 1px solid #000; margin-bottom: 15px;">
                 <tr>
                     <td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 12px;">
-                        <img src="logo.png" style="height: 20px; vertical-align: top;"> GRANJA RINCONADA DEL SUR S.A.
+                        <img src="../../logo.png" style="height: 20px; vertical-align: top;"> GRANJA RINCONADA DEL SUR S.A.
                     </td>
                     <td style="width: 60%; text-align: center; padding: 5px; background-color: #6c5b7b; color: white; font-weight: bold; font-size: 14px;">
                         REGISTRO DE ENVÍO DE MUESTRAS
@@ -1590,7 +1207,7 @@ if (!$conexion) {
                             <tr>
                                 <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Fecha de envío</strong></td>
                                 <td style="padding: 2px 5px; vertical-align: top; text-align: center; width: 10px; min-width: 10px;">:</td>
-                                <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${fechaEnvio}</td>
+                                <td style="padding: 2px 0; vertical-align: top; text-align: left; border-bottom: 1px solid #000;">${formatearFecha(fechaEnvio)}</td>
                             </tr>
                             <tr>
                                 <td style="padding: 2px 0; vertical-align: top; text-align: left; width: 45%; white-space: nowrap;"><strong>Hora de envío</strong></td>
@@ -1659,7 +1276,7 @@ if (!$conexion) {
 
                 summaryHTML += `<tr>`;
                 summaryHTML += `<td style="border:1px solid #000; padding:3px; text-align:center;">${codigoRef}</td>`;
-                summaryHTML += `<td style="border:1px solid #000; padding:3px; text-align:center;">${fechaToma}</td>`;
+                summaryHTML += `<td style="border:1px solid #000; padding:3px; text-align:center;">${formatearFecha(fechaToma)}</td>`;
                 summaryHTML += `<td style="border:1px solid #000; padding:3px; text-align:center;">${numeroMuestras}</td>`;
 
                 allTiposMuestra.forEach(tm => {
@@ -1704,11 +1321,18 @@ if (!$conexion) {
             const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
             confirmModal.show();
         }
+        function generarUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
         // === Función para confirmar el envío ===
         window.confirmSubmit = async function (descargarPdf = false) {
-            
-            const formData = new FormData();
 
+            const formData = new FormData();
+            formData.append('id', generarUUID());
             // 2. Agregar campos fijos (del formulario principal)
             const fields = [
                 'fechaEnvio', 'horaEnvio', 'laboratorio', 'empresa_transporte',
@@ -1732,7 +1356,7 @@ if (!$conexion) {
                     formData.append(`tipoMuestra_${i}`, tipoMuestra.value);
                     const nombreTipoMuestra = tipoMuestra.selectedOptions[0].text;
                     formData.append(`tipoMuestraNombre_${i}`, nombreTipoMuestra);
-                } 
+                }
 
                 // Código de referencia
                 const codRef = document.getElementById(`codigoReferenciaValue_${i}`);
@@ -1745,7 +1369,7 @@ if (!$conexion) {
                 // Número de muestras
                 const numMuestras = document.getElementById(`numeroMuestras_${i}`);
                 if (numMuestras) formData.append(`numeroMuestras_${i}`, numMuestras.value);
-               
+
                 const analisis = sampleDataCache[i]?.analisisSeleccionados || [];
                 // Serializar el array completo de objetos (incluyendo nombre y paquete)
                 formData.append(`analisis_completos_${i}`, JSON.stringify(analisis));
@@ -1780,7 +1404,7 @@ if (!$conexion) {
                     resetAllState();
 
                     // Mensaje de éxito
-                    alert(" Registro guardado exitosamente. Código: " + result.codigoEnvio);
+                    if (typeof SwalAlert === 'function') SwalAlert('Registro guardado exitosamente. Código: ' + result.codigoEnvio, 'success'); else alert("Registro guardado exitosamente. Código: " + result.codigoEnvio);
 
 
                 } else {
@@ -1788,14 +1412,9 @@ if (!$conexion) {
                 }
             } catch (error) {
                 console.error("Error:", error);
-                alert("❌ Error al guardar el registro: " + error.message);
+                if (typeof SwalAlert === 'function') SwalAlert('Error al guardar el registro: ' + error.message, 'error'); else alert("❌ Error al guardar el registro: " + error.message);
             }
         };
-
-        // === Función para cerrar el modal de confirmación ===
-        /*window.closeConfirmModal = function () {
-            document.getElementById("confirmModal").style.display = "none";
-        };*/
 
         function resetAllState() {
             // 1. Resetear el formulario (incluye inputs, selects, textareas)

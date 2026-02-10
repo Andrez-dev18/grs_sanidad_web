@@ -4,7 +4,10 @@ let destinatariosPara = []; // Solo usamos este array
 
 // =============== CARGA INICIAL ===============
 document.addEventListener("DOMContentLoaded", (e) => {
-  cargarReportes(1, "");
+
+  if (document.getElementById("reportes-lista")) {
+    cargarReportes(1, "");
+  }
 });
 // === MANEJO DE EVENTOS (DELEGACIÓN) ===
 document.addEventListener("click", function (e) {
@@ -119,8 +122,24 @@ function abrirModalCorreo(codigo) {
     this.value = "";
   });
 
-  // Mostrar modal
-  new bootstrap.Modal(document.getElementById("modalCorreo")).show();
+  // Mostrar modal (Tailwind o Bootstrap si existiera en otra vista)
+  abrirModalCorreoUI();
+}
+
+function abrirModalCorreoUI() {
+  const modal = document.getElementById("modalCorreo");
+  if (!modal) return;
+
+
+  if (window.bootstrap?.Modal) {
+    new bootstrap.Modal(modal).show();
+    return;
+  }
+
+
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  document.body.style.overflow = "hidden";
 }
 
 // =============== DESTINATARIOS ("Para") ===============
@@ -172,15 +191,25 @@ document.getElementById("destinatarioSelect").addEventListener("change", functio
   
   select.style.display = "none";
 });
+
+// Cerrar modal correo al hacer clic fuera 
+document.addEventListener("click", function (e) {
+  const modal = document.getElementById("modalCorreo");
+  if (!modal) return;
+  if (window.bootstrap?.Modal) return;
+  if (e.target === modal && !modal.classList.contains("hidden")) {
+    cerrarModalCorreo();
+  }
+});
 function renderDestinatariosPara() {
   const cont = document.getElementById("listaPara");
   cont.innerHTML = "";
   destinatariosPara.forEach((correo, i) => {
     const badge = document.createElement("span");
-    badge.className = "badge bg-primary me-2 mb-1 d-inline-flex align-items-center";
+    badge.className = "inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-medium mr-2 mb-2";
     badge.innerHTML = `
       ${correo}
-      <i class="fas fa-times ms-1" style="cursor:pointer;font-size:0.85em;" 
+      <i class="fas fa-times" style="cursor:pointer;font-size:0.85em;" 
          onclick="eliminarDestinatario(${i})"></i>
     `;
     cont.appendChild(badge);
@@ -190,7 +219,7 @@ function renderDestinatariosPara() {
 function eliminarDestinatario(index) {
   destinatariosPara.splice(index, 1);
   renderDestinatariosPara();
-  cargarContactosEnSelect(); // Reactivar en el select
+  cargarContactosEnSelect(); 
 }
 
 // =============== ARCHIVOS ADJUNTOS ===============
@@ -210,13 +239,13 @@ function actualizarListaArchivos(codigo) {
 
   // PDF por defecto
   const pdf = document.createElement("div");
-  pdf.className = "d-flex justify-content-between align-items-center bg-primary bg-opacity-10 p-2 rounded mb-2";
+  pdf.className = "flex items-center justify-between bg-blue-50 border border-blue-100 p-2 rounded-lg mb-2 text-sm";
   pdf.innerHTML = `
-    <div class="d-flex align-items-center gap-2">
-      <i class="fas fa-file-pdf text-danger"></i>
+    <div class="flex items-center gap-2">
+      <i class="fas fa-file-pdf text-red-600"></i>
       <span>Reporte_${codigo}.pdf</span>
     </div>
-    <a href="generar_pdf_tabla.php?codigo=${encodeURIComponent(codigo)}" target="_blank" class="text-primary">
+    <a href="generar_pdf_tabla.php?codigo=${encodeURIComponent(codigo)}" target="_blank" class="text-blue-700 hover:text-blue-900">
       <i class="fas fa-eye"></i>
     </a>
   `;
@@ -225,13 +254,13 @@ function actualizarListaArchivos(codigo) {
   // Archivos acumulados
   archivosAcumulados.forEach((file, i) => {
     const item = document.createElement("div");
-    item.className = "d-flex justify-content-between align-items-center bg-light p-2 rounded mb-2";
+    item.className = "flex items-center justify-between bg-gray-50 border border-gray-200 p-2 rounded-lg mb-2 text-sm";
     item.innerHTML = `
-      <div class="d-flex align-items-center gap-2">
+      <div class="flex items-center gap-2 min-w-0">
         <i class="fas ${getIconoArchivo(file.name)}"></i>
-        <span>${file.name}</span>
+        <span class="truncate">${file.name}</span>
       </div>
-      <i class="fas fa-times text-danger" style="cursor:pointer;" onclick="eliminarArchivo(${i})"></i>
+      <i class="fas fa-times text-red-600 hover:text-red-800" style="cursor:pointer;" onclick="eliminarArchivo(${i})"></i>
     `;
     cont.appendChild(item);
   });
@@ -269,19 +298,31 @@ function enviarCorreoDesdeSistema() {
   fetch("enviar_correo_reporte.php", { method: "POST", body: formData })
     .then(r => r.json())
     .then(data => {
-      resultado.className = data.success ? "text-success small" : "text-danger small";
+      resultado.className = data.success ? "text-green-600 text-sm" : "text-red-600 text-sm";
       resultado.textContent = data.message || (data.success ? "¡Correo enviado!" : "Error al enviar.");
       if (data.success) setTimeout(cerrarModalCorreo, 1500);
     })
     .catch(err => {
-      resultado.className = "text-danger small";
+      resultado.className = "text-red-600 text-sm";
       resultado.textContent = "Error de red.";
       console.error(err);
     });
 }
 
 function cerrarModalCorreo() {
-  bootstrap.Modal.getInstance(document.getElementById("modalCorreo"))?.hide();
+  const modal = document.getElementById("modalCorreo");
+  if (!modal) return;
+
+  // Si existe Bootstrap (otras pantallas), usarlo
+  if (window.bootstrap?.Modal) {
+    bootstrap.Modal.getInstance(modal)?.hide();
+    return;
+  }
+
+  // Tailwind
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  document.body.style.overflow = "";
 }
 
 // =============== UTILIDADES ===============

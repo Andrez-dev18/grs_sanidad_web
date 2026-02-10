@@ -8,11 +8,17 @@ $start = intval($_POST['start'] ?? 0);
 $length = intval($_POST['length'] ?? 10);
 $search = $_POST['search']['value'] ?? '';
 
-// Filtros personalizados
+// Filtros personalizados (periodo: periodoTipo + fechas/meses; si no se envía o es TODOS, no se filtra por fecha)
+$periodoTipo = $_POST['periodoTipo'] ?? '';
+$fechaUnica = $_POST['fechaUnica'] ?? '';
 $fechaInicio = $_POST['fechaInicio'] ?? '';
 $fechaFin = $_POST['fechaFin'] ?? '';
+$mesUnico = $_POST['mesUnico'] ?? '';
+$mesInicio = $_POST['mesInicio'] ?? '';
+$mesFin = $_POST['mesFin'] ?? '';
 $estado = $_POST['estado'] ?? '';
 $laboratorio = $_POST['laboratorio'] ?? '';
+$empTrans = $_POST['empTrans'] ?? '';
 $muestra = $_POST['muestra'] ?? '';
 $analisis = $_POST['analisis'] ?? '';
 $granjas = $_POST['granjas'] ?? [];
@@ -23,11 +29,17 @@ $edadHasta = $_POST['edadHasta'] ?? '';
 
 $where = " WHERE 1=1 ";
 
-/* FILTROS */
-if ($fechaInicio && $fechaFin) {
-    $fechaInicio = mysqli_real_escape_string($conexion, $fechaInicio);
-    $fechaFin = mysqli_real_escape_string($conexion, $fechaFin);
-    $where .= " AND c.fecEnvio BETWEEN '$fechaInicio' AND '$fechaFin' ";
+/* FILTRO PERIODO */
+require_once __DIR__ . '/../../includes/filtro_periodo_util.php';
+$rangoPeriodo = periodo_a_rango([
+    'periodoTipo' => $periodoTipo, 'fechaUnica' => $fechaUnica,
+    'fechaInicio' => $fechaInicio, 'fechaFin' => $fechaFin,
+    'mesUnico' => $mesUnico, 'mesInicio' => $mesInicio, 'mesFin' => $mesFin
+]);
+if ($rangoPeriodo) {
+    $desde = mysqli_real_escape_string($conexion, $rangoPeriodo['desde']);
+    $hasta = mysqli_real_escape_string($conexion, $rangoPeriodo['hasta']);
+    $where .= " AND c.fecEnvio BETWEEN '$desde' AND '$hasta' ";
 }
 
 if ($estado) {
@@ -38,6 +50,11 @@ if ($estado) {
 if ($laboratorio) {
     $laboratorio = mysqli_real_escape_string($conexion, $laboratorio);
     $where .= " AND c.nomLab = '$laboratorio' ";
+}
+
+if ($empTrans) {
+    $empTrans = mysqli_real_escape_string($conexion, $empTrans);
+    $where .= " AND c.nomEmpTrans = '$empTrans' ";
 }
 
 if ($muestra) {

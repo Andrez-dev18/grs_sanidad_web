@@ -63,7 +63,7 @@ $accion = ($tipoReceptor === 'Transporte')
     : 'Recepción de muestra por laboratorio';
 
 // === VERIFICAR DUPLICADO ===
-$sqlCheck = "SELECT id FROM san_dim_historial_resultados WHERE codEnvio = ? AND ubicacion = ? LIMIT 1";
+$sqlCheck = "SELECT id FROM san_dim_historial_resultados WHERE codEnvio = ? AND ubicacion = ? AND accion = 'Recepción de muestra por laboratorio' LIMIT 1";
 $stmtCheck = $conn->prepare($sqlCheck);
 $stmtCheck->bind_param("ss", $codEnvio, $ubicacion);
 $stmtCheck->execute();
@@ -110,7 +110,7 @@ if (isset($_FILES['evidencias']) && !empty($_FILES['evidencias']['name'][0])) {
 }
 
 // === INSERTAR EN LA BASE DE DATOS ===
-$usuario = $_SESSION['usuario'] ?? ($tipoReceptor === 'Transporte' ? 'transportista' : 'laboratorio');
+$usuario = $_SESSION['usuario'] ?? $_POST['usuario'] ?? ($tipoReceptor === 'Transporte' ? 'transportista' : 'laboratorio');
 
 $ok = insertarHistorial(
     $conn,

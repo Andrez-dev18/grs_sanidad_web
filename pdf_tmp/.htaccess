@@ -1,0 +1,4 @@
+# Bloquear acceso directo por URL a archivos temporales de PDF
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>

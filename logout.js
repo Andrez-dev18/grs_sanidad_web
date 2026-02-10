@@ -1,7 +1,7 @@
 function logout() {
-    /*document.getElementById('dashboard').classList.remove('active');
-            document.getElementById('loginScreen').style.display = 'flex';*/
-    if (confirm("¿Desea cerrar la sesión?")) {
-      window.location.href = "logout.php";
-    }
-  }
+  var msg = "¿Desea cerrar la sesión?";
+  var prom = (typeof SwalConfirm === 'function') ? SwalConfirm(msg, 'Cerrar sesión') : Promise.resolve(confirm(msg));
+  prom.then(function(ok) {
+    if (ok) window.location.href = "logout.php";
+  });
+}

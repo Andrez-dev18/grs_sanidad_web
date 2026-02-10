@@ -29,6 +29,9 @@ if (!$conexion) {
     <link rel="stylesheet" href="../../../css/output.css">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
+    <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <style>
         body {
             background: #f8f9fa;
@@ -122,15 +125,7 @@ if (!$conexion) {
             white-space: nowrap;
         }
 
-        #tablaRespuesta th {
-            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
-            font-weight: 600;
-            color: #ffffff !important;
-        }
-
-        #tablaRespuesta tbody tr:hover {
-            background-color: #eff6ff !important;
-        }
+        /* Cabecera y filas: estilos unificados vía dashboard-config.css (config-table) */
 
         /* Modal interno */
         #respuestasModal table {
@@ -206,25 +201,26 @@ if (!$conexion) {
     background: white;
 }
 
-/* ✅ Cabecera de la tabla: azul con texto blanco */
-#tablaRespuesta thead th {
-    background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
-    color: white !important;
-    font-weight: 600;
-    padding: 0.75rem 1rem;
-}
     </style>
 </head>
 
 <body class="bg-gray-50">
     <div class="container mx-auto px-6 py-12">
         <div class="max-w-full mx-auto mt-6">
-            <div class="border border-gray-300 rounded-2xl bg-white overflow-hidden">
-                <div class="table-wrapper">
-                    <table id="tablaRespuesta" class="display" style="width:100%">
+            <div id="tablaRespuestaWrapper" class="border border-gray-300 rounded-2xl bg-white overflow-hidden p-4" data-vista-tabla-iconos data-vista="">
+                <div class="view-toggle-group flex items-center gap-2 mb-4">
+                    <button type="button" class="view-toggle-btn active" id="btnViewTablaResp" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                    <button type="button" class="view-toggle-btn" id="btnViewIconosResp" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                </div>
+                <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasResp">
+                    <div id="cardsContainerResp" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
+                    <div id="cardsPaginationResp" class="flex items-center justify-between mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
+                </div>
+                <div class="view-lista-wrap table-wrapper">
+                    <table id="tablaRespuesta" class="display data-table config-table" style="width:100%">
                         <thead>
                             <tr>
-                                <th>Código</th>
+                                <th class="px-4 py-3">Código</th>
                                 <th>Nombre</th>
                                 <th>Acciones</th>
                             </tr>
@@ -239,9 +235,12 @@ if (!$conexion) {
                                     <td><?= htmlspecialchars($row['codigo']) ?></td>
                                     <td><?= htmlspecialchars($row['nombre']) ?></td>
                                     <td>
-                                        <button class="btn-secondary text-xs px-3 py-1 flex items-center gap-1"
+                                        <button
+                                            type="button"
+                                            class="p-2 rounded-lg text-blue-600 hover:text-blue-800 hover:bg-blue-100 transition"
+                                            title="Ver respuestas"
                                             onclick="openRespuestasModal(<?= (int) $row['codigo'] ?>)">
-                                            <i class="fas fa-list"></i> Ver respuestas
+                                            <i class="fa-solid fa-eye"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -274,7 +273,7 @@ if (!$conexion) {
                         <input type="hidden" id="editTipoResultadoCodigo" value="">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Valor de la respuesta</label>
                         <input type="text" id="tipoResultadoInput" class="form-control mb-2" placeholder="Ej: Positivo, 5.2 mg/dL..." required>
-                        <div class="flex gap-2">
+                        <div class="dashboard-modal-actions flex flex-wrap gap-2">
                             <button type="button" class="btn-outline text-sm" onclick="closeFormTipoResultado()">Cancelar</button>
                             <button type="button" class="btn-primary text-sm" onclick="guardarTipoResultado()">💾 Guardar</button>
                         </div>
@@ -303,12 +302,23 @@ if (!$conexion) {
             </div>
         </div>
 
-        <div class="text-center mt-12">
-            <p class="text-gray-500 text-sm">Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> - © 2025</p>
+        <!-- Footer dinámico -->
+        <div class="text-center mt-12 mb-5">
+            <p class="text-gray-500 text-sm">
+                Sistema desarrollado para <strong>Granja Rinconada Del Sur S.A.</strong> -
+                © <span id="currentYear"></span>
+            </p>
         </div>
+
+        <script>
+            // Actualizar el año dinámicamente
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+        </script>
 
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="../../../assets/js/sweetalert-helpers.js"></script>
         <script>
            
             let currentAnalisisCodigo = null;
@@ -373,13 +383,17 @@ if (!$conexion) {
                             tr.innerHTML = `
                                 <td class="border-b py-2">${escapeHtml(item.tipo)}</td>
                                 <td class="border-b py-2 text-right">
-                                    <button class="text-blue-600 hover:text-blue-800 text-xs mr-2" 
+                                    <button
+                                        title="Editar"
+                                        class="text-blue-600 hover:text-blue-800 text-xs mr-2 inline-flex items-center gap-1 transition" 
                                         onclick="openFormTipoResultado(${JSON.stringify(item).replace(/"/g, '&quot;')})">
-                                        ✏️ Editar
+                                        <i class="fa-solid fa-edit"></i> Editar
                                     </button>
-                                    <button class="text-red-600 hover:text-red-800 text-xs" 
+                                    <button
+                                        title="Eliminar"
+                                        class="text-red-600 hover:text-red-800 text-xs inline-flex items-center gap-1 transition" 
                                         onclick="eliminarTipoResultado(${item.codigo})">
-                                        🗑️ Eliminar
+                                        <i class="fa-solid fa-trash"></i> Eliminar
                                     </button>
                                 </td>
                             `;
@@ -402,7 +416,7 @@ if (!$conexion) {
                 const analisis = currentAnalisisCodigo;
 
                 if (!tipo) {
-                    alert('El valor de la respuesta es obligatorio.');
+                    SwalAlert('El valor de la respuesta es obligatorio.', 'warning');
                     return;
                 }
 
@@ -418,21 +432,22 @@ if (!$conexion) {
                 .then(r => r.json())
                 .then(res => {
                     if (res.success) {
-                        alert(res.message);
+                        SwalAlert(res.message, 'success');
                         closeFormTipoResultado();
                         cargarTipoResultados(analisis);
                     } else {
-                        alert('Error: ' + res.message);
+                        SwalAlert('Error: ' + res.message, 'error');
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('Error al guardar la respuesta.');
+                    SwalAlert('Error al guardar la respuesta.', 'error');
                 });
             }
 
-            function eliminarTipoResultado(codigo) {
-                if (!confirm('¿Eliminar esta respuesta?')) return;
+            async function eliminarTipoResultado(codigo) {
+                var ok = await SwalConfirm('¿Eliminar esta respuesta?', 'Confirmar');
+                if (!ok) return;
 
                 fetch('eliminar_tiporesultado.php', {
                     method: 'POST',
@@ -442,24 +457,84 @@ if (!$conexion) {
                 .then(r => r.json())
                 .then(res => {
                     if (res.success) {
-                        alert(res.message);
+                        SwalAlert(res.message, 'success');
                         cargarTipoResultados(currentAnalisisCodigo);
                     } else {
-                        alert('Error: ' + res.message);
+                        SwalAlert('Error: ' + res.message, 'error');
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('Error al eliminar la respuesta.');
+                    SwalAlert('Error al eliminar la respuesta.', 'error');
                 });
             }
 
-          $('#tablaRespuesta').DataTable({
-    language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
-    pageLength: 10,
-    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
-    order: [[0, 'asc']]
-});
+          var tableRespuesta;
+          function actualizarVistaInicialResp() {
+              var w = $(window).width();
+              var w$ = $('#tablaRespuestaWrapper');
+              if (!w$.attr('data-vista')) {
+                  w$.attr('data-vista', w < 768 ? 'iconos' : 'tabla');
+                  $('#btnViewIconosResp').toggleClass('active', w$.attr('data-vista') === 'iconos');
+                  $('#btnViewTablaResp').toggleClass('active', w$.attr('data-vista') === 'tabla');
+              }
+          }
+          function renderizarTarjetasResp() {
+              if (!tableRespuesta) return;
+              var api = tableRespuesta;
+              var cont = $('#cardsContainerResp');
+              cont.empty();
+              var info = api.page.info();
+              var rowIndex = 0;
+              api.rows({ page: 'current' }).every(function() {
+                  rowIndex++;
+                  var numero = info.start + rowIndex;
+                  var $row = $(this.node());
+                  var cells = $row.find('td');
+                  if (cells.length < 2) return;
+                  var codigo = $(cells[0]).text().trim();
+                  var nombre = $(cells[1]).text().trim();
+                  var codAttr = (codigo + '').replace(/"/g, '&quot;');
+                  var card = $('<div class="card-item" data-codigo="' + codAttr + '">' +
+                      '<div class="card-numero-row">#' + numero + '</div>' +
+                      '<div class="card-row"><span class="label">codigo:</span> ' + $('<div>').text(codigo).html() + '</div>' +
+                      '<div class="card-row"><span class="label">Nombre:</span> ' + $('<div>').text(nombre).html() + '</div>' +
+                      '<div class="card-acciones">' +
+                      '<button type="button" class="btn-ver-resp-card p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition" title="Ver respuestas" data-codigo="' + codAttr + '"><i class="fa-solid fa-eye"></i> Ver respuestas</button>' +
+                      '</div></div>');
+                  cont.append(card);
+              });
+              var pagHtml = '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' +
+                  '<div class="flex gap-2"><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="tableRespuesta && tableRespuesta.page(\'previous\').draw(false); renderizarTarjetasResp();">Anterior</button>' +
+                  '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="tableRespuesta && tableRespuesta.page(\'next\').draw(false); renderizarTarjetasResp();">Siguiente</button></div>';
+              $('#cardsPaginationResp').html(pagHtml);
+          }
+          tableRespuesta = $('#tablaRespuesta').DataTable({
+              language: { url: '../../../assets/i18n/es-ES.json' },
+              pageLength: 10,
+              lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+              order: [[0, 'asc']],
+              drawCallback: function() { renderizarTarjetasResp(); }
+          });
+          actualizarVistaInicialResp();
+          $('#btnViewIconosResp').on('click', function() {
+              $('#tablaRespuestaWrapper').attr('data-vista', 'iconos');
+              $('#btnViewIconosResp').addClass('active');
+              $('#btnViewTablaResp').removeClass('active');
+          });
+          $('#btnViewTablaResp').on('click', function() {
+              $('#tablaRespuestaWrapper').attr('data-vista', 'tabla');
+              $('#btnViewTablaResp').addClass('active');
+              $('#btnViewIconosResp').removeClass('active');
+          });
+          $(window).on('resize', function() {
+              if (!$('#tablaRespuestaWrapper').attr('data-vista')) return;
+              actualizarVistaInicialResp();
+          });
+          $(document).on('click', '.btn-ver-resp-card', function() {
+              var cod = $(this).attr('data-codigo');
+              if (cod !== undefined) openRespuestasModal(isNaN(cod) ? cod : parseInt(cod, 10));
+          });
         </script>
 </body>
 

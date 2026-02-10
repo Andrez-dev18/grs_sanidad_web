@@ -23,7 +23,7 @@ document.getElementById('analisisForm')?.addEventListener('submit', function(e) 
     const codigo = document.getElementById('analisisEditCodigo').value;
 
     if (!nombre) {
-        alert('⚠️ El nombre del análisis es obligatorio.');
+        if (typeof SwalAlert === 'function') SwalAlert('El nombre del análisis es obligatorio.', 'warning'); else alert('⚠️ El nombre del análisis es obligatorio.');
         return;
     }
 
@@ -44,16 +44,15 @@ document.getElementById('analisisForm')?.addEventListener('submit', function(e) 
         btn.innerHTML = orig;
         btn.disabled = false;
         if (d.success) {
-            alert('✅ ' + d.message);
-            location.reload();
+            if (typeof SwalAlert === 'function') SwalAlert(d.message, 'success').then(function() { location.reload(); }); else { alert('✅ ' + d.message); location.reload(); }
         } else {
-            alert('❌ ' + d.message);
+            if (typeof SwalAlert === 'function') SwalAlert(d.message, 'error'); else alert('❌ ' + d.message);
         }
     })
     .catch(err => {
         btn.innerHTML = orig;
         btn.disabled = false;
-        alert('Error: ' + err.message);
+        if (typeof SwalAlert === 'function') SwalAlert('Error: ' + err.message, 'error'); else alert('Error: ' + err.message);
     });
 });
 
