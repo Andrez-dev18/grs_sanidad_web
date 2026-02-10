@@ -7,6 +7,63 @@
 .filter-row-periodo .min-w-\[120px\] { min-width: 180px !important; }
 .filter-row-periodo .min-w-\[130px\] { min-width: 200px !important; }
 
+/* ========== Card de filtros compacta (menor altura, todo más junto) ========== */
+/* Cabecera de la card: menos padding */
+.card-filtros-compacta > button,
+.card-filtros-compacta > div[onclick],
+.card-filtros-compacta .border-b > button {
+    padding: 0.35rem 1rem !important;
+}
+.card-filtros-compacta > button h3,
+.card-filtros-compacta > div[onclick] h3,
+.card-filtros-compacta .border-b > button h3 {
+    font-size: 0.875rem !important;
+}
+/* Contenido de la card: menos padding */
+.card-filtros-compacta #contenidoFiltros,
+.card-filtros-compacta #filtrosContent,
+.card-filtros-compacta #contenidoFiltrosProgramas {
+    padding: 0.5rem 1rem 0.75rem !important;
+}
+/* Fila periodo: menos margen y gap */
+.card-filtros-compacta .filter-row-periodo {
+    margin-bottom: 0.5rem !important;
+    gap: 0.35rem 0.75rem !important;
+}
+.card-filtros-compacta .filter-row-periodo label {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.2rem !important;
+}
+.card-filtros-compacta .filter-row-periodo input,
+.card-filtros-compacta .filter-row-periodo select {
+    padding: 0.35rem 0.5rem !important;
+    font-size: 0.8125rem !important;
+    min-height: auto !important;
+}
+.card-filtros-compacta .filter-row-periodo .min-w-\[180px\] label,
+.card-filtros-compacta .filter-row-periodo .min-w-\[200px\] label {
+    margin-bottom: 0.2rem !important;
+}
+/* Filas siguientes dentro del contenido del filtro (grid de otros filtros) */
+.card-filtros-compacta #contenidoFiltros .grid.gap-6,
+.card-filtros-compacta #filtrosContent .grid.gap-6,
+.card-filtros-compacta #contenidoFiltrosProgramas .grid.gap-6 { gap: 0.5rem 1rem !important; }
+.card-filtros-compacta #contenidoFiltros .grid.gap-4,
+.card-filtros-compacta #filtrosContent .grid.gap-4,
+.card-filtros-compacta #contenidoFiltrosProgramas .grid.gap-4 { gap: 0.35rem 0.75rem !important; }
+.card-filtros-compacta #contenidoFiltros .mb-6,
+.card-filtros-compacta #filtrosContent .mb-6,
+.card-filtros-compacta #contenidoFiltrosProgramas .mb-6 { margin-bottom: 0.5rem !important; }
+.card-filtros-compacta #contenidoFiltros .mb-4,
+.card-filtros-compacta #filtrosContent .mb-4,
+.card-filtros-compacta #contenidoFiltrosProgramas .mb-4 { margin-bottom: 0.35rem !important; }
+.card-filtros-compacta #contenidoFiltros .mt-6,
+.card-filtros-compacta #filtrosContent .mt-6,
+.card-filtros-compacta #contenidoFiltrosProgramas .mt-6 { margin-top: 0.5rem !important; }
+.card-filtros-compacta #contenidoFiltros .mt-4,
+.card-filtros-compacta #filtrosContent .mt-4,
+.card-filtros-compacta #contenidoFiltrosProgramas .mt-4 { margin-top: 0.35rem !important; }
+
 /* Botones: mismo estilo que tipo_muestra */
 .btn-export {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);

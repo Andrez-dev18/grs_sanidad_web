@@ -232,7 +232,7 @@ if (!$conn) {
     <div class="container-fluid py-4 mx-8">
 
         <!-- CARD FILTROS PLEGABLE -->
-        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+        <div class="card-filtros-compacta mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
 
             <!-- HEADER -->
             <button type="button" onclick="toggleFiltros()"

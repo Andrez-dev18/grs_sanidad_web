@@ -337,7 +337,7 @@ if ($codigoUsuario) {
     <div class="w-full max-w-full py-4 px-4 sm:px-6 lg:px-8 box-border">
 
         <!-- CARD FILTROS PLEGABLE -->
-        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+        <div class="card-filtros-compacta mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
             <!-- HEADER -->
             <button type="button" onclick="toggleFiltros()"
                 class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">

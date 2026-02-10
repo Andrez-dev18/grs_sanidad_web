@@ -245,7 +245,7 @@ $result = $conexion->query($query);
             <header class="flex-shrink-0 bg-white p-4 rounded-xl shadow-sm border border-[#e5e7eb]">
 
                 <!-- FILTROS -->
-                <div class="mt-2 bg-white">
+                <div class="card-filtros-compacta mt-2 bg-white">
 
                     <!-- HEADER FILTROS (con botón plegable) -->
                     <div class="flex items-center justify-between cursor-pointer" onclick="toggleFiltros()">

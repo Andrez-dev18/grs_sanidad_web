@@ -124,7 +124,7 @@ if (!$conexion) {
 
 <div class="container-fluid py-4">
     <!-- CARD FILTROS PLEGABLE -->
-    <div class="mx-5 mb-6 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+    <div class="card-filtros-compacta mx-5 mb-6 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <!-- HEADER -->
         <button type="button" onclick="toggleFiltros()"
             class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">

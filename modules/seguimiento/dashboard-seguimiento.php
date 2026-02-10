@@ -692,7 +692,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     <div class="w-full max-w-full py-4 px-4 sm:px-6 lg:px-8 box-border">
 
         <!-- CARD FILTROS PLEGABLE (mismo estilo que reportes) -->
-        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+        <div class="card-filtros-compacta mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
 
                     <!-- HEADER -->
                     <button type="button" onclick="toggleFiltros()"

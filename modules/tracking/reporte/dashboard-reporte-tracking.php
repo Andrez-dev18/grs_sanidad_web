@@ -287,7 +287,7 @@ if ($codigoUsuario) {
     <div class="container-fluid py-4">
 
         <!-- CARD FILTROS PLEGABLE -->
-        <div class="mx-5 mb-6 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div class="card-filtros-compacta mx-5 mb-6 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
 
             <!-- HEADER -->
             <button type="button" onclick="toggleFiltros()"

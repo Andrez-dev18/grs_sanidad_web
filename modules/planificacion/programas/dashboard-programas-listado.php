@@ -196,7 +196,7 @@ if (empty($_SESSION['active'])) {
     <div class="w-full max-w-full py-4 px-4 sm:px-6 lg:px-8 box-border">
 
         <!-- Card Programas: filtros + tabla única + botón exportar PDF -->
-        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+        <div class="card-filtros-compacta mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
             <!-- Filtros de búsqueda (estilo reportes, desplegado por defecto) -->
             <div class="border-b border-gray-200">
                 <button type="button" id="btnToggleFiltrosProgramas"
