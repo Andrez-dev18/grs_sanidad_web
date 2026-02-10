@@ -358,7 +358,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
                 if ($extension === 'pdf') {
 
-                    $boton = '<button onclick="previsualizarPDF(\'' . htmlspecialchars($ruta) . '\')" 
+                    $boton = '<button onclick="previsualizarPDF(\'../../' . htmlspecialchars($ruta) . '\')" 
                                 class="px-4 py-2 bg-red-600 text-white rounded-lg">
                                 📄 Ver PDF
                             </button>';
