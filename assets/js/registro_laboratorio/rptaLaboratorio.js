@@ -1052,7 +1052,7 @@ function confirmarCambioCuali(checkbox) {
 
     if (!checkbox.checked) {
         var prom = (typeof SwalConfirm === 'function') ? SwalConfirm('¿Desea desactivar los resultados cualitativos?', 'Confirmar') : Promise.resolve(confirm('⚠️ ¿Desea desactivar los resultados cualitativos?'));
-        prom.then(function(confirmar) {
+        prom.then(function (confirmar) {
             if (!confirmar) { checkbox.checked = true; return; }
             desactivarResultadosCuali();
         });
@@ -1060,7 +1060,7 @@ function confirmarCambioCuali(checkbox) {
     }
     if (checkbox.checked) {
         var prom = (typeof SwalConfirm === 'function') ? SwalConfirm('¿Desea activar los resultados cualitativos?', 'Confirmar') : Promise.resolve(confirm('⚠️ ¿Desea activar los resultados cualitativos?'));
-        prom.then(function(confirmar) {
+        prom.then(function (confirmar) {
             if (!confirmar) { checkbox.checked = false; return; }
             activarResultadosCuali();
         });
@@ -1116,7 +1116,7 @@ function confirmarCambioCuanti(checkbox) {
 
     if (!checkbox.checked) {
         var prom = (typeof SwalConfirm === 'function') ? SwalConfirm('¿Desea desactivar los resultados cuantitativos?', 'Confirmar') : Promise.resolve(confirm('⚠️ ¿Desea desactivar los resultados cuantitativos?'));
-        prom.then(function(confirmar) {
+        prom.then(function (confirmar) {
             if (!confirmar) { checkbox.checked = true; return; }
             desactivarResultadosCuanti();
         });
@@ -1124,7 +1124,7 @@ function confirmarCambioCuanti(checkbox) {
     }
     if (checkbox.checked) {
         var prom = (typeof SwalConfirm === 'function') ? SwalConfirm('¿Desea activar los resultados cuantitativos?', 'Confirmar') : Promise.resolve(confirm('⚠️ ¿Desea activar los resultados cuantitativos?'));
-        prom.then(function(confirmar) {
+        prom.then(function (confirmar) {
             if (!confirmar) { checkbox.checked = false; return; }
             activarResultadosCuanti();
         });
@@ -1357,8 +1357,8 @@ inputPDF.addEventListener("change", () => {
 
         // validar tipo
         if (!allowedTypes.includes(file.type)) {
-                if (typeof SwalAlert === 'function') SwalAlert('Archivo no permitido: ' + file.name, 'error'); else alert('❌ Archivo no permitido: ' + file.name);
-                continue;
+            if (typeof SwalAlert === 'function') SwalAlert('Archivo no permitido: ' + file.name, 'error'); else alert('❌ Archivo no permitido: ' + file.name);
+            continue;
         }
 
         // validar tamaño
@@ -1656,30 +1656,30 @@ function reemplazarArchivoCuanti(idArchivo) {
 function eliminarArchivoCuanti(idArchivo, nombreArchivo) {
     var msg = '¿Estás seguro de eliminar el archivo "' + nombreArchivo + '"? Esta acción no se puede deshacer.';
     var prom = (typeof SwalConfirm === 'function') ? SwalConfirm(msg, 'Confirmar eliminación') : Promise.resolve(confirm(msg));
-    prom.then(function(confirmed) {
+    prom.then(function (confirmed) {
         if (!confirmed) return;
         var codigoEnvio = window.codigoEnvioActual;
         var posSolicitud = window.posSolicitudActual;
         fetch('eliminar_archivo.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            idArchivo: idArchivo
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                idArchivo: idArchivo
+            })
         })
-    })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                if (typeof SwalAlert === 'function') SwalAlert('Archivo eliminado correctamente', 'success'); else alert('Archivo eliminado correctamente');
-                cargarArchivosCompletadosCuanti(codigoEnvio, posSolicitud);
-            } else {
-                if (typeof SwalAlert === 'function') SwalAlert('Error: ' + data.message, 'error'); else alert('Error: ' + data.message);
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            if (typeof SwalAlert === 'function') SwalAlert('Error de conexión al eliminar archivo', 'error'); else alert('Error de conexión al eliminar archivo');
-        });
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    if (typeof SwalAlert === 'function') SwalAlert('Archivo eliminado correctamente', 'success'); else alert('Archivo eliminado correctamente');
+                    cargarArchivosCompletadosCuanti(codigoEnvio, posSolicitud);
+                } else {
+                    if (typeof SwalAlert === 'function') SwalAlert('Error: ' + data.message, 'error'); else alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                if (typeof SwalAlert === 'function') SwalAlert('Error de conexión al eliminar archivo', 'error'); else alert('Error de conexión al eliminar archivo');
+            });
     });
 }
 
@@ -1734,29 +1734,29 @@ function reemplazarArchivo(idArchivo) {
 function eliminarArchivo(idArchivo, nombreArchivo) {
     var msg = '¿Estás seguro de eliminar el archivo "' + nombreArchivo + '"? Esta acción no se puede deshacer.';
     var prom = (typeof SwalConfirm === 'function') ? SwalConfirm(msg, 'Confirmar eliminación') : Promise.resolve(confirm(msg));
-    prom.then(function(confirmed) {
+    prom.then(function (confirmed) {
         if (!confirmed) return;
         var codigoEnvio = document.getElementById("detailCodigo").textContent;
         fetch('eliminar_archivo.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            idArchivo: idArchivo
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                idArchivo: idArchivo
+            })
         })
-    })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                if (typeof SwalAlert === 'function') SwalAlert('Archivo eliminado correctamente', 'success'); else alert('Archivo eliminado correctamente');
-                cargarArchivosCompletados(codigoEnvio, currentPosition);
-            } else {
-                if (typeof SwalAlert === 'function') SwalAlert('Error: ' + data.message, 'error'); else alert('Error: ' + data.message);
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            if (typeof SwalAlert === 'function') SwalAlert('Error de conexión al eliminar archivo', 'error'); else alert('Error de conexión al eliminar archivo');
-        });
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    if (typeof SwalAlert === 'function') SwalAlert('Archivo eliminado correctamente', 'success'); else alert('Archivo eliminado correctamente');
+                    cargarArchivosCompletados(codigoEnvio, currentPosition);
+                } else {
+                    if (typeof SwalAlert === 'function') SwalAlert('Error: ' + data.message, 'error'); else alert('Error: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                if (typeof SwalAlert === 'function') SwalAlert('Error de conexión al eliminar archivo', 'error'); else alert('Error de conexión al eliminar archivo');
+            });
     });
 }
 
@@ -2033,20 +2033,17 @@ async function cargarDatosCompletados(codigoEnvio) {
                 state[`${enf.nombre}_sd`] = d.desviacion_estandar || '';
                 state[`${enf.nombre}_count`] = d.count_muestras || 20;
 
-                // Niveles según tipo
-                if (tipo.toUpperCase() === 'ADULTO') {
-                    for (let i = 1; i <= 6; i++) {
-                        const colBD = `s${String(i).padStart(2, '0')}`;
-                        const nombreInput = `${enf.nombre}_s${i}`;
-                        state[nombreInput] = d[colBD] || '';
-                        console.log(`  ${nombreInput} = ${d[colBD]}`);
-                    }
-                } else {
-                    for (let i = 0; i <= 25; i++) {
-                        const colBD = `nivel_${i}`;
-                        const nombreInput = `${enf.nombre}_n${i}`;
-                        state[nombreInput] = d[colBD] || 0;
-                    }
+                for (let i = 0; i <= 24; i++) {
+                    // Nombre de columna en BD (según tu función save: 's0' + i)
+                    // Ej: i=0 -> s00, i=10 -> s010
+                    const colBD = `s0${i}`;
+
+                    // Nombre del input en HTML
+                    const nombreInput = `${enf.nombre}_s${i}`;
+
+                    // Asignar valor (si es null o undefined, poner vacío o 0 según prefieras)
+                    // Nota: Si en BD es NULL, aquí ponemos cadena vacía para que el input se vea limpio
+                    state[nombreInput] = (d[colBD] !== null && d[colBD] !== undefined) ? d[colBD] : '';
                 }
 
                 window.enfermedadStates[enf.nombre] = state;
@@ -2379,10 +2376,10 @@ function guardar(e, estadoCuanti = 'completado') {
     const enfermedadesAEnviar = Object.keys(window.enfermedadStates || {});
     console.log('📋 Enfermedades a enviar:', enfermedadesAEnviar);
     console.log('📋 Total enfermedades:', enfermedadesAEnviar.length);
-    
+
     // ✅ Usar Set para evitar duplicados
     const enfermedadesUnicas = [...new Set(enfermedadesAEnviar)];
-    
+
     enfermedadesUnicas.forEach(enfName => {
         const st = window.enfermedadStates[enfName] || {};
         const inpE = document.createElement('input');
@@ -2642,27 +2639,15 @@ function renderEnfermedadPanel(enf, conf, tipo) {
         codigoEnfermedad = window.enfermedadesAgregadasReciente[enf];
     }
 
-    let nivelesHtml = '';
-    if ((tipo || '').toUpperCase() === 'ADULTO') {
-        nivelesHtml = `<div class="mt-2 grid grid-cols-6 gap-2 bg-gray-50 p-2 rounded border border-gray-100">` +
-            Array.from({ length: 6 }, (_, i) => {
-                const idx = i + 1;
-                return `<input type="number" name="${enf}_s${idx}" placeholder="S${idx}" class="text-center text-[10px] border border-gray-300 rounded h-7 w-full focus:border-blue-500 outline-none">`;
-            }).join('') +
-            `</div>`;
-    } else {
-        nivelesHtml = `<div class="mt-2 bg-gray-50 p-3 rounded border border-gray-100">
-            <div class="text-sm font-semibold text-gray-600 mb-2">Niveles (N0 - N25)</div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">` +
-            Array.from({ length: 26 }, (_, i) => {
-                const label = 't' + String(i + 1).padStart(2, '0');
-                return `<div class="flex flex-col">
-                    <label class="text-[10px] text-gray-500 mb-1 text-center font-medium">${label}</label>
-                    <input type="number" name="${enf}_n${i}" placeholder="${label}" class="text-center text-sm border border-gray-300 rounded py-2 px-2 w-full focus:border-blue-500 outline-none bg-white">
-                 </div>`
-            }).join('') +
-            `</div></div>`;
-    }
+    let nivelesHtml = `<div class="mt-2 grid grid-cols-5 gap-2 bg-gray-50 p-3 rounded border border-gray-100">` +
+        Array.from({ length: 25 }, (_, i) => {
+            // Genera inputs desde S0 hasta S24
+            return `<input type="number" 
+                           name="${enf}_s${i}" 
+                           placeholder="S${i}" 
+                           class="text-center text-xs border border-gray-300 rounded h-8 w-full focus:border-blue-500 outline-none hover:bg-white transition-colors focus:ring-1 focus:ring-blue-200">`;
+        }).join('') +
+        `</div>`;
 
     /* CODIGO ANTERIOR - sin botón de eliminar enfermedad
     panel.innerHTML = `
@@ -2746,7 +2731,7 @@ function eliminarEnfermedadCuanti(nombreEnfermedad, codigoEnfermedad) {
     //  Permitir eliminar aunque tenga resultados (solo enfermedades agregadas recientemente)
     var msgElim = '¿Eliminar "' + nombreEnfermedad + '" de esta solicitud?\n\nSi tiene resultados guardados, también se eliminarán.';
     var promElim = (typeof SwalConfirm === 'function') ? SwalConfirm(msgElim, 'Confirmar eliminación') : Promise.resolve(confirm(msgElim));
-    promElim.then(function(ok) {
+    promElim.then(function (ok) {
         if (!ok) return;
         var fd = new FormData();
         fd.append('action', 'eliminar_enfermedad_solicitud');
@@ -2927,114 +2912,114 @@ function filtrarEnfermedadesCatalogo() {
 function agregarEnfermedadASolicitud(codigo, nombre) {
     var msgAgr = '¿Agregar "' + nombre + '" a la solicitud ' + window.codigoEnvioActual + ' (Pos: ' + window.posSolicitudActual + ')?';
     var promAgr = (typeof SwalConfirm === 'function') ? SwalConfirm(msgAgr, 'Confirmar') : Promise.resolve(confirm(msgAgr));
-    promAgr.then(function(confirmed) {
+    promAgr.then(function (confirmed) {
         if (!confirmed) return;
-    var codRef = document.getElementById('edadAves_display').value;
-    //const fecToma = document.getElementById('fechaToma').value;
+        var codRef = document.getElementById('edadAves_display').value;
+        //const fecToma = document.getElementById('fechaToma').value;
 
-    const fd = new FormData();
-    fd.append('action', 'agregar_enfermedad_solicitud');
-    fd.append('codEnvio', window.codigoEnvioActual);
-    fd.append('posSolicitud', window.posSolicitudActual); // ✅ Enviar posSolicitud actual
-    fd.append('codAnalisis', codigo);
-    fd.append('nomAnalisis', nombre);
-    fd.append('codRef', codRef);
-    fd.append('fecToma', fecTomaCuantiAux);
+        const fd = new FormData();
+        fd.append('action', 'agregar_enfermedad_solicitud');
+        fd.append('codEnvio', window.codigoEnvioActual);
+        fd.append('posSolicitud', window.posSolicitudActual); // ✅ Enviar posSolicitud actual
+        fd.append('codAnalisis', codigo);
+        fd.append('nomAnalisis', nombre);
+        fd.append('codRef', codRef);
+        fd.append('fecToma', fecTomaCuantiAux);
 
-    // ✅ Guardar el nombre de la enfermedad que se está agregando
-    const nombreEnfermedadNueva = nombre;
-    const codigoEnfermedadNueva = codigo;
+        // ✅ Guardar el nombre de la enfermedad que se está agregando
+        const nombreEnfermedadNueva = nombre;
+        const codigoEnfermedadNueva = codigo;
 
-    fetch('crud-serologia.php', { method: 'POST', body: fd })
-        .then(r => r.text())
-        .then(text => {
-            try {
-                const data = JSON.parse(text);
-                if (data.success) {
-                    if (typeof SwalAlert === 'function') SwalAlert('Enfermedad agregada', 'success'); else alert('✅ Enfermedad agregada');
-                    cerrarModalAgregarEnfermedad();
+        fetch('crud-serologia.php', { method: 'POST', body: fd })
+            .then(r => r.text())
+            .then(text => {
+                try {
+                    const data = JSON.parse(text);
+                    if (data.success) {
+                        if (typeof SwalAlert === 'function') SwalAlert('Enfermedad agregada', 'success'); else alert('✅ Enfermedad agregada');
+                        cerrarModalAgregarEnfermedad();
 
-                    /* CODIGO ANTERIOR (no incluía posSolicitud en la consulta)
-                    fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}`)
-                    */
-                    // ✅ Incluir posSolicitud en la consulta para obtener solo las enfermedades de esta solicitud
-                    fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}&posSolicitud=${window.posSolicitudActual}`)
-                        .then(r => r.text())
-                        .then(t => {
-                            try {
-                                const dd = JSON.parse(t);
-                                if (dd.success) {
-                                    window.enfermedadesActuales = dd.enfermedades;
+                        /* CODIGO ANTERIOR (no incluía posSolicitud en la consulta)
+                        fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}`)
+                        */
+                        // ✅ Incluir posSolicitud en la consulta para obtener solo las enfermedades de esta solicitud
+                        fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}&posSolicitud=${window.posSolicitudActual}`)
+                            .then(r => r.text())
+                            .then(t => {
+                                try {
+                                    const dd = JSON.parse(t);
+                                    if (dd.success) {
+                                        window.enfermedadesActuales = dd.enfermedades;
 
-                                    // ✅ Inicializar el estado de la nueva enfermedad (vacío para poder guardar datos)
-                                    dd.enfermedades.forEach(enf => {
-                                        if (!window.enfermedadStates[enf.nombre]) {
-                                            window.enfermedadStates[enf.nombre] = {};
+                                        // ✅ Inicializar el estado de la nueva enfermedad (vacío para poder guardar datos)
+                                        dd.enfermedades.forEach(enf => {
+                                            if (!window.enfermedadStates[enf.nombre]) {
+                                                window.enfermedadStates[enf.nombre] = {};
+                                            }
+                                        });
+
+                                        // ✅ Marcar la enfermedad como agregada recientemente (para mostrar X)
+                                        if (!window.enfermedadesAgregadasReciente) {
+                                            window.enfermedadesAgregadasReciente = {};
                                         }
-                                    });
+                                        window.enfermedadesAgregadasReciente[nombreEnfermedadNueva] = codigoEnfermedadNueva;
 
-                                    // ✅ Marcar la enfermedad como agregada recientemente (para mostrar X)
-                                    if (!window.enfermedadesAgregadasReciente) {
-                                        window.enfermedadesAgregadasReciente = {};
+                                        const tipo = document.getElementById('tipo_ave_hidden') ? document.getElementById('tipo_ave_hidden').value : 'BB';
+
+                                        /* CODIGO ANTERIOR (solo renderizaba sin seleccionar la nueva)
+                                        renderizarEnfermedades(tipo);
+                                        const selectEnfermedad = document.getElementById('selectEnfermedad');
+                                        if (selectEnfermedad) {
+                                            const enfermedadesUnicas = [...new Set(dd.enfermedades.map(e => e.enfermedad || e.nombre))];
+                                            const label = selectEnfermedad.parentElement?.querySelector('label');
+                                            if (label) {
+                                                label.textContent = `Seleccione Enfermedad (${enfermedadesUnicas.length} asignadas)`;
+                                            }
+                                        }
+                                        */
+
+                                        //  Seleccionar automáticamente la nueva enfermedad agregada
+                                        // Primero renderizamos las enfermedades (esto pondrá la primera por defecto)
+                                        renderizarEnfermedades(tipo);
+
+                                        const selectEnfermedad = document.getElementById('selectEnfermedad');
+                                        if (selectEnfermedad) {
+                                            // Buscar la opción que coincida con el nombre de la enfermedad agregada
+                                            const opciones = Array.from(selectEnfermedad.options);
+                                            const opcionNueva = opciones.find(opt => opt.value === nombreEnfermedadNueva);
+
+                                            if (opcionNueva) {
+                                                // Cambiar el valor del select a la nueva enfermedad
+                                                selectEnfermedad.value = nombreEnfermedadNueva;
+                                                window.currentEnfermedadSelected = nombreEnfermedadNueva;
+
+                                                // Disparar el evento change para que se renderice el panel correcto
+                                                selectEnfermedad.dispatchEvent(new Event('change'));
+                                            }
+
+                                            const enfermedadesUnicas = [...new Set(dd.enfermedades.map(e => e.enfermedad || e.nombre))];
+                                            const label = selectEnfermedad.parentElement?.querySelector('label');
+                                            if (label) {
+                                                label.textContent = `Seleccione Enfermedad (${enfermedadesUnicas.length} asignadas)`;
+                                            }
+                                        }
                                     }
-                                    window.enfermedadesAgregadasReciente[nombreEnfermedadNueva] = codigoEnfermedadNueva;
-
-                                    const tipo = document.getElementById('tipo_ave_hidden') ? document.getElementById('tipo_ave_hidden').value : 'BB';
-
-                                    /* CODIGO ANTERIOR (solo renderizaba sin seleccionar la nueva)
-                                    renderizarEnfermedades(tipo);
-                                    const selectEnfermedad = document.getElementById('selectEnfermedad');
-                                    if (selectEnfermedad) {
-                                        const enfermedadesUnicas = [...new Set(dd.enfermedades.map(e => e.enfermedad || e.nombre))];
-                                        const label = selectEnfermedad.parentElement?.querySelector('label');
-                                        if (label) {
-                                            label.textContent = `Seleccione Enfermedad (${enfermedadesUnicas.length} asignadas)`;
-                                        }
-                                    }
-                                    */
-
-                                    //  Seleccionar automáticamente la nueva enfermedad agregada
-                                    // Primero renderizamos las enfermedades (esto pondrá la primera por defecto)
-                                    renderizarEnfermedades(tipo);
-
-                                    const selectEnfermedad = document.getElementById('selectEnfermedad');
-                                    if (selectEnfermedad) {
-                                        // Buscar la opción que coincida con el nombre de la enfermedad agregada
-                                        const opciones = Array.from(selectEnfermedad.options);
-                                        const opcionNueva = opciones.find(opt => opt.value === nombreEnfermedadNueva);
-
-                                        if (opcionNueva) {
-                                            // Cambiar el valor del select a la nueva enfermedad
-                                            selectEnfermedad.value = nombreEnfermedadNueva;
-                                            window.currentEnfermedadSelected = nombreEnfermedadNueva;
-
-                                            // Disparar el evento change para que se renderice el panel correcto
-                                            selectEnfermedad.dispatchEvent(new Event('change'));
-                                        }
-
-                                        const enfermedadesUnicas = [...new Set(dd.enfermedades.map(e => e.enfermedad || e.nombre))];
-                                        const label = selectEnfermedad.parentElement?.querySelector('label');
-                                        if (label) {
-                                            label.textContent = `Seleccione Enfermedad (${enfermedadesUnicas.length} asignadas)`;
-                                        }
-                                    }
+                                } catch (e) {
+                                    console.error('Error parseando respuesta:', e);
                                 }
-                            } catch (e) {
-                                console.error('Error parseando respuesta:', e);
-                            }
-                        });
-                } else {
-                    if (typeof SwalAlert === 'function') SwalAlert(data.message, 'error'); else alert('❌ Error: ' + data.message);
+                            });
+                    } else {
+                        if (typeof SwalAlert === 'function') SwalAlert(data.message, 'error'); else alert('❌ Error: ' + data.message);
+                    }
+                } catch (err) {
+                    console.error('Respuesta no JSON:', text);
+                    if (typeof SwalAlert === 'function') SwalAlert('Respuesta inesperada del servidor. Revisa la consola (F12).', 'error'); else alert('Respuesta inesperada del servidor. Revisa la consola (F12).');
                 }
-            } catch (err) {
-                console.error('Respuesta no JSON:', text);
-                if (typeof SwalAlert === 'function') SwalAlert('Respuesta inesperada del servidor. Revisa la consola (F12).', 'error'); else alert('Respuesta inesperada del servidor. Revisa la consola (F12).');
-            }
-        })
-        .catch(e => {
-            console.error('Error fetch:', e);
-            if (typeof SwalAlert === 'function') SwalAlert('Error de conexión: ' + e.message, 'error'); else alert('❌ Error de conexión: ' + e.message);
-        });
+            })
+            .catch(e => {
+                console.error('Error fetch:', e);
+                if (typeof SwalAlert === 'function') SwalAlert('Error de conexión: ' + e.message, 'error'); else alert('❌ Error de conexión: ' + e.message);
+            });
     });
 }
 
@@ -3097,11 +3082,11 @@ if (inputPDFCuanti) {
 
         for (let file of inputPDFCuanti.files) {
             if (!allowedTypes.includes(file.type)) {
-            if (typeof SwalAlert === 'function') SwalAlert('Archivo no permitido: ' + file.name, 'error'); else alert('❌ Archivo no permitido: ' + file.name);
-            continue;
-        }
+                if (typeof SwalAlert === 'function') SwalAlert('Archivo no permitido: ' + file.name, 'error'); else alert('❌ Archivo no permitido: ' + file.name);
+                continue;
+            }
 
-        if (file.size > MAX_SIZE) {
+            if (file.size > MAX_SIZE) {
                 if (typeof SwalAlert === 'function') SwalAlert(file.name + ' pesa ' + (file.size / 1024 / 1024).toFixed(2) + 'MB (máx. 10MB)', 'error'); else alert('❌ ' + file.name + ' pesa ' + (file.size / 1024 / 1024).toFixed(2) + 'MB (máx. 10MB)');
                 continue;
             }

@@ -95,7 +95,7 @@ $result = $conexion->query($query);
     <title>Dashboard - Respuesta lab</title>
 
     <!-- Tailwind CSS -->
-    <link href="../../css/output.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
