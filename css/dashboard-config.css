@@ -1,5 +1,12 @@
 /* Estilos unificados para dashboards de configuración (botones, tabla, DataTables) */
 
+/* Filtro por periodo: más ancho en todas las secciones */
+.filter-row-periodo > div.flex-shrink-0[style*="width"] { min-width: 200px !important; }
+.filter-row-periodo #periodoPorFecha,
+.filter-row-periodo #periodoPorMes { min-width: 200px !important; }
+.filter-row-periodo .min-w-\[120px\] { min-width: 180px !important; }
+.filter-row-periodo .min-w-\[130px\] { min-width: 200px !important; }
+
 /* Botones: mismo estilo que tipo_muestra */
 .btn-export {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);

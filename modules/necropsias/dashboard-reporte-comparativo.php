@@ -145,41 +145,41 @@ if (!$conexion) {
         <div id="contenidoFiltros" class="px-6 pb-6 pt-4">
             <!-- Fila 1: Periodo -->
             <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
-                <div class="flex-shrink-0" style="width: 100px;">
+                <div class="flex-shrink-0" style="min-width: 200px;">
                     <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-alt mr-1 text-blue-600"></i>Periodo</label>
                     <select id="periodoTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
-                        <option value="TODOS" selected>Todos</option>
-                        <option value="POR_FECHA">Por fecha</option>
+                        <option value="TODOS">Todos</option>
+                        <option value="POR_FECHA" selected>Por fecha</option>
                         <option value="ENTRE_FECHAS">Entre fechas</option>
                         <option value="POR_MES">Por mes</option>
                         <option value="ENTRE_MESES">Entre meses</option>
                         <option value="ULTIMA_SEMANA">Última Semana</option>
                     </select>
                 </div>
-                <div id="periodoPorFecha" class="flex-shrink-0 min-w-[130px] hidden">
+                <div id="periodoPorFecha" class="flex-shrink-0 min-w-[200px] hidden">
                     <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-day mr-1 text-blue-600"></i>Fecha</label>
-                    <input id="fechaUnica" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    <input id="fechaUnica" type="date" value="<?php echo date('Y-m-d'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                 </div>
                 <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
-                    <div class="min-w-[120px]">
+                    <div class="min-w-[180px]">
                         <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Desde</label>
                         <input id="fechaInicio" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     </div>
-                    <div class="min-w-[120px]">
+                    <div class="min-w-[180px]">
                         <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label>
                         <input id="fechaFin" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     </div>
                 </div>
-                <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[130px]">
+                <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[200px]">
                     <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
                     <input id="mesUnico" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                 </div>
                 <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
-                    <div class="min-w-[120px]">
+                    <div class="min-w-[180px]">
                         <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label>
                         <input id="mesInicio" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     </div>
-                    <div class="min-w-[120px]">
+                    <div class="min-w-[180px]">
                         <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label>
                         <input id="mesFin" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     </div>
@@ -797,8 +797,8 @@ if (!$conexion) {
 
         // Limpiar filtros
         function limpiarFiltros() {
-            document.getElementById('periodoTipo').value = 'TODOS';
-            document.getElementById('fechaUnica').value = '';
+            document.getElementById('periodoTipo').value = 'POR_FECHA';
+            document.getElementById('fechaUnica').value = new Date().toISOString().slice(0, 10);
             document.getElementById('fechaInicio').value = '';
             document.getElementById('fechaFin').value = '';
             document.getElementById('mesUnico').value = '';
