@@ -12,9 +12,7 @@ CREATE TABLE IF NOT EXISTS san_dim_tipo_programa (
     codigo INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
     sigla VARCHAR(20) DEFAULT NULL,
-    campoZona TINYINT(1) NOT NULL DEFAULT 0,
-    campoDespliegue TINYINT(1) NOT NULL DEFAULT 0,
-    campoDescripcion TINYINT(1) NOT NULL DEFAULT 0,
+   
     campoUbicacion TINYINT(1) NOT NULL DEFAULT 0,
     campoProducto TINYINT(1) NOT NULL DEFAULT 0,
     campoUnidades TINYINT(1) NOT NULL DEFAULT 0,

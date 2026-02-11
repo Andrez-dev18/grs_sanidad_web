@@ -5,38 +5,56 @@ if (empty($_SESSION['active'])) {
     exit('No autorizado');
 }
 
-$granja = trim((string)($_GET['granja'] ?? ''));
-$campania = trim((string)($_GET['campania'] ?? ''));
-$galpon = trim((string)($_GET['galpon'] ?? ''));
 $codPrograma = trim((string)($_GET['codPrograma'] ?? ''));
+$numCronograma = trim((string)($_GET['numCronograma'] ?? ''));
+$porNumCronograma = $numCronograma !== '' && ctype_digit($numCronograma);
 
-if ($granja === '' || $campania === '' || $galpon === '' || $codPrograma === '') {
-    exit('Faltan parámetros: granja, campania, galpon, codPrograma');
+if (!$porNumCronograma && $codPrograma === '') {
+    exit('Falta parámetro: codPrograma o numCronograma');
 }
 
 include_once '../../../../conexion_grs_joya/conexion.php';
 $conn = conectar_joya();
 if (!$conn) exit('Error de conexión');
 
-$chk = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'fechaHoraRegistro'");
-$tieneFechaHora = $chk && $chk->num_rows > 0;
-$sql = "SELECT nomPrograma, zona, fechaCarga, fechaEjecucion";
-if ($tieneFechaHora) $sql .= ", fechaHoraRegistro";
-$sql .= " FROM san_fact_cronograma WHERE granja = ? AND campania = ? AND galpon = ? AND codPrograma = ? ORDER BY fechaEjecucion ASC";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("ssss", $granja, $campania, $galpon, $codPrograma);
+$chk = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'nomGranja'");
+$tieneNomGranja = $chk && $chk->num_rows > 0;
+$chk2 = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'edad'");
+$tieneEdad = $chk2 && $chk2->num_rows > 0;
+$chk3 = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'posDetalle'");
+$tienePosDetalle = $chk3 && $chk3->num_rows > 0;
+
+$sql = "SELECT codPrograma, nomPrograma, granja, campania, galpon, fechaCarga, fechaEjecucion";
+if ($tieneNomGranja) $sql .= ", nomGranja";
+if ($tieneEdad) $sql .= ", edad";
+if ($tienePosDetalle) $sql .= ", posDetalle";
+if ($porNumCronograma) {
+    $sql .= " FROM san_fact_cronograma WHERE numCronograma = ? ORDER BY granja, campania, galpon, fechaEjecucion ASC";
+    $stmt = $conn->prepare($sql);
+    $numCronoInt = (int)$numCronograma;
+    $stmt->bind_param("i", $numCronoInt);
+} else {
+    $sql .= " FROM san_fact_cronograma WHERE codPrograma = ? ORDER BY granja, campania, galpon, fechaEjecucion ASC";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $codPrograma);
+}
 $stmt->execute();
 $res = $stmt->get_result();
 $filas = [];
 $nomPrograma = '';
-$zona = '';
 while ($row = $res->fetch_assoc()) {
     if ($nomPrograma === '') $nomPrograma = (string)($row['nomPrograma'] ?? '');
-    if ($zona === '') $zona = (string)($row['zona'] ?? '');
     $filas[] = [
+        'codPrograma' => $row['codPrograma'] ?? '',
+        'nomPrograma' => $row['nomPrograma'] ?? '',
+        'granja' => $row['granja'] ?? '',
+        'nomGranja' => $tieneNomGranja ? ($row['nomGranja'] ?? '') : ($row['granja'] ?? ''),
+        'campania' => $row['campania'] ?? '',
+        'galpon' => $row['galpon'] ?? '',
+        'edad' => $tieneEdad ? ($row['edad'] ?? '') : '',
+        'posDetalle' => $tienePosDetalle ? ($row['posDetalle'] ?? '') : '',
         'fechaCarga' => $row['fechaCarga'] ?? '',
         'fechaEjecucion' => $row['fechaEjecucion'] ?? '',
-        'fechaHoraRegistro' => $tieneFechaHora ? ($row['fechaHoraRegistro'] ?? '') : ($row['fechaCarga'] ?? '')
     ];
 }
 $stmt->close();
@@ -87,19 +105,20 @@ $html .= '<td style="width: 60%; text-align: center; padding: 8px 10px; backgrou
 $html .= '<td style="width: 20%; background-color: #fff; border: 1px solid #cbd5e1;"></td></tr></table>';
 
 $html .= '<table class="data-table">';
-$html .= '<thead><tr><th>N°</th><th>Cód. Programa</th><th>Nom. Programa</th><th>Fecha Prog.</th><th>Granja</th><th>Campaña</th><th>Galpón</th><th>Fec. Carga</th><th>Fec. Ejecución</th></tr></thead><tbody>';
+$html .= '<thead><tr><th>N°</th><th>Cód. Programa</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Edad</th><th>Fec. Carga</th><th>Fec. Ejecución</th></tr></thead><tbody>';
 if (empty($filas)) {
     $html .= '<tr><td colspan="9" style="text-align:center;color:#64748b;">Sin registros en el cronograma.</td></tr>';
 } else {
     foreach ($filas as $i => $f) {
+        $edad = ($f['edad'] !== '' && $f['edad'] !== null) ? $f['edad'] : '—';
         $html .= '<tr>';
         $html .= '<td>' . ($i + 1) . '</td>';
-        $html .= '<td>' . htmlspecialchars($codPrograma) . '</td>';
-        $html .= '<td>' . htmlspecialchars($nomPrograma) . '</td>';
-        $html .= '<td>' . htmlspecialchars(fechaDDMMYYYY($f['fechaHoraRegistro'])) . '</td>';
-        $html .= '<td>' . htmlspecialchars($granja) . '</td>';
-        $html .= '<td>' . htmlspecialchars($campania) . '</td>';
-        $html .= '<td>' . htmlspecialchars($galpon) . '</td>';
+        $html .= '<td>' . htmlspecialchars($f['codPrograma']) . '</td>';
+        $html .= '<td>' . htmlspecialchars($f['granja']) . '</td>';
+        $html .= '<td>' . htmlspecialchars($f['nomGranja']) . '</td>';
+        $html .= '<td>' . htmlspecialchars($f['campania']) . '</td>';
+        $html .= '<td>' . htmlspecialchars($f['galpon']) . '</td>';
+        $html .= '<td>' . htmlspecialchars($edad) . '</td>';
         $html .= '<td>' . htmlspecialchars(fechaDDMMYYYY($f['fechaCarga'])) . '</td>';
         $html .= '<td>' . htmlspecialchars(fechaDDMMYYYY($f['fechaEjecucion'])) . '</td>';
         $html .= '</tr>';
@@ -126,7 +145,7 @@ try {
     ]);
     $mpdf->SetFooter('<div style="text-align:center;font-size:9pt;font-weight:normal;">{PAGENO} de {nbpg}</div>');
     $mpdf->WriteHTML($html);
-    $nombreArchivo = 'cronograma_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $granja . '_' . $campania . '_' . $galpon . '_' . $codPrograma) . '_' . date('Ymd_His') . '.pdf';
+    $nombreArchivo = 'cronograma_' . ($porNumCronograma ? 'n' . $numCronograma : preg_replace('/[^a-zA-Z0-9_-]/', '_', $codPrograma)) . '_' . date('Ymd_His') . '.pdf';
     $mpdf->Output($nombreArchivo, 'I');
     exit;
 } catch (Exception $e) {

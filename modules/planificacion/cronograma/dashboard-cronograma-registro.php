@@ -59,9 +59,42 @@ if (empty($_SESSION['active'])) {
         .campanias-chk label { cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; gap: 0.35rem; }
         #modalCargaCrono.hidden { display: none !important; }
         #modalCargaCrono { display: flex; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+        .modal-overlay.hidden { display: none; }
+        .modal-box { background: white; border-radius: 1rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-width: 95%; width: 100%; max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
+        .modal-box .modal-header { padding: 1rem 1.25rem; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; }
+        .modal-box .modal-body { padding: 1rem 1.25rem; overflow-y: auto; flex: 1; }
+        .btn-ver-crono-detalle { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; color: #4b5563; border-radius: 0.5rem; }
+        .btn-ver-crono-detalle:hover { color: #2563eb; background: #eff6ff; }
+        .tabs-crono-resultado { display: flex; gap: 0; border-bottom: 1px solid #e2e8f0; margin-bottom: 0.75rem; }
+        .tabs-crono-resultado .tab-btn { padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; color: #64748b; background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; margin-bottom: -1px; }
+        .tabs-crono-resultado .tab-btn:hover { color: #2563eb; }
+        .tabs-crono-resultado .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
+        .tab-panel-crono { display: none; }
+        .tab-panel-crono.active { display: block; }
     </style>
 </head>
 <body class="bg-gray-50">
+    <!-- Modal Ver cabecera y detalle del programa (cronograma) -->
+    <div id="modalVerProgramaDetalleCrono" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal-box" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <h3 id="modalVerProgramaDetalleCronoTitulo" class="text-lg font-semibold text-gray-800">Programa - Cabecera y detalle</h3>
+                <button type="button" id="modalVerProgramaDetalleCronoCerrar" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="modalVerCabeceraCrono" class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200 text-sm"></div>
+                <div class="overflow-x-auto">
+                    <table class="tabla-fechas-crono w-full text-sm" id="tablaModalVerDetalleCrono">
+                        <thead class="bg-gray-50 border-b border-gray-200" id="modalVerDetalleTheadCrono"></thead>
+                        <tbody id="modalVerDetalleBodyCrono"></tbody>
+                    </table>
+                </div>
+                <p id="modalVerDetalleSinRegistrosCrono" class="hidden text-gray-500 text-sm mt-2">Sin registros en el detalle.</p>
+            </div>
+        </div>
+    </div>
+
     <div id="modalCargaCrono" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-sky-50 rounded-xl shadow-2xl p-8 text-center max-w-sm w-full">
             <img src="../../../assets/img/gallina.gif" alt="Cargando..." class="w-32 h-32 mx-auto mb-4" onerror="this.style.display='none'">
@@ -130,13 +163,35 @@ if (empty($_SESSION['active'])) {
                     <button type="button" id="btnAsignar" class="btn-primary w-full sm:w-auto">
                         <i class="fas fa-calendar-check mr-1"></i> Asignar
                     </button>
-                    <div id="fechasResultado" class="hidden"></div>
+                    <div id="fechasResultado" class="hidden mt-2 p-3 rounded-lg text-sm">
+                        <div class="tabs-crono-resultado">
+                            <button type="button" class="tab-btn active" data-tab="granjas" data-context="especifico">Granjas</button>
+                            <button type="button" class="tab-btn" data-tab="programa" data-context="especifico">Programa</button>
+                        </div>
+                        <div id="tabPanelGranjasEspecifico" class="tab-panel-crono active"></div>
+                        <div id="tabPanelProgramaEspecifico" class="tab-panel-crono">
+                            <div id="programaCabEspecifico" class="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm"></div>
+                            <div class="overflow-x-auto"><table class="tabla-fechas-crono w-full text-sm" id="tablaProgramaEspecifico"><thead id="programaTheadEspecifico"></thead><tbody id="programaBodyEspecifico"></tbody></table></div>
+                            <p id="programaSinRegEspecifico" class="hidden text-gray-500 text-sm mt-2">Sin registros en el detalle del programa.</p>
+                        </div>
+                    </div>
                 </div>
                 <div id="bloqueAsignarZonas" class="bloque-especifico" style="display:none;">
                     <button type="button" id="btnAsignarZonas" class="btn-primary">
                         <i class="fas fa-calendar-check mr-1"></i> Calcular fechas
                     </button>
-                    <div id="fechasResultadoZonas" class="hidden mt-2 p-3 rounded-lg text-sm"></div>
+                    <div id="fechasResultadoZonas" class="hidden mt-2 p-3 rounded-lg text-sm">
+                        <div class="tabs-crono-resultado">
+                            <button type="button" class="tab-btn active" data-tab="granjas" data-context="zonas">Granjas</button>
+                            <button type="button" class="tab-btn" data-tab="programa" data-context="zonas">Programa</button>
+                        </div>
+                        <div id="tabPanelGranjasZonas" class="tab-panel-crono active"></div>
+                        <div id="tabPanelProgramaZonas" class="tab-panel-crono">
+                            <div id="programaCabZonas" class="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm"></div>
+                            <div class="overflow-x-auto"><table class="tabla-fechas-crono w-full text-sm" id="tablaProgramaZonas"><thead id="programaTheadZonas"></thead><tbody id="programaBodyZonas"></tbody></table></div>
+                            <p id="programaSinRegZonas" class="hidden text-gray-500 text-sm mt-2">Sin registros en el detalle del programa.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="px-6 pb-6 flex gap-3 justify-end">
@@ -164,6 +219,186 @@ if (empty($_SESSION['active'])) {
             if (p.length >= 3) return (p[2].length === 1 ? '0' + p[2] : p[2]) + '/' + (p[1].length === 1 ? '0' + p[1] : p[1]) + '/' + p[0];
             return s;
         }
+        function esc(s) {
+            if (s === null || s === undefined) return '';
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+        }
+        function formatearDescripcionVacuna(s) {
+            if (s === null || s === undefined) s = '';
+            s = String(s).trim();
+            if (!s) return '';
+            if (/^Contra[\r\n]/.test(s) || (s.indexOf('\n') !== -1 && s.indexOf('- ') !== -1)) return s;
+            var partes = s.split(',').map(function(x) { return x.trim(); }).filter(Boolean);
+            if (partes.length === 0) return '';
+            return 'Contra\n' + partes.map(function(p) { return '- ' + p; }).join('\n');
+        }
+        var columnasPorSiglaReporte = {
+            'NC': ['num', 'ubicacion', 'edad'],
+            'PL': ['num', 'ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'edad'],
+            'GR': ['num', 'ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'edad'],
+            'MC': ['num', 'ubicacion', 'producto', 'proveedor', 'dosis', 'area_galpon', 'cantidad_por_galpon', 'unidadDosis', 'edad'],
+            'LD': ['num', 'ubicacion', 'producto', 'proveedor', 'dosis', 'unidadDosis', 'edad'],
+            'CP': ['num', 'ubicacion', 'producto', 'proveedor', 'dosis', 'unidadDosis', 'edad']
+        };
+        var columnasDetalleCompletasCrono = ['posDetalle','ubicacion','producto','proveedor','unidad','dosis','unidadDosis','numeroFrascos','edad','descripcion_vacuna','area_galpon','cantidad_por_galpon'];
+        var labelsReporteCrono = {
+            num: '#', posDetalle: 'N° Det', ubicacion: 'Ubicación', producto: 'Producto', proveedor: 'Proveedor', unidad: 'Unidad',
+            dosis: 'Dosis', descripcion_vacuna: 'Descripcion', numeroFrascos: 'Nº frascos', edad: 'Edad',
+            unidadDosis: 'Unid. dosis', area_galpon: 'Área galpón', cantidad_por_galpon: 'Cant. por galpón'
+        };
+        function valorCeldaDetalleCrono(k, d) {
+            if (k === 'num') return '';
+            if (k === 'ubicacion') return esc(d.ubicacion || '');
+            if (k === 'producto') return esc(d.nomProducto || d.codProducto || '');
+            if (k === 'proveedor') return esc(d.nomProveedor || '');
+            if (k === 'unidad') return esc(d.unidades || '');
+            if (k === 'dosis') return esc(d.dosis || '');
+            if (k === 'descripcion_vacuna') return esc(formatearDescripcionVacuna(d.descripcionVacuna));
+            if (k === 'numeroFrascos') return esc(d.numeroFrascos || '');
+            if (k === 'edad') return (d.edad !== null && d.edad !== undefined && d.edad !== '' ? d.edad : '');
+            if (k === 'unidadDosis') return esc(d.unidadDosis || '');
+            if (k === 'area_galpon') return (d.areaGalpon !== null && d.areaGalpon !== undefined && d.areaGalpon !== '' ? d.areaGalpon : '');
+            if (k === 'cantidad_por_galpon') return (d.cantidadPorGalpon !== null && d.cantidadPorGalpon !== undefined && d.cantidadPorGalpon !== '' ? d.cantidadPorGalpon : '');
+            if (k === 'posDetalle') return (d.posDetalle !== null && d.posDetalle !== undefined && d.posDetalle !== '' ? esc(d.posDetalle) : '');
+            return '';
+        }
+        function cargarTabProgramaEnResultadoCrono(codPrograma, cabElId, theadId, tbodyId, sinRegId) {
+            var cabEl = document.getElementById(cabElId);
+            var theadEl = document.getElementById(theadId);
+            var tbodyEl = document.getElementById(tbodyId);
+            var sinRegEl = document.getElementById(sinRegId);
+            if (!cabEl || !theadEl || !tbodyEl || !sinRegEl) return;
+            cabEl.innerHTML = '<span class="text-gray-500">Cargando...</span>';
+            theadEl.innerHTML = '';
+            tbodyEl.innerHTML = '';
+            sinRegEl.classList.add('hidden');
+            if (!codPrograma || String(codPrograma).trim() === '') {
+                cabEl.innerHTML = '<span class="text-gray-500">No hay programa seleccionado.</span>';
+                return;
+            }
+            fetch('../programas/get_programa_cab_detalle.php?codigo=' + encodeURIComponent(codPrograma)).then(function(r) { return r.json(); }).then(function(res) {
+                if (!res.success) {
+                    cabEl.innerHTML = '<span class="text-red-600">' + esc(res.message || 'Error al cargar programa.') + '</span>';
+                    return;
+                }
+                var cab = res.cab || {};
+                var detalles = res.detalles || [];
+                var cabHtml = '<div class="font-semibold text-gray-800 mb-1">' + esc(cab.codigo) + ' — ' + esc(cab.nombre) + '</div>';
+                cabHtml += '<dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">';
+                cabHtml += '<dt class="font-medium">Tipo</dt><dd>' + esc(cab.nomTipo || '') + '</dd>';
+                if (cab.despliegue) { cabHtml += '<dt class="font-medium">Despliegue</dt><dd>' + esc(cab.despliegue) + '</dd>'; }
+                if (cab.descripcion) { cabHtml += '<dt class="font-medium col-span-2">Descripción</dt><dd class="col-span-2">' + esc(cab.descripcion) + '</dd>'; }
+                cabHtml += '</dl>';
+                cabEl.innerHTML = cabHtml;
+                var colsDetalle = columnasDetalleCompletasCrono.slice();
+                var thCells = '<th class="px-3 py-2 text-left">Código</th><th class="px-3 py-2 text-left">Nombre programa</th><th class="px-3 py-2 text-left">Despliegue</th><th class="px-3 py-2 text-left">Descripción</th>';
+                colsDetalle.forEach(function(k) { thCells += '<th class="px-3 py-2 text-left">' + (labelsReporteCrono[k] || k) + '</th>'; });
+                theadEl.innerHTML = '<tr>' + thCells + '</tr>';
+                tbodyEl.innerHTML = '';
+                if (detalles.length === 0) {
+                    sinRegEl.classList.remove('hidden');
+                } else {
+                    detalles.forEach(function(d) {
+                        var tr = document.createElement('tr');
+                        tr.className = 'border-b border-gray-200';
+                        var td = '<td class="px-3 py-2">' + esc(cab.codigo) + '</td><td class="px-3 py-2">' + esc(cab.nombre) + '</td><td class="px-3 py-2">' + esc(cab.despliegue || '') + '</td><td class="px-3 py-2">' + esc(cab.descripcion || '') + '</td>';
+                        colsDetalle.forEach(function(k) {
+                            td += '<td class="px-3 py-2"' + (k === 'descripcion_vacuna' ? ' style="white-space:pre-wrap;"' : '') + '>' + valorCeldaDetalleCrono(k, d) + '</td>';
+                        });
+                        tr.innerHTML = td;
+                        tbodyEl.appendChild(tr);
+                    });
+                }
+            }).catch(function() {
+                cabEl.innerHTML = '<span class="text-red-600">Error al cargar el programa.</span>';
+            });
+        }
+        function abrirModalVerProgramaDetalleCrono(codigo, posDetalle) {
+            if (!codigo) return;
+            var pos = parseInt(posDetalle, 10);
+            if (isNaN(pos) || pos < 1) pos = 1;
+            document.getElementById('modalVerProgramaDetalleCronoTitulo').textContent = 'Programa ' + codigo + ' - Cabecera y detalle';
+            document.getElementById('modalVerCabeceraCrono').innerHTML = '<p class="text-gray-500">Cargando...</p>';
+            document.getElementById('modalVerDetalleBodyCrono').innerHTML = '';
+            document.getElementById('modalVerDetalleSinRegistrosCrono').classList.add('hidden');
+            fetch('../programas/get_programa_cab_detalle.php?codigo=' + encodeURIComponent(codigo))
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (!res.success) {
+                        document.getElementById('modalVerCabeceraCrono').innerHTML = '<p class="text-red-500">' + esc(res.message || 'Error') + '</p>';
+                        return;
+                    }
+                    var cab = res.cab || {};
+                    var detalles = res.detalles || [];
+                    var sigla = (res.sigla || 'PL').toUpperCase();
+                    if (sigla === 'NEC') sigla = 'NC';
+                    var cols = columnasPorSiglaReporte[sigla] || columnasPorSiglaReporte['PL'];
+                    var colsSinNum = cols.filter(function(k) { return k !== 'num'; });
+                    var cabHtml = '<div class="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-700">' +
+                        '<span class="font-medium">Código:</span><span>' + esc(cab.codigo) + '</span>' +
+                        '<span class="font-medium">Nombre:</span><span>' + esc(cab.nombre) + '</span>' +
+                        '<span class="font-medium">Tipo:</span><span>' + esc(cab.nomTipo) + '</span>' +
+                        '<span class="font-medium">Zona:</span><span>' + esc(cab.zona) + '</span>' +
+                        '<span class="font-medium">Despliegue:</span><span>' + esc(cab.despliegue) + '</span>' +
+                        '<span class="font-medium">Fecha registro:</span><span>' + (cab.fechaHoraRegistro ? formatoDDMMYYYY(cab.fechaHoraRegistro.split(' ')[0]) : '') + '</span>' +
+                        (cab.descripcion ? ('<span class="font-medium">Descripción:</span><span class="col-span-1">' + esc(cab.descripcion) + '</span>') : '') +
+                        '</div>';
+                    document.getElementById('modalVerCabeceraCrono').innerHTML = cabHtml;
+                    var thCells = '<th class="px-3 py-2 text-left">Código</th><th class="px-3 py-2 text-left">Nombre programa</th><th class="px-3 py-2 text-left">Zona</th><th class="px-3 py-2 text-left">Despliegue</th><th class="px-3 py-2 text-left">Descripción</th>';
+                    colsSinNum.forEach(function(k) {
+                        thCells += '<th class="px-3 py-2 text-left">' + (labelsReporteCrono[k] || k) + '</th>';
+                    });
+                    document.getElementById('modalVerDetalleTheadCrono').innerHTML = '<tr>' + thCells + '</tr>';
+                    var tbody = document.getElementById('modalVerDetalleBodyCrono');
+                    var sinReg = document.getElementById('modalVerDetalleSinRegistrosCrono');
+                    var detalleIndex = pos - 1;
+                    if (detalleIndex < 0 || !detalles[detalleIndex]) {
+                        sinReg.classList.remove('hidden');
+                    } else {
+                        sinReg.classList.add('hidden');
+                        var d = detalles[detalleIndex];
+                        var td = '<td class="px-3 py-2">' + esc(cab.codigo || codigo) + '</td><td class="px-3 py-2">' + esc(cab.nombre || '') + '</td><td class="px-3 py-2">' + esc(cab.zona || '') + '</td><td class="px-3 py-2">' + esc(cab.despliegue || '') + '</td><td class="px-3 py-2">' + esc(cab.descripcion || '') + '</td>';
+                        colsSinNum.forEach(function(k) {
+                            td += '<td class="px-3 py-2"' + (k === 'descripcion_vacuna' ? ' style="white-space:pre-wrap;"' : '') + '>' + valorCeldaDetalleCrono(k, d) + '</td>';
+                        });
+                        tbody.innerHTML = '<tr class="border-b border-gray-200">' + td + '</tr>';
+                    }
+                    document.getElementById('modalVerProgramaDetalleCrono').classList.remove('hidden');
+                })
+                .catch(function() {
+                    document.getElementById('modalVerCabeceraCrono').innerHTML = '<p class="text-red-500">Error de conexión.</p>';
+                });
+        }
+        function cerrarModalVerProgramaDetalleCrono() {
+            document.getElementById('modalVerProgramaDetalleCrono').classList.add('hidden');
+        }
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest('.btn-ver-crono-detalle');
+            if (!btn) return;
+            e.preventDefault();
+            abrirModalVerProgramaDetalleCrono(btn.getAttribute('data-codigo'), btn.getAttribute('data-pos-detalle'));
+        });
+        document.getElementById('modalVerProgramaDetalleCronoCerrar').addEventListener('click', cerrarModalVerProgramaDetalleCrono);
+        document.getElementById('modalVerProgramaDetalleCrono').addEventListener('click', function(e) { if (e.target === this) cerrarModalVerProgramaDetalleCrono(); });
+        document.addEventListener('click', function(e) {
+            var tabBtn = e.target.closest('.tabs-crono-resultado .tab-btn');
+            if (!tabBtn) return;
+            e.preventDefault();
+            var tab = tabBtn.getAttribute('data-tab');
+            var ctx = tabBtn.getAttribute('data-context') || 'especifico';
+            var container = ctx === 'zonas' ? document.getElementById('fechasResultadoZonas') : document.getElementById('fechasResultado');
+            if (!container) return;
+            container.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+            container.querySelectorAll('.tab-panel-crono').forEach(function(p) { p.classList.remove('active'); });
+            tabBtn.classList.add('active');
+            if (tab === 'granjas') {
+                var panel = ctx === 'zonas' ? document.getElementById('tabPanelGranjasZonas') : document.getElementById('tabPanelGranjasEspecifico');
+                if (panel) panel.classList.add('active');
+            } else if (tab === 'programa') {
+                var panel = ctx === 'zonas' ? document.getElementById('tabPanelProgramaZonas') : document.getElementById('tabPanelProgramaEspecifico');
+                if (panel) panel.classList.add('active');
+            }
+        });
         function mostrarCarga(mostrar) {
             var el = document.getElementById('modalCargaCrono');
             if (mostrar) el.classList.remove('hidden'); else el.classList.add('hidden');
@@ -223,11 +458,12 @@ if (empty($_SESSION['active'])) {
         function cargarCampanias() {
             var granja = document.getElementById('cronoGranja').value.trim();
             var galpon = document.getElementById('cronoGalpon').value.trim();
+            var anio = (document.getElementById('cronoAnio') && document.getElementById('cronoAnio').value) || new Date().getFullYear();
             var cont = document.getElementById('contenedorCampanias');
             cont.innerHTML = '';
             if (!granja || !galpon) return;
             cont.innerHTML = '<span class="text-gray-500 text-sm">Cargando campañas...</span>';
-            fetch('get_campanias.php?granja=' + encodeURIComponent(granja) + '&galpon=' + encodeURIComponent(galpon)).then(r => r.json()).then(data => {
+            fetch('get_campanias.php?granja=' + encodeURIComponent(granja) + '&galpon=' + encodeURIComponent(galpon) + '&anio=' + encodeURIComponent(anio)).then(r => r.json()).then(data => {
                 cont.innerHTML = '';
                 (data || []).forEach(c => {
                     var label = document.createElement('label');
@@ -244,6 +480,7 @@ if (empty($_SESSION['active'])) {
         }
 
         document.getElementById('cronoGalpon').addEventListener('change', cargarCampanias);
+        document.getElementById('cronoAnio').addEventListener('change', cargarCampanias);
 
         function initSelect2CronoPrograma() {
             if (typeof jQuery === 'undefined' || !jQuery.fn.select2) return;
@@ -491,6 +728,7 @@ if (empty($_SESSION['active'])) {
                 .then(r => r.json())
                 .then(res => {
                     var div = document.getElementById('fechasResultadoZonas');
+                    var panelGranjas = document.getElementById('tabPanelGranjasZonas');
                     if (!res.success) {
                         div.classList.add('hidden');
                         Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudieron calcular fechas.' });
@@ -499,8 +737,13 @@ if (empty($_SESSION['active'])) {
                     fechasAsignadas = res.fechas || [];
                     paresCargaEjecucion = res.pares || [];
                     itemsZonas = res.items || [];
+                    document.querySelectorAll('#fechasResultadoZonas .tab-btn').forEach(function(b) { b.classList.remove('active'); });
+                    document.querySelectorAll('#fechasResultadoZonas .tab-panel-crono').forEach(function(p) { p.classList.remove('active'); });
+                    var firstTab = document.querySelector('#fechasResultadoZonas .tab-btn[data-tab="granjas"]');
+                    if (firstTab) firstTab.classList.add('active');
+                    if (panelGranjas) panelGranjas.classList.add('active');
                     if (fechasAsignadas.length === 0) {
-                        div.innerHTML = '<p class="text-amber-700">No se encontraron fechas para los criterios seleccionados.</p>';
+                        if (panelGranjas) panelGranjas.innerHTML = '<p class="text-amber-700">No se encontraron fechas para los criterios seleccionados.</p>';
                     } else {
                         var zonaSubzonaPorPar = {};
                         document.querySelectorAll('.chk-subzona:checked').forEach(function(c) {
@@ -528,19 +771,21 @@ if (empty($_SESSION['active'])) {
                             var zonaTxt = zs.zona || '—';
                             var subzonaTxt = zs.subzona || '—';
                             var nomG = (granjasMap[it.granja] || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;');
-                            (it.fechas || []).forEach(function(f) {
+                            (it.fechas || []).forEach(function(f, idx) {
                                 var campaniaFila = (f.campania != null && String(f.campania).trim() !== '') ? String(f.campania).trim() : (it.campania || '—');
-                                filas.push({ zona: zonaTxt, subzona: subzonaTxt, granja: it.granja || '—', nomGranja: nomG || '—', campania: campaniaFila, galpon: it.galpon || '—', edad: f.edad != null ? f.edad : '—', fechaCarga: formatoDDMMYYYY(f.fechaCarga), fechaEjec: formatoDDMMYYYY(f.fechaEjecucion) });
+                                filas.push({ codPrograma: codPrograma, posDetalle: (f.posDetalle != null && f.posDetalle !== '') ? f.posDetalle : (idx + 1), zona: zonaTxt, subzona: subzonaTxt, granja: it.granja || '—', nomGranja: nomG || '—', campania: campaniaFila, galpon: it.galpon || '—', edad: f.edad != null ? f.edad : '—', fechaCarga: formatoDDMMYYYY(f.fechaCarga), fechaEjec: formatoDDMMYYYY(f.fechaEjecucion) });
                             });
                         });
                         var html = '<p class="text-gray-600 text-xs mb-2"><strong>Total:</strong> ' + filas.length + ' registro(s)</p>';
-                        html += '<div class="overflow-x-auto rounded-lg border border-gray-200"><table class="tabla-fechas-crono"><thead><tr><th>Zona</th><th>Subzona</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Edad</th><th>Fec. Carga</th><th>Fec. Ejecución</th></tr></thead><tbody>';
+                        html += '<div class="overflow-x-auto rounded-lg border border-gray-200"><table class="tabla-fechas-crono"><thead><tr><th>cod. programa</th><th>N° Det</th><th>Zona</th><th>Subzona</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Edad</th><th>Fec. Carga</th><th>Fec. Ejecución</th></tr></thead><tbody>';
                         filas.forEach(function(r) {
-                            html += '<tr><td>' + r.zona + '</td><td>' + r.subzona + '</td><td>' + r.granja + '</td><td>' + r.nomGranja + '</td><td>' + r.campania + '</td><td>' + r.galpon + '</td><td>' + r.edad + '</td><td>' + r.fechaCarga + '</td><td>' + r.fechaEjec + '</td></tr>';
+                            var codEsc = (r.codPrograma || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+                            html += '<tr><td>' + (r.codPrograma || '—') + '</td><td><span class="mr-1">' + (r.posDetalle || '—') + '</span><button type="button" class="btn-ver-crono-detalle" data-codigo="' + codEsc + '" data-pos-detalle="' + (r.posDetalle || 0) + '" title="Ver cabecera y detalle"><i class="fas fa-eye"></i></button></td><td>' + r.zona + '</td><td>' + r.subzona + '</td><td>' + r.granja + '</td><td>' + r.nomGranja + '</td><td>' + r.campania + '</td><td>' + r.galpon + '</td><td>' + r.edad + '</td><td>' + r.fechaCarga + '</td><td>' + r.fechaEjec + '</td></tr>';
                         });
                         html += '</tbody></table></div>';
-                        div.innerHTML = html;
+                        if (panelGranjas) panelGranjas.innerHTML = html;
                     }
+                    cargarTabProgramaEnResultadoCrono(codPrograma, 'programaCabZonas', 'programaTheadZonas', 'programaBodyZonas', 'programaSinRegZonas');
                     div.classList.remove('hidden');
                     document.getElementById('btnGuardarCrono').disabled = fechasAsignadas.length === 0;
                 })
@@ -575,6 +820,7 @@ if (empty($_SESSION['active'])) {
                 .then(r => r.json())
                 .then(res => {
                     var div = document.getElementById('fechasResultado');
+                    var panelGranjas = document.getElementById('tabPanelGranjasEspecifico');
                     if (!res.success) {
                         div.classList.add('hidden');
                         Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudieron calcular fechas.' });
@@ -583,27 +829,34 @@ if (empty($_SESSION['active'])) {
                     fechasAsignadas = res.fechas || [];
                     itemsEspecifico = res.items || [];
                     edadProgramaCrono = res.edadPrograma != null ? parseInt(res.edadPrograma, 10) : null;
+                    document.querySelectorAll('#fechasResultado .tab-btn').forEach(function(b) { b.classList.remove('active'); });
+                    document.querySelectorAll('#fechasResultado .tab-panel-crono').forEach(function(p) { p.classList.remove('active'); });
+                    var firstTab = document.querySelector('#fechasResultado .tab-btn[data-tab="granjas"]');
+                    if (firstTab) firstTab.classList.add('active');
+                    if (panelGranjas) panelGranjas.classList.add('active');
                     if (fechasAsignadas.length === 0) {
-                        div.innerHTML = '<p class="text-amber-700">No se encontraron fechas para los criterios seleccionados.</p>';
+                        if (panelGranjas) panelGranjas.innerHTML = '<p class="text-amber-700">No se encontraron fechas para los criterios seleccionados.</p>';
                     } else {
                         var nomGranjaSel = (granjasMap[granja] || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;');
                         var filas = [];
                         (itemsEspecifico || []).forEach(function(it) {
                             var nomG = (granjasMap[it.granja] || nomGranjaSel || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;');
-                            (it.fechas || []).forEach(function(f) {
+                            (it.fechas || []).forEach(function(f, idx) {
                                 var fe = (f && typeof f === 'object') ? f : {};
                                 var campaniaFila = (fe.campania != null && String(fe.campania).trim() !== '') ? String(fe.campania).trim() : (it.campania || '—');
-                                filas.push({ granja: it.granja || '—', nomGranja: nomG || '—', campania: campaniaFila, galpon: it.galpon || '—', edad: fe.edad != null ? fe.edad : '—', fechaCarga: formatoDDMMYYYY(fe.fechaCarga), fechaEjec: formatoDDMMYYYY(fe.fechaEjecucion) });
+                                filas.push({ codPrograma: codPrograma, posDetalle: (fe.posDetalle != null && fe.posDetalle !== '') ? fe.posDetalle : (idx + 1), granja: it.granja || '—', nomGranja: nomG || '—', campania: campaniaFila, galpon: it.galpon || '—', edad: fe.edad != null ? fe.edad : '—', fechaCarga: formatoDDMMYYYY(fe.fechaCarga), fechaEjec: formatoDDMMYYYY(fe.fechaEjecucion) });
                             });
                         });
                         var html = '<p class="text-gray-600 text-xs mb-2"><strong>Zona:</strong> Especifico &nbsp;·&nbsp; <strong>Total:</strong> ' + filas.length + ' registro(s)</p>';
-                        html += '<div class="overflow-x-auto rounded-lg border border-gray-200"><table class="tabla-fechas-crono"><thead><tr><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Edad</th><th>Fec. Carga</th><th>Fec. Ejecución</th></tr></thead><tbody>';
+                        html += '<div class="overflow-x-auto rounded-lg border border-gray-200"><table class="tabla-fechas-crono"><thead><tr><th>cod. programa</th><th>N° Det</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Edad</th><th>Fec. Carga</th><th>Fec. Ejecución</th></tr></thead><tbody>';
                         filas.forEach(function(r) {
-                            html += '<tr><td>' + r.granja + '</td><td>' + r.nomGranja + '</td><td>' + r.campania + '</td><td>' + r.galpon + '</td><td>' + r.edad + '</td><td>' + r.fechaCarga + '</td><td>' + r.fechaEjec + '</td></tr>';
+                            var codEsc = (r.codPrograma || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+                            html += '<tr><td>' + (r.codPrograma || '—') + '</td><td><span class="mr-1">' + (r.posDetalle || '—') + '</span><button type="button" class="btn-ver-crono-detalle" data-codigo="' + codEsc + '" data-pos-detalle="' + (r.posDetalle || 0) + '" title="Ver cabecera y detalle"><i class="fas fa-eye"></i></button></td><td>' + r.granja + '</td><td>' + r.nomGranja + '</td><td>' + r.campania + '</td><td>' + r.galpon + '</td><td>' + r.edad + '</td><td>' + r.fechaCarga + '</td><td>' + r.fechaEjec + '</td></tr>';
                         });
                         html += '</tbody></table></div>';
-                        div.innerHTML = html;
+                        if (panelGranjas) panelGranjas.innerHTML = html;
                     }
+                    cargarTabProgramaEnResultadoCrono(codPrograma, 'programaCabEspecifico', 'programaTheadEspecifico', 'programaBodyEspecifico', 'programaSinRegEspecifico');
                     div.classList.remove('hidden');
                     document.getElementById('btnGuardarCrono').disabled = fechasAsignadas.length === 0;
                 })
@@ -634,7 +887,7 @@ if (empty($_SESSION['active'])) {
                         fechas: (it.fechas || []).map(function(f) {
                             var fe = (f && typeof f === 'object') ? f : {};
                             var campaniaFe = (fe.campania != null) ? String(fe.campania).trim() : ((it.campania != null) ? String(it.campania).trim() : '');
-                            return { edad: fe.edad != null ? fe.edad : (edadProgramaCrono != null ? edadProgramaCrono : null), fechaCarga: fe.fechaCarga, fechaEjecucion: fe.fechaEjecucion, campania: campaniaFe };
+                            return { edad: fe.edad != null ? fe.edad : (edadProgramaCrono != null ? edadProgramaCrono : null), posDetalle: (fe.posDetalle != null && fe.posDetalle !== '') ? fe.posDetalle : null, fechaCarga: fe.fechaCarga, fechaEjecucion: fe.fechaEjecucion, campania: campaniaFe };
                         })
                     };
                 });
@@ -694,7 +947,7 @@ if (empty($_SESSION['active'])) {
                     subzona: zs.subzona,
                         fechas: (it.fechas || []).map(function(f) {
                             var campaniaF = (f.campania != null) ? String(f.campania).trim() : ((it.campania != null) ? String(it.campania).trim() : '');
-                            return { edad: f.edad != null ? f.edad : null, fechaCarga: f.fechaCarga, fechaEjecucion: f.fechaEjecucion, campania: campaniaF };
+                            return { edad: f.edad != null ? f.edad : null, posDetalle: (f.posDetalle != null && f.posDetalle !== '') ? f.posDetalle : null, fechaCarga: f.fechaCarga, fechaEjecucion: f.fechaEjecucion, campania: campaniaF };
                         })
                 };
             });

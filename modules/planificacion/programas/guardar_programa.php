@@ -20,7 +20,7 @@ $codigo = trim($input['codigo'] ?? '');
 $nombre = trim($input['nombre'] ?? '');
 $codTipo = (int)($input['codTipo'] ?? 0);
 $nomTipo = trim($input['nomTipo'] ?? '');
-$zona = trim($input['zona'] ?? '');
+$zona = ''; // Ya no se registra zona
 $despliegue = trim($input['despliegue'] ?? '');
 $descripcion = trim($input['descripcion'] ?? '');
 $detalles = isset($input['detalles']) && is_array($input['detalles']) ? $input['detalles'] : [];
@@ -81,11 +81,17 @@ if (!$stmtCab->execute()) {
 }
 $stmtCab->close();
 
-// Detalle: una fila por cada elemento en detalles (incl. descripcionVacuna, areaGalpon, cantidadPorGalpon)
+// Detalle: una fila por cada elemento en detalles (incl. descripcionVacuna, areaGalpon, cantidadPorGalpon, posDetalle)
 $chkCols = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'descripcionVacuna'");
 $tieneExtras = $chkCols && $chkCols->fetch_assoc();
-if ($tieneExtras) {
+$chkPosDet = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'posDetalle'");
+$tienePosDetalle = $chkPosDet && $chkPosDet->fetch_assoc();
+if ($tieneExtras && $tienePosDetalle) {
+    $stmtDet = $conn->prepare("INSERT INTO san_fact_programa_det (codPrograma, nomPrograma, codProducto, nomProducto, codProveedor, nomProveedor, ubicacion, unidades, dosis, unidadDosis, numeroFrascos, edad, descripcionVacuna, areaGalpon, cantidadPorGalpon, posDetalle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+} elseif ($tieneExtras) {
     $stmtDet = $conn->prepare("INSERT INTO san_fact_programa_det (codPrograma, nomPrograma, codProducto, nomProducto, codProveedor, nomProveedor, ubicacion, unidades, dosis, unidadDosis, numeroFrascos, edad, descripcionVacuna, areaGalpon, cantidadPorGalpon) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+} elseif ($tienePosDetalle) {
+    $stmtDet = $conn->prepare("INSERT INTO san_fact_programa_det (codPrograma, nomPrograma, codProducto, nomProducto, codProveedor, nomProveedor, ubicacion, unidades, dosis, unidadDosis, numeroFrascos, edad, posDetalle) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 } else {
     $stmtDet = $conn->prepare("INSERT INTO san_fact_programa_det (codPrograma, nomPrograma, codProducto, nomProducto, codProveedor, nomProveedor, ubicacion, unidades, dosis, unidadDosis, numeroFrascos, edad) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 }
@@ -124,9 +130,15 @@ foreach ($detalles as $d) {
     }
     $areaGalpon = isset($d['areaGalpon']) && $d['areaGalpon'] !== '' && $d['areaGalpon'] !== null ? (int)$d['areaGalpon'] : null;
     $cantidadPorGalpon = isset($d['cantidadPorGalpon']) && $d['cantidadPorGalpon'] !== '' && $d['cantidadPorGalpon'] !== null ? (int)$d['cantidadPorGalpon'] : null;
+    $posDetalle = isset($d['posDetalle']) ? (int)$d['posDetalle'] : 1;
+    if ($posDetalle < 1) $posDetalle = 1;
 
-    if ($tieneExtras) {
+    if ($tieneExtras && $tienePosDetalle) {
+        $stmtDet->bind_param("sssssssssssisiii", $codigo, $nombre, $codProducto, $nomProducto, $codProveedor, $nomProveedor, $ubicacion, $unidades, $dosis, $unidadDosis, $numeroFrascos, $edad, $descripcionVacuna, $areaGalpon, $cantidadPorGalpon, $posDetalle);
+    } elseif ($tieneExtras) {
         $stmtDet->bind_param("sssssssssssisii", $codigo, $nombre, $codProducto, $nomProducto, $codProveedor, $nomProveedor, $ubicacion, $unidades, $dosis, $unidadDosis, $numeroFrascos, $edad, $descripcionVacuna, $areaGalpon, $cantidadPorGalpon);
+    } elseif ($tienePosDetalle) {
+        $stmtDet->bind_param("sssssssssssii", $codigo, $nombre, $codProducto, $nomProducto, $codProveedor, $nomProveedor, $ubicacion, $unidades, $dosis, $unidadDosis, $numeroFrascos, $edad, $posDetalle);
     } else {
         $stmtDet->bind_param("sssssssssssi", $codigo, $nombre, $codProducto, $nomProducto, $codProveedor, $nomProveedor, $ubicacion, $unidades, $dosis, $unidadDosis, $numeroFrascos, $edad);
     }

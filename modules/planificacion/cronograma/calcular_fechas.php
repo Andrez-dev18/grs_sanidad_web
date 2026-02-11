@@ -21,20 +21,31 @@ if ($codPrograma === '') {
     exit;
 }
 
-// Edades del programa desde san_fact_programa_det
-$st = $conn->prepare("SELECT DISTINCT edad FROM san_fact_programa_det WHERE codPrograma = ? AND edad IS NOT NULL AND edad > 0 ORDER BY edad ASC");
+// Detalles del programa (edad + posDetalle) desde san_fact_programa_det para conservar N° Det
+$chkPosDet = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'posDetalle'");
+$tienePosDetalle = $chkPosDet && $chkPosDet->fetch_assoc();
+$sqlDet = $tienePosDetalle
+    ? "SELECT edad, posDetalle FROM san_fact_programa_det WHERE codPrograma = ? AND edad IS NOT NULL AND edad > 0 ORDER BY posDetalle ASC, id ASC"
+    : "SELECT edad FROM san_fact_programa_det WHERE codPrograma = ? AND edad IS NOT NULL AND edad > 0 ORDER BY id ASC";
+$st = $conn->prepare($sqlDet);
 $st->bind_param("s", $codPrograma);
 $st->execute();
 $resEdades = $st->get_result();
-$edades = [];
+$edadesConPos = [];
+$idx = 0;
 while ($r = $resEdades->fetch_assoc()) {
-    $edades[] = (int) $r['edad'];
+    $idx++;
+    $edadesConPos[] = [
+        'edad' => (int) $r['edad'],
+        'posDetalle' => $tienePosDetalle && isset($r['posDetalle']) ? (int) $r['posDetalle'] : $idx
+    ];
 }
 $st->close();
-if (empty($edades)) {
+if (empty($edadesConPos)) {
     echo json_encode(['success' => false, 'message' => 'Programa sin edades en el detalle.', 'fechas' => []]);
     exit;
 }
+$edades = array_map(function ($e) { return $e['edad']; }, $edadesConPos);
 
 $modo = trim($_POST['modo'] ?? $_GET['modo'] ?? 'especifico');
 $fechasResultado = [];
@@ -70,13 +81,15 @@ if ($modo === 'zonas') {
             $fechaCarga = $r['fecha'];
             if ($fechaCarga) {
                 $d = new DateTime($fechaCarga);
-                foreach ($edades as $edad) {
+                foreach ($edadesConPos as $det) {
+                    $edad = $det['edad'];
+                    $posDetalle = $det['posDetalle'];
                     $d2 = clone $d;
                     $d2->modify('+' . $edad . ' days');
                     $fechaEjec = $d2->format('Y-m-d');
                     $fechasResultado[] = $fechaEjec;
-                    $paresCargaEjecucion[] = ['edad' => $edad, 'fechaCarga' => $fechaCarga, 'fechaEjecucion' => $fechaEjec, 'campania' => $campaniaVal];
-                    $paresEsta[] = ['edad' => $edad, 'fechaCarga' => $fechaCarga, 'fechaEjecucion' => $fechaEjec, 'campania' => $campaniaVal];
+                    $paresCargaEjecucion[] = ['edad' => $edad, 'posDetalle' => $posDetalle, 'fechaCarga' => $fechaCarga, 'fechaEjecucion' => $fechaEjec, 'campania' => $campaniaVal];
+                    $paresEsta[] = ['edad' => $edad, 'posDetalle' => $posDetalle, 'fechaCarga' => $fechaCarga, 'fechaEjecucion' => $fechaEjec, 'campania' => $campaniaVal];
                 }
             }
         }
@@ -122,12 +135,14 @@ if ($modo === 'especifico_multi') {
             $fechaCarga = $r['fecha'];
             if ($fechaCarga) {
                 $d = new DateTime($fechaCarga);
-                foreach ($edades as $edad) {
+                foreach ($edadesConPos as $det) {
+                    $edad = $det['edad'];
+                    $posDetalle = $det['posDetalle'];
                     $d2 = clone $d;
                     $d2->modify('+' . $edad . ' days');
                     $fechaEjec = $d2->format('Y-m-d');
                     $fechasResultado[] = $fechaEjec;
-                    $paresEstaCampania[] = ['edad' => $edad, 'fechaCarga' => $fechaCarga, 'fechaEjecucion' => $fechaEjec, 'campania' => $campania];
+                    $paresEstaCampania[] = ['edad' => $edad, 'posDetalle' => $posDetalle, 'fechaCarga' => $fechaCarga, 'fechaEjecucion' => $fechaEjec, 'campania' => $campania];
                 }
             }
         }
@@ -178,12 +193,14 @@ if (empty($fechasBase)) {
 
 foreach ($fechasBase as $fechaBase) {
     $d = new DateTime($fechaBase);
-    foreach ($edades as $edad) {
+    foreach ($edadesConPos as $det) {
+        $edad = $det['edad'];
+        $posDetalle = $det['posDetalle'];
         $d2 = clone $d;
         $d2->modify('+' . $edad . ' days');
         $fechaEjec = $d2->format('Y-m-d');
         $fechasResultado[] = $fechaEjec;
-        $paresCargaEjecucion[] = ['edad' => $edad, 'fechaCarga' => $fechaBase, 'fechaEjecucion' => $fechaEjec];
+        $paresCargaEjecucion[] = ['edad' => $edad, 'posDetalle' => $posDetalle, 'fechaCarga' => $fechaBase, 'fechaEjecucion' => $fechaEjec];
     }
 }
 $fechasResultado = array_unique($fechasResultado);

@@ -41,7 +41,38 @@ if (empty($_SESSION['active'])) {
         .tabla-detalle-compact .form-control.compact { padding: 0.25rem 0.5rem; font-size: 0.75rem; min-height: 26px; border-radius: 0.2rem; }
         .tabla-detalle-compact textarea.compact { min-height: 36px; border-radius: 0.2rem; }
         .btn-add-row { padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: 0.25rem; }
-        .btn-quitar-fila { padding: 0.15rem 0.4rem; font-size: 0.7rem; line-height: 1; border-radius: 0.2rem; }
+        .btn-quitar-fila { padding: 0.15rem 0.35rem; font-size: 0.7rem; line-height: 1; border-radius: 0.2rem; }
+        /* Anchos de columnas: # reducida, Producto/Proveedor/Ubicación más anchos, Unidad/Dosis/Frascos/Edad reducidos, Quitar mínima */
+        .tabla-detalle-compact th.col-num, .tabla-detalle-compact td.col-num { width: 28px; max-width: 28px; min-width: 28px; }
+        .tabla-detalle-compact th.col-quitar, .tabla-detalle-compact td.col-quitar { width: 36px; max-width: 36px; min-width: 36px; }
+        .tabla-detalle-compact .col-ubicacion { min-width: 72px; max-width: 90px; }
+        .tabla-detalle-compact .col-producto { min-width: 260px; }
+        .tabla-detalle-compact .col-proveedor { min-width: 200px; }
+        .tabla-detalle-compact .col-producto .form-control,
+        .tabla-detalle-compact .col-proveedor .form-control,
+        .tabla-detalle-compact .col-producto textarea.compact,
+        .tabla-detalle-compact .col-proveedor textarea.compact { min-width: 0; width: 100%; }
+        /* Lupa mismo tamaño en producto y proveedor */
+        .tabla-detalle-compact .btn-lupa-detalle { width: 28px; min-width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0; }
+        /* Textarea producto/proveedor: multilínea y altura dinámica */
+        .tabla-detalle-compact .col-producto .wrap-producto-proveedor,
+        .tabla-detalle-compact .col-proveedor .wrap-producto-proveedor { display: flex; align-items: flex-start; gap: 4px; width: 100%; }
+        .tabla-detalle-compact .col-producto textarea.compact.multiline,
+        .tabla-detalle-compact .col-proveedor textarea.compact.multiline { resize: none; min-height: 36px; overflow-y: hidden; line-height: 1.3; white-space: pre-wrap; word-wrap: break-word; }
+        /* Descripción vacuna: altura dinámica */
+        .tabla-detalle-compact .td-descripcion-vacuna textarea.compact { resize: none; min-height: 36px; overflow-y: hidden; line-height: 1.3; white-space: pre-wrap; word-wrap: break-word; }
+        .tabla-detalle-compact .col-unidad, .tabla-detalle-compact .col-uniddosis, .tabla-detalle-compact .col-frascos { min-width: 42px; max-width: 58px; width: 50px; }
+        .tabla-detalle-compact .col-dosis { min-width: 55px; max-width: 75px; width: 65px; }
+        .tabla-detalle-compact .col-edad { min-width: 58px; max-width: 72px; width: 65px; }
+        .tabla-detalle-compact .col-unidad .form-control, .tabla-detalle-compact .col-dosis .form-control,
+        .tabla-detalle-compact .col-uniddosis .form-control, .tabla-detalle-compact .col-frascos .form-control,
+        .tabla-detalle-compact .col-edad .form-control { min-width: 0; width: 100%; max-width: 100%; box-sizing: border-box; }
+        #modalProveedorResultados { overflow-y: auto; overflow-x: hidden; max-height: 320px; min-height: 120px; }
+        /* Modal buscar producto: scroll en resultados */
+        #modalProductoResultados { overflow-y: auto; overflow-x: hidden; max-height: 320px; min-height: 120px; }
+        #modalProductoResultados::-webkit-scrollbar { width: 8px; }
+        #modalProductoResultados::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        #modalProductoResultados::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
         /* Cabecera compacta */
         .cabecera-compact .form-control { padding: 0.3rem 0.5rem; font-size: 0.8125rem; border-radius: 0.25rem; }
         .cabecera-compact label { font-size: 0.7rem; margin-bottom: 0.2rem; }
@@ -70,16 +101,11 @@ if (empty($_SESSION['active'])) {
                         </div>
                         
                     </div>
-                    <!-- Fila 2: Nombre del programa, Zona y Despliegue en una misma fila (siempre visibles) -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <div>
+                    <!-- Fila 2: Descripción y Despliegue (zona ya no se registra) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
                             <label class="block text-xs font-medium text-gray-600 mb-0.5">Descripción</label>
                             <input type="text" id="descripcion" name="descripcion" class="form-control" placeholder="Descripción" maxlength="500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-0.5">Zona</label>
-                            <input type="text" id="zona" name="zona" class="form-control" placeholder="La Joya" maxlength="100" list="zonasList" autocomplete="off">
-                            <datalist id="zonasList"><option value="Mollendo"><option value="La Joya"></datalist>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-0.5">Despliegue</label>
@@ -100,6 +126,9 @@ if (empty($_SESSION['active'])) {
                                 <thead class="bg-gray-100" id="solicitudesThead"></thead>
                                 <tbody id="solicitudesBody"></tbody>
                             </table>
+                            <datalist id="ubicacionList">
+                                <option value="Planta de Incubacion"><option value="Granja"><option value="Galpón"><option value="Piso"><option value="Techo">
+                            </datalist>
                         </div>
                         <p id="solicitudesMsgTipo" class="hidden text-amber-600 text-xs mt-1">Seleccione primero el tipo de programa.</p>
                     </div>
@@ -109,6 +138,32 @@ if (empty($_SESSION['active'])) {
                     <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar</button>
                 </div>
             </form>
+        </div>
+    </div>
+    <!-- Modal buscar producto -->
+    <div id="modalBuscarProducto" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
+            <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-800">Buscar producto</h3>
+                <button type="button" id="btnCerrarModalProducto" class="text-gray-500 hover:text-gray-700 text-xl leading-none">&times;</button>
+            </div>
+            <div class="p-4">
+                <input type="text" id="modalProductoBuscar" class="form-control mb-3" placeholder="Escriba nombre o código del producto..." autocomplete="off">
+                <div id="modalProductoResultados" class="border border-gray-200 rounded text-sm"></div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal buscar proveedor (ccte) -->
+    <div id="modalBuscarProveedor" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
+            <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-800">Buscar proveedor</h3>
+                <button type="button" id="btnCerrarModalProveedor" class="text-gray-500 hover:text-gray-700 text-xl leading-none">&times;</button>
+            </div>
+            <div class="p-4">
+                <input type="text" id="modalProveedorBuscar" class="form-control mb-3" placeholder="Escriba nombre o código del proveedor..." autocomplete="off">
+                <div id="modalProveedorResultados" class="border border-gray-200 rounded text-sm"></div>
+            </div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -173,13 +228,23 @@ if (empty($_SESSION['active'])) {
             var cols = getColumnasFromCampos(campos);
             var html = '<tr>';
             cols.forEach(function(k) {
+                var ext = '';
+                if (k === 'num') ext = ' col-num';
+                else if (k === 'ubicacion') ext = ' col-ubicacion';
+                else if (k === 'producto') ext = ' col-producto';
+                else if (k === 'proveedor') ext = ' col-proveedor';
+                else if (k === 'unidad') ext = ' col-unidad';
+                else if (k === 'dosis') ext = ' col-dosis';
+                else if (k === 'unidadDosis') ext = ' col-uniddosis';
+                else if (k === 'numeroFrascos') ext = ' col-frascos';
+                else if (k === 'edad') ext = ' col-edad';
                 if (k === 'descripcion_vacuna') {
-                    html += '<th id="th_descripcion_vacuna" class="th-descripcion-vacuna px-1.5 py-1 text-left border-b border-gray-200 font-semibold text-gray-600 text-xs" style="display:none">' + (LABELS[k] || k) + '</th>';
+                    html += '<th id="th_descripcion_vacuna" class="th-descripcion-vacuna px-1.5 py-1 text-left border-b border-gray-200 font-semibold text-gray-600 text-xs' + ext + '" style="display:none">' + (LABELS[k] || k) + '</th>';
                 } else {
-                    html += '<th class="px-1.5 py-1 text-left border-b border-gray-200 font-semibold text-gray-600 text-xs">' + (LABELS[k] || k) + '</th>';
+                    html += '<th class="px-1.5 py-1 text-left border-b border-gray-200 font-semibold text-gray-600 text-xs' + ext + '">' + (LABELS[k] || k) + '</th>';
                 }
             });
-            html += '<th class="px-1.5 py-1 text-center border-b border-gray-200 font-semibold text-gray-600 text-xs w-14">Quitar</th></tr>';
+            html += '<th class="col-quitar px-1.5 py-1 text-center border-b border-gray-200 font-semibold text-gray-600 text-xs">Quitar</th></tr>';
             thead.innerHTML = html;
         }
         function updateVisibilidadColumnaDescripcion() {
@@ -194,22 +259,21 @@ if (empty($_SESSION['active'])) {
             var parts = [];
             var cellClass = 'px-1.5 py-1';
             var inputClass = 'form-control compact';
-            var estiloEdad = 'min-width:70px', anchoUbicacion = 'min-width:140px', anchoProveedor = 'min-width:140px', anchoUnidad = 'min-width:80px', anchoDosis = 'min-width:90px', anchoUnidDosis = 'min-width:80px', anchoFrascos = 'min-width:72px';
             cols.forEach(function(k) {
-                if (k === 'num') parts.push('<td class="' + cellClass + ' text-gray-600 text-xs">' + (i + 1) + '</td>');
-                else if (k === 'ubicacion') parts.push('<td class="' + cellClass + '" style="' + anchoUbicacion + '"><input type="text" id="ubicacion_' + i + '" name="ubicacion_' + i + '" class="' + inputClass + '" placeholder="Ubicación" maxlength="200"></td>');
-                else if (k === 'producto') parts.push('<td class="' + cellClass + '" style="min-width:200px;"><select id="producto_' + i + '" class="' + inputClass + ' select-producto-programa" name="codProducto_' + i + '" style="width:100%;min-width:180px;"><option value="">Producto...</option></select></td>');
-                else if (k === 'proveedor') parts.push('<td class="' + cellClass + '" style="' + anchoProveedor + '"><input type="text" id="proveedor_ro_' + i + '" class="' + inputClass + ' bg-gray-100" readonly placeholder="-"></td>');
-                else if (k === 'unidad') parts.push('<td class="' + cellClass + '" style="' + anchoUnidad + '"><input type="text" id="unidad_ro_' + i + '" class="' + inputClass + ' bg-gray-100" readonly placeholder="-"></td>');
-                else if (k === 'dosis') parts.push('<td class="' + cellClass + '" style="' + anchoDosis + '"><input type="text" id="dosis_ro_' + i + '" class="' + inputClass + ' bg-gray-100" readonly placeholder="-"></td>');
-                else if (k === 'descripcion_vacuna') parts.push('<td id="td_descripcion_vacuna_' + i + '" class="' + cellClass + ' td-descripcion-vacuna" style="display:none;min-width:160px;"><textarea id="descripcion_vacuna_ro_' + i + '" class="' + inputClass + ' compact bg-gray-100" readonly rows="2" style="min-width:140px;white-space:pre-wrap;"></textarea></td>');
-                else if (k === 'numeroFrascos') parts.push('<td class="' + cellClass + '" style="' + anchoFrascos + '"><input type="text" id="numeroFrascos_' + i + '" name="numeroFrascos_' + i + '" class="' + inputClass + '" placeholder="Nº" maxlength="50"></td>');
-                else if (k === 'edad') parts.push('<td class="' + cellClass + '"><input type="number" id="edad_' + i + '" name="edad_' + i + '" class="' + inputClass + '" min="0" max="45" placeholder="0-45" style="' + estiloEdad + '"></td>');
-                else if (k === 'unidadDosis') parts.push('<td class="' + cellClass + '" style="' + anchoUnidDosis + '"><input type="text" id="unidadDosis_' + i + '" name="unidadDosis_' + i + '" class="' + inputClass + '" placeholder="Unid." maxlength="50"></td>');
+                if (k === 'num') parts.push('<td class="col-num ' + cellClass + ' text-gray-600 text-xs">' + (i + 1) + '</td>');
+                else if (k === 'ubicacion') parts.push('<td class="col-ubicacion ' + cellClass + '"><input type="text" id="ubicacion_' + i + '" name="ubicacion_' + i + '" class="' + inputClass + '" list="ubicacionList" placeholder="Ubicación" maxlength="200"></td>');
+                else if (k === 'producto') parts.push('<td class="col-producto ' + cellClass + '"><input type="hidden" id="producto_' + i + '" name="codProducto_' + i + '" value=""><div class="wrap-producto-proveedor"><textarea id="producto_text_' + i + '" class="' + inputClass + ' compact multiline bg-gray-100" readonly placeholder="Producto..." rows="2"></textarea><button type="button" class="btn-lupa-detalle btn-buscar-celda border border-gray-300 text-gray-600 hover:bg-gray-100 rounded" data-row="' + i + '" title="Buscar producto"><i class="fas fa-search"></i></button></div></td>');
+                else if (k === 'proveedor') parts.push('<td class="col-proveedor ' + cellClass + '"><input type="hidden" id="codProveedor_' + i + '" name="codProveedor_' + i + '" value=""><div class="wrap-producto-proveedor"><textarea id="proveedor_' + i + '" class="' + inputClass + ' compact multiline bg-gray-100" readonly placeholder="Proveedor" rows="2"></textarea><button type="button" class="btn-lupa-detalle btn-buscar-proveedor border border-gray-300 text-gray-600 hover:bg-gray-100 rounded" data-row="' + i + '" title="Buscar proveedor"><i class="fas fa-search"></i></button></div></td>');
+                else if (k === 'unidad') parts.push('<td class="col-unidad ' + cellClass + '"><input type="text" id="unidad_ro_' + i + '" name="unidad_' + i + '" class="' + inputClass + '" placeholder="Unidad" maxlength="50"></td>');
+                else if (k === 'dosis') parts.push('<td class="col-dosis ' + cellClass + '"><input type="text" id="dosis_' + i + '" name="dosis_' + i + '" class="' + inputClass + '" placeholder="Dosis"></td>');
+                else if (k === 'descripcion_vacuna') parts.push('<td id="td_descripcion_vacuna_' + i + '" class="' + cellClass + ' td-descripcion-vacuna" style="display:none;min-width:160px;"><textarea id="descripcion_vacuna_ro_' + i + '" class="' + inputClass + ' compact bg-gray-100 descripcion-vacuna-ta" readonly style="min-width:140px;"></textarea></td>');
+                else if (k === 'numeroFrascos') parts.push('<td class="col-frascos ' + cellClass + '"><input type="text" id="numeroFrascos_' + i + '" name="numeroFrascos_' + i + '" class="' + inputClass + '" placeholder="Nº" maxlength="50"></td>');
+                else if (k === 'edad') parts.push('<td class="col-edad ' + cellClass + '" title="Una edad (ej: 2) o varias separadas por coma (ej: 2,4)"><input type="text" id="edad_' + i + '" name="edad_' + i + '" class="' + inputClass + '" placeholder="Ej: 2 o 2,4" maxlength="50"></td>');
+                else if (k === 'unidadDosis') parts.push('<td class="col-uniddosis ' + cellClass + '"><input type="text" id="unidadDosis_' + i + '" name="unidadDosis_' + i + '" class="' + inputClass + '" placeholder="Unid." maxlength="50"></td>');
                 else if (k === 'area_galpon') parts.push('<td class="' + cellClass + '"><input type="number" id="area_galpon_' + i + '" name="area_galpon_' + i + '" class="' + inputClass + '" min="0" placeholder="Área" style="min-width:50px"></td>');
                 else if (k === 'cantidad_por_galpon') parts.push('<td class="' + cellClass + '"><input type="number" id="cantidad_por_galpon_' + i + '" name="cantidad_por_galpon_' + i + '" class="' + inputClass + '" min="0" placeholder="Cant." style="min-width:50px"></td>');
             });
-            parts.push('<td class="' + cellClass + ' text-center"><button type="button" class="btn-quitar-fila border border-red-200 text-red-600 hover:bg-red-50 rounded" data-row="' + i + '" title="Quitar fila"><i class="fas fa-trash-alt"></i></button></td>');
+            parts.push('<td class="col-quitar ' + cellClass + ' text-center"><button type="button" class="btn-quitar-fila border border-red-200 text-red-600 hover:bg-red-50 rounded" data-row="' + i + '" title="Quitar fila"><i class="fas fa-trash-alt"></i></button></td>');
             return parts.join('');
         }
         document.getElementById('tipo').addEventListener('change', function() {
@@ -236,37 +300,138 @@ if (empty($_SESSION['active'])) {
             }
         });
         var currentCampos = null;
-        function initSelect2ProductoRow(selectEl) {
-            if (typeof jQuery === 'undefined' || !jQuery.fn.select2 || !selectEl) return;
-            var $sel = jQuery(selectEl);
-            if ($sel.data('select2')) return;
-            $sel.select2({
-                placeholder: 'Escriba nombre del producto para buscar...',
-                allowClear: true,
-                width: '100%',
-                dropdownParent: jQuery('#formProgramaContainer'),
-                minimumInputLength: 0,
-                ajax: { url: 'get_productos_programa.php', dataType: 'json', delay: 250, data: function(params) { return { q: params.term }; }, processResults: function(data) { if (data.success && data.results) return { results: data.results }; return { results: [] }; }, cache: true },
-                templateResult: function(item) {
-                    if (!item.id) return item.text;
-                    var cod = item.codigo || item.id;
-                    var desc = item.descri || (item.text ? item.text.replace(/^[^\s-]+\s*-\s*/, '') : '');
-                    return jQuery('<span><b>' + cod + '</b> - ' + desc + '</span>');
-                },
-                templateSelection: function(item) {
-                    if (!item.id) return item.text || '';
-                    var cod = item.codigo || item.id;
-                    var desc = item.descri || (item.text ? item.text.replace(/^[^\s-]+\s*-\s*/, '') : '');
-                    return jQuery('<span><b>' + cod + '</b> - ' + desc + '</span>');
-                },
-                language: { noResults: function() { return 'Sin resultados'; }, searching: function() { return 'Buscando...'; } }
-            });
+        var modalProductoRowIndex = -1;
+        var modalProveedorRowIndex = -1;
+        var modalProductoSearchTimer = null;
+        var modalProveedorSearchTimer = null;
+        function autoResizeTextarea(ta) {
+            if (!ta || !(ta.classList.contains('multiline') || ta.classList.contains('descripcion-vacuna-ta'))) return;
+            ta.style.height = 'auto';
+            var maxH = ta.classList.contains('descripcion-vacuna-ta') ? 280 : 120;
+            ta.style.height = Math.max(36, Math.min(ta.scrollHeight, maxH)) + 'px';
         }
+        document.getElementById('solicitudesContainer').addEventListener('click', function(e) {
+            var btnProd = e.target.closest('.btn-buscar-celda');
+            if (btnProd) {
+                var row = parseInt(btnProd.getAttribute('data-row'), 10);
+                if (isNaN(row)) return;
+                modalProductoRowIndex = row;
+                document.getElementById('modalProductoBuscar').value = '';
+                document.getElementById('modalProductoResultados').innerHTML = '<p class="text-gray-500 text-sm p-2">Escriba para buscar producto.</p>';
+                document.getElementById('modalBuscarProducto').classList.remove('hidden');
+                setTimeout(function() { document.getElementById('modalProductoBuscar').focus(); }, 100);
+                return;
+            }
+            var btnProv = e.target.closest('.btn-buscar-proveedor');
+            if (btnProv) {
+                var row = parseInt(btnProv.getAttribute('data-row'), 10);
+                if (isNaN(row)) return;
+                modalProveedorRowIndex = row;
+                document.getElementById('modalProveedorBuscar').value = '';
+                document.getElementById('modalProveedorResultados').innerHTML = '<p class="text-gray-500 text-sm p-2">Escriba para buscar proveedor.</p>';
+                document.getElementById('modalBuscarProveedor').classList.remove('hidden');
+                setTimeout(function() { document.getElementById('modalProveedorBuscar').focus(); }, 100);
+            }
+        });
+        document.getElementById('btnCerrarModalProducto').addEventListener('click', function() {
+            document.getElementById('modalBuscarProducto').classList.add('hidden');
+            modalProductoRowIndex = -1;
+        });
+        document.getElementById('modalBuscarProducto').addEventListener('click', function(e) {
+            if (e.target.id === 'modalBuscarProducto') { document.getElementById('modalBuscarProducto').classList.add('hidden'); modalProductoRowIndex = -1; }
+        });
+        document.getElementById('modalProductoBuscar').addEventListener('input', function() {
+            var q = (this.value || '').trim();
+            var cont = document.getElementById('modalProductoResultados');
+            if (modalProductoSearchTimer) clearTimeout(modalProductoSearchTimer);
+            if (!q) { cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Escriba para buscar producto.</p>'; return; }
+            cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Buscando...</p>';
+            modalProductoSearchTimer = setTimeout(function() {
+                fetch('get_productos_programa.php?q=' + encodeURIComponent(q)).then(function(r) { return r.json(); }).then(function(data) {
+                    if (!data.success || !data.results || !data.results.length) {
+                        cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Sin resultados.</p>';
+                        return;
+                    }
+                    var html = '';
+                    data.results.forEach(function(item) {
+                        var cod = item.codigo || item.id;
+                        var desc = (item.descri || item.text || '').replace(/^[^\s-]+\s*-\s*/, '');
+                        var esc = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+                        var labelHtml = '<strong>' + esc(cod) + '</strong> - ' + esc(desc);
+                        html += '<div class="modal-producto-item p-2 border-b border-gray-100 hover:bg-gray-100 cursor-pointer text-sm" data-id="' + (item.id || '').replace(/"/g, '&quot;') + '" data-codigo="' + (cod || '').replace(/"/g, '&quot;') + '" data-descri="' + (desc || '').replace(/"/g, '&quot;') + '">' + labelHtml + '</div>';
+                    });
+                    cont.innerHTML = html;
+                    cont.querySelectorAll('.modal-producto-item').forEach(function(el) {
+                        el.onclick = function() {
+                            var id = this.getAttribute('data-id');
+                            var codigo = this.getAttribute('data-codigo');
+                            var descri = this.getAttribute('data-descri');
+                            var text = (codigo || '') + (descri ? '\n' + descri : '');
+                            var row = modalProductoRowIndex;
+                            var inpCod = document.getElementById('producto_' + row);
+                            var inpText = document.getElementById('producto_text_' + row);
+                            if (inpCod) inpCod.value = id || '';
+                            if (inpText) { inpText.value = text; autoResizeTextarea(inpText); }
+                            document.getElementById('modalBuscarProducto').classList.add('hidden');
+                            modalProductoRowIndex = -1;
+                            if (id) onProductoChange(row);
+                        };
+                    });
+                }).catch(function() { cont.innerHTML = '<p class="text-red-500 text-sm p-2">Error al buscar.</p>'; });
+            }, 250);
+        });
+        document.getElementById('btnCerrarModalProveedor').addEventListener('click', function() {
+            document.getElementById('modalBuscarProveedor').classList.add('hidden');
+            modalProveedorRowIndex = -1;
+        });
+        document.getElementById('modalBuscarProveedor').addEventListener('click', function(e) {
+            if (e.target.id === 'modalBuscarProveedor') { document.getElementById('modalBuscarProveedor').classList.add('hidden'); modalProveedorRowIndex = -1; }
+        });
+        document.getElementById('modalProveedorBuscar').addEventListener('input', function() {
+            var q = (this.value || '').trim();
+            var cont = document.getElementById('modalProveedorResultados');
+            if (modalProveedorSearchTimer) clearTimeout(modalProveedorSearchTimer);
+            if (!q) { cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Escriba para buscar proveedor.</p>'; return; }
+            cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Buscando...</p>';
+            modalProveedorSearchTimer = setTimeout(function() {
+                fetch('get_ccte_lista.php?q=' + encodeURIComponent(q)).then(function(r) { return r.json(); }).then(function(data) {
+                    if (!data.success || !data.data || !data.data.length) {
+                        cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Sin resultados.</p>';
+                        return;
+                    }
+                    var html = '';
+                    var esc = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+                    data.data.forEach(function(item) {
+                        var cod = item.codigo || '';
+                        var nom = item.nombre || '';
+                        var labelHtml = '<strong>' + esc(cod) + '</strong> - ' + esc(nom);
+                        html += '<div class="modal-proveedor-item p-2 border-b border-gray-100 hover:bg-gray-100 cursor-pointer text-sm" data-codigo="' + (cod + '').replace(/"/g, '&quot;') + '" data-nombre="' + (nom + '').replace(/"/g, '&quot;') + '">' + labelHtml + '</div>';
+                    });
+                    cont.innerHTML = html;
+                    cont.querySelectorAll('.modal-proveedor-item').forEach(function(el) {
+                        el.onclick = function() {
+                            var codigo = this.getAttribute('data-codigo') || '';
+                            var nombre = this.getAttribute('data-nombre') || '';
+                            var row = modalProveedorRowIndex;
+                            var inpCod = document.getElementById('codProveedor_' + row);
+                            var inpNom = document.getElementById('proveedor_' + row);
+                            if (inpCod) inpCod.value = codigo;
+                            if (inpNom) {
+                                inpNom.value = codigo + (nombre ? '\n' + nombre : '');
+                                autoResizeTextarea(inpNom);
+                            }
+                            document.getElementById('modalBuscarProveedor').classList.add('hidden');
+                            modalProveedorRowIndex = -1;
+                        };
+                    });
+                }).catch(function() { cont.innerHTML = '<p class="text-red-500 text-sm p-2">Error al buscar.</p>'; });
+            }, 250);
+        });
         function onProductoChange(rowIndex) {
-            var sel = document.getElementById('producto_' + rowIndex);
-            if (!sel || !sel.value) return;
+            var inp = document.getElementById('producto_' + rowIndex);
+            if (!inp || !inp.value) return;
             if (!solicitudesData[rowIndex]) solicitudesData[rowIndex] = {};
-            fetch('get_datos_producto_programa.php?codigo=' + encodeURIComponent(sel.value)).then(function(r) { return r.json(); }).then(function(data) {
+            fetch('get_datos_producto_programa.php?codigo=' + encodeURIComponent(inp.value)).then(function(r) { return r.json(); }).then(function(data) {
                 if (!data.success) return;
                 solicitudesData[rowIndex].codProveedor = data.codProveedor || '';
                 solicitudesData[rowIndex].nomProducto = data.nomProducto || '';
@@ -275,14 +440,27 @@ if (empty($_SESSION['active'])) {
                 var desc = (data.descripcionVacuna || '').trim();
                 var descTexto = data.esVacuna && desc ? 'Contra\n' + desc.split(',').map(function(s) { return '- ' + s.trim(); }).filter(Boolean).join('\n') : desc || '';
                 solicitudesData[rowIndex].descripcionVacuna = descTexto;
-                var prov = document.getElementById('proveedor_ro_' + rowIndex); if (prov) prov.value = data.nomProveedor || '';
+                var codProv = document.getElementById('codProveedor_' + rowIndex);
+                if (codProv) codProv.value = data.codProveedor || '';
+                var prov = document.getElementById('proveedor_' + rowIndex);
+                if (prov) {
+                    prov.value = (data.codProveedor || '') + (data.nomProveedor ? '\n' + data.nomProveedor : '');
+                    autoResizeTextarea(prov);
+                }
+                var inpProdText = document.getElementById('producto_text_' + rowIndex);
+                if (inpProdText && data.nomProducto) {
+                    var codProd = document.getElementById('producto_' + rowIndex);
+                    var cod = (codProd && codProd.value) ? codProd.value : (data.codProducto || '');
+                    inpProdText.value = cod + '\n' + data.nomProducto;
+                    autoResizeTextarea(inpProdText);
+                }
                 var unid = document.getElementById('unidad_ro_' + rowIndex); if (unid) unid.value = data.unidad || '';
-                var dosisRo = document.getElementById('dosis_ro_' + rowIndex); if (dosisRo) dosisRo.value = data.dosis || '';
+                var dosisInp = document.getElementById('dosis_' + rowIndex); if (dosisInp) dosisInp.value = data.dosis || '';
                 var tdDesc = document.getElementById('td_descripcion_vacuna_' + rowIndex);
                 var descVac = document.getElementById('descripcion_vacuna_ro_' + rowIndex);
                 if (data.esVacuna) {
                     if (tdDesc) tdDesc.style.display = '';
-                    if (descVac) descVac.value = descTexto;
+                    if (descVac) { descVac.value = descTexto; autoResizeTextarea(descVac); }
                     var thDesc = document.getElementById('th_descripcion_vacuna'); if (thDesc) thDesc.style.display = '';
                 } else {
                     if (tdDesc) tdDesc.style.display = 'none';
@@ -325,24 +503,27 @@ if (empty($_SESSION['active'])) {
                     tr.innerHTML = buildRowHtml(currentCampos, i);
                     tbody.appendChild(tr);
                     var inpUb = document.getElementById('ubicacion_' + i); if (inpUb && solicitudesData[i].ubicacion) inpUb.value = solicitudesData[i].ubicacion;
-                    var inpDosisRo = document.getElementById('dosis_ro_' + i); if (inpDosisRo && solicitudesData[i].dosis) inpDosisRo.value = solicitudesData[i].dosis;
-                    var inpDescVac = document.getElementById('descripcion_vacuna_ro_' + i); if (inpDescVac && solicitudesData[i].descripcionVacuna) inpDescVac.value = solicitudesData[i].descripcionVacuna;
+                    var inpDosis = document.getElementById('dosis_' + i); if (inpDosis && solicitudesData[i].dosis) inpDosis.value = solicitudesData[i].dosis;
+                    var inpCodProv = document.getElementById('codProveedor_' + i); var inpProv = document.getElementById('proveedor_' + i);
+                    if (inpCodProv && solicitudesData[i].codProveedor) inpCodProv.value = solicitudesData[i].codProveedor;
+                    if (inpProv) {
+                        var pv = solicitudesData[i].nomProveedor || '';
+                        inpProv.value = (pv.indexOf('\n') !== -1) ? pv : ((solicitudesData[i].codProveedor || '') + (pv ? '\n' + pv : ''));
+                        autoResizeTextarea(inpProv);
+                    }
+                    var inpDescVac = document.getElementById('descripcion_vacuna_ro_' + i);
+                    if (inpDescVac && solicitudesData[i].descripcionVacuna) { inpDescVac.value = solicitudesData[i].descripcionVacuna; autoResizeTextarea(inpDescVac); }
                     var tdDescI = document.getElementById('td_descripcion_vacuna_' + i); if (tdDescI) tdDescI.style.display = solicitudesData[i].esVacuna ? '' : 'none';
-                    var inpEdad = document.getElementById('edad_' + i); if (inpEdad && solicitudesData[i].edad !== undefined && solicitudesData[i].edad !== '') inpEdad.value = solicitudesData[i].edad;
+                    var inpEdad = document.getElementById('edad_' + i); if (inpEdad && solicitudesData[i].edad !== undefined && solicitudesData[i].edad !== '') inpEdad.value = String(solicitudesData[i].edad);
                     var ud = document.getElementById('unidadDosis_' + i); var nf = document.getElementById('numeroFrascos_' + i);
                     if (sigla === 'PL' || sigla === 'GR') { if (ud) ud.disabled = true; if (nf) nf.disabled = true; }
-                    initSelect2ProductoRow(document.getElementById('producto_' + i));
-                    (function(idx) {
-                        jQuery('#producto_' + idx).off('select2:select').on('select2:select', function() { onProductoChange(idx); });
-                        jQuery('#producto_' + idx).off('select2:clear').on('select2:clear', function() {
-                            if (solicitudesData[idx]) solicitudesData[idx].esVacuna = false;
-                            var tdDesc = document.getElementById('td_descripcion_vacuna_' + idx);
-                            var descVac = document.getElementById('descripcion_vacuna_ro_' + idx);
-                            if (tdDesc) tdDesc.style.display = 'none';
-                            if (descVac) descVac.value = '';
-                            updateVisibilidadColumnaDescripcion();
-                        });
-                    })(i);
+                    var inpProd = document.getElementById('producto_' + i); var inpProdText = document.getElementById('producto_text_' + i);
+                    if (inpProd && solicitudesData[i].codProducto) inpProd.value = solicitudesData[i].codProducto;
+                    if (inpProdText) {
+                        var np = solicitudesData[i].nomProducto || '';
+                        inpProdText.value = (np.indexOf('\n') !== -1) ? np : ((solicitudesData[i].codProducto || '') + (np ? '\n' + np : ''));
+                        autoResizeTextarea(inpProdText);
+                    }
                 }
                 tbody.querySelectorAll('.btn-quitar-fila').forEach(function(btn) {
                     var rowIdx = parseInt(btn.getAttribute('data-row'), 10);
@@ -360,22 +541,25 @@ if (empty($_SESSION['active'])) {
                     if (tr) {
                         tr.innerHTML = buildRowHtml(currentCampos, i);
                         var inpUb = document.getElementById('ubicacion_' + i); if (inpUb && solicitudesData[i] && solicitudesData[i].ubicacion) inpUb.value = solicitudesData[i].ubicacion;
-                        var inpDosisRo = document.getElementById('dosis_ro_' + i); if (inpDosisRo && solicitudesData[i] && solicitudesData[i].dosis) inpDosisRo.value = solicitudesData[i].dosis;
-                        var inpDescVac = document.getElementById('descripcion_vacuna_ro_' + i); if (inpDescVac && solicitudesData[i] && solicitudesData[i].descripcionVacuna) inpDescVac.value = solicitudesData[i].descripcionVacuna;
+                        var inpDosis = document.getElementById('dosis_' + i); if (inpDosis && solicitudesData[i] && solicitudesData[i].dosis) inpDosis.value = solicitudesData[i].dosis;
+                        var inpCodProv = document.getElementById('codProveedor_' + i); var inpProv = document.getElementById('proveedor_' + i);
+                        if (inpCodProv && solicitudesData[i].codProveedor) inpCodProv.value = solicitudesData[i].codProveedor;
+                        if (inpProv) {
+                            var pv = (solicitudesData[i] && solicitudesData[i].nomProveedor) ? solicitudesData[i].nomProveedor : '';
+                            inpProv.value = (pv.indexOf('\n') !== -1) ? pv : ((solicitudesData[i].codProveedor || '') + (pv ? '\n' + pv : ''));
+                            autoResizeTextarea(inpProv);
+                        }
+                        var inpDescVac = document.getElementById('descripcion_vacuna_ro_' + i);
+                        if (inpDescVac && solicitudesData[i] && solicitudesData[i].descripcionVacuna) { inpDescVac.value = solicitudesData[i].descripcionVacuna; autoResizeTextarea(inpDescVac); }
                         var tdDescI = document.getElementById('td_descripcion_vacuna_' + i); if (tdDescI && solicitudesData[i]) tdDescI.style.display = solicitudesData[i].esVacuna ? '' : 'none';
-                        var inpEdad = document.getElementById('edad_' + i); if (inpEdad && solicitudesData[i] && solicitudesData[i].edad !== undefined && solicitudesData[i].edad !== '') inpEdad.value = solicitudesData[i].edad;
-                        initSelect2ProductoRow(document.getElementById('producto_' + i));
-                        (function(idx) {
-                            jQuery('#producto_' + idx).off('select2:select').on('select2:select', function() { onProductoChange(idx); });
-                            jQuery('#producto_' + idx).off('select2:clear').on('select2:clear', function() {
-                                if (solicitudesData[idx]) solicitudesData[idx].esVacuna = false;
-                                var tdDesc = document.getElementById('td_descripcion_vacuna_' + idx);
-                                var descVac = document.getElementById('descripcion_vacuna_ro_' + idx);
-                                if (tdDesc) tdDesc.style.display = 'none';
-                                if (descVac) descVac.value = '';
-                                updateVisibilidadColumnaDescripcion();
-                            });
-                        })(i);
+                        var inpEdad = document.getElementById('edad_' + i); if (inpEdad && solicitudesData[i] && solicitudesData[i].edad !== undefined && solicitudesData[i].edad !== '') inpEdad.value = String(solicitudesData[i].edad);
+                        var inpProd = document.getElementById('producto_' + i); var inpProdText = document.getElementById('producto_text_' + i);
+                        if (inpProd && solicitudesData[i].codProducto) inpProd.value = solicitudesData[i].codProducto;
+                        if (inpProdText) {
+                            var np = (solicitudesData[i] && solicitudesData[i].nomProducto) ? solicitudesData[i].nomProducto : '';
+                            inpProdText.value = (np.indexOf('\n') !== -1) ? np : ((solicitudesData[i].codProducto || '') + (np ? '\n' + np : ''));
+                            autoResizeTextarea(inpProdText);
+                        }
                     }
                 }
                 tbody.querySelectorAll('.btn-quitar-fila').forEach(function(btn) {
@@ -385,37 +569,98 @@ if (empty($_SESSION['active'])) {
             }
             updateVisibilidadColumnaDescripcion();
         }
+        /** Parsea campo edad: "2", "2,4", "2, 4" -> array de números [2] o [2,4]. Cada edad genera un detalle; posDetalle es el número de detalle global (1, 2, 3, 4...). */
+        function parseEdades(edadStr) {
+            if (typeof edadStr !== 'string') edadStr = '';
+            var parts = edadStr.split(',').map(function(s) { return parseInt(s.trim(), 10); }).filter(function(n) { return !isNaN(n) && n >= 0 && n <= 45; });
+            return parts.length ? parts : [0];
+        }
+        /** Lee el valor de un campo del detalle para la fila s según la columna mostrada (id del input). Solo se usan columnas que están en cols (campos con valor 1). */
+        function leerValorDetalle(colKey, s) {
+            var el;
+            switch (colKey) {
+                case 'ubicacion': el = document.getElementById('ubicacion_' + s); return el ? (el.value || '').trim() : '';
+                case 'producto': el = document.getElementById('producto_' + s); return el ? (el.value || '').trim() : '';
+                case 'proveedor': el = document.getElementById('codProveedor_' + s); return el ? (el.value || '').trim() : '';
+                case 'unidad': el = document.getElementById('unidad_ro_' + s); return el ? (el.value || '').trim() : '';
+                case 'dosis': el = document.getElementById('dosis_' + s); return el ? (el.value || '').trim() : '';
+                case 'unidadDosis': el = document.getElementById('unidadDosis_' + s); return el ? (el.value || '').trim() : '';
+                case 'numeroFrascos': el = document.getElementById('numeroFrascos_' + s); return el ? (el.value || '').trim() : '';
+                case 'edad': el = document.getElementById('edad_' + s); return el ? String(el.value || '').trim() : '';
+                case 'descripcion_vacuna': el = document.getElementById('descripcion_vacuna_ro_' + s); return el ? (el.value || '').trim() : '';
+                case 'area_galpon': el = document.getElementById('area_galpon_' + s); return el ? (parseInt(el.value, 10) || null) : null;
+                case 'cantidad_por_galpon': el = document.getElementById('cantidad_por_galpon_' + s); return el ? (parseInt(el.value, 10) || null) : null;
+                default: return '';
+            }
+        }
+        function getRowDataFromRowIndex(s, cols) {
+            var inpText = document.getElementById('producto_text_' + s);
+            var nomProducto = (inpText && inpText.value) ? inpText.value.trim() : '';
+            if (solicitudesData[s] && solicitudesData[s].nomProducto) nomProducto = solicitudesData[s].nomProducto;
+            var obj = { ubicacion: '', codProducto: '', nomProducto: nomProducto, codProveedor: '', nomProveedor: '', unidades: '', dosis: '', unidadDosis: '', numeroFrascos: '', edad: '', descripcionVacuna: '', esVacuna: !!(solicitudesData[s] && solicitudesData[s].esVacuna), areaGalpon: null, cantidadPorGalpon: null };
+            if (cols.indexOf('ubicacion') !== -1) obj.ubicacion = leerValorDetalle('ubicacion', s);
+            if (cols.indexOf('producto') !== -1) { obj.codProducto = leerValorDetalle('producto', s); obj.nomProducto = nomProducto; }
+            if (cols.indexOf('proveedor') !== -1) { obj.codProveedor = leerValorDetalle('proveedor', s); obj.nomProveedor = (document.getElementById('proveedor_' + s) && document.getElementById('proveedor_' + s).value) ? document.getElementById('proveedor_' + s).value.trim() : ''; }
+            if (cols.indexOf('unidad') !== -1) obj.unidades = leerValorDetalle('unidad', s);
+            if (cols.indexOf('dosis') !== -1) obj.dosis = leerValorDetalle('dosis', s);
+            if (cols.indexOf('unidadDosis') !== -1) obj.unidadDosis = leerValorDetalle('unidadDosis', s);
+            if (cols.indexOf('numeroFrascos') !== -1) obj.numeroFrascos = leerValorDetalle('numeroFrascos', s);
+            if (cols.indexOf('edad') !== -1) obj.edad = leerValorDetalle('edad', s);
+            if (cols.indexOf('descripcion_vacuna') !== -1) obj.descripcionVacuna = leerValorDetalle('descripcion_vacuna', s);
+            if (cols.indexOf('area_galpon') !== -1) obj.areaGalpon = leerValorDetalle('area_galpon', s);
+            if (cols.indexOf('cantidad_por_galpon') !== -1) obj.cantidadPorGalpon = leerValorDetalle('cantidad_por_galpon', s);
+            return obj;
+        }
+        /** Devuelve un objeto por fila de la tabla (para quitar/restaurar), con edad como string. Solo incluye valores de columnas mostradas (campos con valor 1). */
+        function getRowDataForTable() {
+            var tbody = document.getElementById('solicitudesBody');
+            if (!tbody) return [];
+            var rows = tbody.querySelectorAll('tr');
+            var campos = getCamposActual();
+            var cols = getColumnasFromCampos(campos || {});
+            var out = [];
+            for (var s = 0; s < rows.length; s++) {
+                var row = getRowDataFromRowIndex(s, cols);
+                out.push({ ubicacion: row.ubicacion, codProducto: row.codProducto, nomProducto: row.nomProducto, codProveedor: row.codProveedor, nomProveedor: row.nomProveedor, unidades: row.unidades, dosis: row.dosis, unidadDosis: row.unidadDosis, numeroFrascos: row.numeroFrascos, edad: row.edad, descripcionVacuna: row.descripcionVacuna, esVacuna: row.esVacuna, areaGalpon: row.areaGalpon, cantidadPorGalpon: row.cantidadPorGalpon });
+            }
+            return out;
+        }
+        /** Construye el array de detalles para enviar al backend. Solo incluye valores de columnas mostradas (campos con valor 1 en el tipo). */
         function getDetallesFromForm() {
             var tbody = document.getElementById('solicitudesBody');
             if (!tbody) return [];
             var rows = tbody.querySelectorAll('tr');
+            var campos = getCamposActual();
+            var cols = getColumnasFromCampos(campos || {});
             var out = [];
+            var posDetalle = 0;
             for (var s = 0; s < rows.length; s++) {
-                var selProd = document.getElementById('producto_' + s);
-                var codProducto = selProd ? (selProd.value || '').trim() : '';
-                var nomProducto = selProd && selProd.options[selProd.selectedIndex] ? selProd.options[selProd.selectedIndex].textContent : '';
-                if (solicitudesData[s] && solicitudesData[s].nomProducto) nomProducto = solicitudesData[s].nomProducto;
-                out.push({
-                    ubicacion: (document.getElementById('ubicacion_' + s) && document.getElementById('ubicacion_' + s).value) ? document.getElementById('ubicacion_' + s).value.trim() : '',
-                    codProducto: codProducto,
-                    nomProducto: nomProducto,
-                    codProveedor: (solicitudesData[s] && solicitudesData[s].codProveedor) ? solicitudesData[s].codProveedor : '',
-                    nomProveedor: (document.getElementById('proveedor_ro_' + s) && document.getElementById('proveedor_ro_' + s).value) ? document.getElementById('proveedor_ro_' + s).value.trim() : '',
-                    unidades: (document.getElementById('unidad_ro_' + s) && document.getElementById('unidad_ro_' + s).value) ? document.getElementById('unidad_ro_' + s).value.trim() : '',
-                    dosis: (solicitudesData[s] && solicitudesData[s].dosis) ? solicitudesData[s].dosis : '',
-                    unidadDosis: (document.getElementById('unidadDosis_' + s) && document.getElementById('unidadDosis_' + s).value) ? document.getElementById('unidadDosis_' + s).value.trim() : '',
-                    numeroFrascos: (document.getElementById('numeroFrascos_' + s) && document.getElementById('numeroFrascos_' + s).value) ? document.getElementById('numeroFrascos_' + s).value.trim() : '',
-                    edad: (function(){ var el = document.getElementById('edad_' + s); return el ? (parseInt(el.value,10)||0) : 0; })(),
-                    descripcionVacuna: (document.getElementById('descripcion_vacuna_ro_' + s) && document.getElementById('descripcion_vacuna_ro_' + s).value) ? document.getElementById('descripcion_vacuna_ro_' + s).value.trim() : '',
-                    esVacuna: !!(solicitudesData[s] && solicitudesData[s].esVacuna),
-                    areaGalpon: (function(){ var el = document.getElementById('area_galpon_' + s); return el ? (parseInt(el.value,10)||null) : null; })(),
-                    cantidadPorGalpon: (function(){ var el = document.getElementById('cantidad_por_galpon_' + s); return el ? (parseInt(el.value,10)||null) : null; })()
+                var row = getRowDataFromRowIndex(s, cols);
+                var edades = parseEdades(row.edad);
+                var base = {
+                    ubicacion: row.ubicacion,
+                    codProducto: row.codProducto,
+                    nomProducto: row.nomProducto,
+                    codProveedor: row.codProveedor,
+                    nomProveedor: row.nomProveedor,
+                    unidades: row.unidades,
+                    dosis: row.dosis,
+                    unidadDosis: row.unidadDosis,
+                    numeroFrascos: row.numeroFrascos,
+                    descripcionVacuna: row.descripcionVacuna,
+                    esVacuna: row.esVacuna,
+                    areaGalpon: row.areaGalpon,
+                    cantidadPorGalpon: row.cantidadPorGalpon
+                };
+                edades.forEach(function(edadVal) {
+                    posDetalle++;
+                    out.push(Object.assign({}, base, { edad: edadVal, posDetalle: posDetalle }));
                 });
             }
             return out;
         }
         function quitarFila(index) {
-            var data = getDetallesFromForm();
+            var data = getRowDataForTable();
             data.splice(index, 1);
             solicitudesData = {};
             data.forEach(function(d, i) { solicitudesData[i] = d; });
@@ -453,44 +698,19 @@ if (empty($_SESSION['active'])) {
             var nomTipo = tipo.options[tipo.selectedIndex] ? tipo.options[tipo.selectedIndex].textContent : '';
             var codigo = document.getElementById('codigo').value.trim();
             var nombre = document.getElementById('nombre').value.trim();
-            var zona = document.getElementById('zona') ? document.getElementById('zona').value.trim() : '';
             var despliegue = document.getElementById('despliegue') ? document.getElementById('despliegue').value.trim() : '';
             var descripcion = document.getElementById('descripcion') ? document.getElementById('descripcion').value.trim() : '';
             if (!codTipo || !codigo || !nombre) {
                 Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Complete tipo, código y nombre.' });
                 return;
             }
-            var numSol = document.getElementById('solicitudesBody') ? document.getElementById('solicitudesBody').querySelectorAll('tr').length : 0;
-            if (numSol < 1) {
-                Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Debe haber al menos un detalle. Agregue una fila con el botón "Agregar fila".' });
+            var detalles = getDetallesFromForm();
+            if (detalles.length < 1) {
+                Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Debe haber al menos un detalle. Agregue una fila y complete edad (ej: 2 o 2,4).' });
                 return;
             }
             var sigla = getSiglaActual();
-            var detalles = [];
-            for (var s = 0; s < numSol; s++) {
-                var ub = document.getElementById('ubicacion_' + s) ? document.getElementById('ubicacion_' + s).value.trim() : '';
-                var selProd = document.getElementById('producto_' + s);
-                var codProducto = selProd ? (selProd.value || '').trim() : '';
-                var nomProducto = selProd && selProd.options[selProd.selectedIndex] ? selProd.options[selProd.selectedIndex].textContent : '';
-                var codProveedor = (solicitudesData[s] && solicitudesData[s].codProveedor) ? solicitudesData[s].codProveedor : '';
-                var nomProveedor = document.getElementById('proveedor_ro_' + s) ? document.getElementById('proveedor_ro_' + s).value.trim() : '';
-                if (solicitudesData[s] && solicitudesData[s].nomProducto) nomProducto = solicitudesData[s].nomProducto;
-                var unidadDosis = document.getElementById('unidadDosis_' + s) ? document.getElementById('unidadDosis_' + s).value.trim() : '';
-                var numeroFrascos = document.getElementById('numeroFrascos_' + s) ? document.getElementById('numeroFrascos_' + s).value.trim() : '';
-                var edadEl = document.getElementById('edad_' + s);
-                var edad = edadEl ? (parseInt(edadEl.value, 10) || 0) : 0;
-                if (edad < 0) edad = 0; if (edad > 45) edad = 45;
-                var descVacEl = document.getElementById('descripcion_vacuna_ro_' + s);
-                var descripcionVacuna = descVacEl ? descVacEl.value.trim() : (solicitudesData[s] && solicitudesData[s].descripcionVacuna ? solicitudesData[s].descripcionVacuna : '');
-                var areaGalponEl = document.getElementById('area_galpon_' + s);
-                var areaGalpon = areaGalponEl ? (parseInt(areaGalponEl.value, 10) || null) : null;
-                var cantGalponEl = document.getElementById('cantidad_por_galpon_' + s);
-                var cantidadPorGalpon = cantGalponEl ? (parseInt(cantGalponEl.value, 10) || null) : null;
-                var unidades = (document.getElementById('unidad_ro_' + s) ? document.getElementById('unidad_ro_' + s).value.trim() : '') || '';
-                var dosis = (solicitudesData[s] && solicitudesData[s].dosis) ? solicitudesData[s].dosis : '';
-                detalles.push({ ubicacion: ub, codProducto: codProducto, nomProducto: nomProducto, codProveedor: codProveedor, nomProveedor: nomProveedor, unidades: unidades, dosis: dosis, unidadDosis: unidadDosis, numeroFrascos: numeroFrascos, edad: edad, descripcionVacuna: descripcionVacuna, areaGalpon: areaGalpon, cantidadPorGalpon: cantidadPorGalpon });
-            }
-            var payload = { codigo: codigo, nombre: nombre, codTipo: parseInt(codTipo, 10), nomTipo: nomTipo, sigla: sigla, zona: zona, despliegue: despliegue, descripcion: descripcion, detalles: detalles };
+            var payload = { codigo: codigo, nombre: nombre, codTipo: parseInt(codTipo, 10), nomTipo: nomTipo, sigla: sigla, despliegue: despliegue, descripcion: descripcion, detalles: detalles };
             fetch('guardar_programa.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                 .then(function(r) { return r.json(); })
                 .then(function(res) {
@@ -503,9 +723,6 @@ if (empty($_SESSION['active'])) {
                             document.getElementById('btnAgregarFila').classList.add('hidden');
                             document.getElementById('solicitudesContainer').classList.add('hidden');
                             solicitudesData = {};
-                            if (window.top && window.top !== window.self && typeof window.top.loadDashboardAndData === 'function') {
-                                window.top.loadDashboardAndData('modules/planificacion/programas/dashboard-programas-listado.php', '📋 Programas - Listado', 'Filtros y listado de programas');
-                            }
                         });
                     } else {
                         Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudo guardar.' });

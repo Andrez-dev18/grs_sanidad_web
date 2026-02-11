@@ -14,8 +14,8 @@ if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
 
-// Proveedores = registros de ccte con proveedor_programa = 1
-$query = "SELECT codigo, nombre, codigo_proveedor FROM ccte WHERE COALESCE(proveedor_programa, 0) = 1 ORDER BY nombre";
+// Proveedores = registros de ccte con proveedor_programa = 1, código longitud 11 y solo numérico
+$query = "SELECT codigo, nombre, codigo_proveedor FROM ccte WHERE COALESCE(proveedor_programa, 0) = 1 AND LENGTH(TRIM(codigo)) = 11 AND codigo REGEXP '^[0-9]{11}$' ORDER BY nombre";
 $result_proveedores = mysqli_query($conexion, $query);
 ?>
 

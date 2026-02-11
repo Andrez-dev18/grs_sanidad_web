@@ -30,10 +30,21 @@ $usuario = $_SESSION['usuario'] ?? 'WEB';
 // Columnas opcionales en san_fact_cronograma
 $tieneNomGranja = false;
 $tieneEdad = false;
+$tienePosDetalle = false;
 $chkNom = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'nomGranja'");
 if ($chkNom && $chkNom->num_rows > 0) $tieneNomGranja = true;
 $chkEdad = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'edad'");
 if ($chkEdad && $chkEdad->num_rows > 0) $tieneEdad = true;
+$chkPosDet = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'posDetalle'");
+if ($chkPosDet && $chkPosDet->num_rows > 0) $tienePosDetalle = true;
+$chkNumCrono = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'numCronograma'");
+$tieneNumCronograma = $chkNumCrono && $chkNumCrono->num_rows > 0;
+
+$numCronograma = 1;
+if ($tieneNumCronograma) {
+    $resMax = $conn->query("SELECT COALESCE(MAX(numCronograma), 0) + 1 AS nextNum FROM san_fact_cronograma");
+    if ($resMax && $row = $resMax->fetch_assoc()) $numCronograma = (int)$row['nextNum'];
+}
 
 // Obtener primera edad del programa si se necesita (siempre registrar edad)
 $edadPrograma = null;
@@ -54,7 +65,11 @@ if (is_array($items) && !empty($items)) {
     $cols = "granja, campania, galpon, codPrograma, nomPrograma, fechaCarga, fechaEjecucion, usuarioRegistro, zona, subzona";
     $placeholders = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
     $types = "sssssssssi";
-    $bindGranja = $bindCampania = $bindGalpon = $bindCod = $bindNom = $bindCarga = $bindEjec = $bindUsuario = $bindZona = $bindSub = null;
+    if ($tieneNumCronograma) {
+        $cols .= ", numCronograma";
+        $placeholders .= ", ?";
+        $types .= "i";
+    }
     if ($tieneNomGranja) {
         $cols .= ", nomGranja";
         $placeholders .= ", ?";
@@ -62,6 +77,11 @@ if (is_array($items) && !empty($items)) {
     }
     if ($tieneEdad) {
         $cols .= ", edad";
+        $placeholders .= ", ?";
+        $types .= "i";
+    }
+    if ($tienePosDetalle) {
+        $cols .= ", posDetalle";
         $placeholders .= ", ?";
         $types .= "i";
     }
@@ -87,18 +107,17 @@ if (is_array($items) && !empty($items)) {
             $edadVal = isset($f['edad']) ? (int)$f['edad'] : (isset($it['edad']) ? (int)$it['edad'] : (int)$edadPrograma);
             if ($edadVal < 0) $edadVal = 0;
             if ($edadVal > 999) $edadVal = 999;
+            $posDetalleVal = isset($f['posDetalle']) ? (int)$f['posDetalle'] : 0;
+            if ($posDetalleVal < 1) $posDetalleVal = 0;
             $fechaCarga = isset($f['fechaCarga']) ? (is_string($f['fechaCarga']) ? $f['fechaCarga'] : date('Y-m-d', strtotime($f['fechaCarga']))) : '';
             $fechaEjecucion = isset($f['fechaEjecucion']) ? (is_string($f['fechaEjecucion']) ? $f['fechaEjecucion'] : date('Y-m-d', strtotime($f['fechaEjecucion']))) : (is_string($f) ? $f : date('Y-m-d', strtotime($f)));
             if ($fechaCarga === '') $fechaCarga = $fechaEjecucion;
-            if ($tieneNomGranja && $tieneEdad) {
-                $stmt->bind_param($types, $granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zonaItem, $subzonaVal, $nomGranja, $edadVal);
-            } elseif ($tieneNomGranja) {
-                $stmt->bind_param($types, $granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zonaItem, $subzonaVal, $nomGranja);
-            } elseif ($tieneEdad) {
-                $stmt->bind_param($types, $granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zonaItem, $subzonaVal, $edadVal);
-            } else {
-                $stmt->bind_param($types, $granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zonaItem, $subzonaVal);
-            }
+            $bindVals = [$granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zonaItem, $subzonaVal];
+            if ($tieneNumCronograma) $bindVals[] = $numCronograma;
+            if ($tieneNomGranja) $bindVals[] = $nomGranja;
+            if ($tieneEdad) $bindVals[] = $edadVal;
+            if ($tienePosDetalle) $bindVals[] = $posDetalleVal;
+            $stmt->bind_param($types, ...$bindVals);
             if (!$stmt->execute()) {
                 $stmt->close();
                 $conn->close();
@@ -133,7 +152,15 @@ if (!is_array($pares)) {
     $pares = array_filter(array_map('trim', explode(',', $pares)));
 }
 
-$stmt = $conn->prepare("INSERT INTO san_fact_cronograma (granja, campania, galpon, codPrograma, nomPrograma, fechaCarga, fechaEjecucion, usuarioRegistro, zona, subzona) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+$colsModo2 = "granja, campania, galpon, codPrograma, nomPrograma, fechaCarga, fechaEjecucion, usuarioRegistro, zona, subzona";
+$placeholdersModo2 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
+$typesModo2 = "sssssssssi";
+if ($tieneNumCronograma) {
+    $colsModo2 .= ", numCronograma";
+    $placeholdersModo2 .= ", ?";
+    $typesModo2 .= "i";
+}
+$stmt = $conn->prepare("INSERT INTO san_fact_cronograma ($colsModo2) VALUES ($placeholdersModo2)");
 if (!$stmt) {
     echo json_encode(['success' => false, 'message' => 'Error prepare: ' . $conn->error]);
     exit;
@@ -148,7 +175,11 @@ foreach ($pares as $f) {
         $fechaEjecucion = is_string($f) ? $f : date('Y-m-d', strtotime($f));
         $fechaCarga = $fechaEjecucion;
     }
-    $stmt->bind_param("sssssssssi", $granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zona, $subzona);
+    if ($tieneNumCronograma) {
+        $stmt->bind_param($typesModo2, $granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zona, $subzona, $numCronograma);
+    } else {
+        $stmt->bind_param($typesModo2, $granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zona, $subzona);
+    }
     if (!$stmt->execute()) {
         $stmt->close();
         $conn->close();

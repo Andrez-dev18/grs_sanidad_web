@@ -17,8 +17,9 @@ $q = isset($_GET['q']) ? trim($_GET['q']) : (isset($_POST['q']) ? trim($_POST['q
 $codigo_actual = isset($_GET['codigo_actual']) ? trim((string)$_GET['codigo_actual']) : (isset($_POST['codigo_actual']) ? trim((string)$_POST['codigo_actual']) : '');
 
 $results = [];
+$condCodigo11 = " AND LENGTH(TRIM(codigo)) = 11 AND codigo REGEXP '^[0-9]{11}$'";
 
-// En edición: incluir siempre el registro actual para que aparezca seleccionado
+// En edición: incluir siempre el registro actual para que aparezca seleccionado (aunque no cumpla 11 numérico)
 if ($codigo_actual !== '') {
     $st = $conn->prepare("SELECT codigo, nombre FROM ccte WHERE codigo = ? AND TRIM(COALESCE(nombre, '')) <> ''");
     if ($st) {
@@ -32,13 +33,13 @@ if ($codigo_actual !== '') {
     }
 }
 
-// Búsqueda por nombre: no proveedores (proveedor_programa = 0) o el actual si estamos editando
+// Búsqueda por nombre: solo códigos longitud 11 numéricos (o el actual en edición); no proveedores o el actual
 if (strlen($q) >= 1) {
     $term = '%' . $q . '%';
     if ($codigo_actual !== '') {
-        $stmt = $conn->prepare("SELECT codigo, nombre FROM ccte WHERE TRIM(COALESCE(nombre, '')) <> '' AND nombre LIKE ? AND (COALESCE(proveedor_programa, 0) = 0 OR codigo = ?) AND codigo <> ? ORDER BY nombre LIMIT 50");
+        $stmt = $conn->prepare("SELECT codigo, nombre FROM ccte WHERE TRIM(COALESCE(nombre, '')) <> '' AND nombre LIKE ? AND (COALESCE(proveedor_programa, 0) = 0 OR codigo = ?) AND codigo <> ? AND ( (LENGTH(TRIM(codigo)) = 11 AND codigo REGEXP '^[0-9]{11}$') OR codigo = ? ) ORDER BY nombre LIMIT 50");
         if ($stmt) {
-            $stmt->bind_param("sss", $term, $codigo_actual, $codigo_actual);
+            $stmt->bind_param("ssss", $term, $codigo_actual, $codigo_actual, $codigo_actual);
             $stmt->execute();
             $res = $stmt->get_result();
             while ($row = $res->fetch_assoc()) {
@@ -47,7 +48,7 @@ if (strlen($q) >= 1) {
             $stmt->close();
         }
     } else {
-        $stmt = $conn->prepare("SELECT codigo, nombre FROM ccte WHERE TRIM(COALESCE(nombre, '')) <> '' AND nombre LIKE ? AND COALESCE(proveedor_programa, 0) = 0 ORDER BY nombre LIMIT 50");
+        $stmt = $conn->prepare("SELECT codigo, nombre FROM ccte WHERE TRIM(COALESCE(nombre, '')) <> '' AND nombre LIKE ? AND COALESCE(proveedor_programa, 0) = 0" . $condCodigo11 . " ORDER BY nombre LIMIT 50");
         if ($stmt) {
             $stmt->bind_param("s", $term);
             $stmt->execute();

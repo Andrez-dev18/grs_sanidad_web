@@ -121,9 +121,13 @@ if ($rTipos) {
 
 $chkExtras = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'descripcionVacuna'");
 $tieneExtras = $chkExtras && $chkExtras->fetch_assoc();
-$sqlDet = $tieneExtras
-    ? "SELECT ubicacion, codProducto, nomProducto, codProveedor, nomProveedor, unidades, dosis, unidadDosis, numeroFrascos, edad, descripcionVacuna, areaGalpon, cantidadPorGalpon FROM san_fact_programa_det WHERE codPrograma = ? ORDER BY id"
-    : "SELECT ubicacion, codProducto, nomProducto, codProveedor, nomProveedor, unidades, dosis, unidadDosis, numeroFrascos, edad FROM san_fact_programa_det WHERE codPrograma = ? ORDER BY id";
+$chkPosDet = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'posDetalle'");
+$tienePosDetalle = $chkPosDet && $chkPosDet->fetch_assoc();
+$camposDet = $tieneExtras
+    ? "ubicacion, codProducto, nomProducto, codProveedor, nomProveedor, unidades, dosis, unidadDosis, numeroFrascos, edad, descripcionVacuna, areaGalpon, cantidadPorGalpon"
+    : "ubicacion, codProducto, nomProducto, codProveedor, nomProveedor, unidades, dosis, unidadDosis, numeroFrascos, edad";
+if ($tienePosDetalle) $camposDet .= ", posDetalle";
+$sqlDet = "SELECT " . $camposDet . " FROM san_fact_programa_det WHERE codPrograma = ? ORDER BY " . ($tienePosDetalle ? "posDetalle, id" : "id");
 $stmtDet = $conn->prepare($sqlDet);
 if (!$stmtDet) {
     echo json_encode(['success' => true, 'data' => $programas, 'detalles' => []]);

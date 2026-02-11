@@ -92,7 +92,6 @@ function formatearDescripcionVacuna($s) {
 $cols = isset($columnasPorSigla[$sigla]) ? $columnasPorSigla[$sigla] : $columnasPorSigla['PL'];
 $colsSinNum = array_values(array_filter($cols, function($k) { return $k !== 'num'; }));
 
-$cabZona = $cab['zona'] ?? '';
 $cabDespliegue = $tieneDespliegue ? ($cab['despliegue'] ?? '') : '';
 $cabDesc = $cab['descripcion'] ?? '';
 
@@ -130,7 +129,7 @@ $html .= '<td style="width: 60%; text-align: center; padding: 5px; background-co
 $html .= '<td style="width: 20%; background-color: #fff; border: 1px solid #cbd5e1;"></td></tr></table>';
 $html .= '<table class="data-table">';
 $html .= '<thead><tr>';
-$html .= '<th>Código</th><th>Nombre programa</th><th>Zona</th><th>Despliegue</th><th>Descripción</th>';
+$html .= '<th>Código</th><th>Nombre programa</th><th>Despliegue</th><th>Descripción</th>';
 foreach ($colsSinNum as $k) {
     $html .= '<th>' . htmlspecialchars($labelsReporte[$k] ?? $k) . '</th>';
 }
@@ -140,7 +139,6 @@ if (empty($detalles)) {
     $html .= '<tr>';
     $html .= '<td>' . htmlspecialchars($codigo) . '</td>';
     $html .= '<td>' . htmlspecialchars($nombrePrograma) . '</td>';
-    $html .= '<td>' . htmlspecialchars($cabZona) . '</td>';
     $html .= '<td>' . htmlspecialchars($cabDespliegue) . '</td>';
     $html .= '<td>' . htmlspecialchars($cabDesc) . '</td>';
     $html .= '<td colspan="' . count($colsSinNum) . '" style="text-align:center;color:#64748b;">Sin registros en el detalle.</td></tr>';
@@ -149,7 +147,6 @@ if (empty($detalles)) {
         $html .= '<tr>';
         $html .= '<td>' . htmlspecialchars($codigo) . '</td>';
         $html .= '<td>' . htmlspecialchars($nombrePrograma) . '</td>';
-        $html .= '<td>' . htmlspecialchars($cabZona) . '</td>';
         $html .= '<td>' . htmlspecialchars($cabDespliegue) . '</td>';
         $html .= '<td>' . htmlspecialchars($cabDesc) . '</td>';
         foreach ($colsSinNum as $k) {

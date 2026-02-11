@@ -101,7 +101,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
     <div id="modalVerFechas" class="modal-overlay hidden">
         <div class="modal-box" style="max-width: 380px;">
             <div class="modal-header">
-                <h3 class="text-lg font-semibold text-gray-800">Detalles del cronograma</h3>
+                <h3 class="text-lg font-semibold text-gray-800">Detalles de la asignación</h3>
                 <button type="button" class="modal-cerrar-ver text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
             <div class="modal-body">

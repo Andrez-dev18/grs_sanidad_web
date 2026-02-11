@@ -11,8 +11,6 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-// La página no ejecuta consultas; los datos se cargan por AJAX (get_tipos_programa, guardar_programa, etc.).
-// No abrir conexión aquí para evitar agotar el límite de conexiones de MySQL.
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -241,7 +239,7 @@ if (empty($_SESSION['active'])) {
                             <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label><input id="mesFin" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
                         </div>
                     </div>
-                    <!-- Fila 2: Tipo, Zona, Despliegue -->
+                    <!-- Fila 2: Tipo, Zona, Despliegue --> 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-layer-group mr-1 text-blue-600"></i>Tipo de programa</label>
@@ -290,7 +288,6 @@ if (empty($_SESSION['active'])) {
                                 <th class="px-4 py-3 text-left">Código</th>
                                 <th class="px-4 py-3 text-left">Nombre</th>
                                 <th class="px-4 py-3 text-left">Tipo</th>
-                                <th class="px-4 py-3 text-left">Zona</th>
                                 <th class="px-4 py-3 text-left">Despliegue</th>
                                 <th class="px-4 py-3 text-left">Fecha registro</th>
                                 <th class="px-4 py-3 text-center">Detalles</th>
@@ -314,23 +311,8 @@ if (empty($_SESSION['active'])) {
             </div>
             <div class="modal-body overflow-auto flex-1 p-4">
                 <div class="table-wrapper overflow-x-auto">
-                    <table class="data-table w-full text-sm">
-                        <thead class="bg-gray-50 border-b border-gray-200">
-                            <tr>
-                                <th class="px-3 py-2 text-left">#</th>
-                                <th class="px-3 py-2 text-left">Ubicación</th>
-                                <th class="px-3 py-2 text-left">Producto</th>
-                                <th class="px-3 py-2 text-left">Proveedor</th>
-                                <th class="px-3 py-2 text-left">Unidad</th>
-                                <th class="px-3 py-2 text-left">Dosis</th>
-                                <th class="px-3 py-2 text-left">Descripcion</th>
-                                <th class="px-3 py-2 text-left">Nº frascos</th>
-                                <th class="px-3 py-2 text-left">Edad</th>
-                                <th class="px-3 py-2 text-left">Unid. dosis</th>
-                                <th class="px-3 py-2 text-left">Área galpón</th>
-                                <th class="px-3 py-2 text-left">Cant. galpón</th>
-                            </tr>
-                        </thead>
+                    <table class="data-table w-full text-sm" id="tablaModalDetalles">
+                        <thead class="bg-gray-50 border-b border-gray-200" id="modalDetallesThead"></thead>
                         <tbody id="modalDetallesBody"></tbody>
                     </table>
                 </div>
@@ -342,6 +324,8 @@ if (empty($_SESSION['active'])) {
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         window._detallesPorPrograma = {};
+        window._cabPorPrograma = {};
+        window._siglaPorPrograma = {};
 
         function toggleFiltrosProgramas() {
             var contenido = document.getElementById('contenidoFiltrosProgramas');
@@ -395,6 +379,8 @@ if (empty($_SESSION['active'])) {
             if (!tbody) return;
             tbody.innerHTML = '';
             window._detallesPorPrograma = {};
+            window._cabPorPrograma = {};
+            window._siglaPorPrograma = {};
             fetch(url, { cache: 'no-store' })
                 .then(r => r.json())
                 .then(res => {
@@ -408,6 +394,8 @@ if (empty($_SESSION['active'])) {
                         var cab = item.cab || {};
                         var codigo = cab.codigo || '';
                         window._detallesPorPrograma[codigo] = item.detalles || [];
+                        window._cabPorPrograma[codigo] = cab;
+                        window._siglaPorPrograma[codigo] = (item.sigla || 'PL').toUpperCase();
                         var tr = document.createElement('tr');
                         tr.className = 'border-b border-gray-200 hover:bg-gray-50';
                         var reporteUrl = 'generar_reporte_programa.php?codigo=' + encodeURIComponent(codigo);
@@ -415,7 +403,6 @@ if (empty($_SESSION['active'])) {
                             '<td class="px-4 py-3">' + esc(codigo) + '</td>' +
                             '<td class="px-4 py-3">' + esc(cab.nombre) + '</td>' +
                             '<td class="px-4 py-3">' + esc(cab.nomTipo) + '</td>' +
-                            '<td class="px-4 py-3">' + esc(cab.zona) + '</td>' +
                             '<td class="px-4 py-3">' + esc(cab.despliegue) + '</td>' +
                             '<td class="px-4 py-3">' + formatearFecha(cab.fechaHoraRegistro) + '</td>' +
                             '<td class="px-4 py-3 text-center"><button type="button" class="btn-detalles-programa px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '" title="Ver detalle"><i class="fas fa-list mr-1"></i> Detalles</button></td>' +
@@ -427,19 +414,58 @@ if (empty($_SESSION['active'])) {
                     });
                     $('#tablaProgramas').DataTable({
                         language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
-                        order: [[6, 'desc']]
+                        order: [[5, 'desc']]
                     });
                 })
                 .catch(function() {});
         }
 
+        var columnasPorSiglaReporte = {
+            'NC': ['num', 'ubicacion', 'edad'],
+            'PL': ['num', 'ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'edad'],
+            'GR': ['num', 'ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'edad'],
+            'MC': ['num', 'ubicacion', 'producto', 'proveedor', 'dosis', 'area_galpon', 'cantidad_por_galpon', 'unidadDosis', 'edad'],
+            'LD': ['num', 'ubicacion', 'producto', 'proveedor', 'dosis', 'unidadDosis', 'edad'],
+            'CP': ['num', 'ubicacion', 'producto', 'proveedor', 'dosis', 'unidadDosis', 'edad']
+        };
+        var labelsReporte = {
+            num: '#', ubicacion: 'Ubicación', producto: 'Producto', proveedor: 'Proveedor', unidad: 'Unidad',
+            dosis: 'Dosis', descripcion_vacuna: 'Descripcion', numeroFrascos: 'Nº frascos', edad: 'Edad',
+            unidadDosis: 'Unid. dosis', area_galpon: 'Área galpón', cantidad_por_galpon: 'Cant. por galpón'
+        };
+        function valorCeldaDetalle(k, d) {
+            if (k === 'num') return '';
+            if (k === 'ubicacion') return esc(d.ubicacion || '');
+            if (k === 'producto') return esc(d.nomProducto || d.codProducto || '');
+            if (k === 'proveedor') return esc(d.nomProveedor || '');
+            if (k === 'unidad') return esc(d.unidades || '');
+            if (k === 'dosis') return esc(d.dosis || '');
+            if (k === 'descripcion_vacuna') return esc(formatearDescripcionVacuna(d.descripcionVacuna));
+            if (k === 'numeroFrascos') return esc(d.numeroFrascos || '');
+            if (k === 'edad') return (d.edad !== null && d.edad !== undefined && d.edad !== '' ? d.edad : '');
+            if (k === 'unidadDosis') return esc(d.unidadDosis || '');
+            if (k === 'area_galpon') return (d.areaGalpon !== null && d.areaGalpon !== undefined && d.areaGalpon !== '' ? d.areaGalpon : '');
+            if (k === 'cantidad_por_galpon') return (d.cantidadPorGalpon !== null && d.cantidadPorGalpon !== undefined && d.cantidadPorGalpon !== '' ? d.cantidadPorGalpon : '');
+            return '';
+        }
         function abrirModalDetalles(codigo) {
             if (!codigo) return;
             var detalles = window._detallesPorPrograma[codigo];
             if (!detalles) detalles = [];
+            var cab = window._cabPorPrograma[codigo] || {};
+            var sigla = (window._siglaPorPrograma[codigo] || 'PL').toUpperCase();
+            if (sigla === 'NEC') sigla = 'NC';
+            var cols = columnasPorSiglaReporte[sigla] || columnasPorSiglaReporte['PL'];
+            var colsSinNum = cols.filter(function(k) { return k !== 'num'; });
             document.getElementById('modalDetallesTitulo').textContent = 'Detalles - ' + codigo;
+            var thead = document.getElementById('modalDetallesThead');
             var tbody = document.getElementById('modalDetallesBody');
             var sinReg = document.getElementById('modalDetallesSinRegistros');
+            var thCells = '<th class="px-3 py-2 text-left">Código</th><th class="px-3 py-2 text-left">Nombre programa</th><th class="px-3 py-2 text-left">Despliegue</th><th class="px-3 py-2 text-left">Descripción</th>';
+            colsSinNum.forEach(function(k) {
+                thCells += '<th class="px-3 py-2 text-left">' + (labelsReporte[k] || k) + '</th>';
+            });
+            thead.innerHTML = '<tr>' + thCells + '</tr>';
             tbody.innerHTML = '';
             if (detalles.length === 0) {
                 sinReg.classList.remove('hidden');
@@ -448,7 +474,11 @@ if (empty($_SESSION['active'])) {
                 detalles.forEach(function(d, i) {
                     var tr = document.createElement('tr');
                     tr.className = 'border-b border-gray-200';
-                    tr.innerHTML = '<td class="px-3 py-2">' + (i + 1) + '</td><td class="px-3 py-2">' + esc(d.ubicacion) + '</td><td class="px-3 py-2">' + esc(d.nomProducto || d.codProducto) + '</td><td class="px-3 py-2">' + esc(d.nomProveedor) + '</td><td class="px-3 py-2">' + esc(d.unidades) + '</td><td class="px-3 py-2">' + esc(d.dosis) + '</td><td class="px-3 py-2" style="white-space:pre-wrap;">' + esc(formatearDescripcionVacuna(d.descripcionVacuna)) + '</td><td class="px-3 py-2">' + esc(d.numeroFrascos) + '</td><td class="px-3 py-2">' + (d.edad !== null && d.edad !== undefined && d.edad !== '' ? d.edad : '') + '</td><td class="px-3 py-2">' + esc(d.unidadDosis) + '</td><td class="px-3 py-2">' + (d.areaGalpon !== null && d.areaGalpon !== undefined && d.areaGalpon !== '' ? d.areaGalpon : '') + '</td><td class="px-3 py-2">' + (d.cantidadPorGalpon !== null && d.cantidadPorGalpon !== undefined && d.cantidadPorGalpon !== '' ? d.cantidadPorGalpon : '') + '</td>';
+                    var td = '<td class="px-3 py-2">' + esc(cab.codigo || codigo) + '</td><td class="px-3 py-2">' + esc(cab.nombre || '') + '</td><td class="px-3 py-2">' + esc(cab.despliegue || '') + '</td><td class="px-3 py-2">' + esc(cab.descripcion || '') + '</td>';
+                    colsSinNum.forEach(function(k) {
+                        td += '<td class="px-3 py-2"' + (k === 'descripcion_vacuna' ? ' style="white-space:pre-wrap;"' : '') + '>' + valorCeldaDetalle(k, d) + '</td>';
+                    });
+                    tr.innerHTML = td;
                     tbody.appendChild(tr);
                 });
             }

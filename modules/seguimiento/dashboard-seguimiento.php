@@ -1677,15 +1677,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 scrollX: true,
                 autoWidth: false,
                 dom: `
-                    <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6"
-                        <"flex items-center gap-6"
-                            <"text-sm text-gray-600" l>
-                            <"text-sm text-gray-600" i>
-                        >
+                    <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4"
+                        <"flex items-center gap-6" l>
                         <"flex items-center gap-2" f>
                     >
                     rt
-                    <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-6"
+                    <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-4 pt-4 border-t border-gray-200"
+                        <"text-sm text-gray-600" i>
                         <"text-sm text-gray-600" p>
                     >
                     `,

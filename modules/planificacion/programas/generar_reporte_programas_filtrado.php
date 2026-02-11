@@ -113,8 +113,8 @@ if (empty($logo) && file_exists(__DIR__ . '/../../logo.png')) {
     $logo = '<img src="' . htmlspecialchars($logoBase64) . '" style="height: 20px; vertical-align: top;">';
 }
 
-$cabecerasUnificadas = ['Código', 'Nombre programa', 'Zona', 'Despliegue', 'Descripción', 'Ubicación', 'Producto', 'Proveedor', 'Unidad', 'Dosis', 'Descripcion', 'Nº frascos', 'Edad', 'Unid. dosis', 'Área galpón', 'Cant. por galpón'];
-$keysDetalle = ['ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'edad', 'unidadDosis', 'area_galpon', 'cantidad_por_galpon'];
+$cabecerasUnificadas = ['Código', 'Nombre programa', 'Despliegue', 'Descripción', 'Ubicación', 'Producto', 'Proveedor', 'Unidad', 'Dosis', 'Descripcion', 'Nº frascos', 'Unid. dosis', 'Área galpón', 'Cant. por galpón', 'Edad'];
+$keysDetalle = ['ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'unidadDosis', 'area_galpon', 'cantidad_por_galpon', 'edad'];
 function formatearDescripcionVacuna($s) {
     $s = trim((string)($s ?? ''));
     if ($s === '') return '';
@@ -124,13 +124,15 @@ function formatearDescripcionVacuna($s) {
     return "Contra\n" . implode("\n", array_map(function($p) { return '- ' . $p; }, $partes));
 }
 
-$anchosColumnas = [5, 12, 6, 6, 10, 8, 10, 8, 5, 5, 10, 4, 4, 5, 4, 4];
+$anchosColumnas = [5, 12, 6, 10, 8, 10, 8, 5, 5, 10, 4, 5, 4, 4, 4];
 $css = 'body{font-family:"Segoe UI",Arial,sans-serif;font-size:9pt;color:#1e293b;margin:0;padding:10px;position:relative;}
 .fecha-hora-arriba{position:absolute;top:8px;right:0;font-size:9pt;color:#475569;z-index:10;}
 .tabla-programa{margin-bottom:24px;}
 .data-table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed;}
 .data-table th,.data-table td{padding:4px 6px;border:1px solid #cbd5e1;vertical-align:top;text-align:left;background:#fff;overflow:hidden;}
 .data-table thead th{background-color:#2563eb !important;color:#fff !important;font-weight:bold;}
+.data-table tbody tr.borde-grueso-codprograma{border-bottom:2px solid #64748b;}
+.data-table tbody tr.borde-grueso-codprograma td{border-bottom:2px solid #64748b;}
 .titulo-programa{font-size:10pt;font-weight:bold;margin-bottom:6px;color:#334155;}';
 
 $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' . $css . '</style></head><body>';
@@ -172,20 +174,22 @@ foreach ($programasPorTipo as $codTipo => $lista) {
         $detalles = [];
         while ($row = $resDet->fetch_assoc()) $detalles[] = $row;
 
-        $cabZona = $cab['zona'] ?? '';
         $cabDespliegue = $cab['despliegue'] ?? '';
         $cabDesc = $cab['descripcion'] ?? '';
         $cabNombre = $cab['nombre'] ?? '';
 
         if (empty($detalles)) {
-            $html .= '<tr>';
-            $html .= '<td>' . htmlspecialchars($codigo) . '</td><td>' . htmlspecialchars($cabNombre) . '</td><td>' . htmlspecialchars($cabZona) . '</td><td>' . htmlspecialchars($cabDespliegue) . '</td><td>' . htmlspecialchars($cabDesc) . '</td>';
+            $html .= '<tr class="borde-grueso-codprograma">';
+            $html .= '<td>' . htmlspecialchars($codigo) . '</td><td>' . htmlspecialchars($cabNombre) . '</td><td>' . htmlspecialchars($cabDespliegue) . '</td><td>' . htmlspecialchars($cabDesc) . '</td>';
             for ($i = 0; $i < count($keysDetalle); $i++) $html .= '<td></td>';
             $html .= '</tr>';
         } else {
-            foreach ($detalles as $d) {
-                $html .= '<tr>';
-                $html .= '<td>' . htmlspecialchars($codigo) . '</td><td>' . htmlspecialchars($cabNombre) . '</td><td>' . htmlspecialchars($cabZona) . '</td><td>' . htmlspecialchars($cabDespliegue) . '</td><td>' . htmlspecialchars($cabDesc) . '</td>';
+            $numDet = count($detalles);
+            foreach ($detalles as $idx => $d) {
+                $esUltimaFilaPrograma = ($idx === $numDet - 1);
+                $claseTr = $esUltimaFilaPrograma ? ' class="borde-grueso-codprograma"' : '';
+                $html .= '<tr' . $claseTr . '>';
+                $html .= '<td>' . htmlspecialchars($codigo) . '</td><td>' . htmlspecialchars($cabNombre) . '</td><td>' . htmlspecialchars($cabDespliegue) . '</td><td>' . htmlspecialchars($cabDesc) . '</td>';
                 $html .= '<td>' . htmlspecialchars($d['ubicacion'] ?? '') . '</td>';
                 $html .= '<td>' . htmlspecialchars($d['nomProducto'] ?? ($d['codProducto'] ?? '')) . '</td>';
                 $html .= '<td>' . htmlspecialchars($d['nomProveedor'] ?? '') . '</td>';
@@ -194,10 +198,10 @@ foreach ($programasPorTipo as $codTipo => $lista) {
                 $descVac = formatearDescripcionVacuna($d['descripcionVacuna'] ?? '');
                 $html .= '<td style="white-space:pre-wrap;">' . htmlspecialchars($descVac) . '</td>';
                 $html .= '<td>' . htmlspecialchars($d['numeroFrascos'] ?? '') . '</td>';
-                $html .= '<td>' . (isset($d['edad']) && $d['edad'] !== '' && $d['edad'] !== null ? (int)$d['edad'] : '') . '</td>';
                 $html .= '<td>' . htmlspecialchars($d['unidadDosis'] ?? '') . '</td>';
                 $html .= '<td>' . (isset($d['areaGalpon']) && $d['areaGalpon'] !== null && $d['areaGalpon'] !== '' ? (int)$d['areaGalpon'] : '') . '</td>';
                 $html .= '<td>' . (isset($d['cantidadPorGalpon']) && $d['cantidadPorGalpon'] !== null && $d['cantidadPorGalpon'] !== '' ? (int)$d['cantidadPorGalpon'] : '') . '</td>';
+                $html .= '<td>' . (isset($d['edad']) && $d['edad'] !== '' && $d['edad'] !== null ? (int)$d['edad'] : '') . '</td>';
                 $html .= '</tr>';
             }
         }
