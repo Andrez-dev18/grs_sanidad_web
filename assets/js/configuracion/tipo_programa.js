@@ -92,8 +92,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-var CAMPOS_IDS = ['modalCampoUbicacion', 'modalCampoProducto', 'modalCampoUnidades', 'modalCampoUnidadDosis', 'modalCampoNumeroFrascos', 'modalCampoEdadAplicacion', 'modalCampoAreaGalpon', 'modalCampoCantidadPorGalpon'];
-var CAMPOS_KEYS = ['ubicacion', 'producto', 'unidades', 'unidad_dosis', 'numero_frascos', 'edad_aplicacion', 'area_galpon', 'cantidad_por_galpon'];
+var CAMPOS_IDS = ['modalCampoUbicacion', 'modalCampoProducto', 'modalCampoProveedor', 'modalCampoUnidad', 'modalCampoDosis', 'modalCampoDescripcion', 'modalCampoUnidades', 'modalCampoUnidadDosis', 'modalCampoNumeroFrascos', 'modalCampoEdadAplicacion', 'modalCampoAreaGalpon', 'modalCampoCantidadPorGalpon'];
+var CAMPOS_KEYS = ['ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion', 'unidades', 'unidad_dosis', 'numero_frascos', 'edad_aplicacion', 'area_galpon', 'cantidad_por_galpon'];
 
 function setCamposCheckboxes(campos) {
     CAMPOS_IDS.forEach(function(id, i) {
@@ -157,7 +157,7 @@ function saveTipoPrograma(event) {
     }
     var params = { action: action, nombre: nombre, sigla: sigla };
     if (action === 'update') params.codigo = codigo;
-    var campoNames = ['campoUbicacion', 'campoProducto', 'campoUnidades', 'campoUnidadDosis', 'campoNumeroFrascos', 'campoEdadAplicacion', 'campoAreaGalpon', 'campoCantidadPorGalpon'];
+    var campoNames = ['campoUbicacion', 'campoProducto', 'campoProveedor', 'campoUnidad', 'campoDosis', 'campoDescripcion', 'campoUnidades', 'campoUnidadDosis', 'campoNumeroFrascos', 'campoEdadAplicacion', 'campoAreaGalpon', 'campoCantidadPorGalpon'];
     CAMPOS_IDS.forEach(function(id, i) {
         var el = document.getElementById(id);
         params[campoNames[i]] = (el && el.checked) ? '1' : '0';

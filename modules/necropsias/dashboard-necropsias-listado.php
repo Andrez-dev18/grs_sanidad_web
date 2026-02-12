@@ -39,6 +39,8 @@ if (!$conn) {
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../assets/js/sweetalert-helpers.js"></script>
+    <script src="../../assets/js/pagination-iconos.js"></script>
 
     <style>
         body {
@@ -149,82 +151,7 @@ if (!$conn) {
             overflow: hidden;
         }
 
-        .table-wrapper {
-            overflow-x: auto;
-            overflow-y: visible;
-            width: 100%;
-            border-radius: 1rem;
-        }
-
-        .table-wrapper::-webkit-scrollbar {
-            height: 10px;
-        }
-
-        .table-wrapper::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 10px;
-        }
-
-        .table-wrapper::-webkit-scrollbar-thumb {
-            background: #94a3b8;
-            border-radius: 10px;
-        }
-
-        .table-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
-        }
-
-        .dataTables_wrapper .dataTables_length,
-        .dataTables_wrapper .dataTables_filter,
-        .dataTables_wrapper .dataTables_info,
-        .dataTables_wrapper .dataTables_paginate {
-            padding: 1rem;
-        }
-
-        .dataTables_wrapper .dataTables_length select {
-            padding: 0.5rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            margin: 0 0.5rem;
-        }
-
-        .dataTables_wrapper .dataTables_filter input {
-            padding: 0.5rem 1rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            margin-left: 0.5rem;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            padding: 0.5rem 1rem !important;
-            margin: 0 0.25rem;
-            border-radius: 0.5rem;
-            border: 1px solid #d1d5db !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
-            color: white !important;
-            border: 1px solid #1e40af !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-            background: #eff6ff !important;
-            color: #1d4ed8 !important;
-        }
-
-        table.dataTable thead .sorting:before,
-        table.dataTable thead .sorting_asc:before,
-        table.dataTable thead .sorting_desc:before,
-        table.dataTable thead .sorting:after,
-        table.dataTable thead .sorting_asc:after,
-        table.dataTable thead .sorting_desc:after {
-            color: white !important;
-        }
-
-        .dataTables_wrapper {
-            overflow-x: visible !important;
-        }
+        /* Estilos de tabla/toolbar unificados: usar dashboard-config.css y dashboard-vista-tabla-iconos.css */
     </style>
 </head>
 
@@ -288,8 +215,8 @@ if (!$conn) {
                     <div class="flex-shrink-0" style="min-width: 200px;">
                         <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-alt mr-1 text-blue-600"></i> Periodo</label>
                         <select id="periodoTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
-                            <option value="TODOS">Todos</option>
-                            <option value="POR_FECHA" selected>Por fecha</option>
+                            <option value="TODOS" selected>Todos</option>
+                            <option value="POR_FECHA">Por fecha</option>
                             <option value="ENTRE_FECHAS">Entre fechas</option>
                             <option value="POR_MES">Por mes</option>
                             <option value="ENTRE_MESES">Entre meses</option>
@@ -301,16 +228,16 @@ if (!$conn) {
                         <input id="fechaUnica" type="date" value="<?php echo date('Y-m-d'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     </div>
                     <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
-                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1">Desde</label><input id="fechaInicio" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
-                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label><input id="fechaFin" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1">Desde</label><input id="fechaInicio" type="date" value="<?php echo date('Y-m-01'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label><input id="fechaFin" type="date" value="<?php echo date('Y-m-t'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
                     </div>
                     <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[200px]">
                         <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
                         <input id="mesUnico" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     </div>
                     <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
-                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label><input id="mesInicio" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
-                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label><input id="mesFin" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label><input id="mesInicio" type="month" value="<?php echo date('Y') . '-01'; ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label><input id="mesFin" type="month" value="<?php echo date('Y') . '-12'; ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
                     </div>
                 </div>
                 <!-- Fila 2: Granja -->
@@ -1395,55 +1322,55 @@ if (!$conn) {
             </div>
         </div>
 
-        <!-- contenedor boton y tabla  -->
-        <div class="bg-white rounded-xl shadow-md p-5">
-            <?php
-            $codigoUsuario = $_SESSION['usuario'] ?? 'USER';
-            $sql = "SELECT rol_sanidad FROM usuario WHERE codigo = '$codigoUsuario'";
-            $res = $conn->query($sql);
-
-            $rol = 'user';
-
-            if ($res && $res->num_rows > 0) {
-                $fila = $res->fetch_assoc();
-                $rol = strtolower(trim($fila['rol_sanidad']));
-            }
-            ?>
-
-            <p id="idRolUser" data-rol="<?= htmlspecialchars($rol) ?>"></p>
-
-            <!-- tabla (estilo reportes) -->
-            <div class="card-body p-0 mt-5" id="tablaNecropsiasWrapper" data-vista-tabla-iconos data-vista="">
-                <div class="view-toggle-group flex items-center gap-2 mb-4 px-4">
-                    <button type="button" class="view-toggle-btn active" id="btnViewTablaNec" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
-                    <button type="button" class="view-toggle-btn" id="btnViewIconosNec" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+        <!-- Tabla: mismo estilo que reportes (card, toolbar Lista/Iconos, controles, vista iconos) -->
+        <div class="bg-white rounded-xl shadow-md p-5" id="tablaNecropsiasWrapper" data-vista-tabla-iconos data-vista="">
+            <div class="card-body p-0 mt-5">
+                <?php
+                $codigoUsuario = $_SESSION['usuario'] ?? 'USER';
+                $sql = "SELECT rol_sanidad FROM usuario WHERE codigo = '$codigoUsuario'";
+                $res = $conn->query($sql);
+                $rol = 'user';
+                if ($res && $res->num_rows > 0) {
+                    $fila = $res->fetch_assoc();
+                    $rol = strtolower(trim($fila['rol_sanidad']));
+                }
+                ?>
+                <p id="idRolUser" data-rol="<?= htmlspecialchars($rol) ?>"></p>
+                <!-- Toolbar: Lista/Iconos + controles tabla (lista) o Mostrar+Buscar (iconos) -->
+                <div class="reportes-toolbar-row toolbar-vista-row flex flex-wrap items-center justify-between gap-3 mb-3" id="necropsiasToolbarRow">
+                    <div class="view-toggle-group flex items-center gap-2" id="viewToggleGroupNec">
+                        <button type="button" class="view-toggle-btn active" id="btnViewTablaNec" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                        <button type="button" class="view-toggle-btn" id="btnViewIconosNec" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                    </div>
+                    <div id="necDtControls" class="flex flex-wrap items-center gap-3"></div>
+                    <div id="necIconosControls" class="flex flex-wrap items-center gap-3" style="display: none;"></div>
                 </div>
                 <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasNec">
                     <div id="cardsControlsTopNec" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
                     <div id="cardsContainerNec" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
-                    <div id="cardsPaginationNec" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
+                    <div id="cardsPaginationNec" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-table="#tabla"></div>
                 </div>
-                <div class="view-lista-wrap table-wrapper overflow-x-auto">
-                    <table id="tabla" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
-                        <thead>
-                            <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold">N°Reg</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold">Fecha Necropsia</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold">Granja</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold">Nombre</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold">Campaña</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold">Galpón</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold">Edad</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold">Usuario</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold">Fecha Registro</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold">Opciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-
-                        </tbody>
-                    </table>
+                <div class="view-lista-wrap" id="viewListaNec">
+                    <div class="table-wrapper overflow-x-auto">
+                        <table id="tabla" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">N°Reg</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Fecha Necropsia</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Granja</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Nombre</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Campaña</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Galpón</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Edad</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Usuario</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Fecha Registro</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Opciones</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1507,10 +1434,8 @@ if (!$conn) {
         </div>
 
         <script>
-            // Actualizar el año dinámicamente
             document.getElementById('currentYear').textContent = new Date().getFullYear();
         </script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     </div>
 
     <script>
@@ -1618,6 +1543,21 @@ if (!$conn) {
                 processing: true,
                 serverSide: true,
                 stripeClasses: [],
+                drawCallback: function () {
+                    if (typeof renderizarTarjetasNecropsias === 'function') renderizarTarjetasNecropsias();
+                },
+                initComplete: function () {
+                    this.api().columns.adjust();
+                    var wrapper = $('#tabla').closest('.dataTables_wrapper');
+                    var $controls = $('#necDtControls');
+                    var $length = wrapper.find('.dataTables_length').first();
+                    var $filter = wrapper.find('.dataTables_filter').first();
+                    if ($controls.length && $length.length && $filter.length) {
+                        $controls.append($length, $filter);
+                        var vista = $('#tablaNecropsiasWrapper').attr('data-vista') || 'lista';
+                        $controls.toggle(vista !== 'iconos');
+                    }
+                },
                 ajax: {
                     url: 'listar_necropsias.php',
                     type: 'POST',
@@ -1739,10 +1679,7 @@ if (!$conn) {
                             return buttonsHtml;
                         }
                     }
-                ],
-                drawCallback: function() {
-                    if (typeof renderizarTarjetasNecropsias === 'function') renderizarTarjetasNecropsias();
-                }
+                ]
             });
 
             function actualizarVistaInicialNec() {
@@ -1800,33 +1737,58 @@ if (!$conn) {
                 });
                 var len = api.page.len();
                 var lengthOptions = [10, 25, 50, 100];
-                var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select px-2 py-1 border border-gray-300 rounded-md text-sm">' +
+                var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
                     lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
                     '</select><span>registros</span></label>';
-                var navBtns = '<div class="flex items-center gap-3 flex-wrap">' +
-                    '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' +
-                    '<div class="flex gap-2">' +
-                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
-                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
-                    '</div></div>';
-                var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + navBtns + '</div>';
-                $('#cardsControlsTopNec').html(controlsHtml);
-                $('#cardsPaginationNec').html(controlsHtml);
-                $('#cardsControlsTopNec .cards-length-select, #cardsPaginationNec .cards-length-select').on('change', function() {
-                    var val = parseInt($(this).val(), 10);
-                    if (tabla) tabla.page.len(val).draw(false);
-                });
+                var vista = $('#tablaNecropsiasWrapper').attr('data-vista') || '';
+                if (vista === 'iconos') {
+                    var $toolbarRow = $('#necIconosControls .iconos-toolbar-row');
+                    if (!$toolbarRow.length) {
+                        var $filter = $('#necDtControls .dataTables_filter').detach();
+                        var iconosRow = '<div class="iconos-toolbar-row flex flex-wrap items-center gap-3">' + lengthSelect + '</div>';
+                        $('#necIconosControls').html(iconosRow);
+                        if ($filter.length) $('#necIconosControls .iconos-toolbar-row').append($filter);
+                        $('#necIconosControls .cards-length-select').on('change', function() {
+                            var val = parseInt($(this).val(), 10);
+                            if (tabla) tabla.page.len(val).draw(false);
+                        });
+                    } else {
+                        var $sel = $toolbarRow.find('.cards-length-select');
+                        if ($sel.length) $sel.find('option').remove().end().append(lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join(''));
+                    }
+                    $('#cardsControlsTopNec').empty();
+                    $('#cardsPaginationNec').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : '');
+                } else {
+                    var navBtns = '<div class="flex gap-2">' +
+                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
+                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
+                        '</div>';
+                    var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' + navBtns + '</div>';
+                    $('#cardsControlsTopNec').html(controlsHtml);
+                    $('#cardsPaginationNec').html(controlsHtml);
+                    $('#cardsControlsTopNec .cards-length-select, #cardsPaginationNec .cards-length-select').on('change', function() {
+                        var val = parseInt($(this).val(), 10);
+                        if (tabla) tabla.page.len(val).draw(false);
+                    });
+                }
             }
             function aplicarVisibilidadVistaNec(vista) {
                 var esTabla = (vista === 'tabla');
                 $('#tablaNecropsiasWrapper').attr('data-vista', vista);
                 if (esTabla) {
+                    var $filter = $('#necIconosControls .dataTables_filter').detach();
+                    if ($filter.length) $('#necDtControls').append($filter);
+                    $('#necDtControls').show();
+                    $('#necIconosControls').hide();
                     $('#viewTarjetasNec').addClass('hidden').css('display', 'none');
                     $('#tablaNecropsiasWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
                 } else {
+                    $('#necDtControls').hide();
+                    $('#necIconosControls').show();
                     $('#tablaNecropsiasWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
                     $('#viewTarjetasNec').removeClass('hidden').css('display', 'block');
                     $('#cardsContainerNec').attr('data-vista-cards', 'iconos');
+                    if (typeof renderizarTarjetasNecropsias === 'function') renderizarTarjetasNecropsias();
                 }
             }
             actualizarVistaInicialNec();
@@ -1852,9 +1814,14 @@ if (!$conn) {
 
             // Limpiar filtros
             $('#btnLimpiarFiltros').on('click', function() {
-                $('#periodoTipo').val('POR_FECHA');
-                $('#fechaUnica').val(new Date().toISOString().slice(0, 10));
-                $('#fechaInicio, #fechaFin, #mesUnico, #mesInicio, #mesFin').val('');
+                $('#periodoTipo').val('TODOS');
+                var d = new Date();
+                $('#fechaUnica').val(d.toISOString().slice(0, 10));
+                $('#fechaInicio').val(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01');
+                $('#fechaFin').val(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()).padStart(2, '0'));
+                $('#mesUnico').val(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+                $('#mesInicio').val(d.getFullYear() + '-01');
+                $('#mesFin').val(d.getFullYear() + '-12');
                 aplicarVisibilidadPeriodoNecropsias();
                 $('#filtroGranja').val('');
                 tabla.ajax.reload();

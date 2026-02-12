@@ -3,30 +3,35 @@ include_once '../../../conexion_grs_joya/conexion.php';
 require_once __DIR__ . '/../../includes/filtro_periodo_util.php';
 $conn = conectar_joya();
 
-$page  = intval($_GET["page"] ?? 1);
-$limit = intval($_GET["limit"] ?? 10);
+$page  = max(1, intval($_GET["page"] ?? 1));
+$limit = (int)($_GET["limit"] ?? 10);
+$limit = $limit < 1 ? 10 : ($limit > 100 ? 100 : $limit);
 $offset = ($page - 1) * $limit;
 
 $periodoOpts = [
-    'periodoTipo' => $_GET['periodoTipo'] ?? '',
-    'fechaUnica'  => $_GET['fechaUnica'] ?? '',
-    'fechaInicio' => $_GET['fechaInicio'] ?? '',
-    'fechaFin'    => $_GET['fechaFin'] ?? '',
-    'mesUnico'    => $_GET['mesUnico'] ?? '',
-    'mesInicio'   => $_GET['mesInicio'] ?? '',
-    'mesFin'      => $_GET['mesFin'] ?? '',
+    'periodoTipo' => trim((string)($_GET['periodoTipo'] ?? '')),
+    'fechaUnica'  => trim((string)($_GET['fechaUnica'] ?? '')),
+    'fechaInicio' => trim((string)($_GET['fechaInicio'] ?? '')),
+    'fechaFin'    => trim((string)($_GET['fechaFin'] ?? '')),
+    'mesUnico'    => trim((string)($_GET['mesUnico'] ?? '')),
+    'mesInicio'   => trim((string)($_GET['mesInicio'] ?? '')),
+    'mesFin'      => trim((string)($_GET['mesFin'] ?? '')),
 ];
-$rangoPeriodo = periodo_a_rango($periodoOpts);
-if ($rangoPeriodo !== null) {
-    $fechaInicio = $rangoPeriodo['desde'];
-    $fechaFin    = $rangoPeriodo['hasta'];
-} else {
-    $fechaInicio = $_GET['fechaInicio'] ?? null;
-    $fechaFin    = $_GET['fechaFin'] ?? null;
+// TODOS = todos los registros de la tabla, sin filtro por fecha (no hay fechaInicio ni fechaFin)
+$periodoTipo = $periodoOpts['periodoTipo'];
+$fechaInicio = null;
+$fechaFin    = null;
+if ($periodoTipo !== '' && strtoupper($periodoTipo) !== 'TODOS') {
+    $rangoPeriodo = periodo_a_rango($periodoOpts);
+    if ($rangoPeriodo !== null) {
+        $fechaInicio = $rangoPeriodo['desde'];
+        $fechaFin    = $rangoPeriodo['hasta'];
+    }
 }
-$estado      = $_GET['estado'] ?? "pendiente";
-$nomLab = trim($_GET['lab'] ?? '');
-$qSearch     = trim($_GET['q'] ?? '');
+$estado  = trim((string)($_GET['estado'] ?? 'pendiente'));
+$nomLab  = trim((string)($_GET['lab'] ?? ''));
+$qSearch = trim((string)($_GET['q'] ?? ''));
+if ($estado === '') $estado = 'pendiente';
 
 // Construir condiciones
 $conditions = [];
@@ -55,11 +60,10 @@ if ($estado !== "todos") {
 }
 
 
-if (!empty($fechaInicio)) {
+if ($fechaInicio !== null && $fechaInicio !== '') {
     $conditions[] = "d.fecToma >= '" . $conn->real_escape_string($fechaInicio) . "'";
 }
-
-if (!empty($fechaFin)) {
+if ($fechaFin !== null && $fechaFin !== '') {
     $conditions[] = "d.fecToma <= '" . $conn->real_escape_string($fechaFin) . "'";
 }
 

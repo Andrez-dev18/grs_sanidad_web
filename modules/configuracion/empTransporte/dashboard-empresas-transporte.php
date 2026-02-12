@@ -29,15 +29,14 @@ if (!$conexion) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Empresas de Transporte</title>
 
-    <!-- Tailwind CSS -->
-    <link rel="stylesheet" href="../../../css/output.css">
-
-    <!-- Font Awesome para iconos -->
+    <link href="../../../css/output.css" rel="stylesheet">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
@@ -101,21 +100,24 @@ if (!$conexion) {
                         <button type="button" class="btn-secondary inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-1 sm:order-2" onclick="openModal('create')">➕ Nueva Empresa</button>
                     </div>
                 </div>
-                <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
-                <div id="tablaEmpTransWrapper" class="p-4" data-vista-tabla-iconos data-vista="tabla">
-                    <div class="view-toggle-group flex items-center gap-2 mb-4">
-                        <button type="button" class="view-toggle-btn active" id="btnViewTablaEmpTrans" title="Lista">
-                            <i class="fas fa-list mr-1"></i> Lista
-                        </button>
-                        <button type="button" class="view-toggle-btn" id="btnViewIconosEmpTrans" title="Iconos">
-                            <i class="fas fa-th mr-1"></i> Iconos
-                        </button>
+                <div class="bg-white rounded-xl shadow-md p-5 dashboard-tabla-wrapper" id="tablaEmpTransWrapper" data-vista="">
+                    <div class="card-body p-0 mt-5">
+                    <div class="reportes-toolbar-row flex flex-wrap items-center justify-between gap-3 mb-3">
+                        <div class="view-toggle-group flex items-center gap-2">
+                            <button type="button" class="view-toggle-btn active" id="btnViewTablaEmpTrans" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                            <button type="button" class="view-toggle-btn" id="btnViewIconosEmpTrans" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                        </div>
+                        <div id="empTransDtControls" class="toolbar-dt-controls flex flex-wrap items-center gap-3"></div>
+                        <div id="empTransIconosControls" class="toolbar-iconos-controls flex flex-wrap items-center gap-3" style="display: none;"></div>
                     </div>
                     <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasEmpTrans">
+                        <div id="cardsControlsTopEmpTrans" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
                         <div id="cardsContainerEmpTrans" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
+                        <div id="cardsPaginationEmpTrans" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-table="#tablaEmpTrans"></div>
                     </div>
-                    <div class="view-lista-wrap table-container overflow-x-auto">
-                        <table id="tablaEmpTrans" class="data-table w-full config-table">
+                    <div class="view-lista-wrap" id="viewListaEmpTrans">
+                    <div class="table-wrapper overflow-x-auto">
+                        <table id="tablaEmpTrans" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
                             <thead>
                                 <tr>
                                     <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
@@ -134,7 +136,7 @@ if (!$conexion) {
                                         $cod = (int) $row['codigo'];
                                         $nom = htmlspecialchars($row['nombre']);
                                         $nomAttr = htmlspecialchars($row['nombre'], ENT_QUOTES, 'UTF-8');
-                                        echo '<tr class="hover:bg-gray-50 transition" data-codigo="' . $cod . '" data-nombre="' . $nomAttr . '" data-index="' . $idx . '">';
+                                        echo '<tr data-codigo="' . $cod . '" data-nombre="' . $nomAttr . '" data-index="' . $idx . '">';
                                         echo '<td class="px-6 py-4 text-gray-700">' . $idx . '</td>';
                                         echo '<td class="px-6 py-4 text-gray-700 font-medium">' . $nom . '</td>';
                                         echo '<td class="px-6 py-4 flex gap-2">
@@ -155,6 +157,7 @@ if (!$conexion) {
                                 ?>
                             </tbody>
                         </table>
+                    </div>
                     </div>
                 </div>
                 </div>
@@ -222,8 +225,7 @@ if (!$conexion) {
 
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="../../../assets/js/pagination-iconos.js"></script>
     <script src="../../../assets/js/configuracion/empresas_transporte.js"></script>
     <script>
     (function() {
@@ -235,7 +237,16 @@ if (!$conexion) {
                 lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'Todos']],
                 language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
                 order: [[1, 'asc']],
-                columnDefs: [{ orderable: false, targets: [0, 2] }]
+                columnDefs: [{ orderable: false, targets: [0, 2] }],
+                initComplete: function() {
+                    var wrapper = $t.closest('.dataTables_wrapper');
+                    var $controls = jQuery('#empTransDtControls');
+                    var $length = wrapper.find('.dataTables_length').first();
+                    var $filter = wrapper.find('.dataTables_filter').first();
+                    if ($controls.length && $length.length && $filter.length) {
+                        $controls.append($length, $filter);
+                    }
+                }
             });
         }
     })();

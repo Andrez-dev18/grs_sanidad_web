@@ -199,21 +199,117 @@ if ($codigoUsuario) {
         .dataTables_wrapper .dataTables_filter,
         .dataTables_wrapper .dataTables_info,
         .dataTables_wrapper .dataTables_paginate {
-            padding: 1rem;
+            padding: 0.5rem 0.75rem;
         }
 
-        .dataTables_wrapper .dataTables_length select {
-            padding: 0.5rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            margin: 0 0.5rem;
+        /* Mostrar (length) y Buscar (filter) alineados con botones Lista/Iconos */
+        #reportesDtControls .dataTables_length,
+        #reportesDtControls .dataTables_filter {
+            margin: 0;
+            padding: 0;
         }
-
-        .dataTables_wrapper .dataTables_filter input {
+        #reportesDtControls .dataTables_length label,
+        #reportesDtControls .dataTables_filter label {
+            margin: 0;
+            font-size: 0.875rem;
+            font-weight: normal;
+            color: #374151;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        #reportesDtControls .dataTables_length select {
             padding: 0.5rem 1rem;
             border: 1px solid #d1d5db;
             border-radius: 0.5rem;
-            margin-left: 0.5rem;
+            font-size: 0.875rem;
+            color: #374151;
+            background: white;
+            cursor: pointer;
+            min-height: 2.25rem;
+            box-sizing: border-box;
+        }
+        #reportesDtControls .dataTables_length select:hover {
+            border-color: #9ca3af;
+        }
+        #reportesDtControls .dataTables_length select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+        #reportesDtControls .dataTables_filter input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            color: #374151;
+            min-height: 2.25rem;
+            box-sizing: border-box;
+            min-width: 180px;
+        }
+        #reportesDtControls .dataTables_filter input:hover {
+            border-color: #9ca3af;
+        }
+        #reportesDtControls .dataTables_filter input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+
+        /* Mostrar registros en modo iconos: misma fila que Lista/Iconos */
+        #reportesIconosControls label {
+            margin: 0;
+            font-size: 0.875rem;
+            font-weight: normal;
+            color: #374151;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        #reportesIconosControls .cards-length-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            min-height: 2.25rem;
+            box-sizing: border-box;
+        }
+        #reportesIconosControls .cards-length-select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+        #reportesIconosControls .dataTables_filter label,
+        #reportesIconosControls .dataTables_filter input {
+            margin: 0;
+            font-size: 0.875rem;
+            font-weight: normal;
+        }
+        #reportesIconosControls .dataTables_filter input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            min-height: 2.25rem;
+            min-width: 180px;
+            box-sizing: border-box;
+        }
+        #reportesIconosControls .dataTables_filter input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+        .reportes-iconos-toolbar-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.75rem 1rem;
+        }
+        /* En modo iconos no mostrar línea debajo del toolbar (cardsControlsTopReportes queda vacío) */
+        #tablaReportesWrapper[data-vista="iconos"] #cardsControlsTopReportes {
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+            margin-bottom: 0 !important;
+            min-height: 0;
         }
 
         .dataTables_wrapper .dataTables_paginate .paginate_button {
@@ -247,20 +343,29 @@ if ($codigoUsuario) {
             overflow-x: visible !important;
         }
 
-        /* Vista tarjetas (iconos) para móvil */
+        /* Vista tarjetas (iconos) para móvil - toolbar siempre visible */
+        #reportesToolbarRow {
+            margin-bottom: 1rem;
+            overflow: visible;
+        }
         .view-toggle-group {
             display: flex;
             gap: 0.25rem;
-            margin-bottom: 1rem;
         }
         .view-toggle-btn {
             padding: 0.5rem 1rem;
             border: 1px solid #d1d5db;
             background: white;
             border-radius: 0.5rem;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+            border-bottom-right-radius: 0.5rem;
+            border-bottom-left-radius: 0.5rem;
             cursor: pointer;
             font-size: 0.875rem;
             transition: all 0.2s;
+            box-sizing: border-box;
+            overflow: visible;
         }
         .view-toggle-btn:hover {
             background: #f3f4f6;
@@ -365,8 +470,8 @@ if ($codigoUsuario) {
                         </label>
                         <select id="periodoTipo"
                             class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
-                            <option value="TODOS">Todos</option>
-                            <option value="POR_FECHA" selected>Por fecha</option>
+                            <option value="TODOS" selected>Todos</option>
+                            <option value="POR_FECHA">Por fecha</option>
                             <option value="ENTRE_FECHAS">Entre fechas</option>
                             <option value="POR_MES">Por mes</option>
                             <option value="ENTRE_MESES">Entre meses</option>
@@ -387,7 +492,7 @@ if ($codigoUsuario) {
                                 <i class="fas fa-hourglass-start mr-1 text-blue-600"></i>
                                 Desde
                             </label>
-                            <input id="fechaInicio" type="date"
+                            <input id="fechaInicio" type="date" value="<?php echo date('Y-m-01'); ?>"
                                 class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                         </div>
                         <div class="min-w-[180px]">
@@ -395,7 +500,7 @@ if ($codigoUsuario) {
                                 <i class="fas fa-hourglass-end mr-1 text-blue-600"></i>
                                 Hasta
                             </label>
-                            <input id="fechaFin" type="date"
+                            <input id="fechaFin" type="date" value="<?php echo date('Y-m-t'); ?>"
                                 class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                         </div>
                     </div>
@@ -404,7 +509,7 @@ if ($codigoUsuario) {
                             <i class="fas fa-calendar mr-1 text-blue-600"></i>
                             Mes
                         </label>
-                        <input id="mesUnico" type="month"
+                        <input id="mesUnico" type="month" value="<?php echo date('Y-m'); ?>"
                             class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     </div>
                     <div id="periodoEntreMeses" class="hidden periodo-dos-inputs flex-shrink-0 flex items-end gap-2">
@@ -413,7 +518,7 @@ if ($codigoUsuario) {
                                 <i class="fas fa-hourglass-start mr-1 text-blue-600"></i>
                                 Mes Inicio
                             </label>
-                            <input id="mesInicio" type="month"
+                            <input id="mesInicio" type="month" value="<?php echo date('Y') . '-01'; ?>"
                                 class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                         </div>
                         <div class="min-w-[180px]">
@@ -421,7 +526,7 @@ if ($codigoUsuario) {
                                 <i class="fas fa-hourglass-end mr-1 text-blue-600"></i>
                                 Mes Fin
                             </label>
-                            <input id="mesFin" type="month"
+                            <input id="mesFin" type="month" value="<?php echo date('Y') . '-12'; ?>"
                                 class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                         </div>
                     </div>
@@ -506,20 +611,24 @@ if ($codigoUsuario) {
         <!-- Tabla -->
         <div class="bg-white rounded-xl shadow-md p-5" id="tablaReportesWrapper" data-vista="">
             <div class="card-body p-0 mt-5">
-                <!-- Toggle vista: Lista / Iconos (como necropsias) -->
-                <div class="view-toggle-group flex items-center gap-2 mb-4">
-                    <button type="button" class="view-toggle-btn active" id="btnViewLista" title="Lista">
-                        <i class="fas fa-list mr-1"></i> Lista
-                    </button>
-                    <button type="button" class="view-toggle-btn" id="btnViewIconos" title="Iconos">
-                        <i class="fas fa-th mr-1"></i> Iconos
-                    </button>
+                <!-- Toolbar siempre visible: Lista/Iconos + controles tabla (solo en vista lista) -->
+                <div class="reportes-toolbar-row flex flex-wrap items-center justify-between gap-3 mb-3" id="reportesToolbarRow">
+                    <div class="view-toggle-group flex items-center gap-2" id="viewToggleGroupReportes">
+                        <button type="button" class="view-toggle-btn active" id="btnViewLista" title="Lista">
+                            <i class="fas fa-list mr-1"></i> Lista
+                        </button>
+                        <button type="button" class="view-toggle-btn" id="btnViewIconos" title="Iconos">
+                            <i class="fas fa-th mr-1"></i> Iconos
+                        </button>
+                    </div>
+                    <div id="reportesDtControls" class="flex flex-wrap items-center gap-3"></div>
+                    <div id="reportesIconosControls" class="flex flex-wrap items-center gap-3" style="display: none;"></div>
                 </div>
 
                 <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetas">
                     <div id="cardsControlsTopReportes" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
                     <div id="cardsContainer" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
-                    <div id="cardsPagination" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
+                    <div id="cardsPagination" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-table="#tablaReportes"></div>
                 </div>
 
                 <div class="view-lista-wrap" id="viewLista">
@@ -1690,12 +1799,19 @@ if ($codigoUsuario) {
             const esLista = (vista === 'lista');
             $('#tablaReportesWrapper').attr('data-vista', vista);
             if (esLista) {
+                var $filter = $('#reportesIconosControls .dataTables_filter').detach();
+                if ($filter.length) $('#reportesDtControls').append($filter);
+                $('#reportesDtControls').show();
+                $('#reportesIconosControls').hide();
                 $('#viewTarjetas').addClass('hidden').css('display', 'none');
                 $('#tablaReportesWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
             } else {
+                $('#reportesDtControls').hide();
+                $('#reportesIconosControls').show();
                 $('#tablaReportesWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
                 $('#viewTarjetas').removeClass('hidden').css('display', 'block');
                 $('#cardsContainer').attr('data-vista-cards', 'iconos');
+                if (typeof renderizarTarjetas === 'function') renderizarTarjetas();
             }
         }
         function actualizarVistaInicial() {
@@ -1760,22 +1876,47 @@ if ($codigoUsuario) {
             });
             const len = api.page.len();
             const lengthOptions = [10, 25, 50];
-            const lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select px-2 py-1 border border-gray-300 rounded-md text-sm">' +
+            const lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
                 lengthOptions.map(n => '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>').join('') +
                 '</select><span>registros</span></label>';
-            const navBtns = '<div class="flex items-center gap-3 flex-wrap">' +
-                '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' +
-                '<div class="flex gap-2">' +
-                '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaReportes\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
-                '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaReportes\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
-                '</div></div>';
-            const controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + navBtns + '</div>';
-            $('#cardsControlsTopReportes').html(controlsHtml);
-            $('#cardsPagination').html(controlsHtml);
-            $('#cardsControlsTopReportes .cards-length-select, #cardsPagination .cards-length-select').on('change', function() {
-                const val = parseInt($(this).val(), 10);
-                if (tableReportes) tableReportes.page.len(val).draw(false);
-            });
+            const navInfo = '<span class="reportes-nav-info text-sm text-gray-600">Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>';
+            const navBtns = '<div class="flex gap-2 flex-shrink-0">' +
+                '<button type="button" class="reportes-nav-prev px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + '>Anterior</button>' +
+                '<button type="button" class="reportes-nav-next px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + '>Siguiente</button>' +
+                '</div>';
+            var vista = $('#tablaReportesWrapper').attr('data-vista') || '';
+            if (vista === 'iconos') {
+                var $toolbarRow = $('#reportesIconosControls .reportes-iconos-toolbar-row');
+                if (!$toolbarRow.length) {
+                    var $filter = $('#reportesDtControls .dataTables_filter').detach();
+                    var iconosRow = '<div class="reportes-iconos-toolbar-row flex flex-wrap items-center gap-3">' + lengthSelect + '</div>';
+                    $('#reportesIconosControls').html(iconosRow);
+                    if ($filter.length) $('#reportesIconosControls .reportes-iconos-toolbar-row').append($filter);
+                    $('#reportesIconosControls .cards-length-select').on('change', function() {
+                        var val = parseInt($(this).val(), 10);
+                        if (tableReportes) tableReportes.page.len(val).draw(false);
+                    });
+                } else {
+                    var $sel = $toolbarRow.find('.cards-length-select');
+                    if ($sel.length) {
+                        $sel.find('option').remove().end().append(lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join(''));
+                    }
+                }
+                $('#cardsControlsTopReportes').empty();
+                $('#cardsPagination').html(buildPaginationIconos(info));
+            } else {
+                const navBtnsWithOnclick = '<div class="flex gap-2 flex-shrink-0">' +
+                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaReportes\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
+                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaReportes\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
+                    '</div>';
+                const controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + '<div class="flex items-center gap-3 flex-wrap">' + navInfo + navBtnsWithOnclick + '</div></div>';
+                $('#cardsControlsTopReportes').html(controlsHtml);
+                $('#cardsPagination').html(controlsHtml);
+                $('#cardsControlsTopReportes .cards-length-select, #cardsPagination .cards-length-select').on('change', function() {
+                    const val = parseInt($(this).val(), 10);
+                    if (tableReportes) tableReportes.page.len(val).draw(false);
+                });
+            }
         }
 
         function cargarTablaReportes() {
@@ -1803,6 +1944,15 @@ if ($codigoUsuario) {
                 },
                 initComplete: function () {
                     this.api().columns.adjust();
+                    var wrapper = $('#tablaReportes').closest('.dataTables_wrapper');
+                    var $controls = $('#reportesDtControls');
+                    var $length = wrapper.find('.dataTables_length').first();
+                    var $filter = wrapper.find('.dataTables_filter').first();
+                    if ($controls.length && $length.length && $filter.length) {
+                        $controls.append($length, $filter);
+                        var vista = $('#tablaReportesWrapper').attr('data-vista') || 'lista';
+                        $controls.toggle(vista === 'lista');
+                    }
                 },
                 ajax: {
                     url: '../seguimiento/listar_cab_filtros.php',
@@ -1956,13 +2106,14 @@ if ($codigoUsuario) {
             });
 
             $('#btnLimpiar').click(function () {
-                $('#periodoTipo').val('POR_FECHA');
-                $('#fechaUnica').val(new Date().toISOString().slice(0, 10));
-                $('#fechaInicio').val('');
-                $('#fechaFin').val('');
-                $('#mesUnico').val('');
-                $('#mesInicio').val('');
-                $('#mesFin').val('');
+                $('#periodoTipo').val('TODOS');
+                var d = new Date();
+                $('#fechaUnica').val(d.toISOString().slice(0, 10));
+                $('#fechaInicio').val(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01');
+                $('#fechaFin').val(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate().toString().padStart(2, '0'));
+                $('#mesUnico').val(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+                $('#mesInicio').val(d.getFullYear() + '-01');
+                $('#mesFin').val(d.getFullYear() + '-12');
                 $('#filtroLaboratorio').val('');
                 $('#filtroTipoMuestra').val('');
                 $('#filtroEmpTrans').val('');
@@ -1983,6 +2134,7 @@ if ($codigoUsuario) {
         });
     </script>
 
+    <script src="../../assets/js/pagination-iconos.js"></script>
     <!-- JS existente para modal de correo-->
     <script src="../../assets/js/reportes/reportes.js"></script>
     <!-- Tabla: estilos unificados al final para ganar a DataTables -->

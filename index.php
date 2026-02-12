@@ -295,6 +295,11 @@ if ($codigoUsuario) {
                 width: 100% !important;
                 max-width: 100%;
             }
+            /* En móvil el modal de calendario puede ocupar toda la pantalla (sidebar está oculto) */
+            #dashboardFrame.iframe-fullscreen {
+                left: 0 !important;
+                width: 100vw !important;
+            }
         }
 
         /* Animaciones */
@@ -320,6 +325,21 @@ if ($codigoUsuario) {
             min-height: calc(100vh - 80px);
             border: none;
             background: #f9fafb;
+        }
+        /* Iframe a pantalla completa cuando un modal interno (ej. Calendario) está abierto; no cubre el sidebar para no cambiarlo */
+        #dashboardFrame.iframe-fullscreen {
+            position: fixed !important;
+            top: 0 !important;
+            left: var(--sidebar-width) !important;
+            width: calc(100vw - var(--sidebar-width)) !important;
+            height: 100vh !important;
+            min-height: 100vh !important;
+            z-index: 99999 !important;
+            transition: left 0.3s ease, width 0.3s ease;
+        }
+        .content-wrapper.sidebar-collapsed #dashboardFrame.iframe-fullscreen {
+            left: var(--sidebar-mini-width) !important;
+            width: calc(100vw - var(--sidebar-mini-width)) !important;
         }
 
         /* Loading */
@@ -519,10 +539,10 @@ if ($codigoUsuario) {
                         <div id="submenu-planificacion" class="submenu hidden pl-10 mt-2 space-y-2">
                             <div class="text-gray-500 text-xs font-semibold uppercase tracking-wider mt-2 first:mt-0">Programa</div>
                             <a href="#"
-                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/programas/dashboard-programas-registro.php', '📋 Programas - Registro', 'Registro de programas de planificación')"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/programas/dashboard-programas-registro.php', '📋 Programa - Registro', 'Registro de programas de planificación')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Registro</a>
                             <a href="#"
-                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/programas/dashboard-programas-listado.php', '📋 Programas - Listado', 'Filtros y listado de programas')"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/programas/dashboard-programas-listado.php', '📋 Programa - Listado', 'Filtros y listado de programas')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Listado</a>
                             <div class="text-gray-500 text-xs font-semibold uppercase tracking-wider mt-2">Asignación</div>
                             <a href="#"
@@ -805,6 +825,19 @@ if ($codigoUsuario) {
             }
 
         }
+
+        // Cuando el iframe abre/cierra un modal a pantalla completa (ej. cronograma calendario o detalle evento)
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'sanidadIframeFullscreen') {
+                var frame = document.getElementById('dashboardFrame');
+                if (!frame) return;
+                if (event.data.open) {
+                    frame.classList.add('iframe-fullscreen');
+                } else {
+                    frame.classList.remove('iframe-fullscreen');
+                }
+            }
+        });
 
         // Inicialización al cargar la página
         window.addEventListener('DOMContentLoaded', () => {

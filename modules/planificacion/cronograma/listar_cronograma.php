@@ -21,9 +21,19 @@ $mesUnico = trim((string)($_GET['mesUnico'] ?? ''));
 $mesInicio = trim((string)($_GET['mesInicio'] ?? ''));
 $mesFin = trim((string)($_GET['mesFin'] ?? ''));
 $codTipo = trim((string)($_GET['codTipo'] ?? ''));
+$mesEjecucion = trim((string)($_GET['mesEjecucion'] ?? ''));
+
+// Filtro por mes de ejecución (para calendario): prioridad sobre periodo de registro
+$rangoEjecucion = null;
+if (preg_match('/^\d{4}-\d{2}$/', $mesEjecucion)) {
+    $rangoEjecucion = [
+        'desde' => $mesEjecucion . '-01',
+        'hasta' => date('Y-m-t', strtotime($mesEjecucion . '-01'))
+    ];
+}
 
 $rango = null;
-if ($periodoTipo !== '' && $periodoTipo !== 'TODOS') {
+if ($rangoEjecucion === null && $periodoTipo !== '' && $periodoTipo !== 'TODOS') {
     if (!is_file(__DIR__ . '/../../../../includes/filtro_periodo_util.php')) {
         if ($periodoTipo === 'POR_FECHA' && $fechaUnica !== '') $rango = ['desde' => $fechaUnica, 'hasta' => $fechaUnica];
         elseif ($periodoTipo === 'ENTRE_FECHAS' && $fechaInicio !== '' && $fechaFin !== '') $rango = ['desde' => $fechaInicio, 'hasta' => $fechaFin];
@@ -79,7 +89,12 @@ $sql .= " FROM san_fact_cronograma c";
 $sql .= $joinTipo;
 $sql .= " WHERE " . ($whereTipo ?: " 1=1 ");
 
-if ($rango !== null && isset($rango['desde'], $rango['hasta'])) {
+if ($rangoEjecucion !== null && isset($rangoEjecucion['desde'], $rangoEjecucion['hasta'])) {
+    $sql .= " AND DATE(c.fechaEjecucion) >= ? AND DATE(c.fechaEjecucion) <= ? ";
+    $params[] = $rangoEjecucion['desde'];
+    $params[] = $rangoEjecucion['hasta'];
+    $types .= 'ss';
+} elseif ($rango !== null && isset($rango['desde'], $rango['hasta'])) {
     $campoFechaFiltro = $tieneFechaHora ? 'c.fechaHoraRegistro' : 'c.fechaEjecucion';
     $sql .= " AND DATE(" . $campoFechaFiltro . ") >= ? AND DATE(" . $campoFechaFiltro . ") <= ? ";
     $params[] = $rango['desde'];

@@ -26,14 +26,14 @@ if (!$conexion) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Análisis</title>
-    <link rel="stylesheet" href="../../../css/output.css">
-    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
     <link href="../../../css/output.css" rel="stylesheet">
-      <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
@@ -259,18 +259,24 @@ if (!$conexion) {
                 <button type="button" class="btn-secondary inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-1 sm:order-2" onclick="openAnalisisModal('create')">➕ Nuevo Análisis</button>
             </div>
         </div>
-        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
-            <div id="tablaAnalisisWrapper" class="p-4" data-vista-tabla-iconos data-vista="">
-                <div class="view-toggle-group flex items-center gap-2 mb-4">
-                    <button type="button" class="view-toggle-btn active" id="btnViewTablaAna" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
-                    <button type="button" class="view-toggle-btn" id="btnViewIconosAna" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+        <div class="bg-white rounded-xl shadow-md p-5 dashboard-tabla-wrapper" id="tablaAnalisisWrapper" data-vista="">
+            <div class="card-body p-0 mt-5">
+                <div class="reportes-toolbar-row flex flex-wrap items-center justify-between gap-3 mb-3" id="analisisToolbarRow">
+                    <div class="view-toggle-group flex items-center gap-2" id="viewToggleGroupAnalisis">
+                        <button type="button" class="view-toggle-btn active" id="btnViewTablaAna" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                        <button type="button" class="view-toggle-btn" id="btnViewIconosAna" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                    </div>
+                    <div id="analisisDtControls" class="toolbar-dt-controls flex flex-wrap items-center gap-3"></div>
+                    <div id="analisisIconosControls" class="toolbar-iconos-controls flex flex-wrap items-center gap-3" style="display: none;"></div>
                 </div>
                 <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasAna">
+                    <div id="cardsControlsTopAna" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
                     <div id="cardsContainerAna" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
-                    <div id="cardsPaginationAna" class="flex items-center justify-between mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
+                    <div id="cardsPaginationAna" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-table="#tablaAnalisis"></div>
                 </div>
-                <div class="view-lista-wrap table-wrapper">
-                    <table id="tablaAnalisis" class="data-table display config-table" style="width:100%">
+                <div class="view-lista-wrap" id="viewListaAnalisis">
+                <div class="table-wrapper overflow-x-auto">
+                    <table id="tablaAnalisis" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
                             <thead>
                                 <tr>
                                     <th class="px-4 py-3">N°</th>
@@ -318,6 +324,7 @@ if (!$conexion) {
                                 ?>
                             </tbody>
                         </table>
+                </div>
                 </div>
             </div>
         </div>
@@ -374,10 +381,7 @@ if (!$conexion) {
         </script>
 
 
-          <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="../../../assets/js/pagination-iconos.js"></script>
     <script src="../../../assets/js/configuracion/analisis.js"></script>
 
         <script>
@@ -421,10 +425,7 @@ if (!$conexion) {
                     cont.append(card);
                 });
                 var info = api.page.info();
-                var pagHtml = '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' +
-                    '<div class="flex gap-2"><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="tableAnalisis && tableAnalisis.page(\'previous\').draw(false); renderizarTarjetasAna();">Anterior</button>' +
-                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="tableAnalisis && tableAnalisis.page(\'next\').draw(false); renderizarTarjetasAna();">Siguiente</button></div>';
-                $('#cardsPaginationAna').html(pagHtml);
+                $('#cardsPaginationAna').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : ('<span class="dataTables_info">Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>'));
             }
             $(document).ready(function () {
                 tableAnalisis = $('#tablaAnalisis').DataTable({
@@ -433,19 +434,43 @@ if (!$conexion) {
                     lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
                     order: [[0, 'asc']],
                     columnDefs: [{ orderable: false, targets: [3] }],
+                    dom: '<"dt-top-row"<"flex items-center gap-6" l><"flex items-center gap-2" f>>rt<"dt-bottom-row"<"text-sm text-gray-600" i><"text-sm text-gray-600" p>>',
+                    initComplete: function() {
+                        var wrapper = $('#tablaAnalisis').closest('.dataTables_wrapper');
+                        var $length = wrapper.find('.dataTables_length').first();
+                        var $filter = wrapper.find('.dataTables_filter').first();
+                        var $controls = $('#analisisDtControls');
+                        if ($controls.length && $length.length && $filter.length) {
+                            $controls.append($length, $filter);
+                        }
+                    },
                     drawCallback: function() { renderizarTarjetasAna(); }
                 });
                 actualizarVistaInicialAna();
-                $('#btnViewIconosAna').on('click', function() {
-                    $('#tablaAnalisisWrapper').attr('data-vista', 'iconos');
-                    $('#btnViewIconosAna').addClass('active');
-                    $('#btnViewTablaAna').removeClass('active');
-                });
-                $('#btnViewTablaAna').on('click', function() {
-                    $('#tablaAnalisisWrapper').attr('data-vista', 'tabla');
-                    $('#btnViewTablaAna').addClass('active');
-                    $('#btnViewIconosAna').removeClass('active');
-                });
+                function aplicarVistaAnalisis(vista) {
+                    var w = $('#tablaAnalisisWrapper');
+                    w.attr('data-vista', vista);
+                    var esLista = (vista === 'lista' || vista === 'tabla');
+                    $('#viewListaAnalisis').css('display', esLista ? 'block' : 'none');
+                    $('#viewTarjetasAna').css('display', esLista ? 'none' : 'block');
+                    $('#btnViewTablaAna').toggleClass('active', esLista);
+                    $('#btnViewIconosAna').toggleClass('active', !esLista);
+                    if (esLista) {
+                        var filterEl = $('#analisisIconosControls .dataTables_filter').detach();
+                        if (filterEl.length) $('#analisisDtControls').append(filterEl);
+                        $('#analisisIconosControls').hide();
+                        $('#analisisDtControls').show();
+                    } else {
+                        var filterEl = $('#analisisDtControls .dataTables_filter').detach();
+                        if (filterEl.length) $('#analisisIconosControls').append(filterEl);
+                        $('#analisisDtControls').hide();
+                        $('#analisisIconosControls').show();
+                        if (typeof renderizarTarjetasAna === 'function') renderizarTarjetasAna();
+                    }
+                }
+                $('#btnViewIconosAna').on('click', function() { aplicarVistaAnalisis('iconos'); });
+                $('#btnViewTablaAna').on('click', function() { aplicarVistaAnalisis('lista'); });
+                aplicarVistaAnalisis($('#tablaAnalisisWrapper').attr('data-vista') || 'lista');
                 $(window).on('resize', function() {
                     if (!$('#tablaAnalisisWrapper').attr('data-vista')) return;
                     actualizarVistaInicialAna();

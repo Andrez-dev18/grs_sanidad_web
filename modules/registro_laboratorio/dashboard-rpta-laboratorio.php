@@ -102,6 +102,7 @@ $result = $conexion->query($query);
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../assets/js/sweetalert-helpers.js"></script>
     <link rel="stylesheet" href="../../css/style-rpt-lab.css">
+    <link rel="stylesheet" href="../../css/dashboard-config.css">
 
     <style>
         body {
@@ -181,11 +182,42 @@ $result = $conexion->query($query);
             grid-template-columns: repeat(13, 1fr);
         }
 
+        /* Panel solicitudes: ocupa la altura disponible sin forzar min que recorte */
+        #panelSolicitudes {
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+        @media (min-width: 768px) {
+            #panelSolicitudes {
+                min-height: 0;
+                height: 100%;
+            }
+        }
+        #pendingOrdersList {
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            flex: 1 1 auto;
+            min-height: 200px;
+        }
+        /* Barra de paginación siempre visible, sin recortes */
+        #paginationControls {
+            flex-shrink: 0;
+            min-height: 56px;
+            padding: 12px 16px;
+            align-items: center;
+            background: #fff;
+        }
         /* Pantallas chicas: una fila de tarjetas, scroll horizontal */
         @media (max-width: 767px) {
             .panel-solicitudes-fila {
                 max-height: 280px;
                 overflow: hidden;
+            }
+            #pendingOrdersList {
+                overflow-y: hidden;
+                overflow-x: auto;
             }
             .pending-orders-row {
                 flex-direction: row;
@@ -201,7 +233,7 @@ $result = $conexion->query($query);
                 min-width: 260px;
             }
         }
-        /* Pantallas grandes: estilo original - sidebar con lista vertical */
+        /* Pantallas grandes: sidebar con lista vertical y scroll */
         @media (min-width: 768px) {
             .panel-solicitudes-fila {
                 max-height: none;
@@ -239,7 +271,7 @@ $result = $conexion->query($query);
 <body class="bg-gray-50 overflow-x-hidden">
     <div class="w-full max-w-full py-4 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
 
-        <div class="flex flex-col h-screen overflow-hidden">
+        <div class="flex flex-col min-h-screen overflow-y-auto">
 
             <!-- HEADER -->
             <header class="flex-shrink-0 bg-white p-4 rounded-xl shadow-sm border border-[#e5e7eb]">
@@ -269,8 +301,8 @@ $result = $conexion->query($query);
                                     <i class="fas fa-calendar-alt mr-1 text-blue-600"></i>Periodo
                                 </label>
                                 <select id="periodoTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
-                                    <option value="TODOS">Todos</option>
-                                    <option value="POR_FECHA" selected>Por fecha</option>
+                                    <option value="TODOS" selected>Todos</option>
+                                    <option value="POR_FECHA">Por fecha</option>
                                     <option value="ENTRE_FECHAS">Entre fechas</option>
                                     <option value="POR_MES">Por mes</option>
                                     <option value="ENTRE_MESES">Entre meses</option>
@@ -284,11 +316,11 @@ $result = $conexion->query($query);
                             <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
                                 <div class="min-w-[180px]">
                                     <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Desde</label>
-                                    <input id="fechaInicio" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                    <input id="fechaInicio" type="date" value="<?php echo date('Y-m-01'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                 </div>
                                 <div class="min-w-[180px]">
                                     <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label>
-                                    <input id="fechaFin" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                    <input id="fechaFin" type="date" value="<?php echo date('Y-m-t'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                 </div>
                             </div>
                             <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[200px]">
@@ -298,11 +330,11 @@ $result = $conexion->query($query);
                             <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
                                 <div class="min-w-[180px]">
                                     <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label>
-                                    <input id="mesInicio" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                    <input id="mesInicio" type="month" value="<?php echo date('Y') . '-01'; ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                 </div>
                                 <div class="min-w-[180px]">
                                     <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label>
-                                    <input id="mesFin" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                    <input id="mesFin" type="month" value="<?php echo date('Y') . '-12'; ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                 </div>
                             </div>
                         </div>
@@ -346,19 +378,19 @@ $result = $conexion->query($query);
 
             </header>
 
-            <!-- Pantallas chicas: columna (fila de tarjetas arriba, detalle abajo). Pantallas grandes: fila (sidebar izquierdo, detalle derecha) -->
-            <div class="flex flex-1 min-h-0 overflow-hidden flex-col md:flex-row">
+            <!-- Área de contenido: altura mínima para que el panel no se recorte y se vea la paginación -->
+            <div class="flex flex-1 flex-col md:flex-row min-h-[70vh] overflow-hidden">
 
                 <!-- Sidebar solicitudes: en chicas una fila con scroll horizontal; en grandes columna con scroll vertical -->
                 <aside id="panelSolicitudes"
-                    class="panel-solicitudes-fila flex-shrink-0 bg-white w-full md:w-[300px] md:flex-shrink-0 md:mr-3 rounded-xl shadow-sm border border-[#e5e7eb] mt-4 flex flex-col min-h-0 min-w-0">
-                    <div class="px-4 py-3 md:px-6 md:py-5 border-b border-[#e5e7eb] flex-shrink-0 flex flex-wrap items-center gap-3">
+                    class="panel-solicitudes-fila flex-shrink-0 bg-white w-full md:w-[320px] md:flex-shrink-0 md:mr-3 rounded-xl shadow-sm border border-[#e5e7eb] mt-4 flex flex-col min-h-0 min-w-0 overflow-hidden">
+                    <div class="px-4 py-3 md:px-4 md:py-4 border-b border-[#e5e7eb] flex-shrink-0 flex flex-wrap items-center gap-3">
                         <h3 class="text-base font-semibold text-[#2c3e50]">Solicitudes</h3>
-                        <input id="searchInput" type="text" placeholder="Buscar..." class="flex-1 min-w-[120px] max-w-xs md:mt-0 md:w-full px-3 py-2 border border-[#d0d7de] rounded-md text-sm placeholder-[#a0aec0] focus:outline-none focus:ring-2 focus:ring-[#0066cc]/30">
+                        <input id="searchInput" type="text" placeholder="Buscar por código o ref..." class="flex-1 min-w-[120px] max-w-xs md:min-w-0 md:max-w-none md:w-full px-3 py-2 border border-[#d0d7de] rounded-md text-sm placeholder-[#a0aec0] focus:outline-none focus:ring-2 focus:ring-[#0066cc]/30">
                     </div>
-                    <div id="pendingOrdersList" class="pending-orders-row flex flex-1 min-h-0 p-4 md:space-y-3">
+                    <div id="pendingOrdersList" class="pending-orders-row flex flex-1 min-h-0 p-4 md:space-y-3 overflow-y-auto overflow-x-hidden">
                     </div>
-                    <div id="paginationControls" class="p-3 md:p-4 flex justify-between text-sm text-gray-600 flex-shrink-0 border-t border-[#e5e7eb]"></div>
+                    <div id="paginationControls" class="p-3 md:p-4 flex flex-wrap items-center justify-between gap-2 text-sm text-gray-600 flex-shrink-0 border-t border-[#e5e7eb]"></div>
                 </aside>
 
                 <!-- Panel detalle: en chicas abajo con scroll propio; en grandes a la derecha -->
@@ -1074,13 +1106,14 @@ $result = $conexion->query($query);
             document.getElementById('periodoTipo').addEventListener('change', aplicarVisibilidadPeriodoRptaLab);
             aplicarVisibilidadPeriodoRptaLab();
             function limpiarFiltrosRptaLab() {
-                document.getElementById('periodoTipo').value = 'POR_FECHA';
-                document.getElementById('fechaUnica').value = new Date().toISOString().slice(0, 10);
-                document.getElementById('fechaInicio').value = '';
-                document.getElementById('fechaFin').value = '';
-                document.getElementById('mesUnico').value = '';
-                document.getElementById('mesInicio').value = '';
-                document.getElementById('mesFin').value = '';
+                document.getElementById('periodoTipo').value = 'TODOS';
+                var d = new Date();
+                document.getElementById('fechaUnica').value = d.toISOString().slice(0, 10);
+                document.getElementById('fechaInicio').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
+                document.getElementById('fechaFin').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()).padStart(2, '0');
+                document.getElementById('mesUnico').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                document.getElementById('mesInicio').value = d.getFullYear() + '-01';
+                document.getElementById('mesFin').value = d.getFullYear() + '-12';
                 document.getElementById('filtroEstado').value = 'pendiente';
                 document.getElementById('filtroLab').value = '';
                 aplicarVisibilidadPeriodoRptaLab();

@@ -25,13 +25,15 @@ $result_proveedores = mysqli_query($conexion, $query);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Proveedores</title>
-    <link rel="stylesheet" href="../../../css/output.css">
+    <link href="../../../css/output.css" rel="stylesheet">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
     <style>
@@ -78,17 +80,24 @@ $result_proveedores = mysqli_query($conexion, $query);
                         <button type="button" class="btn-secondary inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-1 sm:order-2" onclick="openModal('create')">➕ Nuevo Proveedor</button>
                     </div>
                 </div>
-                <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
-                <div id="tablaProveedorWrapper" class="p-3 sm:p-4 min-w-0" data-vista-tabla-iconos data-vista="tabla">
-                    <div class="view-toggle-group flex items-center gap-2 mb-3 sm:mb-4">
-                        <button type="button" class="view-toggle-btn active" id="btnViewTablaProveedor" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
-                        <button type="button" class="view-toggle-btn" id="btnViewIconosProveedor" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                <div class="bg-white rounded-xl shadow-md p-5 dashboard-tabla-wrapper" id="tablaProveedorWrapper" data-vista="">
+                    <div class="card-body p-0 mt-5">
+                    <div class="reportes-toolbar-row flex flex-wrap items-center justify-between gap-3 mb-3" id="proveedorToolbarRow">
+                        <div class="view-toggle-group flex items-center gap-2" id="viewToggleGroupProveedor">
+                            <button type="button" class="view-toggle-btn active" id="btnViewTablaProveedor" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                            <button type="button" class="view-toggle-btn" id="btnViewIconosProveedor" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                        </div>
+                        <div id="proveedorDtControls" class="toolbar-dt-controls flex flex-wrap items-center gap-3"></div>
+                        <div id="proveedorIconosControls" class="toolbar-iconos-controls flex flex-wrap items-center gap-3" style="display: none;"></div>
                     </div>
-                    <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasProveedor">
+                    <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasProveedor" style="display: none;">
+                        <div id="cardsControlsTopProveedor" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
                         <div id="cardsContainerProveedor" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
+                        <div id="cardsPaginationProveedor" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-table="#tablaProveedor"></div>
                     </div>
-                    <div class="view-lista-wrap table-container overflow-x-auto">
-                        <table id="tablaProveedor" class="data-table w-full config-table">
+                    <div class="view-lista-wrap" id="viewListaProveedor">
+                    <div class="table-wrapper overflow-x-auto">
+                        <table id="tablaProveedor" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
                             <thead>
                                 <tr>
                                     <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
@@ -110,7 +119,7 @@ $result_proveedores = mysqli_query($conexion, $query);
                                         $codAttr = htmlspecialchars($cod, ENT_QUOTES, 'UTF-8');
                                         $nomAttr = htmlspecialchars($row['nombre'], ENT_QUOTES, 'UTF-8');
                                         $siglaAttr = htmlspecialchars($row['codigo_proveedor'] ?? '', ENT_QUOTES, 'UTF-8');
-                                        echo '<tr class="hover:bg-gray-50 transition" data-codigo="' . $codAttr . '" data-nombre="' . $nomAttr . '" data-sigla="' . $siglaAttr . '" data-index="' . $idx . '">';
+                                        echo '<tr data-codigo="' . $codAttr . '" data-nombre="' . $nomAttr . '" data-sigla="' . $siglaAttr . '" data-index="' . $idx . '">';
                                         echo '<td class="px-6 py-4 text-gray-700">' . $idx . '</td>';
                                         echo '<td class="px-6 py-4 text-gray-700">' . $codAttr . '</td>';
                                         echo '<td class="px-6 py-4 text-gray-700 font-medium">' . $nom . '</td>';
@@ -126,6 +135,7 @@ $result_proveedores = mysqli_query($conexion, $query);
                                 ?>
                             </tbody>
                         </table>
+                    </div>
                     </div>
                 </div>
                 </div>
@@ -153,6 +163,7 @@ $result_proveedores = mysqli_query($conexion, $query);
                         </div>
                         <div class="form-field mb-6">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Abreviatura</label>
+                            <p class="text-xs text-gray-500 mb-1.5">Se usará en los reportes PDF como nombre corto.</p>
                             <input type="text" id="modalSiglaProveedor" name="sigla" maxlength="50" placeholder="Ej: Abreviatura del proveedor"
                                 class="w-full min-w-0 px-3 sm:px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition text-base">
                         </div>
@@ -172,8 +183,7 @@ $result_proveedores = mysqli_query($conexion, $query);
         </div>
         <script>document.getElementById('currentYear').textContent = new Date().getFullYear();</script>
     </div>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="../../../assets/js/pagination-iconos.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="../../../assets/js/configuracion/proveedor.js"></script>
     <script>
@@ -186,9 +196,54 @@ $result_proveedores = mysqli_query($conexion, $query);
                 lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'Todos']],
                 language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
                 order: [[1, 'asc']],
-                columnDefs: [{ orderable: false, targets: [0, 4] }]
+                columnDefs: [{ orderable: false, targets: [0, 4] }],
+                dom: '<"dt-top-row"<"flex items-center gap-6" l><"flex items-center gap-2" f>>rt<"dt-bottom-row"<"text-sm text-gray-600" i><"text-sm text-gray-600" p>>',
+                initComplete: function() {
+                    var wrapper = jQuery('#tablaProveedor').closest('.dataTables_wrapper');
+                    var $length = wrapper.find('.dataTables_length').first();
+                    var $filter = wrapper.find('.dataTables_filter').first();
+                    var $controls = jQuery('#proveedorDtControls');
+                    if ($controls.length && $length.length && $filter.length) {
+                        $controls.append($length, $filter);
+                    }
+                }
             });
         }
+        function aplicarVistaProveedor(vista) {
+            var w = document.getElementById('tablaProveedorWrapper');
+            if (!w) return;
+            w.setAttribute('data-vista', vista);
+            var esLista = (vista === 'lista');
+            var listWrap = document.getElementById('viewListaProveedor');
+            var iconWrap = document.getElementById('viewTarjetasProveedor');
+            var provDt = document.getElementById('proveedorDtControls');
+            var provIconos = document.getElementById('proveedorIconosControls');
+            if (listWrap) { listWrap.style.display = esLista ? 'block' : 'none'; }
+            if (iconWrap) { iconWrap.style.display = esLista ? 'none' : 'block'; }
+            var btnLista = document.getElementById('btnViewTablaProveedor');
+            var btnIconos = document.getElementById('btnViewIconosProveedor');
+            if (btnLista) btnLista.classList.toggle('active', esLista);
+            if (btnIconos) btnIconos.classList.toggle('active', !esLista);
+            if (esLista) {
+                if (provIconos && provDt) {
+                    var filterEl = provIconos.querySelector('.dataTables_filter');
+                    if (filterEl) { provIconos.removeChild(filterEl); provDt.appendChild(filterEl); }
+                }
+                if (provIconos) provIconos.style.display = 'none';
+                if (provDt) provDt.style.display = '';
+            } else {
+                if (provDt && provIconos) {
+                    var filterEl = provDt.querySelector('.dataTables_filter');
+                    if (filterEl) { provDt.removeChild(filterEl); provIconos.appendChild(filterEl); }
+                }
+                if (provDt) provDt.style.display = 'none';
+                if (provIconos) provIconos.style.display = '';
+                var cont = document.getElementById('cardsContainerProveedor');
+                if (cont) cont.innerHTML = '<p class="text-sm text-gray-500 py-4">Vista en iconos disponible próximamente.</p>';
+            }
+        }
+        document.getElementById('btnViewTablaProveedor').addEventListener('click', function() { aplicarVistaProveedor('lista'); });
+        document.getElementById('btnViewIconosProveedor').addEventListener('click', function() { aplicarVistaProveedor('iconos'); });
     })();
     </script>
 </body>

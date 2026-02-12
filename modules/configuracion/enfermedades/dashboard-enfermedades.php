@@ -26,12 +26,14 @@ if (!$conexion) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Enfermedades</title>
-    <link rel="stylesheet" href="../../../css/output.css">
+    <link href="../../../css/output.css" rel="stylesheet">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
     <style>
@@ -71,17 +73,24 @@ if (!$conexion) {
                         <button type="button" class="btn-secondary inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-1 sm:order-2" onclick="openModal('create')">➕ Nueva Enfermedad</button>
                     </div>
                 </div>
-                <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
-                <div id="tablaEnfermedadesWrapper" class="p-3 sm:p-4 min-w-0" data-vista-tabla-iconos data-vista="tabla">
-                    <div class="view-toggle-group flex items-center gap-2 mb-3 sm:mb-4">
-                        <button type="button" class="view-toggle-btn active" id="btnViewTablaEnfermedades" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
-                        <button type="button" class="view-toggle-btn" id="btnViewIconosEnfermedades" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                <div class="bg-white rounded-xl shadow-md p-5 dashboard-tabla-wrapper" id="tablaEnfermedadesWrapper" data-vista="">
+                    <div class="card-body p-0 mt-5">
+                    <div class="reportes-toolbar-row flex flex-wrap items-center justify-between gap-3 mb-3">
+                        <div class="view-toggle-group flex items-center gap-2">
+                            <button type="button" class="view-toggle-btn active" id="btnViewTablaEnfermedades" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                            <button type="button" class="view-toggle-btn" id="btnViewIconosEnfermedades" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                        </div>
+                        <div id="enfermedadesDtControls" class="toolbar-dt-controls flex flex-wrap items-center gap-3"></div>
+                        <div id="enfermedadesIconosControls" class="toolbar-iconos-controls flex flex-wrap items-center gap-3" style="display: none;"></div>
                     </div>
                     <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasEnfermedades">
+                        <div id="cardsControlsTopEnfermedades" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
                         <div id="cardsContainerEnfermedades" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
+                        <div id="cardsPaginationEnfermedades" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-table="#tablaEnfermedades"></div>
                     </div>
-                    <div class="view-lista-wrap table-container overflow-x-auto">
-                        <table id="tablaEnfermedades" class="data-table w-full config-table">
+                    <div class="view-lista-wrap" id="viewListaEnfermedades">
+                    <div class="table-wrapper overflow-x-auto">
+                        <table id="tablaEnfermedades" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
                             <thead>
                                 <tr>
                                     <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
@@ -100,7 +109,7 @@ if (!$conexion) {
                                         $cod = (int) $row['cod_enf'];
                                         $nom = htmlspecialchars($row['nom_enf']);
                                         $nomAttr = htmlspecialchars($row['nom_enf'], ENT_QUOTES, 'UTF-8');
-                                        echo '<tr class="hover:bg-gray-50 transition" data-codigo="' . $cod . '" data-nombre="' . $nomAttr . '" data-index="' . $idx . '">';
+                                        echo '<tr data-codigo="' . $cod . '" data-nombre="' . $nomAttr . '" data-index="' . $idx . '">';
                                         echo '<td class="px-6 py-4 text-gray-700">' . $idx . '</td>';
                                         echo '<td class="px-6 py-4 text-gray-700 font-medium">' . $nom . '</td>';
                                         echo '<td class="px-6 py-4 flex gap-2">';
@@ -150,8 +159,7 @@ if (!$conexion) {
         </div>
         <script>document.getElementById('currentYear').textContent = new Date().getFullYear();</script>
     </div>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="../../../assets/js/pagination-iconos.js"></script>
     <script src="../../../assets/js/configuracion/enfermedades.js"></script>
     <script>
     (function() {

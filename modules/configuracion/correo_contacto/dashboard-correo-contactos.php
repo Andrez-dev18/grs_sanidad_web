@@ -214,7 +214,7 @@ if (empty($_SESSION['active'])) {
                         return;
                     }
                     tbody.innerHTML = data.map(c => `
-                        <tr class="hover:bg-gray-50">
+                        <tr>
                             <td class="px-6 py-4 font-medium">${c.contacto}</td>
                             <td class="px-6 py-4">${c.correo}</td>
                             <td class="px-6 py-4 flex gap-2">

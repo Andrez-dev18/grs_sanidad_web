@@ -16,21 +16,32 @@ if (!$conn) {
 }
 
 $defaultCampos = [
-    'ubicacion' => 0, 'producto' => 0, 'unidades' => 0, 'unidad_dosis' => 0, 'numero_frascos' => 0,
+    'ubicacion' => 0, 'producto' => 0, 'proveedor' => 0, 'unidad' => 0, 'dosis' => 0, 'descripcion' => 0,
+    'unidades' => 0, 'unidad_dosis' => 0, 'numero_frascos' => 0,
     'edad_aplicacion' => 0, 'area_galpon' => 0, 'cantidad_por_galpon' => 0
 ];
 $lista = [];
 
-$sqlFull = "SELECT codigo, nombre, sigla,
+// Detectar columnas opcionales (por si no se ha ejecutado el ALTER)
+$tieneCampoDescripcion = false;
+$chkDesc = @$conn->query("SHOW COLUMNS FROM san_dim_tipo_programa LIKE 'campoDescripcion'");
+if ($chkDesc && $chkDesc->fetch_assoc()) $tieneCampoDescripcion = true;
+
+$selectCols = "codigo, nombre, sigla,
         COALESCE(campoUbicacion, 0) AS campoUbicacion,
         COALESCE(campoProducto, 0) AS campoProducto,
+        COALESCE(campoProveedor, 0) AS campoProveedor,
+        COALESCE(campoUnidad, 0) AS campoUnidad,
+        COALESCE(campoDosis, 0) AS campoDosis";
+if ($tieneCampoDescripcion) $selectCols .= ",\n        COALESCE(campoDescripcion, 0) AS campoDescripcion";
+$selectCols .= ",
         COALESCE(campoUnidades, 0) AS campoUnidades,
         COALESCE(campoUnidadDosis, 0) AS campoUnidadDosis,
         COALESCE(campoNumeroFrascos, 0) AS campoNumeroFrascos,
         COALESCE(campoEdadAplicacion, 0) AS campoEdadAplicacion,
         COALESCE(campoAreaGalpon, 0) AS campoAreaGalpon,
-        COALESCE(campoCantidadPorGalpon, 0) AS campoCantidadPorGalpon
-        FROM san_dim_tipo_programa ORDER BY nombre";
+        COALESCE(campoCantidadPorGalpon, 0) AS campoCantidadPorGalpon";
+$sqlFull = "SELECT " . $selectCols . " FROM san_dim_tipo_programa ORDER BY nombre";
 $result = @$conn->query($sqlFull);
 if ($result && $result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
@@ -41,6 +52,10 @@ if ($result && $result->num_rows > 0) {
             'campos' => [
                 'ubicacion' => (int)($row['campoUbicacion'] ?? 0),
                 'producto' => (int)($row['campoProducto'] ?? 0),
+                'proveedor' => (int)($row['campoProveedor'] ?? 0),
+                'unidad' => (int)($row['campoUnidad'] ?? 0),
+                'dosis' => (int)($row['campoDosis'] ?? 0),
+                'descripcion' => $tieneCampoDescripcion ? (int)($row['campoDescripcion'] ?? 0) : 0,
                 'unidades' => (int)($row['campoUnidades'] ?? 0),
                 'unidad_dosis' => (int)($row['campoUnidadDosis'] ?? 0),
                 'numero_frascos' => (int)($row['campoNumeroFrascos'] ?? 0),

@@ -72,44 +72,7 @@ if (empty($_SESSION['active'])) {
             border: 1px solid #e5e7eb;
             overflow: hidden;
         }
-        .table-wrapper {
-            overflow-x: auto;
-            overflow-y: visible;
-            width: 100%;
-            border-radius: 1rem;
-        }
-        .table-wrapper::-webkit-scrollbar { height: 10px; }
-        .table-wrapper::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
-        .table-wrapper::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
-        .data-table {
-            width: 100% !important;
-            border-collapse: collapse;
-            min-width: 800px;
-        }
-        .data-table th,
-        .data-table td {
-            padding: 0.75rem 1rem;
-            text-align: left;
-            font-size: 0.875rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .data-table th {
-            background: #2563eb !important;
-            font-weight: 600;
-            color: #ffffff !important;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-        .data-table tbody tr:hover {
-            background-color: #eff6ff !important;
-        }
-        .dataTables_wrapper .dataTables_length,
-        .dataTables_wrapper .dataTables_filter,
-        .dataTables_wrapper .dataTables_info,
-        .dataTables_wrapper .dataTables_paginate { padding: 1rem; font-weight: normal; }
         .dataTables_wrapper .dataTables_length select {
-            padding: 0.5rem;
             border: 1px solid #d1d5db;
             border-radius: 0.5rem;
             margin: 0 0.5rem;
@@ -193,29 +156,25 @@ if (empty($_SESSION['active'])) {
 <body class="bg-gray-50">
     <div class="w-full max-w-full py-4 px-4 sm:px-6 lg:px-8 box-border">
 
-        <!-- Card Programas: filtros + tabla única + botón exportar PDF -->
+        <!-- Card Filtros (estilo reportes) -->
         <div class="card-filtros-compacta mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
-            <!-- Filtros de búsqueda (estilo reportes, desplegado por defecto) -->
-            <div class="border-b border-gray-200">
-                <button type="button" id="btnToggleFiltrosProgramas"
-                    class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">
-                    <div class="flex items-center gap-2">
-                        <span class="text-lg">🔎</span>
-                        <h3 class="text-base font-semibold text-gray-800">Filtros de búsqueda</h3>
-                    </div>
-                    <svg id="iconoFiltrosProgramas" class="w-5 h-5 text-gray-600 transition-transform duration-300 rotate-180"
-                        fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-                <div id="contenidoFiltrosProgramas" class="px-6 pb-6 pt-4">
+            <button type="button" id="btnToggleFiltrosProgramas"
+                class="w-full flex items-center justify-between px-6 py-4 text-left font-medium text-gray-800 hover:bg-gray-50 transition">
+                <span><i class="fas fa-filter mr-2 text-blue-600"></i> Filtros</span>
+                <svg id="iconoFiltrosProgramas" class="w-5 h-5 text-gray-600 transition-transform duration-300 rotate-180"
+                    fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div id="contenidoFiltrosProgramas" class="px-6 pb-6 pt-4">
+                <div class="border-t border-gray-100 pt-4 mx-4">
                     <!-- Fila 1: Periodo -->
                     <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
                         <div class="flex-shrink-0" style="min-width: 200px;">
                             <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-alt mr-1 text-blue-600"></i> Periodo</label>
                             <select id="periodoTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
-                                <option value="TODOS">Todos</option>
-                                <option value="POR_FECHA" selected>Por fecha</option>
+                                <option value="TODOS" selected>Todos</option>
+                                <option value="POR_FECHA">Por fecha</option>
                                 <option value="ENTRE_FECHAS">Entre fechas</option>
                                 <option value="POR_MES">Por mes</option>
                                 <option value="ENTRE_MESES">Entre meses</option>
@@ -232,7 +191,7 @@ if (empty($_SESSION['active'])) {
                         </div>
                         <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[200px]">
                             <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
-                            <input id="mesUnico" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                            <input id="mesUnico" type="month" value="<?php echo date('Y-m'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                         </div>
                         <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
                             <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label><input id="mesInicio" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
@@ -277,25 +236,44 @@ if (empty($_SESSION['active'])) {
                         </button>
                     </div>
                 </div>
-            </div>
+                </div>
+        </div>
 
-            <div class="px-6 pb-6 pt-4">
-                <div class="table-wrapper overflow-x-auto">
-                    <table id="tablaProgramas" class="data-table w-full text-sm config-table">
-                        <thead>
-                            <tr>
-                                <th class="px-4 py-3 text-left">N°</th>
-                                <th class="px-4 py-3 text-left">Código</th>
-                                <th class="px-4 py-3 text-left">Nombre</th>
-                                <th class="px-4 py-3 text-left">Tipo</th>
-                                <th class="px-4 py-3 text-left">Despliegue</th>
-                                <th class="px-4 py-3 text-left">Fecha registro</th>
-                                <th class="px-4 py-3 text-center">Detalles</th>
-                                <th class="px-4 py-3 text-center">Opciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaProgramasBody"></tbody>
-                    </table>
+        <!-- Card Tabla (mismo estilo lista/iconos que reportes) -->
+        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden" id="tablaProgramasWrapper" data-vista-tabla-iconos data-vista="lista">
+            <div class="p-4">
+                <!-- Toolbar: Lista/Iconos y controles de tabla en la misma fila (como reportes) -->
+                <div class="toolbar-vista-row flex flex-wrap items-center justify-between gap-3 mb-3" id="programasToolbarRow">
+                    <div class="view-toggle-group flex items-center gap-2" id="viewToggleGroupProg">
+                        <button type="button" class="view-toggle-btn active" id="btnViewListaProg" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                        <button type="button" class="view-toggle-btn" id="btnViewIconosProg" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                    </div>
+                    <div id="progDtControls" class="flex flex-wrap items-center gap-3"></div>
+                    <div id="progIconosControls" class="flex flex-wrap items-center gap-3" style="display: none;"></div>
+                </div>
+                <div class="view-lista-wrap" id="viewListaProg">
+            <div class="table-wrapper table-wrapper-borde">
+                <table id="tablaProgramas" class="data-table w-full text-sm config-table">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-3 text-left">N°</th>
+                            <th class="px-4 py-3 text-left">Código</th>
+                            <th class="px-4 py-3 text-left">Nombre</th>
+                            <th class="px-4 py-3 text-left">Tipo</th>
+                            <th class="px-4 py-3 text-left">Despliegue</th>
+                            <th class="px-4 py-3 text-left">Fecha registro</th>
+                            <th class="px-4 py-3 text-center">Detalles</th>
+                            <th class="px-4 py-3 text-center">Opciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaProgramasBody"></tbody>
+                </table>
+            </div>
+                </div>
+                <div class="view-tarjetas-wrap hidden px-4 pb-4 overflow-x-hidden" id="viewTarjetasProg" style="display: none;">
+                    <div id="cardsControlsTopProg" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
+                    <div id="cardsContainerProg" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
+                    <div id="cardsPaginationProg" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-page-handler="progIconosPageGo"></div>
                 </div>
             </div>
         </div>
@@ -322,6 +300,7 @@ if (empty($_SESSION['active'])) {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="../../../assets/js/pagination-iconos.js"></script>
     <script>
         window._detallesPorPrograma = {};
         window._cabPorPrograma = {};
@@ -386,6 +365,7 @@ if (empty($_SESSION['active'])) {
                 .then(res => {
                     if (!res.success) return;
                     var data = res.data || [];
+                    window._listadoProgramas = data;
                     if ($.fn.DataTable.isDataTable('#tablaProgramas')) {
                         $('#tablaProgramas').DataTable().destroy();
                     }
@@ -414,7 +394,17 @@ if (empty($_SESSION['active'])) {
                     });
                     $('#tablaProgramas').DataTable({
                         language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
-                        order: [[5, 'desc']]
+                        order: [[5, 'desc']],
+                        dom: '<"dt-top-row"<"flex items-center gap-6" l><"flex items-center gap-2" f>>rt<"dt-bottom-row"<"text-sm text-gray-600" i><"text-sm text-gray-600" p>>',
+                        initComplete: function() {
+                            var wrapper = $('#tablaProgramas').closest('.dataTables_wrapper');
+                            var $length = wrapper.find('.dataTables_length').first();
+                            var $filter = wrapper.find('.dataTables_filter').first();
+                            var $controls = $('#progDtControls');
+                            if ($controls.length && $length.length && $filter.length) {
+                                $controls.append($length, $filter);
+                            }
+                        }
                     });
                 })
                 .catch(function() {});
@@ -430,7 +420,7 @@ if (empty($_SESSION['active'])) {
         };
         var labelsReporte = {
             num: '#', ubicacion: 'Ubicación', producto: 'Producto', proveedor: 'Proveedor', unidad: 'Unidad',
-            dosis: 'Dosis', descripcion_vacuna: 'Descripcion', numeroFrascos: 'Nº frascos', edad: 'Edad',
+            dosis: 'Dosis', descripcion_vacuna: 'Descripcion', numeroFrascos: 'Nº frascos', edad: 'Edad de aplicación',
             unidadDosis: 'Unid. dosis', area_galpon: 'Área galpón', cantidad_por_galpon: 'Cant. por galpón'
         };
         function valorCeldaDetalle(k, d) {
@@ -448,6 +438,41 @@ if (empty($_SESSION['active'])) {
             if (k === 'cantidad_por_galpon') return (d.cantidadPorGalpon !== null && d.cantidadPorGalpon !== undefined && d.cantidadPorGalpon !== '' ? d.cantidadPorGalpon : '');
             return '';
         }
+        function valorClaveDetalle(k, d) {
+            if (k === 'edad' || k === 'num') return '';
+            if (k === 'ubicacion') return (d.ubicacion || '');
+            if (k === 'producto') return (d.nomProducto || d.codProducto || '');
+            if (k === 'proveedor') return ((d.codProveedor && String(d.codProveedor).trim()) ? d.codProveedor : (d.nomProveedor || ''));
+            if (k === 'unidad') return (d.unidades || '');
+            if (k === 'dosis') return (d.dosis || '');
+            if (k === 'descripcion_vacuna') return (d.descripcionVacuna || '');
+            if (k === 'numeroFrascos') return (d.numeroFrascos || '');
+            if (k === 'unidadDosis') return (d.unidadDosis || '');
+            if (k === 'area_galpon') return (d.areaGalpon !== null && d.areaGalpon !== undefined ? String(d.areaGalpon) : '');
+            if (k === 'cantidad_por_galpon') return (d.cantidadPorGalpon !== null && d.cantidadPorGalpon !== undefined ? String(d.cantidadPorGalpon) : '');
+            return '';
+        }
+        function agruparDetallesPorEdad(detalles, colsSinNum) {
+            if (!detalles || detalles.length === 0) return [];
+            var colsSinEdad = colsSinNum.filter(function(k) { return k !== 'edad'; });
+            var map = {};
+            detalles.forEach(function(d) {
+                var key = colsSinEdad.map(function(k) { return valorClaveDetalle(k, d); }).join('\t');
+                if (!map[key]) map[key] = [];
+                map[key].push(d);
+            });
+            var out = [];
+            Object.keys(map).forEach(function(key) {
+                var group = map[key];
+                var first = group[0];
+                var ages = group.map(function(d) { var e = d.edad; return (e !== null && e !== undefined && e !== '' ? String(e).trim() : null); }).filter(Boolean);
+                var merged = {};
+                for (var p in first) if (first.hasOwnProperty(p)) merged[p] = first[p];
+                merged.edad = ages.length > 0 ? ages.join(' - ') : (first.edad !== null && first.edad !== undefined ? String(first.edad) : '');
+                out.push(merged);
+            });
+            return out;
+        }
         function abrirModalDetalles(codigo) {
             if (!codigo) return;
             var detalles = window._detallesPorPrograma[codigo];
@@ -457,6 +482,11 @@ if (empty($_SESSION['active'])) {
             if (sigla === 'NEC') sigla = 'NC';
             var cols = columnasPorSiglaReporte[sigla] || columnasPorSiglaReporte['PL'];
             var colsSinNum = cols.filter(function(k) { return k !== 'num'; });
+            if (colsSinNum.indexOf('edad') !== -1) {
+                colsSinNum = colsSinNum.filter(function(k) { return k !== 'edad'; });
+                colsSinNum.push('edad');
+            }
+            var detallesAgrupados = agruparDetallesPorEdad(detalles, colsSinNum);
             document.getElementById('modalDetallesTitulo').textContent = 'Detalles - ' + codigo;
             var thead = document.getElementById('modalDetallesThead');
             var tbody = document.getElementById('modalDetallesBody');
@@ -467,11 +497,11 @@ if (empty($_SESSION['active'])) {
             });
             thead.innerHTML = '<tr>' + thCells + '</tr>';
             tbody.innerHTML = '';
-            if (detalles.length === 0) {
+            if (detallesAgrupados.length === 0) {
                 sinReg.classList.remove('hidden');
             } else {
                 sinReg.classList.add('hidden');
-                detalles.forEach(function(d, i) {
+                detallesAgrupados.forEach(function(d, i) {
                     var tr = document.createElement('tr');
                     tr.className = 'border-b border-gray-200';
                     var td = '<td class="px-3 py-2">' + esc(cab.codigo || codigo) + '</td><td class="px-3 py-2">' + esc(cab.nombre || '') + '</td><td class="px-3 py-2">' + esc(cab.despliegue || '') + '</td><td class="px-3 py-2">' + esc(cab.descripcion || '') + '</td>';
@@ -508,13 +538,20 @@ if (empty($_SESSION['active'])) {
         document.getElementById('btnBuscarProgramas').addEventListener('click', cargarListado);
         document.getElementById('btnLimpiarFiltrosProgramas').addEventListener('click', function() {
             var pt = document.getElementById('periodoTipo');
-            if (pt) pt.value = 'POR_FECHA';
-            ['fechaInicio','fechaFin','mesUnico','mesInicio','mesFin'].forEach(function(id) {
-                var el = document.getElementById(id);
-                if (el) el.value = '';
-            });
+            if (pt) pt.value = 'TODOS';
+            var d = new Date();
             var fu = document.getElementById('fechaUnica');
-            if (fu) fu.value = new Date().toISOString().slice(0, 10);
+            if (fu) fu.value = d.toISOString().slice(0, 10);
+            var fi = document.getElementById('fechaInicio');
+            if (fi) fi.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
+            var ff = document.getElementById('fechaFin');
+            if (ff) ff.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()).padStart(2, '0');
+            var mu = document.getElementById('mesUnico');
+            if (mu) mu.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            var mi = document.getElementById('mesInicio');
+            if (mi) mi.value = d.getFullYear() + '-01';
+            var mf = document.getElementById('mesFin');
+            if (mf) mf.value = d.getFullYear() + '-12';
             var ft = document.getElementById('filtroTipo');
             if (ft) ft.value = '';
             var fz = document.getElementById('filtroZona');
@@ -545,6 +582,137 @@ if (empty($_SESSION['active'])) {
         });
         document.getElementById('modalDetallesCerrar').addEventListener('click', cerrarModalDetalles);
         document.getElementById('modalDetallesPrograma').addEventListener('click', function(e) { if (e.target === this) cerrarModalDetalles(); });
+
+        window._progIconosPage = 0;
+        window._progIconosPageSize = 10;
+        window._progIconosSearch = '';
+
+        function renderizarTarjetasProgramas() {
+            var data = window._listadoProgramas || [];
+            var q = (window._progIconosSearch || '').toString().trim().toLowerCase();
+            var filtrado = q ? data.filter(function(item) {
+                var cab = item.cab || {};
+                return (cab.codigo || '').toLowerCase().indexOf(q) >= 0 ||
+                    (cab.nombre || '').toLowerCase().indexOf(q) >= 0 ||
+                    (cab.nomTipo || '').toLowerCase().indexOf(q) >= 0 ||
+                    (cab.despliegue || '').toLowerCase().indexOf(q) >= 0 ||
+                    (formatearFecha(cab.fechaHoraRegistro) || '').toLowerCase().indexOf(q) >= 0;
+            }) : data.slice(0);
+            var pageSize = Math.max(1, parseInt(window._progIconosPageSize, 10) || 10);
+            var total = filtrado.length;
+            var totalPag = Math.max(1, Math.ceil(total / pageSize));
+            var page = Math.max(0, Math.min(window._progIconosPage, totalPag - 1));
+            window._progIconosPage = page;
+            var start = page * pageSize;
+            var slice = filtrado.slice(start, start + pageSize);
+
+            var cont = document.getElementById('cardsContainerProg');
+            if (!cont) return;
+            cont.innerHTML = '';
+            slice.forEach(function(item, idx) {
+                var cab = item.cab || {};
+                var codigo = cab.codigo || '';
+                var num = start + idx + 1;
+                var reporteUrl = 'generar_reporte_programa.php?codigo=' + encodeURIComponent(codigo);
+                var codEsc = (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+                var card = document.createElement('div');
+                card.className = 'card-item';
+                card.innerHTML =
+                    '<div class="card-numero-row">#' + num + '</div>' +
+                    '<div class="card-contenido">' +
+                    '<div class="card-codigo">' + esc(codigo) + '</div>' +
+                    '<div class="card-campos">' +
+                    '<div class="card-row"><span class="label">Nombre:</span> ' + esc(cab.nombre || '') + '</div>' +
+                    '<div class="card-row"><span class="label">Tipo:</span> ' + esc(cab.nomTipo || '') + '</div>' +
+                    '<div class="card-row"><span class="label">Despliegue:</span> ' + esc(cab.despliegue || '') + '</div>' +
+                    '<div class="card-row"><span class="label">Fecha:</span> ' + formatearFecha(cab.fechaHoraRegistro) + '</div>' +
+                    '</div>' +
+                    '<div class="card-acciones">' +
+                    '<button type="button" class="btn-detalles-programa px-2 py-1 text-blue-600 hover:bg-blue-50 rounded text-sm" data-codigo="' + codEsc + '" title="Detalles"><i class="fas fa-list mr-1"></i> Detalles</button>' +
+                    '<a href="' + reporteUrl + '" target="_blank" rel="noopener" class="inline-flex items-center px-2 py-1 text-red-600 hover:bg-red-50 rounded text-sm" title="PDF"><i class="fas fa-file-pdf"></i></a>' +
+                    '</div></div>';
+                cont.appendChild(card);
+            });
+            cont.querySelectorAll('.btn-detalles-programa').forEach(function(btn) {
+                btn.addEventListener('click', function() { abrirModalDetalles(this.getAttribute('data-codigo')); });
+            });
+
+            window._progTotalPag = totalPag;
+            window.progIconosPageGo = function(p) {
+                var totalP = window._progTotalPag || 1;
+                var cur = window._progIconosPage || 0;
+                var next = (p === 'prev') ? cur - 1 : (p === 'next') ? cur + 1 : (typeof p === 'number' ? p : cur);
+                if (next < 0 || next >= totalP) return;
+                window._progIconosPage = next;
+                renderizarTarjetasProgramas();
+            };
+            var pagEl = document.getElementById('cardsPaginationProg');
+            if (pagEl && typeof buildPaginationIconos === 'function') {
+                pagEl.innerHTML = buildPaginationIconos({ page: page, pages: totalPag, start: start, end: total === 0 ? 0 : Math.min(start + slice.length, total), recordsDisplay: total });
+            } else if (pagEl) {
+                pagEl.innerHTML = '<span class="dataTables_info">Mostrando ' + (total === 0 ? 0 : start + 1) + ' a ' + Math.min(start + slice.length, total) + ' de ' + total + ' registros</span>';
+            }
+        }
+
+        function aplicarVistaProgramas(vista) {
+            var w = document.getElementById('tablaProgramasWrapper');
+            if (!w) return;
+            w.setAttribute('data-vista', vista);
+            var esLista = (vista === 'lista');
+            var listWrap = document.getElementById('viewListaProg');
+            var iconWrap = document.getElementById('viewTarjetasProg');
+            var progDt = document.getElementById('progDtControls');
+            var progIconos = document.getElementById('progIconosControls');
+            if (listWrap) { listWrap.classList.toggle('hidden', !esLista); listWrap.style.display = esLista ? 'block' : 'none'; }
+            if (iconWrap) { iconWrap.classList.toggle('hidden', esLista); iconWrap.style.display = esLista ? 'none' : 'block'; }
+            var btnLista = document.getElementById('btnViewListaProg'); var btnIconos = document.getElementById('btnViewIconosProg');
+            if (btnLista) btnLista.classList.toggle('active', esLista);
+            if (btnIconos) btnIconos.classList.toggle('active', !esLista);
+            if (esLista) {
+                if (progIconos && progDt) {
+                    var filterEl = progIconos.querySelector('.dataTables_filter');
+                    if (filterEl) { progIconos.removeChild(filterEl); progDt.appendChild(filterEl); }
+                }
+                if (progIconos) progIconos.style.display = 'none';
+                if (progDt) progDt.style.display = '';
+            } else {
+                if (progDt && progIconos) {
+                    var filterEl = progDt.querySelector('.dataTables_filter');
+                    if (filterEl) { progDt.removeChild(filterEl); progIconos.appendChild(filterEl); }
+                }
+                if (progDt) progDt.style.display = 'none';
+                if (progIconos) progIconos.style.display = '';
+                var toolbarRow = progIconos.querySelector('.iconos-toolbar-row');
+                if (!toolbarRow) {
+                    var lengthOptions = [5, 10, 25, 50];
+                    var len = window._progIconosPageSize;
+                    var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
+                        lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select><span>registros</span></label>';
+                    toolbarRow = document.createElement('div');
+                    toolbarRow.className = 'iconos-toolbar-row flex flex-wrap items-center gap-3';
+                    toolbarRow.innerHTML = lengthSelect;
+                    progIconos.insertBefore(toolbarRow, progIconos.firstChild);
+                    if (progIconos.querySelector('.dataTables_filter')) toolbarRow.appendChild(progIconos.querySelector('.dataTables_filter'));
+                    toolbarRow.querySelector('.cards-length-select').addEventListener('change', function() {
+                        window._progIconosPageSize = parseInt(this.value, 10) || 10;
+                        window._progIconosPage = 0;
+                        renderizarTarjetasProgramas();
+                    });
+                }
+                var searchInput = document.querySelector('#progIconosControls .dataTables_filter input');
+                if (searchInput) {
+                    window._progIconosSearch = searchInput.value || '';
+                    searchInput.removeEventListener('input', window._progSearchHandler);
+                    searchInput.removeEventListener('keyup', window._progSearchHandler);
+                    window._progSearchHandler = function() { window._progIconosSearch = searchInput.value || ''; window._progIconosPage = 0; renderizarTarjetasProgramas(); };
+                    searchInput.addEventListener('input', window._progSearchHandler);
+                    searchInput.addEventListener('keyup', window._progSearchHandler);
+                }
+                renderizarTarjetasProgramas();
+            }
+        }
+        document.getElementById('btnViewListaProg').addEventListener('click', function() { aplicarVistaProgramas('lista'); });
+        document.getElementById('btnViewIconosProg').addEventListener('click', function() { aplicarVistaProgramas('iconos'); });
 
         cargarTiposParaFiltro();
         cargarListado();

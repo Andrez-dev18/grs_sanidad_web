@@ -28,17 +28,14 @@ if (!$conexion) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Tipos de Muestra</title>
 
-    <!-- Tailwind CSS -->
-    <link rel="stylesheet" href="../../../css/output.css">
-
-    <!-- Font Awesome para iconos -->
+    <link href="../../../css/output.css" rel="stylesheet">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
-
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
@@ -273,18 +270,24 @@ if (!$conexion) {
                         <button type="button" class="btn-secondary inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-1 sm:order-2" onclick="openTipoMuestraModal('create')">➕ Nuevo Tipo de Muestra</button>
                     </div>
                 </div>
-                <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
-                    <div id="tablaTipoMuestraWrapper" class="p-4" data-vista-tabla-iconos data-vista="">
-                        <div class="view-toggle-group flex items-center gap-2 mb-4">
-                            <button type="button" class="view-toggle-btn active" id="btnViewTablaTM" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
-                            <button type="button" class="view-toggle-btn" id="btnViewIconosTM" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                <div class="bg-white rounded-xl shadow-md p-5 dashboard-tabla-wrapper" id="tablaTipoMuestraWrapper" data-vista="">
+                    <div class="card-body p-0 mt-5">
+                        <div class="reportes-toolbar-row flex flex-wrap items-center justify-between gap-3 mb-3">
+                            <div class="view-toggle-group flex items-center gap-2">
+                                <button type="button" class="view-toggle-btn active" id="btnViewTablaTM" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                                <button type="button" class="view-toggle-btn" id="btnViewIconosTM" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                            </div>
+                            <div id="tipoMuestraDtControls" class="toolbar-dt-controls flex flex-wrap items-center gap-3"></div>
+                            <div id="tipoMuestraIconosControls" class="toolbar-iconos-controls flex flex-wrap items-center gap-3" style="display: none;"></div>
                         </div>
                         <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasTM">
+                            <div id="cardsControlsTopTM" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
                             <div id="cardsContainerTM" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
-                            <div id="cardsPaginationTM" class="flex items-center justify-between mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
+                            <div id="cardsPaginationTM" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-table="#tabla"></div>
                         </div>
-                        <div class="view-lista-wrap table-container overflow-x-auto">
-                            <table id="tabla" class="data-table w-full config-table">
+                        <div class="view-lista-wrap" id="viewListaTM">
+                        <div class="table-wrapper overflow-x-auto">
+                            <table id="tabla" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
                                 <thead>
                                     <tr>
                                         <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
@@ -305,7 +308,7 @@ if (!$conexion) {
                                             $descripcion = htmlspecialchars($row['descripcion'] ?? '');
                                             $descripcion_corta = strlen($descripcion) > 50 ? substr($descripcion, 0, 50) . '...' : $descripcion;
 
-                                            echo '<tr class="hover:bg-gray-50 transition" data-codigo="' . (int)$row['codigo'] . '">';
+                                            echo '<tr data-codigo="' . (int)$row['codigo'] . '">';
                                             echo '<td class="px-6 py-4 text-gray-700">' . $idx . '</td>';
                                             echo '<td class="px-6 py-4 text-gray-700 font-medium">' . htmlspecialchars($row['nombre']) . '</td>';
                                             echo '<td class="px-6 py-4 text-gray-600 text-sm" title="' . $descripcion . '">' . $descripcion_corta . '</td>';
@@ -335,6 +338,7 @@ if (!$conexion) {
                                     ?>
                                 </tbody>
                             </table>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -424,9 +428,7 @@ if (!$conexion) {
 
     <script src="../../../assets/js/configuracion/tipo-muestra.js"></script>
 
-    <!-- DataTables JS -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="../../../assets/js/pagination-iconos.js"></script>
 
     <script>
         var tableTipoMuestra;
@@ -475,10 +477,7 @@ if (!$conexion) {
                 cont.append(card);
             });
             var info = api.page.info();
-            var pagHtml = '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' +
-                '<div class="flex gap-2"><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="tableTipoMuestra && tableTipoMuestra.page(\'previous\').draw(false); renderizarTarjetasTM();">Anterior</button>' +
-                '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="tableTipoMuestra && tableTipoMuestra.page(\'next\').draw(false); renderizarTarjetasTM();">Siguiente</button></div>';
-            $('#cardsPaginationTM').html(pagHtml);
+            $('#cardsPaginationTM').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : ('<span class="dataTables_info">Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>'));
         }
         $(document).ready(function() {
             tableTipoMuestra = $('#tabla').DataTable({

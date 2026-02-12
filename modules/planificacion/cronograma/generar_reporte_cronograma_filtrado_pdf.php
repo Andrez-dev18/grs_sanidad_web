@@ -149,8 +149,8 @@ if (empty($logo) && file_exists(__DIR__ . '/../../logo.png')) {
 $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     body{font-family:"Segoe UI",Arial,sans-serif;font-size:9pt;color:#1e293b;margin:0;padding:12px 14px;}
     .fecha-hora-arriba{position:absolute;top:12px;right:14px;font-size:9pt;color:#475569;z-index:10;}
-    .data-table{width:100%;border-collapse:collapse;font-size:8pt;}
-    .data-table th,.data-table td{padding:4px 6px;border:1px solid #cbd5e1;vertical-align:top;text-align:left;background:#fff;}
+    .data-table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed;border:3px solid #64748b;}
+    .data-table th,.data-table td{padding:4px 6px;border:1px solid #cbd5e1;vertical-align:top;text-align:left;background:#fff;overflow:hidden;}
     .data-table thead th{background-color:#2563eb !important;color:#fff !important;font-weight:bold;}
     .data-table tbody tr.borde-grueso-codprograma{border-bottom:2px solid #64748b;}
     .data-table tbody tr.borde-grueso-codprograma td{border-bottom:2px solid #64748b;}
@@ -167,8 +167,10 @@ if (!empty($logo)) {
 $html .= '<td style="width: 60%; text-align: center; padding: 8px 10px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px; border: 1px solid #cbd5e1;">REPORTE ASIGNACIÓN DE PROGRAMAS</td>';
 $html .= '<td style="width: 20%; background-color: #fff; border: 1px solid #cbd5e1;"></td></tr></table>';
 
-$html .= '<table class="data-table">';
-$html .= '<thead><tr><th>N°</th><th>Cód. Programa</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Fec. Carga</th><th>Fec. Ejecución</th><th>Edad</th></tr></thead><tbody>';
+$pctColCronoFilt = round(100 / 9, 2);
+$html .= '<table class="data-table"><colgroup>';
+for ($i = 0; $i < 9; $i++) $html .= '<col style="width:' . $pctColCronoFilt . '%"/>';
+$html .= '</colgroup><thead><tr><th>N°</th><th>Cód. Programa</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Fec. Carga</th><th>Fec. Ejecución</th><th>Edad de aplicación</th></tr></thead><tbody>';
 if (empty($filas)) {
     $html .= '<tr><td colspan="9" style="text-align:center;color:#64748b;">Sin registros con los filtros aplicados.</td></tr>';
 } else {

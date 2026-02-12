@@ -34,20 +34,6 @@ if (!$cab) {
 $nombrePrograma = $cab['nombre'] ?? $codigo;
 $codTipo = (int)($cab['codTipo'] ?? 0);
 
-// Sigla del tipo de programa (define columnas del reporte)
-$sigla = '';
-if ($codTipo > 0) {
-    $stSigla = $conn->prepare("SELECT sigla FROM san_dim_tipo_programa WHERE codigo = ? LIMIT 1");
-    $stSigla->bind_param("i", $codTipo);
-    $stSigla->execute();
-    $rSigla = $stSigla->get_result();
-    if ($rSigla && $rowSigla = $rSigla->fetch_assoc() && !empty(trim($rowSigla['sigla'] ?? ''))) {
-        $sigla = strtoupper(trim($rowSigla['sigla']));
-        if ($sigla === 'NEC') $sigla = 'NC';
-    }
-    $stSigla->close();
-}
-
 // Detalle del programa (incl. descripcionVacuna, areaGalpon, cantidadPorGalpon si existen)
 $chkExtras = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'descripcionVacuna'");
 $tieneExtras = $chkExtras && $chkExtras->fetch_assoc();
@@ -68,18 +54,12 @@ $conn->close();
 date_default_timezone_set('America/Lima');
 $fechaReporte = date('d/m/Y H:i');
 
-$columnasPorSigla = [
-    'NC' => ['num', 'ubicacion', 'edad'],
-    'PL' => ['num', 'ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'edad'],
-    'GR' => ['num', 'ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'edad'],
-    'MC' => ['num', 'ubicacion', 'producto', 'proveedor', 'dosis', 'area_galpon', 'cantidad_por_galpon', 'unidadDosis', 'edad'],
-    'LD' => ['num', 'ubicacion', 'producto', 'proveedor', 'dosis', 'unidadDosis', 'edad'],
-    'CP' => ['num', 'ubicacion', 'producto', 'proveedor', 'dosis', 'unidadDosis', 'edad'],
-];
+// Todos los campos del detalle (según tipo_programa: ubicacion, producto, unidades, unidadDosis, numeroFrascos, edad, areaGalpon, cantidadPorGalpon) + proveedor, dosis, descripcionVacuna; edad siempre al final
+$colsSinNum = ['ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'unidadDosis', 'area_galpon', 'cantidad_por_galpon', 'edad'];
 $labelsReporte = [
-    'num' => '#', 'ubicacion' => 'Ubicación', 'producto' => 'Producto', 'proveedor' => 'Proveedor', 'unidad' => 'Unidad',
-    'dosis' => 'Dosis', 'descripcion_vacuna' => 'Descripcion', 'numeroFrascos' => 'Nº frascos', 'edad' => 'Edad',
-    'unidadDosis' => 'Unid. dosis', 'area_galpon' => 'Área galpón', 'cantidad_por_galpon' => 'Cant. por galpón'
+    'ubicacion' => 'Ubicación', 'producto' => 'Producto', 'proveedor' => 'Proveedor', 'unidad' => 'Unidad',
+    'dosis' => 'Dosis', 'descripcion_vacuna' => 'Descripción', 'numeroFrascos' => 'Nº frascos', 'unidadDosis' => 'Unid. dosis',
+    'area_galpon' => 'Área galpón', 'cantidad_por_galpon' => 'Cant. por galpón', 'edad' => 'Edad de aplicación'
 ];
 function formatearDescripcionVacuna($s) {
     $s = trim((string)($s ?? ''));
@@ -89,8 +69,45 @@ function formatearDescripcionVacuna($s) {
     if (empty($partes)) return '';
     return "Contra\n" . implode("\n", array_map(function($p) { return '- ' . $p; }, $partes));
 }
-$cols = isset($columnasPorSigla[$sigla]) ? $columnasPorSigla[$sigla] : $columnasPorSigla['PL'];
-$colsSinNum = array_values(array_filter($cols, function($k) { return $k !== 'num'; }));
+function valorClaveDetalleReporte($k, $d) {
+    if ($k === 'edad' || $k === 'num') return '';
+    if ($k === 'ubicacion') return $d['ubicacion'] ?? '';
+    if ($k === 'producto') return $d['nomProducto'] ?? ($d['codProducto'] ?? '');
+    if ($k === 'proveedor') return (trim((string)($d['codProveedor'] ?? '')) !== '' ? $d['codProveedor'] : ($d['nomProveedor'] ?? ''));
+    if ($k === 'unidad') return $d['unidades'] ?? '';
+    if ($k === 'dosis') return $d['dosis'] ?? '';
+    if ($k === 'descripcion_vacuna') return $d['descripcionVacuna'] ?? '';
+    if ($k === 'numeroFrascos') return $d['numeroFrascos'] ?? '';
+    if ($k === 'unidadDosis') return $d['unidadDosis'] ?? '';
+    if ($k === 'area_galpon') return (isset($d['areaGalpon']) && $d['areaGalpon'] !== null && $d['areaGalpon'] !== '') ? (string)$d['areaGalpon'] : '';
+    if ($k === 'cantidad_por_galpon') return (isset($d['cantidadPorGalpon']) && $d['cantidadPorGalpon'] !== null && $d['cantidadPorGalpon'] !== '') ? (string)$d['cantidadPorGalpon'] : '';
+    return '';
+}
+function agruparDetallesPorEdadReporte($detalles, $colsSinNum) {
+    if (empty($detalles)) return [];
+    $colsSinEdad = array_values(array_filter($colsSinNum, function($k) { return $k !== 'edad'; }));
+    $map = [];
+    foreach ($detalles as $d) {
+        $key = implode("\t", array_map(function($k) use ($d) { return valorClaveDetalleReporte($k, $d); }, $colsSinEdad));
+        if (!isset($map[$key])) $map[$key] = [];
+        $map[$key][] = $d;
+    }
+    $out = [];
+    foreach ($map as $group) {
+        $first = $group[0];
+        $ages = [];
+        foreach ($group as $row) {
+            $e = $row['edad'] ?? null;
+            if ($e !== null && $e !== '') $ages[] = trim((string)$e);
+        }
+        $merged = $first;
+        $merged['edad'] = count($ages) > 0 ? implode(' - ', $ages) : (isset($first['edad']) ? (string)$first['edad'] : '');
+        $out[] = $merged;
+    }
+    return $out;
+}
+
+$detalles = agruparDetallesPorEdadReporte($detalles, $colsSinNum);
 
 $cabDespliegue = $tieneDespliegue ? ($cab['despliegue'] ?? '') : '';
 $cabDesc = $cab['descripcion'] ?? '';
@@ -109,26 +126,30 @@ if (empty($logo) && file_exists(__DIR__ . '/../../logo.png')) {
     $logo = '<img src="' . htmlspecialchars($logoBase64) . '" style="height: 20px; vertical-align: top;">';
 }
 
+$numCols = 4 + count($colsSinNum); // cab + detalle
+$pctCol = round(100 / $numCols, 2);
+
 $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     body{font-family:"Segoe UI",Arial,sans-serif;font-size:9pt;color:#1e293b;margin:0;padding:10px;}
     .fecha-hora-arriba{position:absolute;top:8px;right:0;font-size:9pt;color:#475569;z-index:10;}
-    .data-table{width:100%;border-collapse:collapse;font-size:8pt;}
-    .data-table th,.data-table td{padding:4px 6px;border:1px solid #cbd5e1;vertical-align:top;text-align:left;background:#fff;}
+    .data-table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed;border:1px solid #cbd5e1;}
+    .data-table th,.data-table td{padding:4px 6px;border:1px solid #cbd5e1;vertical-align:top;text-align:left;background:#fff;overflow:hidden;}
     .data-table thead th{background-color:#2563eb !important;color:#fff !important;font-weight:bold;}
 </style></head><body style="position:relative;">';
 
 $html .= '<div class="fecha-hora-arriba">' . htmlspecialchars($fechaReporte) . '</div>';
-$html .= '<table width="100%" style="border-collapse: collapse; border: 1px solid #cbd5e1; margin-bottom: 10px; margin-top: 24px;">';
+$html .= '<table width="100%" style="border-collapse: collapse; margin-bottom: 10px; margin-top: 24px;">';
 $html .= '<tr>';
 if (!empty($logo)) {
-    $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap; border: 1px solid #cbd5e1;">' . $logo . ' GRANJA RINCONADA DEL SUR S.A.</td>';
+    $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap;">' . $logo . ' GRANJA RINCONADA DEL SUR S.A.</td>';
 } else {
-    $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap; border: 1px solid #cbd5e1;">GRANJA RINCONADA DEL SUR S.A.</td>';
+    $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap;">GRANJA RINCONADA DEL SUR S.A.</td>';
 }
-$html .= '<td style="width: 60%; text-align: center; padding: 5px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px; border: 1px solid #cbd5e1;">REPORTE ' . htmlspecialchars(strtoupper($nombrePrograma)) . '</td>';
-$html .= '<td style="width: 20%; background-color: #fff; border: 1px solid #cbd5e1;"></td></tr></table>';
-$html .= '<table class="data-table">';
-$html .= '<thead><tr>';
+$html .= '<td style="width: 60%; text-align: center; padding: 5px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px;">REPORTE ' . htmlspecialchars(strtoupper($nombrePrograma)) . '</td>';
+$html .= '<td style="width: 20%; background-color: #fff;"></td></tr></table>';
+$html .= '<table class="data-table"><colgroup>';
+for ($i = 0; $i < $numCols; $i++) $html .= '<col style="width:' . $pctCol . '%"/>';
+$html .= '</colgroup><thead><tr>';
 $html .= '<th>Código</th><th>Nombre programa</th><th>Despliegue</th><th>Descripción</th>';
 foreach ($colsSinNum as $k) {
     $html .= '<th>' . htmlspecialchars($labelsReporte[$k] ?? $k) . '</th>';
@@ -155,17 +176,19 @@ if (empty($detalles)) {
             } elseif ($k === 'producto') {
                 $html .= '<td>' . htmlspecialchars($d['nomProducto'] ?? ($d['codProducto'] ?? '')) . '</td>';
             } elseif ($k === 'proveedor') {
-                $html .= '<td>' . htmlspecialchars($d['nomProveedor'] ?? '') . '</td>';
+                $proveedorVal = (trim((string)($d['codProveedor'] ?? '')) !== '') ? ($d['codProveedor'] ?? '') : ($d['nomProveedor'] ?? '');
+                $html .= '<td>' . htmlspecialchars($proveedorVal) . '</td>';
             } elseif ($k === 'unidad') {
                 $html .= '<td>' . htmlspecialchars($d['unidades'] ?? '') . '</td>';
             } elseif ($k === 'dosis') {
                 $html .= '<td>' . htmlspecialchars($d['dosis'] ?? '') . '</td>';
             } elseif ($k === 'descripcion_vacuna') {
-                $html .= '<td>' . htmlspecialchars($d['descripcionVacuna'] ?? '') . '</td>';
+                $html .= '<td style="white-space:pre-wrap;">' . htmlspecialchars(formatearDescripcionVacuna($d['descripcionVacuna'] ?? '')) . '</td>';
             } elseif ($k === 'numeroFrascos') {
                 $html .= '<td>' . htmlspecialchars($d['numeroFrascos'] ?? '') . '</td>';
             } elseif ($k === 'edad') {
-                $html .= '<td>' . (isset($d['edad']) ? (int)$d['edad'] : '') . '</td>';
+                $edadVal = $d['edad'] ?? '';
+                $html .= '<td>' . htmlspecialchars($edadVal !== '' && $edadVal !== null ? $edadVal : '') . '</td>';
             } elseif ($k === 'unidadDosis') {
                 $html .= '<td>' . htmlspecialchars($d['unidadDosis'] ?? '') . '</td>';
             } elseif ($k === 'area_galpon') {

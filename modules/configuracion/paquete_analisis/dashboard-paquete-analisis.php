@@ -26,13 +26,14 @@ if (!$conexion) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Paquetes de Muestra</title>
-    <link rel="stylesheet" href="../../../css/output.css">
+    <link href="../../../css/output.css" rel="stylesheet">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
@@ -276,18 +277,24 @@ if (!$conexion) {
         </div>
 
         <!-- Tabla de paquetes -->
-        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
-            <div id="tablaPaquetesWrapper" class="p-4" data-vista-tabla-iconos data-vista="">
-                    <div class="view-toggle-group flex items-center gap-2 mb-4">
-                        <button type="button" class="view-toggle-btn active" id="btnViewTablaPaq" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
-                        <button type="button" class="view-toggle-btn" id="btnViewIconosPaq" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+        <div class="bg-white rounded-xl shadow-md p-5 dashboard-tabla-wrapper" id="tablaPaquetesWrapper" data-vista="">
+            <div class="card-body p-0 mt-5">
+                    <div class="reportes-toolbar-row flex flex-wrap items-center justify-between gap-3 mb-3">
+                        <div class="view-toggle-group flex items-center gap-2">
+                            <button type="button" class="view-toggle-btn active" id="btnViewTablaPaq" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                            <button type="button" class="view-toggle-btn" id="btnViewIconosPaq" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                        </div>
+                        <div id="paquetesDtControls" class="toolbar-dt-controls flex flex-wrap items-center gap-3"></div>
+                        <div id="paquetesIconosControls" class="toolbar-iconos-controls flex flex-wrap items-center gap-3" style="display: none;"></div>
                     </div>
                     <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasPaq">
+                        <div id="cardsControlsTopPaq" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
                         <div id="cardsContainerPaq" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
-                        <div id="cardsPaginationPaq" class="flex items-center justify-between mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
+                        <div id="cardsPaginationPaq" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-table="#tablaPaquetes"></div>
                     </div>
-                    <div class="view-lista-wrap table-wrapper">
-                        <table id="tablaPaquetes" class="data-table display config-table" style="width:100%">
+                    <div class="view-lista-wrap" id="viewListaPaq">
+                    <div class="table-wrapper overflow-x-auto">
+                        <table id="tablaPaquetes" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
                             <thead>
                                 <tr>
                                     <th class="px-4 py-3">N°</th>
@@ -354,6 +361,7 @@ if (!$conexion) {
                                 <?php } ?>
                             </tbody>
                         </table>
+                    </div>
                     </div>
                 </div>
         </div>
@@ -463,8 +471,7 @@ if (!$conexion) {
             </script>
         </div>
 
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-        <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+        <script src="../../../assets/js/pagination-iconos.js"></script>
         <script src="../../../assets/js/configuracion/paquete_analisis.js"></script>
 
         <script>
@@ -523,10 +530,7 @@ if (!$conexion) {
                     cont.append(card);
                 });
                 var info = api.page.info();
-                var pagHtml = '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' +
-                    '<div class="flex gap-2"><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="tablePaquetes && tablePaquetes.page(\'previous\').draw(false); renderizarTarjetasPaq();">Anterior</button>' +
-                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="tablePaquetes && tablePaquetes.page(\'next\').draw(false); renderizarTarjetasPaq();">Siguiente</button></div>';
-                $('#cardsPaginationPaq').html(pagHtml);
+                $('#cardsPaginationPaq').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : ('<span class="dataTables_info">Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>'));
             }
             tablePaquetes = $('#tablaPaquetes').DataTable({
                 language: { url: '../../../assets/i18n/es-ES.json' },

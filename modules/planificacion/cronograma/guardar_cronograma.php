@@ -30,13 +30,10 @@ $usuario = $_SESSION['usuario'] ?? 'WEB';
 // Columnas opcionales en san_fact_cronograma
 $tieneNomGranja = false;
 $tieneEdad = false;
-$tienePosDetalle = false;
 $chkNom = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'nomGranja'");
 if ($chkNom && $chkNom->num_rows > 0) $tieneNomGranja = true;
 $chkEdad = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'edad'");
 if ($chkEdad && $chkEdad->num_rows > 0) $tieneEdad = true;
-$chkPosDet = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'posDetalle'");
-if ($chkPosDet && $chkPosDet->num_rows > 0) $tienePosDetalle = true;
 $chkNumCrono = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'numCronograma'");
 $tieneNumCronograma = $chkNumCrono && $chkNumCrono->num_rows > 0;
 
@@ -80,11 +77,6 @@ if (is_array($items) && !empty($items)) {
         $placeholders .= ", ?";
         $types .= "i";
     }
-    if ($tienePosDetalle) {
-        $cols .= ", posDetalle";
-        $placeholders .= ", ?";
-        $types .= "i";
-    }
     $stmt = $conn->prepare("INSERT INTO san_fact_cronograma ($cols) VALUES ($placeholders)");
     if (!$stmt) {
         echo json_encode(['success' => false, 'message' => 'Error prepare: ' . $conn->error]);
@@ -107,8 +99,6 @@ if (is_array($items) && !empty($items)) {
             $edadVal = isset($f['edad']) ? (int)$f['edad'] : (isset($it['edad']) ? (int)$it['edad'] : (int)$edadPrograma);
             if ($edadVal < 0) $edadVal = 0;
             if ($edadVal > 999) $edadVal = 999;
-            $posDetalleVal = isset($f['posDetalle']) ? (int)$f['posDetalle'] : 0;
-            if ($posDetalleVal < 1) $posDetalleVal = 0;
             $fechaCarga = isset($f['fechaCarga']) ? (is_string($f['fechaCarga']) ? $f['fechaCarga'] : date('Y-m-d', strtotime($f['fechaCarga']))) : '';
             $fechaEjecucion = isset($f['fechaEjecucion']) ? (is_string($f['fechaEjecucion']) ? $f['fechaEjecucion'] : date('Y-m-d', strtotime($f['fechaEjecucion']))) : (is_string($f) ? $f : date('Y-m-d', strtotime($f)));
             if ($fechaCarga === '') $fechaCarga = $fechaEjecucion;
@@ -116,7 +106,6 @@ if (is_array($items) && !empty($items)) {
             if ($tieneNumCronograma) $bindVals[] = $numCronograma;
             if ($tieneNomGranja) $bindVals[] = $nomGranja;
             if ($tieneEdad) $bindVals[] = $edadVal;
-            if ($tienePosDetalle) $bindVals[] = $posDetalleVal;
             $stmt->bind_param($types, ...$bindVals);
             if (!$stmt->execute()) {
                 $stmt->close();

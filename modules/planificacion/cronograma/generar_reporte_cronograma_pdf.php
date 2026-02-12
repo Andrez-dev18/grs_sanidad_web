@@ -88,24 +88,25 @@ if (empty($logo) && file_exists(__DIR__ . '/../../logo.png')) {
 $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     body{font-family:"Segoe UI",Arial,sans-serif;font-size:9pt;color:#1e293b;margin:0;padding:12px 14px;}
     .fecha-hora-arriba{position:absolute;top:12px;right:14px;font-size:9pt;color:#475569;z-index:10;}
-    .data-table{width:100%;border-collapse:collapse;font-size:8pt;}
-    .data-table th,.data-table td{padding:4px 6px;border:1px solid #cbd5e1;vertical-align:top;text-align:left;background:#fff;}
+    .data-table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed;border:1px solid #cbd5e1;}
+    .data-table th,.data-table td{padding:4px 6px;border:1px solid #cbd5e1;vertical-align:top;text-align:left;background:#fff;overflow:hidden;}
     .data-table thead th{background-color:#2563eb !important;color:#fff !important;font-weight:bold;}
 </style></head><body style="position:relative;">';
 
 $html .= '<div class="fecha-hora-arriba">' . htmlspecialchars($fechaReporte) . '</div>';
-$html .= '<table width="100%" style="border-collapse: collapse; border: 1px solid #cbd5e1; margin-bottom: 10px; margin-top: 28px;">';
+$html .= '<table width="100%" style="border-collapse: collapse; margin-bottom: 10px; margin-top: 28px;">';
 $html .= '<tr>';
 if (!empty($logo)) {
-    $html .= '<td style="width: 20%; text-align: left; padding: 8px 10px; background-color: #fff; font-size: 8pt; white-space: nowrap; border: 1px solid #cbd5e1;">' . $logo . ' GRANJA RINCONADA DEL SUR S.A.</td>';
+    $html .= '<td style="width: 20%; text-align: left; padding: 8px 10px; background-color: #fff; font-size: 8pt; white-space: nowrap;">' . $logo . ' GRANJA RINCONADA DEL SUR S.A.</td>';
 } else {
-    $html .= '<td style="width: 20%; text-align: left; padding: 8px 10px; background-color: #fff; font-size: 8pt; white-space: nowrap; border: 1px solid #cbd5e1;">GRANJA RINCONADA DEL SUR S.A.</td>';
+    $html .= '<td style="width: 20%; text-align: left; padding: 8px 10px; background-color: #fff; font-size: 8pt; white-space: nowrap;">GRANJA RINCONADA DEL SUR S.A.</td>';
 }
-$html .= '<td style="width: 60%; text-align: center; padding: 8px 10px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px; border: 1px solid #cbd5e1;">REPORTE CRONOGRAMA</td>';
-$html .= '<td style="width: 20%; background-color: #fff; border: 1px solid #cbd5e1;"></td></tr></table>';
+$html .= '<td style="width: 60%; text-align: center; padding: 8px 10px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px;">REPORTE CRONOGRAMA</td>';
+$html .= '<td style="width: 20%; background-color: #fff;"></td></tr></table>';
 
-$html .= '<table class="data-table">';
-$html .= '<thead><tr><th>N°</th><th>Cód. Programa</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Edad</th><th>Fec. Carga</th><th>Fec. Ejecución</th></tr></thead><tbody>';
+$html .= '<table class="data-table"><colgroup>';
+$html .= '<col style="width:4%"/><col style="width:12%"/><col style="width:10%"/><col style="width:12%"/><col style="width:10%"/><col style="width:10%"/><col style="width:6%"/><col style="width:12%"/><col style="width:14%"/>';
+$html .= '</colgroup><thead><tr><th>N°</th><th>Cód. Programa</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Edad</th><th>Fec. Carga</th><th>Fec. Ejecución</th></tr></thead><tbody>';
 if (empty($filas)) {
     $html .= '<tr><td colspan="9" style="text-align:center;color:#64748b;">Sin registros en el cronograma.</td></tr>';
 } else {

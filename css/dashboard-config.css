@@ -7,62 +7,120 @@
 .filter-row-periodo .min-w-\[120px\] { min-width: 180px !important; }
 .filter-row-periodo .min-w-\[130px\] { min-width: 200px !important; }
 
-/* ========== Card de filtros compacta (menor altura, todo más junto) ========== */
+/* ========== Card de filtros compacta: misma altura de campos y aspecto compacto ========== */
 /* Cabecera de la card: menos padding */
 .card-filtros-compacta > button,
 .card-filtros-compacta > div[onclick],
 .card-filtros-compacta .border-b > button {
-    padding: 0.35rem 1rem !important;
+    padding: 0.5rem 1rem !important;
 }
 .card-filtros-compacta > button h3,
 .card-filtros-compacta > div[onclick] h3,
 .card-filtros-compacta .border-b > button h3 {
     font-size: 0.875rem !important;
 }
-/* Contenido de la card: menos padding */
+/* Contenido de la card: menos padding (todos los IDs de contenido de filtros) */
 .card-filtros-compacta #contenidoFiltros,
 .card-filtros-compacta #filtrosContent,
-.card-filtros-compacta #contenidoFiltrosProgramas {
+.card-filtros-compacta #contenidoFiltrosProgramas,
+.card-filtros-compacta #contenidoFiltrosCronograma {
     padding: 0.5rem 1rem 0.75rem !important;
+}
+/* Todos los labels dentro de la card: misma altura de línea y margen */
+.card-filtros-compacta label {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.2rem !important;
+    line-height: 1.2;
+}
+/* Misma altura para TODOS los inputs y selects de la card (compacto) */
+.card-filtros-compacta input[type="date"],
+.card-filtros-compacta input[type="month"],
+.card-filtros-compacta input[type="text"],
+.card-filtros-compacta input[type="number"],
+.card-filtros-compacta select,
+.card-filtros-compacta .form-control {
+    height: 1.875rem !important;
+    min-height: 1.875rem !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.8125rem !important;
+    line-height: 1.25;
+    box-sizing: border-box;
+}
+/* Select2 y botones tipo dropdown dentro de la card (misma altura si aplica) */
+.card-filtros-compacta .select2-container--default .select2-selection--single {
+    height: 1.875rem !important;
+    min-height: 1.875rem !important;
+    padding: 0.25rem 0.5rem !important;
+}
+.card-filtros-compacta .select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 1.4 !important;
+}
+.card-filtros-compacta #dropdownGranjaBtn,
+.card-filtros-compacta button[id^="dropdown"] {
+    height: 1.875rem !important;
+    min-height: 1.875rem !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.8125rem !important;
 }
 /* Fila periodo: menos margen y gap */
 .card-filtros-compacta .filter-row-periodo {
     margin-bottom: 0.5rem !important;
     gap: 0.35rem 0.75rem !important;
 }
-.card-filtros-compacta .filter-row-periodo label {
-    font-size: 0.75rem !important;
-    margin-bottom: 0.2rem !important;
-}
-.card-filtros-compacta .filter-row-periodo input,
-.card-filtros-compacta .filter-row-periodo select {
-    padding: 0.35rem 0.5rem !important;
-    font-size: 0.8125rem !important;
-    min-height: auto !important;
-}
 .card-filtros-compacta .filter-row-periodo .min-w-\[180px\] label,
 .card-filtros-compacta .filter-row-periodo .min-w-\[200px\] label {
     margin-bottom: 0.2rem !important;
 }
-/* Filas siguientes dentro del contenido del filtro (grid de otros filtros) */
+/* Filas siguientes (grid de otros filtros): mismo gap compacto */
+.card-filtros-compacta #contenidoFiltros .grid,
+.card-filtros-compacta #filtrosContent .grid,
+.card-filtros-compacta #contenidoFiltrosProgramas .grid,
+.card-filtros-compacta #contenidoFiltrosCronograma .grid {
+    gap: 0.5rem 1rem !important;
+}
 .card-filtros-compacta #contenidoFiltros .grid.gap-6,
 .card-filtros-compacta #filtrosContent .grid.gap-6,
-.card-filtros-compacta #contenidoFiltrosProgramas .grid.gap-6 { gap: 0.5rem 1rem !important; }
+.card-filtros-compacta #contenidoFiltrosProgramas .grid.gap-6,
+.card-filtros-compacta #contenidoFiltrosCronograma .grid.gap-6 { gap: 0.5rem 1rem !important; }
 .card-filtros-compacta #contenidoFiltros .grid.gap-4,
 .card-filtros-compacta #filtrosContent .grid.gap-4,
-.card-filtros-compacta #contenidoFiltrosProgramas .grid.gap-4 { gap: 0.35rem 0.75rem !important; }
+.card-filtros-compacta #contenidoFiltrosProgramas .grid.gap-4,
+.card-filtros-compacta #contenidoFiltrosCronograma .grid.gap-4 { gap: 0.35rem 0.75rem !important; }
+/* Margenes compactos en contenido de filtros */
 .card-filtros-compacta #contenidoFiltros .mb-6,
 .card-filtros-compacta #filtrosContent .mb-6,
-.card-filtros-compacta #contenidoFiltrosProgramas .mb-6 { margin-bottom: 0.5rem !important; }
+.card-filtros-compacta #contenidoFiltrosProgramas .mb-6,
+.card-filtros-compacta #contenidoFiltrosCronograma .mb-6 { margin-bottom: 0.5rem !important; }
 .card-filtros-compacta #contenidoFiltros .mb-4,
 .card-filtros-compacta #filtrosContent .mb-4,
-.card-filtros-compacta #contenidoFiltrosProgramas .mb-4 { margin-bottom: 0.35rem !important; }
+.card-filtros-compacta #contenidoFiltrosProgramas .mb-4,
+.card-filtros-compacta #contenidoFiltrosCronograma .mb-4 { margin-bottom: 0.35rem !important; }
 .card-filtros-compacta #contenidoFiltros .mt-6,
 .card-filtros-compacta #filtrosContent .mt-6,
-.card-filtros-compacta #contenidoFiltrosProgramas .mt-6 { margin-top: 0.5rem !important; }
+.card-filtros-compacta #contenidoFiltrosProgramas .mt-6,
+.card-filtros-compacta #contenidoFiltrosCronograma .mt-6 { margin-top: 0.5rem !important; }
 .card-filtros-compacta #contenidoFiltros .mt-4,
 .card-filtros-compacta #filtrosContent .mt-4,
-.card-filtros-compacta #contenidoFiltrosProgramas .mt-4 { margin-top: 0.35rem !important; }
+.card-filtros-compacta #contenidoFiltrosProgramas .mt-4,
+.card-filtros-compacta #contenidoFiltrosCronograma .mt-4 { margin-top: 0.35rem !important; }
+/* Acciones (Filtrar, Limpiar): botones compactos */
+.card-filtros-compacta .dashboard-actions,
+.card-filtros-compacta .flex.flex-wrap.items-center.gap-3 {
+    margin-top: 0.5rem !important;
+    gap: 0.35rem 0.75rem !important;
+}
+.card-filtros-compacta .dashboard-actions button,
+.card-filtros-compacta .flex.flex-wrap.items-center.gap-3 button {
+    padding: 0.3rem 0.6rem !important;
+    font-size: 0.8125rem !important;
+    height: 1.875rem !important;
+    min-height: 1.875rem !important;
+}
+/* Border-t / pt del contenido (cronograma, programas) */
+.card-filtros-compacta #contenidoFiltrosCronograma .border-t,
+.card-filtros-compacta #contenidoFiltrosProgramas .border-t {
+    padding-top: 0.5rem !important;
+}
 
 /* Botones: mismo estilo que tipo_muestra */
 .btn-export {
@@ -94,125 +152,538 @@
     color: #fff;
 }
 
-/* ========== Tablas unificadas: cualquier tabla con clase .config-table ========== */
+/* ========== Contenedor de tablas (estilo seguimiento): scroll suave y compacto ========== */
+.table-wrapper {
+    overflow-x: auto;
+    overflow-y: visible;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 1rem;
+    -webkit-overflow-scrolling: touch;
+}
+.table-wrapper::-webkit-scrollbar {
+    height: 8px;
+}
+.table-wrapper::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+.table-wrapper::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 8px;
+}
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
 
-/* Cabecera: franja azul, todas las columnas igual */
+/* ========== Tablas unificadas: compactas, estilo seguimiento, menos scroll horizontal ========== */
+/* Base: todas .data-table y .config-table */
+.data-table,
+.config-table,
+table.data-table,
+table.config-table {
+    width: 100% !important;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+    table-layout: auto;
+    min-width: 0;
+}
+.data-table thead th,
 .config-table thead th,
 .data-table.config-table thead th {
     background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
     color: #ffffff !important;
     font-weight: 600;
+    font-size: 0.75rem;
     border: none;
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.6rem;
+    text-align: left;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
-
-/* Celdas: sin color por columna, mismo estilo en todas */
+/* Esquinas superiores redondeadas de la cabecera (como en reportes) */
+.data-table thead tr:first-child th:first-child,
+.config-table thead tr:first-child th:first-child,
+.data-table.config-table thead tr:first-child th:first-child {
+    border-top-left-radius: 0.5rem;
+}
+.data-table thead tr:first-child th:last-child,
+.config-table thead tr:first-child th:last-child,
+.data-table.config-table thead tr:first-child th:last-child {
+    border-top-right-radius: 0.5rem;
+}
+.data-table tbody td,
 .config-table tbody td,
 .data-table.config-table tbody td {
     font-weight: normal !important;
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     color: #374151;
     border-bottom: 1px solid #e5e7eb;
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.6rem;
     text-align: left;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
+    max-width: 1px;
+}
+.data-table tbody td.max-w-none,
+.config-table tbody td.max-w-none {
+    max-width: none;
 }
 
-/* Tabla base cuando usa .config-table */
-.data-table.config-table,
-table.config-table {
-    width: 100% !important;
-    border-collapse: collapse;
-    min-width: 1200px;
+/* Opcional: columna que no debe envolver (añadir clase .whitespace-nowrap en th/td si hace falta) */
+.data-table .whitespace-nowrap,
+.config-table .whitespace-nowrap {
+    white-space: nowrap !important;
+    max-width: none !important;
 }
 
-/* Filas alternas: impar blanca, par gris claro (ninguna columna con color especial) */
+/* Filas alternas */
+.data-table tbody tr:nth-child(odd),
 .config-table tbody tr:nth-child(odd),
-.config-table tbody tr.odd,
 .data-table.config-table tbody tr:nth-child(odd),
 .data-table.config-table tbody tr.odd {
     background-color: #ffffff;
 }
+.data-table tbody tr:nth-child(even),
 .config-table tbody tr:nth-child(even),
-.config-table tbody tr.even,
 .data-table.config-table tbody tr:nth-child(even),
 .data-table.config-table tbody tr.even {
     background-color: #f8fafc;
 }
 
-/* Tablas reportes y necropsias: forzar por ID (stripeClasses:[] en JS evita odd/even de DataTables) */
-#tablaReportes thead th,
-#tabla thead th {
-    background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
-    color: #ffffff !important;
-    font-weight: 600 !important;
-    border: none !important;
-    padding: 0.75rem 1rem !important;
-}
-#tablaReportes tbody td,
-#tabla tbody td {
-    font-weight: normal !important;
-    font-size: 0.875rem !important;
-    color: #374151 !important;
-    border-bottom: 1px solid #e5e7eb !important;
-    padding: 0.75rem 1rem !important;
-}
-#tablaReportes tbody tr:nth-child(odd),
-#tabla tbody tr:nth-child(odd) {
-    background-color: #ffffff !important;
-}
-#tablaReportes tbody tr:nth-child(even),
-#tabla tbody tr:nth-child(even) {
-    background-color: #f8fafc !important;
-}
-#tablaReportes tbody tr:hover,
-#tabla tbody tr:hover {
-    background-color: #eff6ff !important;
-}
-#tablaReportes tbody tr:hover td,
-#tabla tbody tr:hover td,
-#tablaPendientes tbody tr:hover td {
-    color: #1e40af !important;
-}
-#tablaPendientes thead th { background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important; color: #ffffff !important; font-weight: 600 !important; padding: 0.75rem 1rem !important; }
-#tablaPendientes tbody tr:nth-child(odd) { background-color: #ffffff !important; }
-#tablaPendientes tbody tr:nth-child(even) { background-color: #f8fafc !important; }
-#tablaPendientes tbody tr:hover { background-color: #eff6ff !important; }
-#tablaPendientes tbody td { padding: 0.75rem 1rem !important; border-bottom: 1px solid #e5e7eb !important; }
-
 /* Hover fila */
+.data-table tbody tr:hover,
 .config-table tbody tr:hover,
 .data-table.config-table tbody tr:hover {
     background-color: #eff6ff !important;
 }
+.data-table tbody tr:hover td,
 .config-table tbody tr:hover td,
 .data-table.config-table tbody tr:hover td {
     color: #1e40af;
 }
 
-/* DataTables: controles mostrar y buscar */
+/* Tablas por ID (reportes, seguimiento, necropsias, tracking, programas, cronograma, configuracion) */
+#tablaReportes thead th,
+#tabla thead th,
+#tablaResultados thead th,
+#tablaPendientes thead th,
+#tablaCronograma thead th,
+#tablaProgramas thead th,
+#tablaProveedor thead th,
+#tablaTipoPrograma thead th,
+#tablaVacuna thead th,
+#tablaRespuesta thead th,
+#tablaAnalisis thead th,
+#tablaPaquetes thead th,
+#tablaEnfermedades thead th,
+#tablaEmpTrans thead th,
+#tablaProductosMitm thead th,
+#tablaGranjasEspecifico thead th,
+#tablaGranjasZonas thead th,
+#tablaProgramaEspecifico thead th,
+#tablaProgramaZonas thead th {
+    background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    border: none !important;
+    padding: 0.5rem 0.6rem !important;
+}
+
+/* Con scrollX, DataTables duplica el thead: solo mostrar cabecera en la copia fija (scrollHead) */
+.dataTables_scrollBody .data-table thead th,
+.dataTables_scrollBody .config-table thead th {
+    background: transparent !important;
+    color: transparent !important;
+    border: none !important;
+}
+
+/* Quitar color especial de la primera columna (DataTables añade .sorting_1 con box-shadow/fondo gris) */
+#tablaReportes .sorting_1,
+#tablaReportes .sorting_2,
+#tablaReportes .sorting_3,
+#tablaResultados .sorting_1,
+#tablaResultados .sorting_2,
+#tablaResultados .sorting_3,
+#tablaPendientes .sorting_1,
+#tablaPendientes .sorting_2,
+#tablaPendientes .sorting_3,
+#tabla .sorting_1,
+#tabla .sorting_2,
+#tabla .sorting_3,
+#tablaLaboratorio .sorting_1,
+#tablaLaboratorio .sorting_2,
+#tablaLaboratorio .sorting_3,
+#tablaAnalisis .sorting_1,
+#tablaAnalisis .sorting_2,
+#tablaAnalisis .sorting_3,
+#tablaPaquetes .sorting_1,
+#tablaPaquetes .sorting_2,
+#tablaPaquetes .sorting_3,
+#tablaRespuesta .sorting_1,
+#tablaRespuesta .sorting_2,
+#tablaRespuesta .sorting_3,
+#tablaEmpTrans .sorting_1,
+#tablaEmpTrans .sorting_2,
+#tablaEmpTrans .sorting_3,
+#tablaProveedor .sorting_1,
+#tablaProveedor .sorting_2,
+#tablaProveedor .sorting_3,
+#tablaEnfermedades .sorting_1,
+#tablaEnfermedades .sorting_2,
+#tablaEnfermedades .sorting_3,
+#tablaTipoPrograma .sorting_1,
+#tablaTipoPrograma .sorting_2,
+#tablaTipoPrograma .sorting_3,
+#tablaVacuna .sorting_1,
+#tablaVacuna .sorting_2,
+#tablaVacuna .sorting_3 {
+    box-shadow: none !important;
+    background-color: inherit !important;
+}
+#tablaReportes tbody tr:nth-child(odd) .sorting_1,
+#tablaReportes tbody tr:nth-child(odd) .sorting_2,
+#tablaReportes tbody tr:nth-child(odd) .sorting_3,
+#tablaResultados tbody tr:nth-child(odd) .sorting_1,
+#tablaResultados tbody tr:nth-child(odd) .sorting_2,
+#tablaResultados tbody tr:nth-child(odd) .sorting_3,
+#tablaPendientes tbody tr:nth-child(odd) .sorting_1,
+#tablaPendientes tbody tr:nth-child(odd) .sorting_2,
+#tablaPendientes tbody tr:nth-child(odd) .sorting_3,
+#tabla tbody tr:nth-child(odd) .sorting_1,
+#tabla tbody tr:nth-child(odd) .sorting_2,
+#tabla tbody tr:nth-child(odd) .sorting_3,
+#tablaLaboratorio tbody tr:nth-child(odd) .sorting_1,
+#tablaLaboratorio tbody tr:nth-child(odd) .sorting_2,
+#tablaLaboratorio tbody tr:nth-child(odd) .sorting_3,
+#tablaAnalisis tbody tr:nth-child(odd) .sorting_1,
+#tablaAnalisis tbody tr:nth-child(odd) .sorting_2,
+#tablaAnalisis tbody tr:nth-child(odd) .sorting_3,
+#tablaPaquetes tbody tr:nth-child(odd) .sorting_1,
+#tablaPaquetes tbody tr:nth-child(odd) .sorting_2,
+#tablaPaquetes tbody tr:nth-child(odd) .sorting_3,
+#tablaRespuesta tbody tr:nth-child(odd) .sorting_1,
+#tablaRespuesta tbody tr:nth-child(odd) .sorting_2,
+#tablaRespuesta tbody tr:nth-child(odd) .sorting_3,
+#tablaEmpTrans tbody tr:nth-child(odd) .sorting_1,
+#tablaEmpTrans tbody tr:nth-child(odd) .sorting_2,
+#tablaEmpTrans tbody tr:nth-child(odd) .sorting_3,
+#tablaProveedor tbody tr:nth-child(odd) .sorting_1,
+#tablaProveedor tbody tr:nth-child(odd) .sorting_2,
+#tablaProveedor tbody tr:nth-child(odd) .sorting_3,
+#tablaEnfermedades tbody tr:nth-child(odd) .sorting_1,
+#tablaEnfermedades tbody tr:nth-child(odd) .sorting_2,
+#tablaEnfermedades tbody tr:nth-child(odd) .sorting_3,
+#tablaTipoPrograma tbody tr:nth-child(odd) .sorting_1,
+#tablaTipoPrograma tbody tr:nth-child(odd) .sorting_2,
+#tablaTipoPrograma tbody tr:nth-child(odd) .sorting_3,
+#tablaVacuna tbody tr:nth-child(odd) .sorting_1,
+#tablaVacuna tbody tr:nth-child(odd) .sorting_2,
+#tablaVacuna tbody tr:nth-child(odd) .sorting_3 {
+    background-color: #ffffff !important;
+}
+#tablaReportes tbody tr:nth-child(even) .sorting_1,
+#tablaReportes tbody tr:nth-child(even) .sorting_2,
+#tablaReportes tbody tr:nth-child(even) .sorting_3,
+#tablaResultados tbody tr:nth-child(even) .sorting_1,
+#tablaResultados tbody tr:nth-child(even) .sorting_2,
+#tablaResultados tbody tr:nth-child(even) .sorting_3,
+#tablaPendientes tbody tr:nth-child(even) .sorting_1,
+#tablaPendientes tbody tr:nth-child(even) .sorting_2,
+#tablaPendientes tbody tr:nth-child(even) .sorting_3,
+#tabla tbody tr:nth-child(even) .sorting_1,
+#tabla tbody tr:nth-child(even) .sorting_2,
+#tabla tbody tr:nth-child(even) .sorting_3,
+#tablaLaboratorio tbody tr:nth-child(even) .sorting_1,
+#tablaLaboratorio tbody tr:nth-child(even) .sorting_2,
+#tablaLaboratorio tbody tr:nth-child(even) .sorting_3,
+#tablaAnalisis tbody tr:nth-child(even) .sorting_1,
+#tablaAnalisis tbody tr:nth-child(even) .sorting_2,
+#tablaAnalisis tbody tr:nth-child(even) .sorting_3,
+#tablaPaquetes tbody tr:nth-child(even) .sorting_1,
+#tablaPaquetes tbody tr:nth-child(even) .sorting_2,
+#tablaPaquetes tbody tr:nth-child(even) .sorting_3,
+#tablaRespuesta tbody tr:nth-child(even) .sorting_1,
+#tablaRespuesta tbody tr:nth-child(even) .sorting_2,
+#tablaRespuesta tbody tr:nth-child(even) .sorting_3,
+#tablaEmpTrans tbody tr:nth-child(even) .sorting_1,
+#tablaEmpTrans tbody tr:nth-child(even) .sorting_2,
+#tablaEmpTrans tbody tr:nth-child(even) .sorting_3,
+#tablaProveedor tbody tr:nth-child(even) .sorting_1,
+#tablaProveedor tbody tr:nth-child(even) .sorting_2,
+#tablaProveedor tbody tr:nth-child(even) .sorting_3,
+#tablaEnfermedades tbody tr:nth-child(even) .sorting_1,
+#tablaEnfermedades tbody tr:nth-child(even) .sorting_2,
+#tablaEnfermedades tbody tr:nth-child(even) .sorting_3,
+#tablaTipoPrograma tbody tr:nth-child(even) .sorting_1,
+#tablaTipoPrograma tbody tr:nth-child(even) .sorting_2,
+#tablaTipoPrograma tbody tr:nth-child(even) .sorting_3,
+#tablaVacuna tbody tr:nth-child(even) .sorting_1,
+#tablaVacuna tbody tr:nth-child(even) .sorting_2,
+#tablaVacuna tbody tr:nth-child(even) .sorting_3 {
+    background-color: #f8fafc !important;
+}
+#tablaReportes tbody tr:hover .sorting_1,
+#tablaReportes tbody tr:hover .sorting_2,
+#tablaReportes tbody tr:hover .sorting_3,
+#tablaResultados tbody tr:hover .sorting_1,
+#tablaResultados tbody tr:hover .sorting_2,
+#tablaResultados tbody tr:hover .sorting_3,
+#tablaPendientes tbody tr:hover .sorting_1,
+#tablaPendientes tbody tr:hover .sorting_2,
+#tablaPendientes tbody tr:hover .sorting_3,
+#tabla tbody tr:hover .sorting_1,
+#tabla tbody tr:hover .sorting_2,
+#tabla tbody tr:hover .sorting_3,
+#tablaLaboratorio tbody tr:hover .sorting_1,
+#tablaLaboratorio tbody tr:hover .sorting_2,
+#tablaLaboratorio tbody tr:hover .sorting_3,
+#tablaAnalisis tbody tr:hover .sorting_1,
+#tablaAnalisis tbody tr:hover .sorting_2,
+#tablaAnalisis tbody tr:hover .sorting_3,
+#tablaPaquetes tbody tr:hover .sorting_1,
+#tablaPaquetes tbody tr:hover .sorting_2,
+#tablaPaquetes tbody tr:hover .sorting_3,
+#tablaRespuesta tbody tr:hover .sorting_1,
+#tablaRespuesta tbody tr:hover .sorting_2,
+#tablaRespuesta tbody tr:hover .sorting_3,
+#tablaEmpTrans tbody tr:hover .sorting_1,
+#tablaEmpTrans tbody tr:hover .sorting_2,
+#tablaEmpTrans tbody tr:hover .sorting_3,
+#tablaProveedor tbody tr:hover .sorting_1,
+#tablaProveedor tbody tr:hover .sorting_2,
+#tablaProveedor tbody tr:hover .sorting_3,
+#tablaEnfermedades tbody tr:hover .sorting_1,
+#tablaEnfermedades tbody tr:hover .sorting_2,
+#tablaEnfermedades tbody tr:hover .sorting_3,
+#tablaTipoPrograma tbody tr:hover .sorting_1,
+#tablaTipoPrograma tbody tr:hover .sorting_2,
+#tablaTipoPrograma tbody tr:hover .sorting_3,
+#tablaVacuna tbody tr:hover .sorting_1,
+#tablaVacuna tbody tr:hover .sorting_2,
+#tablaVacuna tbody tr:hover .sorting_3 {
+    background-color: #eff6ff !important;
+}
+
+#tablaReportes tbody td,
+#tabla tbody td,
+#tablaResultados tbody td,
+#tablaPendientes tbody td,
+#tablaCronograma tbody td,
+#tablaProgramas tbody td,
+#tablaProveedor tbody td,
+#tablaTipoPrograma tbody td,
+#tablaVacuna tbody td,
+#tablaRespuesta tbody td,
+#tablaAnalisis tbody td,
+#tablaPaquetes tbody td,
+#tablaEnfermedades tbody td,
+#tablaEmpTrans tbody td,
+#tablaProductosMitm tbody td {
+    font-size: 0.8125rem !important;
+    color: #374151 !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    padding: 0.5rem 0.6rem !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+}
+#tablaReportes tbody tr:nth-child(odd),
+#tabla tbody tr:nth-child(odd),
+#tablaResultados tbody tr:nth-child(odd),
+#tablaPendientes tbody tr:nth-child(odd),
+#tablaLaboratorio tbody tr:nth-child(odd),
+#tablaAnalisis tbody tr:nth-child(odd),
+#tablaPaquetes tbody tr:nth-child(odd),
+#tablaRespuesta tbody tr:nth-child(odd),
+#tablaEmpTrans tbody tr:nth-child(odd),
+#tablaProveedor tbody tr:nth-child(odd),
+#tablaEnfermedades tbody tr:nth-child(odd),
+#tablaTipoPrograma tbody tr:nth-child(odd),
+#tablaVacuna tbody tr:nth-child(odd) {
+    background-color: #ffffff !important;
+}
+#tablaReportes tbody tr:nth-child(even),
+#tabla tbody tr:nth-child(even),
+#tablaResultados tbody tr:nth-child(even),
+#tablaPendientes tbody tr:nth-child(even),
+#tablaLaboratorio tbody tr:nth-child(even),
+#tablaAnalisis tbody tr:nth-child(even),
+#tablaPaquetes tbody tr:nth-child(even),
+#tablaRespuesta tbody tr:nth-child(even),
+#tablaEmpTrans tbody tr:nth-child(even),
+#tablaProveedor tbody tr:nth-child(even),
+#tablaEnfermedades tbody tr:nth-child(even),
+#tablaTipoPrograma tbody tr:nth-child(even),
+#tablaVacuna tbody tr:nth-child(even) {
+    background-color: #f8fafc !important;
+}
+#tablaReportes tbody tr:hover,
+#tabla tbody tr:hover,
+#tablaResultados tbody tr:hover,
+#tablaPendientes tbody tr:hover,
+#tablaLaboratorio tbody tr:hover,
+#tablaAnalisis tbody tr:hover,
+#tablaPaquetes tbody tr:hover,
+#tablaRespuesta tbody tr:hover,
+#tablaEmpTrans tbody tr:hover,
+#tablaProveedor tbody tr:hover,
+#tablaEnfermedades tbody tr:hover,
+#tablaTipoPrograma tbody tr:hover,
+#tablaVacuna tbody tr:hover {
+    background-color: #eff6ff !important;
+}
+#tablaReportes tbody tr:hover td,
+#tabla tbody tr:hover td,
+#tablaResultados tbody tr:hover td,
+#tablaPendientes tbody tr:hover td,
+#tablaLaboratorio tbody tr:hover td,
+#tablaAnalisis tbody tr:hover td,
+#tablaPaquetes tbody tr:hover td,
+#tablaRespuesta tbody tr:hover td,
+#tablaEmpTrans tbody tr:hover td,
+#tablaProveedor tbody tr:hover td,
+#tablaEnfermedades tbody tr:hover td,
+#tablaTipoPrograma tbody tr:hover td,
+#tablaVacuna tbody tr:hover td {
+    color: #1e40af !important;
+}
+
+/* Contorno externo de tablas en pantalla (listados): borde fino */
+.table-wrapper-borde {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+/* ========== Table wrapper global (igual que reportes): scroll horizontal y scrollbar ========== */
+.table-wrapper {
+    overflow-x: auto;
+    overflow-y: visible;
+    width: 100%;
+    border-radius: 1rem;
+}
+.table-wrapper::-webkit-scrollbar {
+    height: 10px;
+}
+.table-wrapper::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+}
+.table-wrapper::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 10px;
+}
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* Columnas del mismo ancho: programas (8 columnas) y cronograma (6 columnas) */
+#tablaProgramas {
+    table-layout: fixed;
+    width: 100% !important;
+}
+#tablaProgramas th,
+#tablaProgramas td {
+    width: 12.5%;
+}
+
+#tablaCronograma {
+    table-layout: fixed;
+    width: 100% !important;
+}
+#tablaCronograma th,
+#tablaCronograma td {
+    width: 16.666%;
+}
+
+/* DataTables: controles compactos */
 .dataTables_wrapper .dataTables_length,
-.dataTables_wrapper .dataTables_filter {
-    padding: 0.75rem 1rem;
+.dataTables_wrapper .dataTables_filter,
+.dataTables_wrapper .dataTables_info,
+.dataTables_wrapper .dataTables_paginate {
+    padding: 0.5rem 0.75rem;
 }
 .dataTables_wrapper .dataTables_length label,
 .dataTables_wrapper .dataTables_filter label {
     margin: 0;
     font-weight: 500;
+    font-size: 0.8125rem;
     color: #374151;
 }
 .dataTables_wrapper .dataTables_filter input {
     border: 1px solid #d1d5db;
     border-radius: 0.5rem;
-    padding: 0.375rem 0.75rem;
+    padding: 0.35rem 0.6rem;
     margin-left: 0.5rem;
+    font-size: 0.8125rem;
 }
 .dataTables_wrapper .dataTables_length select {
     border: 1px solid #d1d5db;
     border-radius: 0.5rem;
-    padding: 0.375rem 0.5rem;
+    padding: 0.35rem 0.5rem;
     margin: 0 0.5rem;
+    font-size: 0.8125rem;
 }
+.dataTables_wrapper {
+    overflow-x: visible !important;
+}
+
+/* Fila inferior de DataTables (info + paginación): layout fijo, mismo estilo que reportes */
+.dt-bottom-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+    width: 100%;
+}
+.dt-bottom-row .dataTables_info,
+.dt-bottom-row .dataTables_paginate,
+.dataTables_wrapper .dataTables_info {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: #374151;
+    margin: 0;
+}
+.dt-bottom-row .dataTables_paginate {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+}
+/* Paginación global: mismo estilo que reportes (todas las tablas) */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 0.5rem 1rem !important;
+    margin: 0 0.25rem;
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db !important;
+    font-size: 0.875rem;
+    background: #fff;
+    cursor: pointer;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
+    color: white !important;
+    border: 1px solid #1e40af !important;
+}
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+}
+/* Ocultar fila superior del dom cuando length/filter se movieron al toolbar */
+.dt-top-row:empty {
+    display: none !important;
+}
+.dataTables_wrapper .dt-top-row:not(:has(.dataTables_length)) {
+    display: none !important;
+}
+
 table.dataTable thead .sorting:before,
 table.dataTable thead .sorting_asc:before,
 table.dataTable thead .sorting_desc:before,
@@ -220,4 +691,348 @@ table.dataTable thead .sorting:after,
 table.dataTable thead .sorting_asc:after,
 table.dataTable thead .sorting_desc:after {
     color: #fff !important;
+}
+
+/* ========== Vista Lista/Iconos: toolbar unificado (reportes, seguimiento, necropsias, tracking, programas, cronograma) ========== */
+.toolbar-vista-row,
+.reportes-toolbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    overflow: visible;
+}
+.view-toggle-group {
+    display: flex;
+    gap: 0.25rem;
+}
+.view-toggle-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+.view-toggle-btn:hover {
+    background: #f3f4f6;
+}
+.view-toggle-btn.active {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    border-color: #1d4ed8;
+}
+/* Controles DataTables en toolbar (lista) */
+.toolbar-dt-controls .dataTables_length,
+.toolbar-dt-controls .dataTables_filter,
+#reportesDtControls .dataTables_length,
+#reportesDtControls .dataTables_filter,
+#segDtControls .dataTables_length,
+#segDtControls .dataTables_filter,
+#necDtControls .dataTables_length,
+#necDtControls .dataTables_filter,
+#trackDtControls .dataTables_length,
+#trackDtControls .dataTables_filter,
+#cronoDtControls .dataTables_length,
+#cronoDtControls .dataTables_filter,
+#progDtControls .dataTables_length,
+#progDtControls .dataTables_filter,
+#pendDtControls .dataTables_length,
+#pendDtControls .dataTables_filter,
+/* Configuración: mismos estilos por clase */
+.toolbar-dt-controls .dataTables_length,
+.toolbar-dt-controls .dataTables_filter {
+    margin: 0;
+    padding: 0;
+}
+.toolbar-dt-controls .dataTables_length label,
+.toolbar-dt-controls .dataTables_filter label,
+#reportesDtControls .dataTables_length label,
+#reportesDtControls .dataTables_filter label,
+#segDtControls .dataTables_length label,
+#segDtControls .dataTables_filter label,
+#necDtControls .dataTables_length label,
+#necDtControls .dataTables_filter label,
+#trackDtControls .dataTables_length label,
+#trackDtControls .dataTables_filter label,
+#cronoDtControls .dataTables_length label,
+#cronoDtControls .dataTables_filter label,
+#progDtControls .dataTables_length label,
+#progDtControls .dataTables_filter label,
+#pendDtControls .dataTables_length label,
+#pendDtControls .dataTables_filter label {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: normal;
+    color: #374151;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.toolbar-dt-controls .dataTables_length select,
+#reportesDtControls .dataTables_length select,
+#segDtControls .dataTables_length select,
+#necDtControls .dataTables_length select,
+#trackDtControls .dataTables_length select,
+#cronoDtControls .dataTables_length select,
+#progDtControls .dataTables_length select,
+#pendDtControls .dataTables_length select,
+.toolbar-dt-controls .dataTables_length select {
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #374151;
+    background: white;
+    cursor: pointer;
+    min-height: 2.25rem;
+    box-sizing: border-box;
+}
+.toolbar-dt-controls .dataTables_length select:hover,
+#reportesDtControls .dataTables_length select:hover,
+#segDtControls .dataTables_length select:hover,
+#necDtControls .dataTables_length select:hover,
+#trackDtControls .dataTables_length select:hover,
+#cronoDtControls .dataTables_length select:hover,
+#progDtControls .dataTables_length select:hover,
+#pendDtControls .dataTables_length select:hover,
+.toolbar-dt-controls .dataTables_length select:hover {
+    border-color: #9ca3af;
+}
+.toolbar-dt-controls .dataTables_length select:focus,
+#reportesDtControls .dataTables_length select:focus,
+#segDtControls .dataTables_length select:focus,
+#necDtControls .dataTables_length select:focus,
+#trackDtControls .dataTables_length select:focus,
+#cronoDtControls .dataTables_length select:focus,
+#progDtControls .dataTables_length select:focus,
+#pendDtControls .dataTables_length select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+.toolbar-dt-controls .dataTables_filter input,
+#reportesDtControls .dataTables_filter input,
+#segDtControls .dataTables_filter input,
+#necDtControls .dataTables_filter input,
+#trackDtControls .dataTables_filter input,
+#cronoDtControls .dataTables_filter input,
+#progDtControls .dataTables_filter input,
+#pendDtControls .dataTables_filter input,
+.toolbar-dt-controls .dataTables_filter input {
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: #374151;
+    min-height: 2.25rem;
+    min-width: 180px;
+    box-sizing: border-box;
+}
+.toolbar-dt-controls .dataTables_filter input:hover,
+#reportesDtControls .dataTables_filter input:hover,
+#segDtControls .dataTables_filter input:hover,
+#necDtControls .dataTables_filter input:hover,
+#trackDtControls .dataTables_filter input:hover,
+#cronoDtControls .dataTables_filter input:hover,
+#progDtControls .dataTables_filter input:hover,
+#pendDtControls .dataTables_filter input:hover {
+    border-color: #9ca3af;
+}
+.toolbar-dt-controls .dataTables_filter input:focus,
+#reportesDtControls .dataTables_filter input:focus,
+#segDtControls .dataTables_filter input:focus,
+#necDtControls .dataTables_filter input:focus,
+#trackDtControls .dataTables_filter input:focus,
+#cronoDtControls .dataTables_filter input:focus,
+#progDtControls .dataTables_filter input:focus,
+#pendDtControls .dataTables_filter input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+/* Controles modo iconos (Mostrar + Buscar en toolbar) */
+.toolbar-iconos-controls label,
+#reportesIconosControls label,
+#segIconosControls label,
+#necIconosControls label,
+#trackIconosControls label,
+#cronoIconosControls label,
+#progIconosControls label,
+#pendIconosControls label {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: normal;
+    color: #374151;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.toolbar-iconos-controls .cards-length-select,
+#reportesIconosControls .cards-length-select,
+#segIconosControls .cards-length-select,
+#necIconosControls .cards-length-select,
+#trackIconosControls .cards-length-select,
+#cronoIconosControls .cards-length-select,
+#progIconosControls .cards-length-select,
+#pendIconosControls .cards-length-select {
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    min-height: 2.25rem;
+    box-sizing: border-box;
+}
+.toolbar-iconos-controls .dataTables_filter input,
+#reportesIconosControls .dataTables_filter input,
+#segIconosControls .dataTables_filter input,
+#necIconosControls .dataTables_filter input,
+#trackIconosControls .dataTables_filter input,
+#cronoIconosControls .dataTables_filter input,
+#progIconosControls .dataTables_filter input,
+#pendIconosControls .dataTables_filter input {
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    min-height: 2.25rem;
+    min-width: 180px;
+    box-sizing: border-box;
+}
+.iconos-toolbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+}
+/* En modo iconos: ocultar línea debajo del área de controles superiores (queda vacía) */
+[data-vista-tabla-iconos][data-vista="iconos"] #cardsControlsTopReportes,
+[data-vista-tabla-iconos][data-vista="iconos"] #cardsControlsTopSeg,
+[data-vista-tabla-iconos][data-vista="iconos"] #cardsControlsTopNec,
+[data-vista-tabla-iconos][data-vista="iconos"] #cardsControlsTopTrack,
+[data-vista-tabla-iconos][data-vista="iconos"] #cardsControlsTopPend {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    min-height: 0;
+}
+
+/* Paginación en modo iconos: mismo aspecto que en modo tabla (números + Anterior/Siguiente) */
+.view-tarjetas-wrap .dataTables_paginate.paginate_button_wrap {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+}
+.view-tarjetas-wrap .dataTables_paginate .paginate_button {
+    padding: 0.5rem 1rem !important;
+    margin: 0 0.125rem;
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db !important;
+    background: white;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #374151;
+    transition: background 0.2s, color 0.2s;
+}
+.view-tarjetas-wrap .dataTables_paginate .paginate_button.current {
+    background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
+    color: white !important;
+    border-color: #1e40af !important;
+}
+.view-tarjetas-wrap .dataTables_paginate .paginate_button:hover:not(.disabled):not(.ellipsis) {
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+}
+.view-tarjetas-wrap .dataTables_paginate .paginate_button.disabled,
+.view-tarjetas-wrap .dataTables_paginate .paginate_button.ellipsis {
+    cursor: default;
+    opacity: 0.7;
+}
+.view-tarjetas-wrap .dataTables_paginate .paginate_button.ellipsis {
+    cursor: default;
+}
+.view-tarjetas-wrap [data-table] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    width: 100%;
+}
+.view-tarjetas-wrap [data-table] .dataTables_info {
+    font-size: 0.875rem;
+    color: #4b5563;
+}
+.view-tarjetas-wrap [data-table] .dataTables_paginate {
+    margin: 0;
+    padding: 0;
+}
+
+/* ========== Configuración: mismo estilo que reportes (tabla + iconos) ========== */
+.dashboard-tabla-card {
+    background: #fff;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    padding: 1.25rem;
+}
+.dashboard-tabla-wrapper {
+    margin-top: 1.25rem;
+}
+/* Vista lista/iconos: mismo toggle que reportes */
+.dashboard-tabla-wrapper .view-tarjetas-wrap {
+    display: none;
+}
+.dashboard-tabla-wrapper[data-vista="iconos"] .view-lista-wrap {
+    display: none !important;
+}
+.dashboard-tabla-wrapper[data-vista="iconos"] .view-tarjetas-wrap {
+    display: block !important;
+}
+.dashboard-tabla-wrapper[data-vista="lista"] .view-tarjetas-wrap,
+.dashboard-tabla-wrapper[data-vista="tabla"] .view-tarjetas-wrap {
+    display: none !important;
+}
+.dashboard-tabla-wrapper[data-vista="lista"] .view-lista-wrap,
+.dashboard-tabla-wrapper[data-vista="tabla"] .view-lista-wrap {
+    display: block !important;
+}
+/* Controles superiores e inferiores en vista iconos (como reportes) */
+.dashboard-tabla-wrapper .view-tarjetas-wrap .cards-controls-top,
+.dashboard-tabla-wrapper #cardsControlsTopLab,
+.dashboard-tabla-wrapper #cardsControlsTopEmpTrans,
+.dashboard-tabla-wrapper [id^="cardsControlsTop"] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 0.875rem;
+    color: #4b5563;
+}
+.dashboard-tabla-wrapper .view-tarjetas-wrap [data-table],
+.dashboard-tabla-wrapper .view-tarjetas-wrap .cards-pagination,
+.dashboard-tabla-wrapper #cardsPaginationLab,
+.dashboard-tabla-wrapper #cardsPaginationEmpTrans,
+.dashboard-tabla-wrapper [id$="cardsPagination"] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e5e7eb;
+    font-size: 0.875rem;
+    color: #4b5563;
+}
+.dashboard-tabla-wrapper .reportes-toolbar-row,
+.dashboard-tabla-wrapper .toolbar-vista-row {
+    margin-bottom: 1rem;
 }

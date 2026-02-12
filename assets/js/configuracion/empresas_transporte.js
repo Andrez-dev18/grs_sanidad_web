@@ -2,14 +2,15 @@
 function aplicarVisibilidadVistaEmpTrans() {
     var wrapper = document.getElementById('tablaEmpTransWrapper');
     if (!wrapper) return;
-    var vista = wrapper.getAttribute('data-vista') || 'tabla';
+    var vista = wrapper.getAttribute('data-vista') || 'lista';
+    var esLista = (vista === 'lista' || vista === 'tabla');
     var listaWrap = wrapper.querySelector('.view-lista-wrap');
     var tarjetasWrap = wrapper.querySelector('.view-tarjetas-wrap');
     var btnLista = document.getElementById('btnViewTablaEmpTrans');
     var btnIconos = document.getElementById('btnViewIconosEmpTrans');
-    if (listaWrap) listaWrap.style.display = vista === 'tabla' ? 'block' : 'none';
+    if (listaWrap) listaWrap.style.display = esLista ? 'block' : 'none';
     if (tarjetasWrap) tarjetasWrap.style.display = vista === 'iconos' ? 'block' : 'none';
-    if (btnLista) btnLista.classList.toggle('active', vista === 'tabla');
+    if (btnLista) btnLista.classList.toggle('active', esLista);
     if (btnIconos) btnIconos.classList.toggle('active', vista === 'iconos');
 }
 
@@ -56,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var wrapper = document.getElementById('tablaEmpTransWrapper');
     if (btnLista) {
         btnLista.addEventListener('click', function() {
-            if (wrapper) wrapper.setAttribute('data-vista', 'tabla');
+            if (wrapper) wrapper.setAttribute('data-vista', 'lista');
             aplicarVisibilidadVistaEmpTrans();
         });
     }

@@ -16,6 +16,8 @@ if (empty($_SESSION['active'])) {
     <link rel="stylesheet" href="../../../css/output.css">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
+    <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -33,12 +35,66 @@ if (empty($_SESSION['active'])) {
         .bloque-especifico.visible { display: block; }
         #fechasResultado, #fechasResultadoZonas { margin-top: 1rem; padding: 0.75rem; background: #f8fafc; border-radius: 0.5rem; font-size: 0.875rem; border: 1px solid #e2e8f0; }
         #fechasResultado ul { margin: 0; padding-left: 1.25rem; }
-        .tabla-fechas-crono { width: 100%; border-collapse: collapse; font-size: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.5rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-        .tabla-fechas-crono th { background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%); color: #fff; font-weight: 600; padding: 0.4rem 0.5rem; text-align: left; white-space: nowrap; }
-        .tabla-fechas-crono td { padding: 0.35rem 0.5rem; border-bottom: 1px solid #e2e8f0; }
-        .tabla-fechas-crono tbody tr:nth-child(even) { background: #f8fafc; }
-        .tabla-fechas-crono tbody tr:hover { background: #eff6ff; }
+        /* Tabla fechas cronograma: mismo estilo que dashboard-seguimiento */
+        .tabla-fechas-crono { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        .tabla-fechas-crono th {
+            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
+            font-weight: 600;
+            color: #ffffff !important;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .tabla-fechas-crono td { padding: 0.5rem 1rem; border-bottom: 1px solid #e5e7eb; }
+        .tabla-fechas-crono tbody tr:nth-child(even) { background: #f9fafb; }
+        .tabla-fechas-crono tbody tr:hover { background-color: #eff6ff !important; }
         .tabla-fechas-crono tbody tr:last-child td { border-bottom: none; }
+        /* Wrapper tipo seguimiento (mismo estilo que tablaSeguimientoWrapper) */
+        .tabla-crono-wrapper { background: #fff; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1); padding: 1.25rem; }
+        .tabla-crono-wrapper .table-wrapper { overflow-x: auto; }
+        /* Toolbar superior: Mostrar + Buscar (como seguimiento) */
+        .tabla-crono-toolbar-top { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; }
+        @media (min-width: 768px) { .tabla-crono-toolbar-top { flex-direction: row; align-items: center; justify-content: space-between; } }
+        .tabla-crono-toolbar-top .toolbar-length { display: flex; align-items: center; gap: 0.5rem; }
+        .tabla-crono-toolbar-top .toolbar-length span { font-size: 0.875rem; color: #374151; }
+        .tabla-crono-toolbar-top .toolbar-length select {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            margin: 0 0.5rem;
+            font-size: 0.875rem;
+        }
+        .tabla-crono-toolbar-top .toolbar-filter input {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            margin-left: 0.5rem;
+            font-size: 0.875rem;
+            min-width: 180px;
+        }
+        /* Toolbar inferior: info + paginado (como seguimiento) */
+        .tabla-crono-toolbar-bottom { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; font-size: 0.875rem; color: #4b5563; }
+        @media (min-width: 768px) { .tabla-crono-toolbar-bottom { flex-direction: row; align-items: center; justify-content: space-between; } }
+        .tabla-crono-toolbar-bottom .paginacion-controles { display: flex; align-items: center; gap: 0.5rem; }
+        .tabla-crono-toolbar-bottom .paginacion-controles button {
+            padding: 0.5rem 1rem;
+            margin: 0 0.25rem;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+            background: #fff;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+        .tabla-crono-toolbar-bottom .paginacion-controles button:hover:not(:disabled) { background: #eff6ff; color: #1d4ed8; }
+        .tabla-crono-toolbar-bottom .paginacion-controles button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .tabla-crono-toolbar-bottom .paginacion-controles .btn-page-current {
+            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
+            color: white !important;
+            border: 1px solid #1e40af !important;
+        }
         /* Unificar estilo del select Código del programa con el resto */
         .select2-container--default .select2-selection--single {
             height: 42px !important;
@@ -57,6 +113,9 @@ if (empty($_SESSION['active'])) {
         .subzona-chk .granja-nom { font-size: 0.75rem; color: #64748b; margin-left: 0.25rem; }
         .campanias-chk { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; }
         .campanias-chk label { cursor: pointer; font-size: 0.875rem; display: flex; align-items: center; gap: 0.35rem; }
+        /* Popover flotante (zona): debajo del ícono, fuera de contenedores */
+        #popoverInfoZonaFlotante { position: fixed; z-index: 9999; min-width: 220px; max-width: 280px; padding: 8px 10px; font-size: 0.75rem; line-height: 1.35; color: #374151; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); white-space: normal; display: none; }
+        #popoverInfoZonaFlotante.visible { display: block; }
         #modalCargaCrono.hidden { display: none !important; }
         #modalCargaCrono { display: flex; }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; }
@@ -72,6 +131,40 @@ if (empty($_SESSION['active'])) {
         .tabs-crono-resultado .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
         .tab-panel-crono { display: none; }
         .tab-panel-crono.active { display: block; }
+        /* Crono Granjas: mismo estilo lista/iconos y controles que reportes */
+        #cronoGranjasWrapperEspecifico[data-vista="iconos"] .view-lista-wrap-crono,
+        #cronoGranjasWrapperZonas[data-vista="iconos"] .view-lista-wrap-crono { display: none !important; }
+        #cronoGranjasWrapperEspecifico[data-vista="iconos"] .view-tarjetas-wrap-crono,
+        #cronoGranjasWrapperZonas[data-vista="iconos"] .view-tarjetas-wrap-crono { display: block !important; }
+        #cronoGranjasWrapperEspecifico[data-vista="lista"] .view-tarjetas-wrap-crono,
+        #cronoGranjasWrapperZonas[data-vista="lista"] .view-tarjetas-wrap-crono { display: none !important; }
+        #cronoGranjasWrapperEspecifico .view-tarjetas-wrap-crono,
+        #cronoGranjasWrapperZonas .view-tarjetas-wrap-crono { display: none; }
+        .crono-granjas-toolbar-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; }
+        .crono-dt-controls, .crono-iconos-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+        .crono-iconos-controls { display: none; }
+        #cronoGranjasWrapperEspecifico[data-vista="iconos"] .crono-dt-controls,
+        #cronoGranjasWrapperZonas[data-vista="iconos"] .crono-dt-controls { display: none; }
+        #cronoGranjasWrapperEspecifico[data-vista="iconos"] .crono-iconos-controls,
+        #cronoGranjasWrapperZonas[data-vista="iconos"] .crono-iconos-controls { display: flex; }
+        .crono-cards-controls-top, .crono-cards-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; font-size: 0.875rem; color: #4b5563; }
+        .crono-cards-controls-top { margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e5e7eb; }
+        .crono-cards-pagination { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb; }
+        .crono-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; padding: 0.5rem 0; }
+        .crono-card-item { background: #fff; border: 1px solid #e5e7eb; border-radius: 1rem; padding: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .crono-card-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .crono-card-item .card-codigo { font-weight: 700; font-size: 1rem; color: #1e40af; margin-bottom: 0.5rem; }
+        .crono-card-item .card-row { font-size: 0.8rem; color: #4b5563; margin-bottom: 0.25rem; }
+        .crono-card-item .card-row .label { color: #6b7280; }
+        .crono-cards-pagination .paginate_button { padding: 0.5rem 1rem; margin: 0 0.25rem; border-radius: 0.5rem; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 0.875rem; }
+        .crono-cards-pagination .paginate_button:hover:not(.disabled) { background: #eff6ff; color: #1d4ed8; }
+        .crono-cards-pagination .paginate_button.current { background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%); color: white; border-color: #1e40af; }
+        .crono-cards-pagination .paginate_button.disabled { opacity: 0.5; cursor: not-allowed; }
+        .tabla-crono-toolbar-bottom .paginate_button_wrap { display: inline-flex; align-items: center; gap: 0.25rem; }
+        .tabla-crono-toolbar-bottom .paginate_button { padding: 0.5rem 1rem; margin: 0 0.25rem; border-radius: 0.5rem; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 0.875rem; }
+        .tabla-crono-toolbar-bottom .paginate_button:hover:not(.disabled) { background: #eff6ff; color: #1d4ed8; }
+        .tabla-crono-toolbar-bottom .paginate_button.current { background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%); color: white; border-color: #1e40af; }
+        .tabla-crono-toolbar-bottom .paginate_button.disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -131,7 +224,10 @@ if (empty($_SESSION['active'])) {
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Zona *</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1.5">
+                        Zona *
+                        <i id="infoZona" class="fas fa-info-circle text-blue-500 cursor-pointer hover:text-blue-700" role="button" title="Ver información" aria-label="Ver información"></i>
+                    </label>
                     <select id="cronoZona" class="form-control" multiple style="min-height: 80px;">
                         <option value="Especifico">Especifico</option>
                     </select>
@@ -171,7 +267,7 @@ if (empty($_SESSION['active'])) {
                         <div id="tabPanelGranjasEspecifico" class="tab-panel-crono active"></div>
                         <div id="tabPanelProgramaEspecifico" class="tab-panel-crono">
                             <div id="programaCabEspecifico" class="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm"></div>
-                            <div class="overflow-x-auto"><table class="tabla-fechas-crono w-full text-sm" id="tablaProgramaEspecifico"><thead id="programaTheadEspecifico"></thead><tbody id="programaBodyEspecifico"></tbody></table></div>
+                            <div class="table-wrapper overflow-x-auto"><table class="tabla-fechas-crono config-table w-full text-sm" id="tablaProgramaEspecifico"><thead id="programaTheadEspecifico"></thead><tbody id="programaBodyEspecifico"></tbody></table></div>
                             <p id="programaSinRegEspecifico" class="hidden text-gray-500 text-sm mt-2">Sin registros en el detalle del programa.</p>
                         </div>
                     </div>
@@ -188,7 +284,7 @@ if (empty($_SESSION['active'])) {
                         <div id="tabPanelGranjasZonas" class="tab-panel-crono active"></div>
                         <div id="tabPanelProgramaZonas" class="tab-panel-crono">
                             <div id="programaCabZonas" class="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm"></div>
-                            <div class="overflow-x-auto"><table class="tabla-fechas-crono w-full text-sm" id="tablaProgramaZonas"><thead id="programaTheadZonas"></thead><tbody id="programaBodyZonas"></tbody></table></div>
+                            <div class="table-wrapper overflow-x-auto"><table class="tabla-fechas-crono config-table w-full text-sm" id="tablaProgramaZonas"><thead id="programaTheadZonas"></thead><tbody id="programaBodyZonas"></tbody></table></div>
                             <p id="programaSinRegZonas" class="hidden text-gray-500 text-sm mt-2">Sin registros en el detalle del programa.</p>
                         </div>
                     </div>
@@ -240,9 +336,9 @@ if (empty($_SESSION['active'])) {
             'LD': ['num', 'ubicacion', 'producto', 'proveedor', 'dosis', 'unidadDosis', 'edad'],
             'CP': ['num', 'ubicacion', 'producto', 'proveedor', 'dosis', 'unidadDosis', 'edad']
         };
-        var columnasDetalleCompletasCrono = ['posDetalle','ubicacion','producto','proveedor','unidad','dosis','unidadDosis','numeroFrascos','edad','descripcion_vacuna','area_galpon','cantidad_por_galpon'];
+        var columnasDetalleCompletasCrono = ['ubicacion','producto','proveedor','unidad','dosis','unidadDosis','numeroFrascos','edad','descripcion_vacuna','area_galpon','cantidad_por_galpon'];
         var labelsReporteCrono = {
-            num: '#', posDetalle: 'N° Det', ubicacion: 'Ubicación', producto: 'Producto', proveedor: 'Proveedor', unidad: 'Unidad',
+            num: '#', ubicacion: 'Ubicación', producto: 'Producto', proveedor: 'Proveedor', unidad: 'Unidad',
             dosis: 'Dosis', descripcion_vacuna: 'Descripcion', numeroFrascos: 'Nº frascos', edad: 'Edad',
             unidadDosis: 'Unid. dosis', area_galpon: 'Área galpón', cantidad_por_galpon: 'Cant. por galpón'
         };
@@ -259,7 +355,6 @@ if (empty($_SESSION['active'])) {
             if (k === 'unidadDosis') return esc(d.unidadDosis || '');
             if (k === 'area_galpon') return (d.areaGalpon !== null && d.areaGalpon !== undefined && d.areaGalpon !== '' ? d.areaGalpon : '');
             if (k === 'cantidad_por_galpon') return (d.cantidadPorGalpon !== null && d.cantidadPorGalpon !== undefined && d.cantidadPorGalpon !== '' ? d.cantidadPorGalpon : '');
-            if (k === 'posDetalle') return (d.posDetalle !== null && d.posDetalle !== undefined && d.posDetalle !== '' ? esc(d.posDetalle) : '');
             return '';
         }
         function cargarTabProgramaEnResultadoCrono(codPrograma, cabElId, theadId, tbodyId, sinRegId) {
@@ -290,9 +385,17 @@ if (empty($_SESSION['active'])) {
                 if (cab.descripcion) { cabHtml += '<dt class="font-medium col-span-2">Descripción</dt><dd class="col-span-2">' + esc(cab.descripcion) + '</dd>'; }
                 cabHtml += '</dl>';
                 cabEl.innerHTML = cabHtml;
-                var colsDetalle = columnasDetalleCompletasCrono.slice();
+                // Mismo orden de columnas que tab Programas del listado: dinámicas por sigla, edad al final
+                var sigla = (res.sigla || 'PL').toUpperCase();
+                if (sigla === 'NEC') sigla = 'NC';
+                var cols = columnasPorSiglaReporte[sigla] || columnasPorSiglaReporte['PL'];
+                var colsSinNum = cols.filter(function(k) { return k !== 'num'; });
+                if (colsSinNum.indexOf('edad') !== -1) {
+                    colsSinNum = colsSinNum.filter(function(k) { return k !== 'edad'; });
+                    colsSinNum.push('edad');
+                }
                 var thCells = '<th class="px-3 py-2 text-left">Código</th><th class="px-3 py-2 text-left">Nombre programa</th><th class="px-3 py-2 text-left">Despliegue</th><th class="px-3 py-2 text-left">Descripción</th>';
-                colsDetalle.forEach(function(k) { thCells += '<th class="px-3 py-2 text-left">' + (labelsReporteCrono[k] || k) + '</th>'; });
+                colsSinNum.forEach(function(k) { thCells += '<th class="px-3 py-2 text-left">' + (labelsReporteCrono[k] || k) + '</th>'; });
                 theadEl.innerHTML = '<tr>' + thCells + '</tr>';
                 tbodyEl.innerHTML = '';
                 if (detalles.length === 0) {
@@ -302,7 +405,7 @@ if (empty($_SESSION['active'])) {
                         var tr = document.createElement('tr');
                         tr.className = 'border-b border-gray-200';
                         var td = '<td class="px-3 py-2">' + esc(cab.codigo) + '</td><td class="px-3 py-2">' + esc(cab.nombre) + '</td><td class="px-3 py-2">' + esc(cab.despliegue || '') + '</td><td class="px-3 py-2">' + esc(cab.descripcion || '') + '</td>';
-                        colsDetalle.forEach(function(k) {
+                        colsSinNum.forEach(function(k) {
                             td += '<td class="px-3 py-2"' + (k === 'descripcion_vacuna' ? ' style="white-space:pre-wrap;"' : '') + '>' + valorCeldaDetalleCrono(k, d) + '</td>';
                         });
                         tr.innerHTML = td;
@@ -402,6 +505,201 @@ if (empty($_SESSION['active'])) {
         function mostrarCarga(mostrar) {
             var el = document.getElementById('modalCargaCrono');
             if (mostrar) el.classList.remove('hidden'); else el.classList.add('hidden');
+        }
+
+        var PAGE_SIZE_GRANJAS = 20;
+        function filterFilasPorBusqueda(filas, q, isZonas) {
+            if (!q || String(q).trim() === '') return filas;
+            var term = String(q).trim().toLowerCase();
+            return filas.filter(function(r) {
+                var txt = (r.codPrograma || '') + ' ' + (r.granja || '') + ' ' + (r.nomGranja || '') + ' ' + (r.campania || '') + ' ' + (r.galpon || '') + ' ' + (r.edad || '') + ' ' + (r.fechaCarga || '') + ' ' + (r.fechaEjec || '');
+                if (isZonas) txt += ' ' + (r.zona || '') + ' ' + (r.subzona || '');
+                return txt.toLowerCase().indexOf(term) !== -1;
+            });
+        }
+        function buildCronoGranjasPaginationHtml(tipo, page, totalPag, total, start, end) {
+            var infoText = 'Mostrando ' + (total === 0 ? 0 : start + 1) + ' a ' + end + ' de ' + total + ' registros';
+            var prevDisabled = page <= 1;
+            var nextDisabled = page >= totalPag;
+            var prevClass = prevDisabled ? ' disabled' : '';
+            var nextClass = nextDisabled ? ' disabled' : '';
+            var html = '<span class="dataTables_info">' + infoText + '</span>';
+            html += '<span class="paginate_button_wrap" style="display:inline-flex;align-items:center;gap:0.25rem;">';
+            html += '<span class="paginate_button previous' + prevClass + '" data-crono-pagenav="prev" data-context="' + tipo + '" role="button">Anterior</span>';
+            html += '<span class="paginate_button current" role="button">Pág. ' + page + ' de ' + totalPag + '</span>';
+            html += '<span class="paginate_button next' + nextClass + '" data-crono-pagenav="next" data-context="' + tipo + '" role="button">Siguiente</span>';
+            html += '</span>';
+            return html;
+        }
+        function renderCronoGranjasCards(filaPage, tipo, total, totalPag, page) {
+            var isZonas = (tipo === 'zonas');
+            var wrapperId = isZonas ? 'cronoGranjasWrapperZonas' : 'cronoGranjasWrapperEspecifico';
+            var containerId = isZonas ? 'cardsContainerGranjasZonas' : 'cardsContainerGranjasEspecifico';
+            var pagId = isZonas ? 'cardsPaginationGranjasZonas' : 'cardsPaginationGranjasEspecifico';
+            var start = (page - 1) * PAGE_SIZE_GRANJAS;
+            var end = Math.min(start + PAGE_SIZE_GRANJAS, total);
+            var container = document.getElementById(containerId);
+            var pagEl = document.getElementById(pagId);
+            if (!container) return;
+            var cardsHtml = '';
+            filaPage.forEach(function(r, i) {
+                var num = start + i + 1;
+                cardsHtml += '<div class="crono-card-item card-item">';
+                cardsHtml += '<div class="card-codigo card-codigo">#' + num + ' · ' + esc(r.codPrograma || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Granja:</span> ' + esc(r.granja || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Nom. Granja:</span> ' + esc(r.nomGranja || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Campaña:</span> ' + esc(r.campania || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Galpón:</span> ' + esc(r.galpon || '—') + '</div>';
+                if (isZonas) {
+                    cardsHtml += '<div class="card-row"><span class="label">Zona:</span> ' + esc(r.zona || '—') + '</div>';
+                    cardsHtml += '<div class="card-row"><span class="label">Subzona:</span> ' + esc(r.subzona || '—') + '</div>';
+                }
+                cardsHtml += '<div class="card-row"><span class="label">Edad:</span> ' + esc(r.edad || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Fec. Carga:</span> ' + esc(r.fechaCarga || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Fec. Ejecución:</span> ' + esc(r.fechaEjec || '—') + '</div>';
+                cardsHtml += '</div>';
+            });
+            container.innerHTML = cardsHtml;
+            if (pagEl) {
+                pagEl.innerHTML = buildCronoGranjasPaginationHtml(tipo, page, totalPag, total, start, end);
+                var prevBtn = pagEl.querySelector('.paginate_button.previous');
+                var nextBtn = pagEl.querySelector('.paginate_button.next');
+                if (prevBtn && !prevBtn.classList.contains('disabled')) prevBtn.addEventListener('click', function() { renderGranjasPage(tipo, page - 1); });
+                if (nextBtn && !nextBtn.classList.contains('disabled')) nextBtn.addEventListener('click', function() { renderGranjasPage(tipo, page + 1); });
+            }
+        }
+        function renderTablaGranjasPaginada(filas, panel, tipo, totalTexto) {
+            if (!panel) return;
+            var isZonas = (tipo === 'zonas');
+            if (isZonas) { window._filasGranjasZonas = filas; window._searchGranjasZonas = ''; }
+            else { window._filasGranjasEspecifico = filas; window._searchGranjasEspecifico = ''; }
+            var wrapperId = isZonas ? 'cronoGranjasWrapperZonas' : 'cronoGranjasWrapperEspecifico';
+            var tableId = isZonas ? 'tablaGranjasZonas' : 'tablaGranjasEspecifico';
+            var theadZonas = '<tr><th>N°</th><th>cod. programa</th><th>Zona</th><th>Subzona</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Edad</th><th>Fec. Carga</th><th>Fec. Ejecución</th></tr>';
+            var theadEsp = '<tr><th>N°</th><th>cod. programa</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Edad</th><th>Fec. Carga</th><th>Fec. Ejecución</th></tr>';
+            var thead = isZonas ? theadZonas : theadEsp;
+            var tbodyId = isZonas ? 'tbodyGranjasZonas' : 'tbodyGranjasEspecifico';
+            var pagId = isZonas ? 'paginacionGranjasZonas' : 'paginacionGranjasEspecifico';
+            var searchId = isZonas ? 'searchGranjasZonas' : 'searchGranjasEspecifico';
+            var searchIdIconos = isZonas ? 'searchGranjasZonasIconos' : 'searchGranjasEspecificoIconos';
+            var sizeSelectId = isZonas ? 'granjasSizeZonas' : 'granjasSizeEspecifico';
+            var sizeSelectIdIconos = isZonas ? 'granjasSizeZonasIconos' : 'granjasSizeEspecificoIconos';
+            var cardsTopId = isZonas ? 'cardsControlsTopGranjasZonas' : 'cardsControlsTopGranjasEspecifico';
+            var cardsContainerId = isZonas ? 'cardsContainerGranjasZonas' : 'cardsContainerGranjasEspecifico';
+            var cardsPagId = isZonas ? 'cardsPaginationGranjasZonas' : 'cardsPaginationGranjasEspecifico';
+            var sizeOpts = PAGE_SIZE_GRANJAS === 20 ? ' selected' : '';
+            var sizeOpts50 = PAGE_SIZE_GRANJAS === 50 ? ' selected' : '';
+            var sizeOpts100 = PAGE_SIZE_GRANJAS === 100 ? ' selected' : '';
+            var controlsLista = '<div class="crono-dt-controls">' +
+                '<label class="inline-flex items-center gap-2" style="margin:0;"><span>Mostrar</span><select id="' + sizeSelectId + '" data-granjas-size data-context="' + tipo + '"><option value="20"' + sizeOpts + '>20</option><option value="50"' + sizeOpts50 + '>50</option><option value="100"' + sizeOpts100 + '>100</option></select><span>registros</span></label>' +
+                '<label class="inline-flex items-center gap-2" style="margin:0;"><span>Buscar:</span><input type="text" class="buscar-granjas" id="' + searchId + '" placeholder="Buscar..." autocomplete="off" data-context="' + tipo + '" style="padding:0.5rem 1rem;border:1px solid #d1d5db;border-radius:0.5rem;min-width:180px;"></label>' +
+                '</div>';
+            var controlsIconos = '<div class="crono-iconos-controls">' +
+                '<label class="inline-flex items-center gap-2" style="margin:0;"><span>Mostrar</span><select id="' + sizeSelectIdIconos + '" data-granjas-size data-context="' + tipo + '"><option value="20"' + sizeOpts + '>20</option><option value="50"' + sizeOpts50 + '>50</option><option value="100"' + sizeOpts100 + '>100</option></select><span>registros</span></label>' +
+                '<label class="inline-flex items-center gap-2" style="margin:0;"><span>Buscar:</span><input type="text" class="buscar-granjas" id="' + searchIdIconos + '" placeholder="Buscar..." autocomplete="off" data-context="' + tipo + '" style="padding:0.5rem 1rem;border:1px solid #d1d5db;border-radius:0.5rem;min-width:180px;"></label>' +
+                '</div>';
+            var html = (totalTexto ? '<p class="text-gray-600 text-sm mb-3">' + totalTexto + '</p>' : '') +
+                '<div class="tabla-crono-wrapper" id="' + wrapperId + '" data-vista="lista">' +
+                '<div class="crono-granjas-toolbar-row">' +
+                '<div class="view-toggle-group flex items-center gap-2">' +
+                '<button type="button" class="view-toggle-btn active" data-crono-view="lista" data-context="' + tipo + '" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>' +
+                '<button type="button" class="view-toggle-btn" data-crono-view="iconos" data-context="' + tipo + '" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>' +
+                '</div>' + controlsLista + controlsIconos + '</div>' +
+                '<div class="view-tarjetas-wrap-crono px-4 pb-4 overflow-x-hidden">' +
+                '<div id="' + cardsTopId + '" class="crono-cards-controls-top"></div>' +
+                '<div id="' + cardsContainerId + '" class="crono-cards-grid cards-grid-iconos"></div>' +
+                '<div id="' + cardsPagId + '" class="crono-cards-pagination" data-context="' + tipo + '"></div>' +
+                '</div>' +
+                '<div class="view-lista-wrap-crono">' +
+                '<div class="table-wrapper overflow-x-auto">' +
+                '<table class="tabla-fechas-crono config-table w-full text-sm border-collapse" id="' + tableId + '"><thead>' + thead + '</thead><tbody id="' + tbodyId + '"></tbody></table>' +
+                '</div>' +
+                '<div id="' + pagId + '" class="tabla-crono-toolbar-bottom" data-context="' + tipo + '"></div>' +
+                '</div></div>';
+            panel.innerHTML = html;
+            var wrapper = document.getElementById(wrapperId);
+            document.querySelectorAll('#' + wrapperId + ' [data-granjas-size]').forEach(function(sel) {
+                sel.addEventListener('change', function() { PAGE_SIZE_GRANJAS = parseInt(this.value, 10) || 20; renderGranjasPage(tipo, 1); });
+            });
+            document.querySelectorAll('#' + wrapperId + ' .buscar-granjas').forEach(function(inp) {
+                inp.addEventListener('input', function() { if (tipo === 'zonas') window._searchGranjasZonas = this.value; else window._searchGranjasEspecifico = this.value; renderGranjasPage(tipo, 1); });
+            });
+            document.querySelectorAll('#' + wrapperId + ' [data-crono-view]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var v = btn.getAttribute('data-crono-view');
+                    wrapper.setAttribute('data-vista', v);
+                    document.querySelectorAll('#' + wrapperId + ' .view-toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    renderGranjasPage(tipo, window._cronoGranjasCurrentPage ? window._cronoGranjasCurrentPage[tipo] || 1 : 1);
+                });
+            });
+            renderGranjasPage(tipo, 1);
+        }
+        function renderGranjasPage(tipo, page) {
+            var filasCompletas = tipo === 'zonas' ? (window._filasGranjasZonas || []) : (window._filasGranjasEspecifico || []);
+            var searchQ = tipo === 'zonas' ? (window._searchGranjasZonas || '') : (window._searchGranjasEspecifico || '');
+            var filas = filterFilasPorBusqueda(filasCompletas, searchQ, tipo === 'zonas');
+            var total = filas.length;
+            var totalPag = Math.max(1, Math.ceil(total / PAGE_SIZE_GRANJAS));
+            page = Math.max(1, Math.min(page, totalPag));
+            if (!window._cronoGranjasCurrentPage) window._cronoGranjasCurrentPage = {};
+            window._cronoGranjasCurrentPage[tipo] = page;
+            var isZonas = (tipo === 'zonas');
+            var tbodyId = isZonas ? 'tbodyGranjasZonas' : 'tbodyGranjasEspecifico';
+            var pagId = isZonas ? 'paginacionGranjasZonas' : 'paginacionGranjasEspecifico';
+            var wrapperId = isZonas ? 'cronoGranjasWrapperZonas' : 'cronoGranjasWrapperEspecifico';
+            var start = (page - 1) * PAGE_SIZE_GRANJAS;
+            var end = Math.min(start + PAGE_SIZE_GRANJAS, total);
+            var filaPage = filas.slice(start, end);
+            var tbody = document.getElementById(tbodyId);
+            if (!tbody) return;
+            var rowsHtml = '';
+            filaPage.forEach(function(r, i) {
+                var num = start + i + 1;
+                if (isZonas) {
+                    rowsHtml += '<tr><td>' + num + '</td><td>' + (r.codPrograma || '—') + '</td><td>' + (r.zona || '—') + '</td><td>' + (r.subzona || '—') + '</td><td>' + r.granja + '</td><td>' + r.nomGranja + '</td><td>' + r.campania + '</td><td>' + r.galpon + '</td><td>' + r.edad + '</td><td>' + r.fechaCarga + '</td><td>' + r.fechaEjec + '</td></tr>';
+                } else {
+                    rowsHtml += '<tr><td>' + num + '</td><td>' + (r.codPrograma || '—') + '</td><td>' + r.granja + '</td><td>' + r.nomGranja + '</td><td>' + r.campania + '</td><td>' + r.galpon + '</td><td>' + r.edad + '</td><td>' + r.fechaCarga + '</td><td>' + r.fechaEjec + '</td></tr>';
+                }
+            });
+            tbody.innerHTML = rowsHtml;
+            var pagEl = document.getElementById(pagId);
+            var pagHtml = buildCronoGranjasPaginationHtml(tipo, page, totalPag, total, start, end);
+            if (pagEl) {
+                pagEl.innerHTML = pagHtml;
+                var prevBtn = pagEl.querySelector('.paginate_button.previous');
+                var nextBtn = pagEl.querySelector('.paginate_button.next');
+                if (prevBtn && !prevBtn.classList.contains('disabled')) prevBtn.addEventListener('click', function() { renderGranjasPage(tipo, page - 1); });
+                if (nextBtn && !nextBtn.classList.contains('disabled')) nextBtn.addEventListener('click', function() { renderGranjasPage(tipo, page + 1); });
+            }
+            var searchIds = isZonas ? ['searchGranjasZonas', 'searchGranjasZonasIconos'] : ['searchGranjasEspecifico', 'searchGranjasEspecificoIconos'];
+            searchIds.forEach(function(id) { var el = document.getElementById(id); if (el) el.value = searchQ; });
+            var wrapper = document.getElementById(wrapperId);
+            if (wrapper && wrapper.getAttribute('data-vista') === 'iconos') {
+                renderCronoGranjasCards(filaPage, tipo, total, totalPag, page);
+                var cardsTopId = isZonas ? 'cardsControlsTopGranjasZonas' : 'cardsControlsTopGranjasEspecifico';
+                var cardsTop = document.getElementById(cardsTopId);
+                var cardsTopId = isZonas ? 'cardsControlsTopGranjasZonas' : 'cardsControlsTopGranjasEspecifico';
+                if (cardsTop && !cardsTop.hasChildNodes()) {
+                    cardsTop.innerHTML = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select data-granjas-size data-context="' + tipo + '"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>registros</span></label>' +
+                        '<label class="inline-flex items-center gap-2"><span>Buscar:</span><input type="text" class="buscar-granjas" placeholder="Buscar..." data-context="' + tipo + '" style="padding:0.5rem 1rem;border:1px solid #d1d5db;border-radius:0.5rem;min-width:180px;"></label>';
+                    var topEl = document.getElementById(cardsTopId);
+                    if (topEl) {
+                        topEl.querySelectorAll('[data-granjas-size]').forEach(function(sel) {
+                            sel.addEventListener('change', function() { PAGE_SIZE_GRANJAS = parseInt(this.value, 10) || 20; renderGranjasPage(tipo, 1); });
+                        });
+                        topEl.querySelectorAll('.buscar-granjas').forEach(function(inp) {
+                            inp.addEventListener('input', function() { if (tipo === 'zonas') window._searchGranjasZonas = this.value; else window._searchGranjasEspecifico = this.value; renderGranjasPage(tipo, 1); });
+                        });
+                    }
+                }
+                if (cardsTop) {
+                    var selTop = cardsTop.querySelector('select[data-granjas-size]');
+                    if (selTop) selTop.value = String(PAGE_SIZE_GRANJAS);
+                    var inpTop = cardsTop.querySelector('input.buscar-granjas');
+                    if (inpTop) inpTop.value = searchQ;
+                }
+            }
         }
 
         function llenarAnios() {
@@ -691,6 +989,40 @@ if (empty($_SESSION['active'])) {
             actualizarVisibilidadZonas();
         });
 
+        document.getElementById('infoZona').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            var pop = document.getElementById('popoverInfoZonaFlotante');
+            if (!pop) {
+                pop = document.createElement('div');
+                pop.id = 'popoverInfoZonaFlotante';
+                pop.innerHTML = 'Puede seleccionar más de una zona manteniendo presionada la tecla <strong>Control</strong> (Ctrl) y haciendo clic en las opciones.<br><br>La opción <strong>Específico</strong> solo se puede seleccionar sola (granja y galpón concretos).';
+                document.body.appendChild(pop);
+            }
+            var isVisible = pop.classList.contains('visible');
+            if (isVisible) {
+                pop.classList.remove('visible');
+            } else {
+                var rect = this.getBoundingClientRect();
+                var pad = 8;
+                pop.style.left = rect.left + 'px';
+                pop.style.top = (rect.bottom + 6) + 'px';
+                pop.classList.add('visible');
+                var w = pop.offsetWidth, h = pop.offsetHeight;
+                var left = parseFloat(pop.style.left) || 0, top = parseFloat(pop.style.top) || 0;
+                left = Math.max(pad, Math.min(left, window.innerWidth - w - pad));
+                top = Math.max(pad, Math.min(top, window.innerHeight - h - pad));
+                pop.style.left = left + 'px';
+                pop.style.top = top + 'px';
+            }
+        });
+        document.addEventListener('click', function(ev) {
+            if (!ev.target.closest('#infoZona')) {
+                var p = document.getElementById('popoverInfoZonaFlotante');
+                if (p) p.classList.remove('visible');
+            }
+        });
+
         document.getElementById('btnAsignarZonas').addEventListener('click', function() {
             var codPrograma = document.getElementById('cronoPrograma').value.trim();
             var anio = document.getElementById('cronoAnio').value || new Date().getFullYear();
@@ -773,17 +1105,11 @@ if (empty($_SESSION['active'])) {
                             var nomG = (granjasMap[it.granja] || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;');
                             (it.fechas || []).forEach(function(f, idx) {
                                 var campaniaFila = (f.campania != null && String(f.campania).trim() !== '') ? String(f.campania).trim() : (it.campania || '—');
-                                filas.push({ codPrograma: codPrograma, posDetalle: (f.posDetalle != null && f.posDetalle !== '') ? f.posDetalle : (idx + 1), zona: zonaTxt, subzona: subzonaTxt, granja: it.granja || '—', nomGranja: nomG || '—', campania: campaniaFila, galpon: it.galpon || '—', edad: f.edad != null ? f.edad : '—', fechaCarga: formatoDDMMYYYY(f.fechaCarga), fechaEjec: formatoDDMMYYYY(f.fechaEjecucion) });
+                                filas.push({ codPrograma: codPrograma, zona: zonaTxt, subzona: subzonaTxt, granja: it.granja || '—', nomGranja: nomG || '—', campania: campaniaFila, galpon: it.galpon || '—', edad: f.edad != null ? f.edad : '—', fechaCarga: formatoDDMMYYYY(f.fechaCarga), fechaEjec: formatoDDMMYYYY(f.fechaEjecucion) });
                             });
                         });
-                        var html = '<p class="text-gray-600 text-xs mb-2"><strong>Total:</strong> ' + filas.length + ' registro(s)</p>';
-                        html += '<div class="overflow-x-auto rounded-lg border border-gray-200"><table class="tabla-fechas-crono"><thead><tr><th>cod. programa</th><th>N° Det</th><th>Zona</th><th>Subzona</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Edad</th><th>Fec. Carga</th><th>Fec. Ejecución</th></tr></thead><tbody>';
-                        filas.forEach(function(r) {
-                            var codEsc = (r.codPrograma || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-                            html += '<tr><td>' + (r.codPrograma || '—') + '</td><td><span class="mr-1">' + (r.posDetalle || '—') + '</span><button type="button" class="btn-ver-crono-detalle" data-codigo="' + codEsc + '" data-pos-detalle="' + (r.posDetalle || 0) + '" title="Ver cabecera y detalle"><i class="fas fa-eye"></i></button></td><td>' + r.zona + '</td><td>' + r.subzona + '</td><td>' + r.granja + '</td><td>' + r.nomGranja + '</td><td>' + r.campania + '</td><td>' + r.galpon + '</td><td>' + r.edad + '</td><td>' + r.fechaCarga + '</td><td>' + r.fechaEjec + '</td></tr>';
-                        });
-                        html += '</tbody></table></div>';
-                        if (panelGranjas) panelGranjas.innerHTML = html;
+                        var totalTexto = '<strong>Total:</strong> ' + filas.length + ' registro(s)';
+                        renderTablaGranjasPaginada(filas, panelGranjas, 'zonas', totalTexto);
                     }
                     cargarTabProgramaEnResultadoCrono(codPrograma, 'programaCabZonas', 'programaTheadZonas', 'programaBodyZonas', 'programaSinRegZonas');
                     div.classList.remove('hidden');
@@ -809,7 +1135,7 @@ if (empty($_SESSION['active'])) {
                 return;
             }
             var fd = new FormData();
-            fd.append('modo', 'especifico_multi');
+            fd.append('modo', 'especifico');
             fd.append('granja', granja);
             fd.append('galpon', galpon);
             fd.append('codPrograma', codPrograma);
@@ -844,17 +1170,11 @@ if (empty($_SESSION['active'])) {
                             (it.fechas || []).forEach(function(f, idx) {
                                 var fe = (f && typeof f === 'object') ? f : {};
                                 var campaniaFila = (fe.campania != null && String(fe.campania).trim() !== '') ? String(fe.campania).trim() : (it.campania || '—');
-                                filas.push({ codPrograma: codPrograma, posDetalle: (fe.posDetalle != null && fe.posDetalle !== '') ? fe.posDetalle : (idx + 1), granja: it.granja || '—', nomGranja: nomG || '—', campania: campaniaFila, galpon: it.galpon || '—', edad: fe.edad != null ? fe.edad : '—', fechaCarga: formatoDDMMYYYY(fe.fechaCarga), fechaEjec: formatoDDMMYYYY(fe.fechaEjecucion) });
+                                filas.push({ codPrograma: codPrograma, granja: it.granja || '—', nomGranja: nomG || '—', campania: campaniaFila, galpon: it.galpon || '—', edad: fe.edad != null ? fe.edad : '—', fechaCarga: formatoDDMMYYYY(fe.fechaCarga), fechaEjec: formatoDDMMYYYY(fe.fechaEjecucion) });
                             });
                         });
-                        var html = '<p class="text-gray-600 text-xs mb-2"><strong>Zona:</strong> Especifico &nbsp;·&nbsp; <strong>Total:</strong> ' + filas.length + ' registro(s)</p>';
-                        html += '<div class="overflow-x-auto rounded-lg border border-gray-200"><table class="tabla-fechas-crono"><thead><tr><th>cod. programa</th><th>N° Det</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Edad</th><th>Fec. Carga</th><th>Fec. Ejecución</th></tr></thead><tbody>';
-                        filas.forEach(function(r) {
-                            var codEsc = (r.codPrograma || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
-                            html += '<tr><td>' + (r.codPrograma || '—') + '</td><td><span class="mr-1">' + (r.posDetalle || '—') + '</span><button type="button" class="btn-ver-crono-detalle" data-codigo="' + codEsc + '" data-pos-detalle="' + (r.posDetalle || 0) + '" title="Ver cabecera y detalle"><i class="fas fa-eye"></i></button></td><td>' + r.granja + '</td><td>' + r.nomGranja + '</td><td>' + r.campania + '</td><td>' + r.galpon + '</td><td>' + r.edad + '</td><td>' + r.fechaCarga + '</td><td>' + r.fechaEjec + '</td></tr>';
-                        });
-                        html += '</tbody></table></div>';
-                        if (panelGranjas) panelGranjas.innerHTML = html;
+                        var totalTexto = '<strong>Zona:</strong> Especifico &nbsp;·&nbsp; <strong>Total:</strong> ' + filas.length + ' registro(s)';
+                        renderTablaGranjasPaginada(filas, panelGranjas, 'especifico', totalTexto);
                     }
                     cargarTabProgramaEnResultadoCrono(codPrograma, 'programaCabEspecifico', 'programaTheadEspecifico', 'programaBodyEspecifico', 'programaSinRegEspecifico');
                     div.classList.remove('hidden');
@@ -887,7 +1207,7 @@ if (empty($_SESSION['active'])) {
                         fechas: (it.fechas || []).map(function(f) {
                             var fe = (f && typeof f === 'object') ? f : {};
                             var campaniaFe = (fe.campania != null) ? String(fe.campania).trim() : ((it.campania != null) ? String(it.campania).trim() : '');
-                            return { edad: fe.edad != null ? fe.edad : (edadProgramaCrono != null ? edadProgramaCrono : null), posDetalle: (fe.posDetalle != null && fe.posDetalle !== '') ? fe.posDetalle : null, fechaCarga: fe.fechaCarga, fechaEjecucion: fe.fechaEjecucion, campania: campaniaFe };
+                            return { edad: fe.edad != null ? fe.edad : (edadProgramaCrono != null ? edadProgramaCrono : null), fechaCarga: fe.fechaCarga, fechaEjecucion: fe.fechaEjecucion, campania: campaniaFe };
                         })
                     };
                 });
@@ -947,7 +1267,7 @@ if (empty($_SESSION['active'])) {
                     subzona: zs.subzona,
                         fechas: (it.fechas || []).map(function(f) {
                             var campaniaF = (f.campania != null) ? String(f.campania).trim() : ((it.campania != null) ? String(it.campania).trim() : '');
-                            return { edad: f.edad != null ? f.edad : null, posDetalle: (f.posDetalle != null && f.posDetalle !== '') ? f.posDetalle : null, fechaCarga: f.fechaCarga, fechaEjecucion: f.fechaEjecucion, campania: campaniaF };
+                            return { edad: f.edad != null ? f.edad : null, fechaCarga: f.fechaCarga, fechaEjecucion: f.fechaEjecucion, campania: campaniaF };
                         })
                 };
             });

@@ -336,7 +336,7 @@ if (!$conexion) {
                     var unidadAttr = (p.unidad || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                     var dosisAttr = (p.dosis || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                     var tr = document.createElement('tr');
-                    tr.className = 'border-b border-gray-200 hover:bg-gray-50';
+                    tr.className = 'border-b border-gray-200';
                     tr.setAttribute('data-codigo', codigoAttr);
                     tr.setAttribute('data-descri', descAttr);
                     tr.setAttribute('data-lin', linAttr);

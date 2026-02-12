@@ -369,10 +369,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                 📊 Ver Documento
                             </button>';
                 } else {
-
-                    $boton = '<a href="' . htmlspecialchars($rutaPublica) . '" download
-                                class="px-4 py-2 bg-blue-600 text-white rounded-lg">
-                                ⬇️ Descargar
+                    $rutaEnc = htmlspecialchars(urlencode($ruta));
+                    $boton = '<a href="descargar_archivo.php?ruta=' . $rutaEnc . '"
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 whitespace-nowrap">
+                                <i class="fas fa-download"></i> Descargar
                             </a>';
                 }
 
@@ -475,111 +475,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             width: 90%;
             height: 90%;
             object-fit: contain;
-        }
-
-        .table-wrapper {
-            overflow-x: auto;
-            overflow-y: visible;
-            width: 100%;
-            border-radius: 1rem;
-        }
-
-        .table-wrapper::-webkit-scrollbar {
-            height: 10px;
-        }
-
-        .table-wrapper::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 10px;
-        }
-
-        .table-wrapper::-webkit-scrollbar-thumb {
-            background: #94a3b8;
-            border-radius: 10px;
-        }
-
-        .table-wrapper::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
-        }
-
-        .data-table {
-            width: 100% !important;
-            border-collapse: collapse;
-            min-width: 1200px;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 0.75rem 1rem;
-            text-align: left;
-            font-size: 0.875rem;
-            border-bottom: 1px solid #e5e7eb;
-            white-space: nowrap;
-        }
-
-        .data-table th {
-            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
-            font-weight: 600;
-            color: #ffffff !important;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .data-table tbody tr:hover {
-            background-color: #eff6ff !important;
-        }
-
-        .dataTables_wrapper .dataTables_length,
-        .dataTables_wrapper .dataTables_filter,
-        .dataTables_wrapper .dataTables_info,
-        .dataTables_wrapper .dataTables_paginate {
-            padding: 1rem;
-        }
-
-        .dataTables_wrapper .dataTables_length select {
-            padding: 0.5rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            margin: 0 0.5rem;
-        }
-
-        .dataTables_wrapper .dataTables_filter input {
-            padding: 0.5rem 1rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            margin-left: 0.5rem;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            padding: 0.5rem 1rem !important;
-            margin: 0 0.25rem;
-            border-radius: 0.5rem;
-            border: 1px solid #d1d5db !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
-            color: white !important;
-            border: 1px solid #1e40af !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-            background: #eff6ff !important;
-            color: #1d4ed8 !important;
-        }
-
-        table.dataTable thead .sorting:before,
-        table.dataTable thead .sorting_asc:before,
-        table.dataTable thead .sorting_desc:before,
-        table.dataTable thead .sorting:after,
-        table.dataTable thead .sorting_asc:after,
-        table.dataTable thead .sorting_desc:after {
-            color: white !important;
-        }
-
-        .dataTables_wrapper {
-            overflow-x: visible !important;
         }
 
         /* Vista tarjetas (iconos) - mismo estilo que reportes */
@@ -724,8 +619,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                 </label>
                                 <select id="periodoTipo"
                                     class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
-                                    <option value="TODOS">Todos</option>
-                                    <option value="POR_FECHA" selected>Por fecha</option>
+                                    <option value="TODOS" selected>Todos</option>
+                                    <option value="POR_FECHA">Por fecha</option>
                                     <option value="ENTRE_FECHAS">Entre fechas</option>
                                     <option value="POR_MES">Por mes</option>
                                     <option value="ENTRE_MESES">Entre meses</option>
@@ -743,12 +638,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
                                 <div class="min-w-[180px]">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Desde</label>
-                                    <input id="fechaInicio" type="date"
+                                    <input id="fechaInicio" type="date" value="<?php echo date('Y-m-01'); ?>"
                                         class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                 </div>
                                 <div class="min-w-[180px]">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Hasta</label>
-                                    <input id="fechaFin" type="date"
+                                    <input id="fechaFin" type="date" value="<?php echo date('Y-m-t'); ?>"
                                         class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                 </div>
                             </div>
@@ -760,12 +655,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                             <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
                                 <div class="min-w-[120px]">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Mes Inicio</label>
-                                    <input id="mesInicio" type="month"
+                                    <input id="mesInicio" type="month" value="<?php echo date('Y') . '-01'; ?>"
                                         class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                 </div>
                                 <div class="min-w-[120px]">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Mes Fin</label>
-                                    <input id="mesFin" type="month"
+                                    <input id="mesFin" type="month" value="<?php echo date('Y') . '-12'; ?>"
                                         class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                                 </div>
                             </div>
@@ -966,14 +861,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         <!-- Tabla (mismo estilo que dashboard-reportes) -->
         <div class="bg-white rounded-xl shadow-md p-5" id="tablaSeguimientoWrapper" data-vista-tabla-iconos data-vista="">
             <div class="card-body p-0 mt-5">
-                <div class="view-toggle-group flex items-center gap-2 mb-4">
-                    <button type="button" class="view-toggle-btn active" id="btnViewTablaSeg" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
-                    <button type="button" class="view-toggle-btn" id="btnViewIconosSeg" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                <!-- Toolbar: Lista/Iconos + controles tabla (lista) o Mostrar+Buscar (iconos) -->
+                <div class="toolbar-vista-row flex flex-wrap items-center justify-between gap-3 mb-3" id="seguimientoToolbarRow">
+                    <div class="view-toggle-group flex items-center gap-2" id="viewToggleGroupSeg">
+                        <button type="button" class="view-toggle-btn active" id="btnViewTablaSeg" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                        <button type="button" class="view-toggle-btn" id="btnViewIconosSeg" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                    </div>
+                    <div id="segDtControls" class="flex flex-wrap items-center gap-3"></div>
+                    <div id="segIconosControls" class="flex flex-wrap items-center gap-3" style="display: none;"></div>
                 </div>
                 <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasSeg">
                     <div id="cardsControlsTopSeg" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
                     <div id="cardsContainerSeg" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
-                    <div id="cardsPaginationSeg" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
+                    <div id="cardsPaginationSeg" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-table="#tablaResultados"></div>
                 </div>
                 <div class="view-lista-wrap" id="viewListaSeg">
                     <div class="table-wrapper overflow-x-auto">
@@ -993,7 +893,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                     <th>Estado</th>
                                     <th>Obs</th>
                                     <th class="px-6 py-4 text-left text-sm font-semibold">Detalles</th>
-                                    <th>Seguimiento</th>
+                                    <th>Seg.</th>
                                     <th>PDF</th>
                                 </tr>
                             </thead>
@@ -1369,18 +1269,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-5/6 flex flex-col">
 
                 <!-- Header -->
-                <div class="flex items-center justify-between px-6 py-4 border-b">
-
-                    <!-- Título + Descargar -->
-                    <div class="flex items-center gap-4">
-                        <button onclick="descargarArchivo()"
-                            class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm flex items-center gap-1">
-                            ⬇️ Descargar
+                <div class="flex items-center justify-between px-6 py-4 border-b gap-4">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="text-sm font-semibold text-gray-700 truncate">Documento</span>
+                        <button type="button" onclick="descargarArchivo()"
+                            class="flex-shrink-0 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium whitespace-nowrap inline-flex items-center gap-2">
+                            <i class="fas fa-download"></i> Descargar
                         </button>
                     </div>
-
-                    <!-- Cerrar -->
-                    <button onclick="cerrarModalPDF()" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">
+                    <button type="button" onclick="cerrarModalPDF()" class="flex-shrink-0 text-gray-500 hover:text-gray-700 text-2xl leading-none p-1">
                         ×
                     </button>
                 </div>
@@ -1636,6 +1533,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../assets/js/sweetalert-helpers.js"></script>
+    <script src="../../assets/js/pagination-iconos.js"></script>
 
     <script>
         var table; // Variable global
@@ -1670,19 +1568,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             var edadHasta = $('#filtroEdadHasta').val();
 
 
-            // Inicializar/Reinicializar DataTable
+            // Inicializar/Reinicializar DataTable (controles l/f se mueven al toolbar en initComplete)
             table = $('#tablaResultados').DataTable({
                 processing: true,
                 serverSide: true,
-                scrollX: true,
+                scrollX: false,
                 autoWidth: false,
+                drawCallback: function () {
+                    renderizarTarjetasSeguimiento();
+                },
+                initComplete: function () {
+                    var wrapper = $('#tablaResultados').closest('.dataTables_wrapper');
+                    var $length = wrapper.find('.dataTables_length').first();
+                    var $filter = wrapper.find('.dataTables_filter').first();
+                    var $controls = $('#segDtControls');
+                    if ($controls.length && $length.length && $filter.length) {
+                        $controls.append($length, $filter);
+                        var vista = $('#tablaSeguimientoWrapper').attr('data-vista') || 'lista';
+                        $controls.toggle(vista === 'lista');
+                    }
+                },
                 dom: `
-                    <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4"
+                    <"dt-top-row"
                         <"flex items-center gap-6" l>
                         <"flex items-center gap-2" f>
                     >
                     rt
-                    <"flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-4 pt-4 border-t border-gray-200"
+                    <"dt-bottom-row"
                         <"text-sm text-gray-600" i>
                         <"text-sm text-gray-600" p>
                     >
@@ -1907,12 +1819,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 var esLista = (vista === 'lista');
                 $('#tablaSeguimientoWrapper').attr('data-vista', vista);
                 if (esLista) {
+                    var $filter = $('#segIconosControls .dataTables_filter').detach();
+                    if ($filter.length) $('#segDtControls').append($filter);
+                    $('#segDtControls').show();
+                    $('#segIconosControls').hide();
                     $('#viewTarjetasSeg').addClass('hidden').css('display', 'none');
                     $('#tablaSeguimientoWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
                 } else {
+                    $('#segDtControls').hide();
+                    $('#segIconosControls').show();
                     $('#tablaSeguimientoWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
                     $('#viewTarjetasSeg').removeClass('hidden').css('display', 'block');
                     $('#cardsContainerSeg').attr('data-vista-cards', 'iconos');
+                    if (typeof renderizarTarjetasSeguimiento === 'function') renderizarTarjetasSeguimiento();
                 }
             }
             function actualizarVistaInicialSeg() {
@@ -1979,22 +1898,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 });
                 var len = api.page.len();
                 var lengthOptions = [5, 10, 15, 20, 25];
-                var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select px-2 py-1 border border-gray-300 rounded-md text-sm">' +
+                var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
                     lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
                     '</select><span>registros</span></label>';
-                var navBtns = '<div class="flex items-center gap-3 flex-wrap">' +
-                    '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' +
-                    '<div class="flex gap-2">' +
-                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaResultados\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
-                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaResultados\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
-                    '</div></div>';
-                var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + navBtns + '</div>';
-                $('#cardsControlsTopSeg').html(controlsHtml);
-                $('#cardsPaginationSeg').html(controlsHtml);
-                $('#cardsControlsTopSeg .cards-length-select, #cardsPaginationSeg .cards-length-select').on('change', function() {
-                    var val = parseInt($(this).val(), 10);
-                    if (table) table.page.len(val).draw(false);
-                });
+                var vista = $('#tablaSeguimientoWrapper').attr('data-vista') || '';
+                if (vista === 'iconos') {
+                    var $toolbarRow = $('#segIconosControls .iconos-toolbar-row');
+                    if (!$toolbarRow.length) {
+                        var $filter = $('#segDtControls .dataTables_filter').detach();
+                        var iconosRow = '<div class="iconos-toolbar-row flex flex-wrap items-center gap-3">' + lengthSelect + '</div>';
+                        $('#segIconosControls').html(iconosRow);
+                        if ($filter.length) $('#segIconosControls .iconos-toolbar-row').append($filter);
+                        $('#segIconosControls .cards-length-select').on('change', function() {
+                            var val = parseInt($(this).val(), 10);
+                            if (table) table.page.len(val).draw(false);
+                        });
+                    } else {
+                        var $sel = $toolbarRow.find('.cards-length-select');
+                        if ($sel.length) $sel.find('option').remove().end().append(lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join(''));
+                    }
+                    $('#cardsControlsTopSeg').empty();
+                    $('#cardsPaginationSeg').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : '');
+                } else {
+                    var navBtns = '<div class="flex gap-2">' +
+                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaResultados\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
+                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaResultados\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
+                        '</div>';
+                    var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' + navBtns + '</div>';
+                    $('#cardsControlsTopSeg').html(controlsHtml);
+                    $('#cardsPaginationSeg').html(controlsHtml);
+                    $('#cardsControlsTopSeg .cards-length-select, #cardsPaginationSeg .cards-length-select').on('change', function() {
+                        var val = parseInt($(this).val(), 10);
+                        if (table) table.page.len(val).draw(false);
+                    });
+                }
             }
             actualizarVistaInicialSeg();
             $('#btnViewTablaSeg').on('click', function () {
@@ -2023,13 +1960,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             });
 
             $('#btnLimpiar').click(function () {
-                $('#periodoTipo').val('POR_FECHA');
-                $('#fechaUnica').val(new Date().toISOString().slice(0, 10));
-                $('#fechaInicio').val('');
-                $('#fechaFin').val('');
-                $('#mesUnico').val('');
-                $('#mesInicio').val('');
-                $('#mesFin').val('');
+                $('#periodoTipo').val('TODOS');
+                var d = new Date();
+                $('#fechaUnica').val(d.toISOString().slice(0, 10));
+                $('#fechaInicio').val(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01');
+                $('#fechaFin').val(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate().toString().padStart(2, '0'));
+                $('#mesUnico').val(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+                $('#mesInicio').val(d.getFullYear() + '-01');
+                $('#mesFin').val(d.getFullYear() + '-12');
                 $('#filtroEstado').val('');
                 $('#filtroLaboratorio').val('');
                 $('#filtroTipoMuestra').val('');
@@ -2611,9 +2549,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
         function descargarArchivo() {
             if (!archivoActual) return;
-
-            // Fuerza descarga en nueva pestaña
-            window.open(archivoActual, '_blank');
+            // archivoActual puede ser '../../uploads/resultados/...' (iframe) o URL absoluta (Office)
+            var rutaParam = archivoActual;
+            if (rutaParam.indexOf('../../') === 0) {
+                rutaParam = rutaParam.replace(/^\.\.\/\.\.\//, '');
+            } else if (rutaParam.indexOf('http') === 0) {
+                window.open(rutaParam, '_blank');
+                return;
+            }
+            window.location.href = 'descargar_archivo.php?ruta=' + encodeURIComponent(rutaParam);
         }
 
 

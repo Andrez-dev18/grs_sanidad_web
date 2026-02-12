@@ -192,86 +192,6 @@ if ($codigoUsuario) {
             background: #64748b;
         }
 
-        .data-table {
-            width: 100% !important;
-            border-collapse: collapse;
-            min-width: 1200px;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 0.75rem 1rem;
-            text-align: left;
-            font-size: 0.875rem;
-            border-bottom: 1px solid #e5e7eb;
-            white-space: nowrap;
-        }
-
-        .data-table th {
-            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
-            font-weight: 600;
-            color: #ffffff !important;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .data-table tbody tr:hover {
-            background-color: #eff6ff !important;
-        }
-
-        .dataTables_wrapper .dataTables_length,
-        .dataTables_wrapper .dataTables_filter,
-        .dataTables_wrapper .dataTables_info,
-        .dataTables_wrapper .dataTables_paginate {
-            padding: 1rem;
-        }
-
-        .dataTables_wrapper .dataTables_length select {
-            padding: 0.5rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            margin: 0 0.5rem;
-        }
-
-        .dataTables_wrapper .dataTables_filter input {
-            padding: 0.5rem 1rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            margin-left: 0.5rem;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            padding: 0.5rem 1rem !important;
-            margin: 0 0.25rem;
-            border-radius: 0.5rem;
-            border: 1px solid #d1d5db !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
-            color: white !important;
-            border: 1px solid #1e40af !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-            background: #eff6ff !important;
-            color: #1d4ed8 !important;
-        }
-
-        table.dataTable thead .sorting:before,
-        table.dataTable thead .sorting_asc:before,
-        table.dataTable thead .sorting_desc:before,
-        table.dataTable thead .sorting:after,
-        table.dataTable thead .sorting_asc:after,
-        table.dataTable thead .sorting_desc:after {
-            color: white !important;
-        }
-
-        .dataTables_wrapper {
-            overflow-x: visible !important;
-        }
-
         /* Comentario: varias líneas */
         #tabla td.comentario-cell {
             white-space: normal !important;
@@ -315,8 +235,8 @@ if ($codigoUsuario) {
                     <div class="flex-shrink-0" style="min-width: 200px;">
                         <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-alt mr-1 text-blue-600"></i> Periodo</label>
                         <select id="periodoTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
-                            <option value="TODOS">Todos</option>
-                            <option value="POR_FECHA" selected>Por fecha</option>
+                            <option value="TODOS" selected>Todos</option>
+                            <option value="POR_FECHA">Por fecha</option>
                             <option value="ENTRE_FECHAS">Entre fechas</option>
                             <option value="POR_MES">Por mes</option>
                             <option value="ENTRE_MESES">Entre meses</option>
@@ -328,16 +248,16 @@ if ($codigoUsuario) {
                         <input id="fechaUnica" type="date" value="<?php echo date('Y-m-d'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     </div>
                     <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
-                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Desde</label><input id="fechaInicio" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
-                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label><input id="fechaFin" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Desde</label><input id="fechaInicio" type="date" value="<?php echo date('Y-m-01'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label><input id="fechaFin" type="date" value="<?php echo date('Y-m-t'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
                     </div>
                     <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[200px]">
                         <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
                         <input id="mesUnico" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     </div>
                     <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
-                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label><input id="mesInicio" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
-                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label><input id="mesFin" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label><input id="mesInicio" type="month" value="<?php echo date('Y') . '-01'; ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                        <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label><input id="mesFin" type="month" value="<?php echo date('Y') . '-12'; ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
                     </div>
                 </div>
                 <!-- Fila 2: Ubicación -->
@@ -394,14 +314,18 @@ if ($codigoUsuario) {
             <!-- CONTENIDO DE TABS -->
             <div id="contenidoTodos" class="tab-content">
                 <div id="tablaTrackingWrapper" class="card-body p-4" data-vista-tabla-iconos data-vista="">
-                    <div class="view-toggle-group flex items-center gap-2 mb-4">
-                        <button type="button" class="view-toggle-btn active" id="btnViewTablaTrack" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
-                        <button type="button" class="view-toggle-btn" id="btnViewIconosTrack" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                    <div class="toolbar-vista-row flex flex-wrap items-center justify-between gap-3 mb-3" id="trackingToolbarRow">
+                        <div class="view-toggle-group flex items-center gap-2" id="viewToggleGroupTrack">
+                            <button type="button" class="view-toggle-btn active" id="btnViewTablaTrack" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                            <button type="button" class="view-toggle-btn" id="btnViewIconosTrack" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                        </div>
+                        <div id="trackDtControls" class="flex flex-wrap items-center gap-3"></div>
+                        <div id="trackIconosControls" class="flex flex-wrap items-center gap-3" style="display: none;"></div>
                     </div>
                     <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasTrack">
                         <div id="cardsControlsTopTrack" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
                         <div id="cardsContainerTrack" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
-                        <div id="cardsPaginationTrack" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
+                        <div id="cardsPaginationTrack" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-table="#tabla"></div>
                     </div>
                     <div class="view-lista-wrap table-wrapper overflow-x-auto">
                         <table id="tabla" class="data-table w-full text-sm border-collapse config-table">
@@ -426,7 +350,6 @@ if ($codigoUsuario) {
 
             <div id="contenidoPendientes" class="tab-content hidden">
                 <?php
-                // Obtener envíos que tienen GRS
                 $enviosGRS = $conexion->query("SELECT DISTINCT codEnvio FROM san_dim_historial_resultados WHERE ubicacion = 'GRS'");
                 $pendientes = [];
                 while ($row = $enviosGRS->fetch_assoc()) {
@@ -441,72 +364,50 @@ if ($codigoUsuario) {
                     }
                 }
                 ?>
-                <div id="pendientesWrapper" class="card-body p-4" data-vista-tabla-iconos data-vista="">
-                    <div class="view-toggle-group flex items-center gap-2 mb-4">
-                        <button type="button" class="view-toggle-btn active" id="btnViewListaPend" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
-                        <button type="button" class="view-toggle-btn" id="btnViewIconosPend" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
-                    </div>
-                    <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden hidden" id="viewTarjetasPend">
-                        <div id="cardsContainerPend" class="cards-grid cards-grid-iconos">
-                            <?php if (empty($pendientes)): ?>
-                                <p class="col-span-full text-center text-gray-500 py-8">¡Excelente! No hay envíos pendientes.</p>
-                            <?php else: ?>
-                                <?php foreach ($pendientes as $idx => $p): $n = $idx + 1; $codSafe = htmlspecialchars($p['codEnvio']); $faltaSafe = htmlspecialchars($p['falta']); $codAttr = htmlspecialchars($p['codEnvio'], ENT_QUOTES, 'UTF-8'); ?>
-                                    <div class="card-item">
-                                        <div class="card-numero-row">#<?php echo $n; ?></div>
-                                        <div class="card-contenido">
-                                            <div class="card-codigo"><?php echo $codSafe; ?></div>
-                                            <div class="card-campos">
-                                                <div class="card-row"><span class="label">Falta:</span> <span class="text-orange-600 font-medium"><?php echo $faltaSafe; ?></span></div>
-                                            </div>
-                                            <div class="card-acciones">
-                                                <button type="button" onclick="cargarEscaneoConCodigo('<?php echo $codAttr; ?>')"
-                                                    class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition">
-                                                    <i class="fa-solid fa-qrcode mr-2"></i> Escanear / Recepcionar
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                <div id="pendientesWrapper" class="bg-white rounded-xl shadow-md p-5 mt-4" data-vista-tabla-iconos data-vista="">
+                    <div class="card-body p-0">
+                        <div class="reportes-toolbar-row flex flex-wrap items-center justify-between gap-3 mb-3" id="pendientesToolbarRow">
+                            <div class="view-toggle-group flex items-center gap-2">
+                                <button type="button" class="view-toggle-btn active" id="btnViewListaPend" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                                <button type="button" class="view-toggle-btn" id="btnViewIconosPend" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                            </div>
+                            <div id="pendDtControls" class="flex flex-wrap items-center gap-3"></div>
+                            <div id="pendIconosControls" class="flex flex-wrap items-center gap-3" style="display: none;"></div>
                         </div>
-                    </div>
-                    <div class="view-lista-wrap table-wrapper overflow-x-auto">
-                        <div class="bg-gray-50 px-6 py-4 border-b">
-                            <h3 class="text-lg font-semibold text-gray-800">Envíos pendientes de acción</h3>
+                        <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden hidden" id="viewTarjetasPend">
+                            <div id="cardsControlsTopPend" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
+                            <div id="cardsContainerPend" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
+                            <div id="cardsPaginationPend" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-table="#tablaPendientes"></div>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table id="tablaPendientes" class="data-table w-full text-sm border-collapse config-table">
-                                <thead>
-                                    <tr>
-                                        <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
-                                        <th class="px-6 py-4 text-left text-sm font-semibold">Código de envío</th>
-                                        <th class="px-6 py-4 text-center text-sm font-semibold">Falta</th>
-                                        <th class="px-6 py-4 text-center text-sm font-semibold">Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php if (empty($pendientes)): ?>
+                        <div class="view-lista-wrap" id="viewListaPend">
+                            <div class="table-wrapper overflow-x-auto">
+                                <table id="tablaPendientes" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
+                                    <thead>
                                         <tr>
-                                            <td colspan="4" class="px-6 py-12 text-center text-gray-500">¡Excelente! No hay envíos pendientes.</td>
+                                            <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
+                                            <th class="px-6 py-4 text-left text-sm font-semibold">Código de envío</th>
+                                            <th class="px-6 py-4 text-center text-sm font-semibold">Falta</th>
+                                            <th class="px-6 py-4 text-center text-sm font-semibold">Acción</th>
                                         </tr>
-                                    <?php else: ?>
-                                        <?php foreach ($pendientes as $idx => $p): $n = $idx + 1; ?>
-                                            <tr>
-                                                <td class="px-6 py-4 text-gray-700"><?php echo $n; ?></td>
-                                                <td class="px-6 py-4 font-medium text-blue-600"><?php echo htmlspecialchars($p['codEnvio']); ?></td>
-                                                <td class="px-6 py-4 text-center text-orange-600 font-medium"><?php echo $p['falta']; ?></td>
-                                                <td class="px-6 py-4 text-center">
-                                                    <button onclick="cargarEscaneoConCodigo('<?php echo htmlspecialchars($p['codEnvio']); ?>')"
-                                                        class="inline-flex items-center px-5 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition shadow hover:shadow-md">
-                                                        <i class="fa-solid fa-qrcode mr-2"></i> Escanear / Recepcionar
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        <?php if (empty($pendientes)): ?>
+                                            <tr><td colspan="4" class="px-6 py-12 text-center text-gray-500">¡Excelente! No hay envíos pendientes.</td></tr>
+                                        <?php else: ?>
+                                            <?php foreach ($pendientes as $idx => $p): $n = $idx + 1; $codAttr = htmlspecialchars($p['codEnvio'], ENT_QUOTES, 'UTF-8'); ?>
+                                                <tr data-codigo="<?php echo $codAttr; ?>" data-falta="<?php echo htmlspecialchars($p['falta'], ENT_QUOTES, 'UTF-8'); ?>">
+                                                    <td class="px-6 py-4 text-gray-700"><?php echo $n; ?></td>
+                                                    <td class="px-6 py-4 font-medium text-blue-600"><?php echo htmlspecialchars($p['codEnvio']); ?></td>
+                                                    <td class="px-6 py-4 text-center text-orange-600 font-medium"><?php echo htmlspecialchars($p['falta']); ?></td>
+                                                    <td class="px-6 py-4 text-center">
+                                                        <button type="button" onclick="cargarEscaneoConCodigo('<?php echo $codAttr; ?>')" class="inline-flex items-center px-5 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition shadow hover:shadow-md"><i class="fa-solid fa-qrcode mr-2"></i> Escanear / Recepcionar</button>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -673,6 +574,7 @@ if ($codigoUsuario) {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/js/all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
+    <script src="../../../assets/js/pagination-iconos.js"></script>
 
     <script>
         $(document).ready(function() {
@@ -779,6 +681,17 @@ if ($codigoUsuario) {
                 ],
                 drawCallback: function() {
                     if (typeof renderizarTarjetasTracking === 'function') renderizarTarjetasTracking();
+                },
+                initComplete: function() {
+                    var wrapper = $('#tabla').closest('.dataTables_wrapper');
+                    var $length = wrapper.find('.dataTables_length').first();
+                    var $filter = wrapper.find('.dataTables_filter').first();
+                    var $controls = $('#trackDtControls');
+                    if ($controls.length && $length.length && $filter.length) {
+                        $controls.append($length, $filter);
+                        var vista = $('#tablaTrackingWrapper').attr('data-vista') || 'tabla';
+                        $controls.toggle(vista === 'tabla');
+                    }
                 }
             });
 
@@ -786,12 +699,19 @@ if ($codigoUsuario) {
                 var esTabla = (vista === 'tabla');
                 $('#tablaTrackingWrapper').attr('data-vista', vista);
                 if (esTabla) {
+                    var $filter = $('#trackIconosControls .dataTables_filter').detach();
+                    if ($filter.length) $('#trackDtControls').append($filter);
+                    $('#trackDtControls').show();
+                    $('#trackIconosControls').hide();
                     $('#viewTarjetasTrack').addClass('hidden').css('display', 'none');
                     $('#tablaTrackingWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
                 } else {
+                    $('#trackDtControls').hide();
+                    $('#trackIconosControls').show();
                     $('#tablaTrackingWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
                     $('#viewTarjetasTrack').removeClass('hidden').css('display', 'block');
                     $('#cardsContainerTrack').attr('data-vista-cards', 'iconos');
+                    if (typeof renderizarTarjetasTracking === 'function') renderizarTarjetasTracking();
                 }
             }
             function actualizarVistaInicialTrack() {
@@ -843,22 +763,40 @@ if ($codigoUsuario) {
                 });
                 var len = api.page.len();
                 var lengthOptions = [10, 25, 50, 100];
-                var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select px-2 py-1 border border-gray-300 rounded-md text-sm">' +
+                var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
                     lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
                     '</select><span>registros</span></label>';
-                var navBtns = '<div class="flex items-center gap-3 flex-wrap">' +
-                    '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' +
-                    '<div class="flex gap-2">' +
-                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
-                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
-                    '</div></div>';
-                var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + navBtns + '</div>';
-                $('#cardsControlsTopTrack').html(controlsHtml);
-                $('#cardsPaginationTrack').html(controlsHtml);
-                $('#cardsControlsTopTrack .cards-length-select, #cardsPaginationTrack .cards-length-select').on('change', function() {
-                    var val = parseInt($(this).val(), 10);
-                    if (tabla) tabla.page.len(val).draw(false);
-                });
+                var vista = $('#tablaTrackingWrapper').attr('data-vista') || '';
+                if (vista === 'iconos') {
+                    var $toolbarRow = $('#trackIconosControls .iconos-toolbar-row');
+                    if (!$toolbarRow.length) {
+                        var $filter = $('#trackDtControls .dataTables_filter').detach();
+                        var iconosRow = '<div class="iconos-toolbar-row flex flex-wrap items-center gap-3">' + lengthSelect + '</div>';
+                        $('#trackIconosControls').html(iconosRow);
+                        if ($filter.length) $('#trackIconosControls .iconos-toolbar-row').append($filter);
+                        $('#trackIconosControls .cards-length-select').on('change', function() {
+                            var val = parseInt($(this).val(), 10);
+                            if (tabla) tabla.page.len(val).draw(false);
+                        });
+                    } else {
+                        var $sel = $toolbarRow.find('.cards-length-select');
+                        if ($sel.length) $sel.find('option').remove().end().append(lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join(''));
+                    }
+                    $('#cardsControlsTopTrack').empty();
+                    $('#cardsPaginationTrack').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : '');
+                } else {
+                    var navBtns = '<div class="flex gap-2">' +
+                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
+                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
+                        '</div>';
+                    var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' + navBtns + '</div>';
+                    $('#cardsControlsTopTrack').html(controlsHtml);
+                    $('#cardsPaginationTrack').html(controlsHtml);
+                    $('#cardsControlsTopTrack .cards-length-select, #cardsPaginationTrack .cards-length-select').on('change', function() {
+                        var val = parseInt($(this).val(), 10);
+                        if (tabla) tabla.page.len(val).draw(false);
+                    });
+                }
             }
             actualizarVistaInicialTrack();
             $('#btnViewTablaTrack').on('click', function() {
@@ -883,9 +821,14 @@ if ($codigoUsuario) {
 
             // Limpiar filtros
             $('#btnLimpiarFiltros').on('click', function() {
-                $('#periodoTipo').val('POR_FECHA');
-                $('#fechaUnica').val(new Date().toISOString().slice(0, 10));
-                $('#fechaInicio, #fechaFin, #mesUnico, #mesInicio, #mesFin').val('');
+                $('#periodoTipo').val('TODOS');
+                var d = new Date();
+                $('#fechaUnica').val(d.toISOString().slice(0, 10));
+                $('#fechaInicio').val(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01');
+                $('#fechaFin').val(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()).padStart(2, '0'));
+                $('#mesUnico').val(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+                $('#mesInicio').val(d.getFullYear() + '-01');
+                $('#mesFin').val(d.getFullYear() + '-12');
                 aplicarVisibilidadPeriodoTracking();
                 $('#filtroUbicacion').val('');
                 tabla.ajax.reload();
@@ -934,36 +877,135 @@ if ($codigoUsuario) {
             cambiarTab('tabTodos', 'tabPendientes', 'contenidoTodos', 'contenidoPendientes');
         });
 
-        document.getElementById('tabPendientes').addEventListener('click', function() {
-            cambiarTab('tabPendientes', 'tabTodos', 'contenidoPendientes', 'contenidoTodos');
-            actualizarVistaInicialPendientes();
-        });
-
+        var tablePendientes = null;
+        function initTablePendientesOnce() {
+            if ($.fn.DataTable && $.fn.DataTable.isDataTable('#tablaPendientes')) return;
+            if (!document.getElementById('tablaPendientes')) return;
+            tablePendientes = $('#tablaPendientes').DataTable({
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                order: [[0, 'asc']],
+                columnDefs: [{ orderable: false, targets: [3] }],
+                drawCallback: function() {
+                    if (typeof renderizarTarjetasPendientes === 'function') renderizarTarjetasPendientes();
+                },
+                initComplete: function() {
+                    this.api().columns.adjust();
+                    var wrapper = $('#tablaPendientes').closest('.dataTables_wrapper');
+                    var $controls = $('#pendDtControls');
+                    var $length = wrapper.find('.dataTables_length').first();
+                    var $filter = wrapper.find('.dataTables_filter').first();
+                    if ($controls.length && $length.length && $filter.length) {
+                        $controls.append($length, $filter);
+                        var vista = $('#pendientesWrapper').attr('data-vista') || '';
+                        $controls.toggle(vista !== 'iconos');
+                    }
+                }
+            });
+        }
+        function renderizarTarjetasPendientes() {
+            if (!tablePendientes) return;
+            var api = tablePendientes;
+            var cont = $('#cardsContainerPend');
+            cont.empty();
+            var info = api.page.info();
+            if (info.recordsDisplay === 0) {
+                cont.html('<p class="col-span-full text-center text-gray-500 py-8">¡Excelente! No hay envíos pendientes.</p>');
+                $('#cardsControlsTopPend').empty();
+                $('#cardsPaginationPend').html('<span class="text-sm text-gray-600">Mostrando 0 registros</span>');
+                return;
+            }
+            var rowIndex = 0;
+            api.rows({ page: 'current' }).every(function() {
+                var $row = $(this.node());
+                if ($row.find('td[colspan]').length) return;
+                rowIndex++;
+                var numero = info.start + rowIndex;
+                var cod = $row.attr('data-codigo') || $row.find('td').eq(1).text().trim();
+                var falta = $row.attr('data-falta') || $row.find('td').eq(2).text().trim();
+                var codEsc = (cod || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                var card = '<div class="card-item">' +
+                    '<div class="card-numero-row">#' + numero + '</div>' +
+                    '<div class="card-contenido">' +
+                    '<div class="card-codigo">' + codEsc + '</div>' +
+                    '<div class="card-campos">' +
+                    '<div class="card-row"><span class="label">Falta:</span> <span class="text-orange-600 font-medium">' + (falta || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></div>' +
+                    '</div>' +
+                    '<div class="card-acciones">' +
+                    '<button type="button" onclick="cargarEscaneoConCodigo(\'' + (cod || '').replace(/'/g, "\\'") + '\')" class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition"><i class="fa-solid fa-qrcode mr-2"></i> Escanear / Recepcionar</button>' +
+                    '</div></div></div>';
+                cont.append(card);
+            });
+            var len = api.page.len();
+            var lengthOptions = [10, 25, 50, 100];
+            var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
+                lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
+                '</select><span>registros</span></label>';
+            var vista = $('#pendientesWrapper').attr('data-vista') || '';
+            if (vista === 'iconos') {
+                var $toolbarRow = $('#pendIconosControls .reportes-iconos-toolbar-row');
+                if (!$toolbarRow.length) {
+                    var $filter = $('#pendDtControls .dataTables_filter').detach();
+                    var iconosRow = '<div class="reportes-iconos-toolbar-row flex flex-wrap items-center gap-3">' + lengthSelect + '</div>';
+                    $('#pendIconosControls').html(iconosRow);
+                    if ($filter.length) $('#pendIconosControls .reportes-iconos-toolbar-row').append($filter);
+                    $('#pendIconosControls .cards-length-select').on('change', function() {
+                        var val = parseInt($(this).val(), 10);
+                        if (tablePendientes) tablePendientes.page.len(val).draw(false);
+                    });
+                } else {
+                    var $sel = $toolbarRow.find('.cards-length-select');
+                    if ($sel.length) $sel.find('option').remove().end().append(lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join(''));
+                }
+                $('#cardsControlsTopPend').empty();
+                $('#cardsPaginationPend').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : '');
+            } else {
+                var navBtns = '<div class="flex gap-2 flex-shrink-0">' +
+                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaPendientes\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
+                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaPendientes\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button></div>';
+                var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + '<span class="text-sm text-gray-600">Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' + navBtns + '</div>';
+                $('#cardsControlsTopPend').html(controlsHtml);
+                $('#cardsPaginationPend').html(controlsHtml);
+                $('#cardsControlsTopPend .cards-length-select, #cardsPaginationPend .cards-length-select').on('change', function() {
+                    var val = parseInt($(this).val(), 10);
+                    if (tablePendientes) tablePendientes.page.len(val).draw(false);
+                });
+            }
+        }
         function aplicarVisibilidadPendientes(vista) {
             var esLista = (vista === 'tabla' || vista === 'lista');
-            var wrapper = document.getElementById('pendientesWrapper');
-            if (!wrapper) return;
-            wrapper.setAttribute('data-vista', vista);
-            var viewTarjetas = document.getElementById('viewTarjetasPend');
-            var viewLista = wrapper.querySelector('.view-lista-wrap');
+            $('#pendientesWrapper').attr('data-vista', vista);
             if (esLista) {
-                if (viewTarjetas) { viewTarjetas.classList.add('hidden'); viewTarjetas.style.display = 'none'; }
-                if (viewLista) { viewLista.classList.remove('hidden'); viewLista.style.display = 'block'; }
+                var $filter = $('#pendIconosControls .dataTables_filter').detach();
+                if ($filter.length) $('#pendDtControls').append($filter);
+                $('#pendDtControls').show();
+                $('#pendIconosControls').hide();
+                $('#viewTarjetasPend').addClass('hidden').css('display', 'none');
+                $('#pendientesWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
             } else {
-                if (viewLista) { viewLista.classList.add('hidden'); viewLista.style.display = 'none'; }
-                if (viewTarjetas) { viewTarjetas.classList.remove('hidden'); viewTarjetas.style.display = 'block'; }
+                $('#pendDtControls').hide();
+                $('#pendIconosControls').show();
+                $('#pendientesWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
+                $('#viewTarjetasPend').removeClass('hidden').css('display', 'block');
+                $('#cardsContainerPend').attr('data-vista-cards', 'iconos');
+                if (typeof renderizarTarjetasPendientes === 'function') renderizarTarjetasPendientes();
             }
-            document.getElementById('btnViewListaPend').classList.toggle('active', esLista);
-            document.getElementById('btnViewIconosPend').classList.toggle('active', !esLista);
+            $('#btnViewListaPend').toggleClass('active', esLista);
+            $('#btnViewIconosPend').toggleClass('active', !esLista);
         }
         function actualizarVistaInicialPendientes() {
             var wrapper = document.getElementById('pendientesWrapper');
             if (!wrapper || wrapper.getAttribute('data-vista')) return;
+            initTablePendientesOnce();
             var w = window.innerWidth;
             var vistaInicial = w < 768 ? 'iconos' : 'tabla';
             wrapper.setAttribute('data-vista', vistaInicial);
             aplicarVisibilidadPendientes(vistaInicial);
         }
+        document.getElementById('tabPendientes').addEventListener('click', function() {
+            cambiarTab('tabPendientes', 'tabTodos', 'contenidoPendientes', 'contenidoTodos');
+            actualizarVistaInicialPendientes();
+        });
         document.getElementById('btnViewListaPend').addEventListener('click', function() {
             aplicarVisibilidadPendientes('tabla');
         });

@@ -27,12 +27,14 @@ if (!$conexion) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Tipos de Programa</title>
 
-    <link rel="stylesheet" href="../../../css/output.css">
+    <link href="../../../css/output.css" rel="stylesheet">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
@@ -59,17 +61,24 @@ if (!$conexion) {
                         <button type="button" class="btn-secondary inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 rounded-lg font-medium order-1 sm:order-2" onclick="openModal('create')">➕ Nuevo Tipo de Programa</button>
                     </div>
                 </div>
-                <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
-                <div id="tablaTipoProgramaWrapper" class="p-4" data-vista-tabla-iconos data-vista="tabla">
-                    <div class="view-toggle-group flex items-center gap-2 mb-4">
-                        <button type="button" class="view-toggle-btn active" id="btnViewTablaTipoProg" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
-                        <button type="button" class="view-toggle-btn" id="btnViewIconosTipoProg" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                <div class="bg-white rounded-xl shadow-md p-5 dashboard-tabla-wrapper" id="tablaTipoProgramaWrapper" data-vista="">
+                    <div class="card-body p-0 mt-5">
+                    <div class="reportes-toolbar-row flex flex-wrap items-center justify-between gap-3 mb-3">
+                        <div class="view-toggle-group flex items-center gap-2">
+                            <button type="button" class="view-toggle-btn active" id="btnViewTablaTipoProg" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                            <button type="button" class="view-toggle-btn" id="btnViewIconosTipoProg" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                        </div>
+                        <div id="tipoProgramaDtControls" class="toolbar-dt-controls flex flex-wrap items-center gap-3"></div>
+                        <div id="tipoProgramaIconosControls" class="toolbar-iconos-controls flex flex-wrap items-center gap-3" style="display: none;"></div>
                     </div>
                     <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasTipoProg">
+                        <div id="cardsControlsTopTipoProg" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
                         <div id="cardsContainerTipoProg" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
+                        <div id="cardsPaginationTipoProg" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-table="#tablaTipoPrograma"></div>
                     </div>
-                    <div class="view-lista-wrap table-container overflow-x-auto">
-                        <table id="tablaTipoPrograma" class="data-table w-full config-table">
+                    <div class="view-lista-wrap" id="viewListaTipoProg">
+                    <div class="table-wrapper overflow-x-auto">
+                        <table id="tablaTipoPrograma" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
                             <thead>
                                 <tr>
                                     <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
@@ -80,7 +89,7 @@ if (!$conexion) {
                             </thead>
                             <tbody id="tipoProgramaTableBody" class="divide-y divide-gray-200">
                                 <?php
-                                $query = "SELECT codigo, nombre, sigla, campoUbicacion, campoProducto, campoUnidades, campoUnidadDosis, campoNumeroFrascos, campoEdadAplicacion, campoAreaGalpon, campoCantidadPorGalpon FROM san_dim_tipo_programa ORDER BY nombre";
+                                $query = "SELECT codigo, nombre, sigla, campoUbicacion, campoProducto, campoProveedor, campoUnidad, campoDosis, campoDescripcion, campoUnidades, campoUnidadDosis, campoNumeroFrascos, campoEdadAplicacion, campoAreaGalpon, campoCantidadPorGalpon FROM san_dim_tipo_programa ORDER BY nombre";
                                 $result = mysqli_query($conexion, $query);
                                 if ($result && mysqli_num_rows($result) > 0) {
                                     $idx = 0;
@@ -92,17 +101,21 @@ if (!$conexion) {
                                         $nomAttr = htmlspecialchars($row['nombre'], ENT_QUOTES, 'UTF-8');
                                         $siglaAttr = htmlspecialchars($row['sigla'] ?? '', ENT_QUOTES, 'UTF-8');
                                         $campos = [
-                                            'ubicacion' => isset($row['campoUbicacion']) ? (int)$row['campoUbicacion'] : 0,
-                                            'producto' => isset($row['campoProducto']) ? (int)$row['campoProducto'] : 0,
-                                            'unidades' => isset($row['campoUnidades']) ? (int)$row['campoUnidades'] : 0,
-                                            'unidad_dosis' => isset($row['campoUnidadDosis']) ? (int)$row['campoUnidadDosis'] : 0,
-                                            'numero_frascos' => isset($row['campoNumeroFrascos']) ? (int)$row['campoNumeroFrascos'] : 0,
-                                            'edad_aplicacion' => isset($row['campoEdadAplicacion']) ? (int)$row['campoEdadAplicacion'] : 0,
-                                            'area_galpon' => isset($row['campoAreaGalpon']) ? (int)$row['campoAreaGalpon'] : 0,
-                                            'cantidad_por_galpon' => isset($row['campoCantidadPorGalpon']) ? (int)$row['campoCantidadPorGalpon'] : 0
+                                            'ubicacion' => (int)($row['campoUbicacion'] ?? 0),
+                                            'producto' => (int)($row['campoProducto'] ?? 0),
+                                            'proveedor' => (int)($row['campoProveedor'] ?? 0),
+                                            'unidad' => (int)($row['campoUnidad'] ?? 0),
+                                            'dosis' => (int)($row['campoDosis'] ?? 0),
+                                            'descripcion' => (int)($row['campoDescripcion'] ?? 0),
+                                            'unidades' => (int)($row['campoUnidades'] ?? 0),
+                                            'unidad_dosis' => (int)($row['campoUnidadDosis'] ?? 0),
+                                            'numero_frascos' => (int)($row['campoNumeroFrascos'] ?? 0),
+                                            'edad_aplicacion' => (int)($row['campoEdadAplicacion'] ?? 0),
+                                            'area_galpon' => (int)($row['campoAreaGalpon'] ?? 0),
+                                            'cantidad_por_galpon' => (int)($row['campoCantidadPorGalpon'] ?? 0)
                                         ];
                                         $camposAttr = htmlspecialchars(json_encode($campos), ENT_QUOTES, 'UTF-8');
-                                        echo '<tr class="hover:bg-gray-50 transition" data-codigo="' . $cod . '" data-nombre="' . $nomAttr . '" data-sigla="' . $siglaAttr . '" data-campos="' . $camposAttr . '" data-index="' . $idx . '">';
+                                        echo '<tr data-codigo="' . $cod . '" data-nombre="' . $nomAttr . '" data-sigla="' . $siglaAttr . '" data-campos="' . $camposAttr . '" data-index="' . $idx . '">';
                                         echo '<td class="px-6 py-4 text-gray-700">' . $idx . '</td>';
                                         echo '<td class="px-6 py-4 text-gray-700 font-medium">' . $nom . '</td>';
                                         echo '<td class="px-6 py-4 text-gray-700">' . $sigla . '</td>';
@@ -156,6 +169,10 @@ if (!$conexion) {
                             <div class="border border-gray-200 rounded-lg p-3 bg-gray-50 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-x-3 gap-y-2">
                                 <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="campoUbicacion" id="modalCampoUbicacion" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"> Ubicación</label>
                                 <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="campoProducto" id="modalCampoProducto" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"> Producto</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="campoProveedor" id="modalCampoProveedor" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"> Proveedor</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="campoUnidad" id="modalCampoUnidad" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"> Unidad</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="campoDosis" id="modalCampoDosis" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"> Dosis</label>
+                                <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="campoDescripcion" id="modalCampoDescripcion" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"> Descripción</label>
                                 <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="campoUnidades" id="modalCampoUnidades" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"> Unidades</label>
                                 <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="campoUnidadDosis" id="modalCampoUnidadDosis" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"> Unidad de dosis</label>
                                 <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" name="campoNumeroFrascos" id="modalCampoNumeroFrascos" value="1" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"> Número de frascos</label>
@@ -180,8 +197,7 @@ if (!$conexion) {
         </div>
         <script>document.getElementById('currentYear').textContent = new Date().getFullYear();</script>
     </div>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="../../../assets/js/pagination-iconos.js"></script>
     <script src="../../../assets/js/configuracion/tipo_programa.js"></script>
     <script>
     (function() {

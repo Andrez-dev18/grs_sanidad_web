@@ -35,9 +35,12 @@ if (empty($_SESSION['active'])) {
         /* Opciones del dropdown Select2 más pequeñas y formato código - descri */
         .select2-container--default .select2-results__option { font-size: 0.75rem; padding: 4px 8px; }
         .select2-container--default .select2-selection--single .select2-selection__rendered { font-size: 0.8125rem; line-height: 28px; }
-        /* Tabla detalle compacta: ocupa todo el ancho del contenedor */
-        .tabla-detalle-compact { font-size: 0.75rem; width: 100%; table-layout: fixed; }
+        /* Tabla detalle: scroll horizontal, sin ellipsis en cabecera */
+        #solicitudesContainer { overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch; }
+        .tabla-detalle-compact { font-size: 0.75rem; width: 100%; min-width: 100%; table-layout: auto; }
         .tabla-detalle-compact th, .tabla-detalle-compact td { padding: 4px 6px; vertical-align: middle; }
+        .tabla-detalle-compact th { white-space: pre-line; overflow-wrap: normal; word-break: normal; line-height: 1.2; min-height: 2.4em; }
+        .tabla-detalle-compact td { white-space: nowrap; }
         .tabla-detalle-compact .form-control.compact { padding: 0.25rem 0.5rem; font-size: 0.75rem; min-height: 26px; border-radius: 0.2rem; }
         .tabla-detalle-compact textarea.compact { min-height: 36px; border-radius: 0.2rem; }
         .btn-add-row { padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: 0.25rem; }
@@ -45,7 +48,9 @@ if (empty($_SESSION['active'])) {
         /* Anchos de columnas: # reducida, Producto/Proveedor/Ubicación más anchos, Unidad/Dosis/Frascos/Edad reducidos, Quitar mínima */
         .tabla-detalle-compact th.col-num, .tabla-detalle-compact td.col-num { width: 28px; max-width: 28px; min-width: 28px; }
         .tabla-detalle-compact th.col-quitar, .tabla-detalle-compact td.col-quitar { width: 36px; max-width: 36px; min-width: 36px; }
-        .tabla-detalle-compact .col-ubicacion { min-width: 72px; max-width: 90px; }
+        .tabla-detalle-compact .col-ubicacion { width: 130px; min-width: 100px; max-width: 130px; }
+        .tabla-detalle-compact .col-ubicacion textarea.compact.multiline { resize: none; min-height: 36px; overflow-y: hidden; line-height: 1.3; white-space: pre-wrap; word-wrap: break-word; width: 100%; min-width: 0; }
+        .tabla-detalle-compact .col-ubicacion input.form-control { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
         .tabla-detalle-compact .col-producto { min-width: 260px; }
         .tabla-detalle-compact .col-proveedor { min-width: 200px; }
         .tabla-detalle-compact .col-producto .form-control,
@@ -59,14 +64,31 @@ if (empty($_SESSION['active'])) {
         .tabla-detalle-compact .col-proveedor .wrap-producto-proveedor { display: flex; align-items: flex-start; gap: 4px; width: 100%; }
         .tabla-detalle-compact .col-producto textarea.compact.multiline,
         .tabla-detalle-compact .col-proveedor textarea.compact.multiline { resize: none; min-height: 36px; overflow-y: hidden; line-height: 1.3; white-space: pre-wrap; word-wrap: break-word; }
-        /* Descripción vacuna: altura dinámica */
+        /* Descripción vacuna: editable + botón enfermedades */
         .tabla-detalle-compact .td-descripcion-vacuna textarea.compact { resize: none; min-height: 36px; overflow-y: hidden; line-height: 1.3; white-space: pre-wrap; word-wrap: break-word; }
-        .tabla-detalle-compact .col-unidad, .tabla-detalle-compact .col-uniddosis, .tabla-detalle-compact .col-frascos { min-width: 42px; max-width: 58px; width: 50px; }
+        .wrap-descripcion-vacuna { display: flex; align-items: flex-start; gap: 4px; width: 100%; min-width: 0; }
+        .wrap-descripcion-vacuna textarea { flex: 1; min-width: 0; }
+        .btn-enfermedades-descripcion { flex-shrink: 0; width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #d1d5db; border-radius: 0.25rem; color: #4b5563; background: #fff; cursor: pointer; }
+        .btn-enfermedades-descripcion:hover { background: #eff6ff; color: #2563eb; }
+        #modalEnfermedadesDescripcion .modal-inner { max-width: 820px; width: 95vw; max-height: 90vh; min-height: 400px; display: flex; flex-direction: column; }
+        #modalEnfermedadesDescripcion .modal-body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+        #wrapCheckboxEnfermedadesDescripcion { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem 0.75rem; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0.5rem 0; }
+        #wrapCheckboxEnfermedadesDescripcion label { display: flex; align-items: center; gap: 0.35rem; cursor: pointer; font-size: 0.8125rem; }
+        #wrapCheckboxEnfermedadesDescripcion input[type="checkbox"] { flex-shrink: 0; background: #fff; }
+        #wrapCheckboxEnfermedadesDescripcion::-webkit-scrollbar { width: 8px; }
+        #wrapCheckboxEnfermedadesDescripcion::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        #wrapCheckboxEnfermedadesDescripcion::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        .tabla-detalle-compact .col-unidad, .tabla-detalle-compact .col-frascos { min-width: 42px; max-width: 58px; width: 50px; }
+        .tabla-detalle-compact .col-uniddosis { min-width: 72px; max-width: 96px; width: 84px; }
         .tabla-detalle-compact .col-dosis { min-width: 55px; max-width: 75px; width: 65px; }
         .tabla-detalle-compact .col-edad { min-width: 58px; max-width: 72px; width: 65px; }
         .tabla-detalle-compact .col-unidad .form-control, .tabla-detalle-compact .col-dosis .form-control,
         .tabla-detalle-compact .col-uniddosis .form-control, .tabla-detalle-compact .col-frascos .form-control,
         .tabla-detalle-compact .col-edad .form-control { min-width: 0; width: 100%; max-width: 100%; box-sizing: border-box; }
+        .tabla-detalle-compact .col-area-galpon,
+        .tabla-detalle-compact .col-cantidad-galpon { min-width: 78px; max-width: 102px; width: 90px; }
+        .tabla-detalle-compact .col-area-galpon .form-control,
+        .tabla-detalle-compact .col-cantidad-galpon .form-control { min-width: 0; width: 100%; max-width: 100%; box-sizing: border-box; font-size: 0.8125rem; }
         #modalProveedorResultados { overflow-y: auto; overflow-x: hidden; max-height: 320px; min-height: 120px; }
         /* Modal buscar producto: scroll en resultados */
         #modalProductoResultados { overflow-y: auto; overflow-x: hidden; max-height: 320px; min-height: 120px; }
@@ -76,6 +98,10 @@ if (empty($_SESSION['active'])) {
         /* Cabecera compacta */
         .cabecera-compact .form-control { padding: 0.3rem 0.5rem; font-size: 0.8125rem; border-radius: 0.25rem; }
         .cabecera-compact label { font-size: 0.7rem; margin-bottom: 0.2rem; }
+        /* Popover flotante fuera de la tabla (se inyecta en body) */
+        .th-edad-wrap { display: inline-flex; align-items: center; }
+        #popoverInfoEdadFlotante { position: fixed; z-index: 9999; min-width: 200px; max-width: 260px; padding: 8px 10px; font-size: 0.75rem; line-height: 1.35; color: #374151; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); white-space: normal; display: none; }
+        #popoverInfoEdadFlotante.visible { display: block; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -92,7 +118,7 @@ if (empty($_SESSION['active'])) {
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-0.5">Código</label>
+                            <label class="block text-xs font-medium text-gray-600 mb-0.5">Código del programa</label>
                             <input type="text" id="codigo" name="codigo" class="form-control bg-gray-100" readonly>
                         </div>
                         <div >
@@ -103,12 +129,12 @@ if (empty($_SESSION['active'])) {
                     </div>
                     <!-- Fila 2: Descripción y Despliegue (zona ya no se registra) -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-0.5">Descripción</label>
+                    <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-0.5">Descripción del programa</label>
                             <input type="text" id="descripcion" name="descripcion" class="form-control" placeholder="Descripción" maxlength="500">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-0.5">Despliegue</label>
+                            <label class="block text-xs font-medium text-gray-600 mb-0.5">Despliegue del programa</label>
                             <input type="text" id="despliegue" name="despliegue" class="form-control" placeholder="Despliegue" maxlength="200" list="desplieguesList" autocomplete="off">
                             <datalist id="desplieguesList"><option value="GRS"><option value="Piloto"></datalist>
                         </div>
@@ -166,6 +192,24 @@ if (empty($_SESSION['active'])) {
             </div>
         </div>
     </div>
+    <!-- Modal seleccionar enfermedades (para descripción) -->
+    <div id="modalEnfermedadesDescripcion" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div id="modalEnfermedadesDescripcionInner" class="modal-inner bg-white rounded-lg shadow-xl w-full flex flex-col max-h-[90vh] min-h-[400px]">
+            <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+                <h3 class="text-sm font-semibold text-gray-800">Seleccionar enfermedades</h3>
+                <button type="button" id="btnCerrarModalEnfermedadesDescripcion" class="text-gray-500 hover:text-gray-700 text-xl leading-none">&times;</button>
+            </div>
+            <div class="modal-body p-4 flex-1 min-h-0">
+               
+                <div id="loadingEnfermedadesDescripcion" class="hidden text-sm text-gray-500 py-2">Cargando...</div>
+                <div id="wrapCheckboxEnfermedadesDescripcion"></div>
+            </div>
+            <div class="px-4 py-3 border-t border-gray-200 flex justify-end gap-2 flex-shrink-0">
+                <button type="button" id="btnCancelarEnfermedadesDescripcion" class="px-3 py-1.5 border border-gray-300 rounded text-gray-700 text-sm hover:bg-gray-50">Cancelar</button>
+                <button type="button" id="btnAceptarEnfermedadesDescripcion" class="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">Aceptar</button>
+            </div>
+        </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         function cargarTipos() {
@@ -203,25 +247,37 @@ if (empty($_SESSION['active'])) {
         function getCamposActual() {
             var tipo = document.getElementById('tipo');
             if (!tipo || !tipo.value) return null;
-            var opt = tipo.options[tipo.selectedIndex];
+            var val = tipo.value;
+            var opt = null;
+            for (var i = 0; i < tipo.options.length; i++) {
+                if (tipo.options[i].value === val) { opt = tipo.options[i]; break; }
+            }
             if (!opt || !opt.dataset.campos) return null;
-            try { return JSON.parse(opt.dataset.campos); } catch (e) { return null; }
+            try {
+                var c = JSON.parse(opt.dataset.campos);
+                if (typeof c.descripcion === 'undefined') c.descripcion = 0;
+                return c;
+            } catch (e) { return null; }
         }
         function getColumnasFromCampos(campos) {
             if (!campos) return ['num', 'ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'edad'];
             var cols = ['num'];
             if (campos.ubicacion === 1) cols.push('ubicacion');
-            if (campos.producto === 1) cols.push('producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna');
-            if (campos.unidades === 1 && cols.indexOf('unidad') === -1) cols.push('unidad');
+            if (campos.producto === 1) cols.push('producto');
+            if (campos.proveedor === 1) cols.push('proveedor');
+            if ((campos.unidad === 1 || campos.unidades === 1) && cols.indexOf('unidad') === -1) cols.push('unidad');
+            if (campos.dosis === 1) cols.push('dosis');
+            // Columna Descripción: visible si san_dim_tipo_programa.campoDescripcion = 1 (no depende del producto)
+            if (Number(campos.descripcion) === 1) cols.push('descripcion_vacuna');
             if (campos.unidad_dosis === 1) cols.push('unidadDosis');
             if (campos.numero_frascos === 1) cols.push('numeroFrascos');
-            if (campos.edad_aplicacion === 1) cols.push('edad');
             if (campos.area_galpon === 1) cols.push('area_galpon');
             if (campos.cantidad_por_galpon === 1) cols.push('cantidad_por_galpon');
+            if (campos.edad_aplicacion === 1) cols.push('edad');
             if (cols.length === 1) cols.push('ubicacion', 'edad');
             return cols;
         }
-        var LABELS = { num: '#', ubicacion: 'Ubicación', producto: 'Producto', proveedor: 'Proveedor', unidad: 'Unidad', dosis: 'Dosis', descripcion_vacuna: 'Descripcion', numeroFrascos: 'Nº frascos', edad: 'Edad', unidadDosis: 'Unid. dosis', area_galpon: 'Área galpón', cantidad_por_galpon: 'Cant. por galpón' };
+        var LABELS = { num: '#', ubicacion: 'Ubic.', producto: 'Producto', proveedor: 'Proveedor', unidad: 'Unid.', dosis: 'Dosis', descripcion_vacuna: 'Descrip.', numeroFrascos: 'Nº frascos', edad: 'Edad', unidadDosis: 'Unid. dosis', area_galpon: 'Área galpón', cantidad_por_galpon: 'Cant/\ngalpon' };
         function buildThead(campos) {
             var thead = document.getElementById('solicitudesThead');
             if (!thead) return;
@@ -238,8 +294,12 @@ if (empty($_SESSION['active'])) {
                 else if (k === 'unidadDosis') ext = ' col-uniddosis';
                 else if (k === 'numeroFrascos') ext = ' col-frascos';
                 else if (k === 'edad') ext = ' col-edad';
+                else if (k === 'area_galpon') ext = ' col-area-galpon';
+                else if (k === 'cantidad_por_galpon') ext = ' col-cantidad-galpon';
                 if (k === 'descripcion_vacuna') {
-                    html += '<th id="th_descripcion_vacuna" class="th-descripcion-vacuna px-1.5 py-1 text-left border-b border-gray-200 font-semibold text-gray-600 text-xs' + ext + '" style="display:none">' + (LABELS[k] || k) + '</th>';
+                    html += '<th id="th_descripcion_vacuna" class="th-descripcion-vacuna px-1.5 py-1 text-left border-b border-gray-200 font-semibold text-gray-600 text-xs' + ext + '">' + (LABELS[k] || k) + '</th>';
+                } else if (k === 'edad') {
+                    html += '<th class="px-1.5 py-1 text-left border-b border-gray-200 font-semibold text-gray-600 text-xs' + ext + '"><span class="th-edad-wrap">' + (LABELS[k] || k) + ' <button type="button" class="btn-info-edad ml-0.5 text-blue-500 hover:text-blue-700 inline-flex align-middle p-0 border-0 bg-transparent cursor-pointer" title="Ayuda"><i class="fas fa-info-circle text-sm"></i></button></span></th>';
                 } else {
                     html += '<th class="px-1.5 py-1 text-left border-b border-gray-200 font-semibold text-gray-600 text-xs' + ext + '">' + (LABELS[k] || k) + '</th>';
                 }
@@ -248,11 +308,7 @@ if (empty($_SESSION['active'])) {
             thead.innerHTML = html;
         }
         function updateVisibilidadColumnaDescripcion() {
-            var th = document.getElementById('th_descripcion_vacuna');
-            if (!th) return;
-            var algunaVacuna = false;
-            for (var key in solicitudesData) { if (solicitudesData[key].esVacuna) { algunaVacuna = true; break; } }
-            th.style.display = algunaVacuna ? '' : 'none';
+            // La columna Descripción se muestra según campoDescripcion del tipo (th/td ya visibles cuando está en la tabla).
         }
         function buildRowHtml(campos, i) {
             var cols = getColumnasFromCampos(campos);
@@ -261,17 +317,17 @@ if (empty($_SESSION['active'])) {
             var inputClass = 'form-control compact';
             cols.forEach(function(k) {
                 if (k === 'num') parts.push('<td class="col-num ' + cellClass + ' text-gray-600 text-xs">' + (i + 1) + '</td>');
-                else if (k === 'ubicacion') parts.push('<td class="col-ubicacion ' + cellClass + '"><input type="text" id="ubicacion_' + i + '" name="ubicacion_' + i + '" class="' + inputClass + '" list="ubicacionList" placeholder="Ubicación" maxlength="200"></td>');
-                else if (k === 'producto') parts.push('<td class="col-producto ' + cellClass + '"><input type="hidden" id="producto_' + i + '" name="codProducto_' + i + '" value=""><div class="wrap-producto-proveedor"><textarea id="producto_text_' + i + '" class="' + inputClass + ' compact multiline bg-gray-100" readonly placeholder="Producto..." rows="2"></textarea><button type="button" class="btn-lupa-detalle btn-buscar-celda border border-gray-300 text-gray-600 hover:bg-gray-100 rounded" data-row="' + i + '" title="Buscar producto"><i class="fas fa-search"></i></button></div></td>');
-                else if (k === 'proveedor') parts.push('<td class="col-proveedor ' + cellClass + '"><input type="hidden" id="codProveedor_' + i + '" name="codProveedor_' + i + '" value=""><div class="wrap-producto-proveedor"><textarea id="proveedor_' + i + '" class="' + inputClass + ' compact multiline bg-gray-100" readonly placeholder="Proveedor" rows="2"></textarea><button type="button" class="btn-lupa-detalle btn-buscar-proveedor border border-gray-300 text-gray-600 hover:bg-gray-100 rounded" data-row="' + i + '" title="Buscar proveedor"><i class="fas fa-search"></i></button></div></td>');
-                else if (k === 'unidad') parts.push('<td class="col-unidad ' + cellClass + '"><input type="text" id="unidad_ro_' + i + '" name="unidad_' + i + '" class="' + inputClass + '" placeholder="Unidad" maxlength="50"></td>');
-                else if (k === 'dosis') parts.push('<td class="col-dosis ' + cellClass + '"><input type="text" id="dosis_' + i + '" name="dosis_' + i + '" class="' + inputClass + '" placeholder="Dosis"></td>');
-                else if (k === 'descripcion_vacuna') parts.push('<td id="td_descripcion_vacuna_' + i + '" class="' + cellClass + ' td-descripcion-vacuna" style="display:none;min-width:160px;"><textarea id="descripcion_vacuna_ro_' + i + '" class="' + inputClass + ' compact bg-gray-100 descripcion-vacuna-ta" readonly style="min-width:140px;"></textarea></td>');
-                else if (k === 'numeroFrascos') parts.push('<td class="col-frascos ' + cellClass + '"><input type="text" id="numeroFrascos_' + i + '" name="numeroFrascos_' + i + '" class="' + inputClass + '" placeholder="Nº" maxlength="50"></td>');
-                else if (k === 'edad') parts.push('<td class="col-edad ' + cellClass + '" title="Una edad (ej: 2) o varias separadas por coma (ej: 2,4)"><input type="text" id="edad_' + i + '" name="edad_' + i + '" class="' + inputClass + '" placeholder="Ej: 2 o 2,4" maxlength="50"></td>');
-                else if (k === 'unidadDosis') parts.push('<td class="col-uniddosis ' + cellClass + '"><input type="text" id="unidadDosis_' + i + '" name="unidadDosis_' + i + '" class="' + inputClass + '" placeholder="Unid." maxlength="50"></td>');
-                else if (k === 'area_galpon') parts.push('<td class="' + cellClass + '"><input type="number" id="area_galpon_' + i + '" name="area_galpon_' + i + '" class="' + inputClass + '" min="0" placeholder="Área" style="min-width:50px"></td>');
-                else if (k === 'cantidad_por_galpon') parts.push('<td class="' + cellClass + '"><input type="number" id="cantidad_por_galpon_' + i + '" name="cantidad_por_galpon_' + i + '" class="' + inputClass + '" min="0" placeholder="Cant." style="min-width:50px"></td>');
+                else if (k === 'ubicacion') parts.push('<td class="col-ubicacion ' + cellClass + '"><input type="text" id="ubicacion_' + i + '" name="ubicacion_' + i + '" class="' + inputClass + '" maxlength="200" placeholder="Ubicación" list="ubicacionList" autocomplete="off"></td>');
+                else if (k === 'producto') parts.push('<td class="col-producto ' + cellClass + '"><input type="hidden" id="producto_' + i + '" name="codProducto_' + i + '" value=""><div class="wrap-producto-proveedor"><textarea id="producto_text_' + i + '" class="' + inputClass + ' compact multiline bg-gray-100" readonly rows="2"></textarea><button type="button" class="btn-lupa-detalle btn-buscar-celda border border-gray-300 text-gray-600 hover:bg-gray-100 rounded" data-row="' + i + '" title="Buscar producto"><i class="fas fa-search"></i></button></div></td>');
+                else if (k === 'proveedor') parts.push('<td class="col-proveedor ' + cellClass + '"><input type="hidden" id="codProveedor_' + i + '" name="codProveedor_' + i + '" value=""><div class="wrap-producto-proveedor"><textarea id="proveedor_' + i + '" class="' + inputClass + ' compact multiline bg-gray-100" readonly rows="2"></textarea><button type="button" class="btn-lupa-detalle btn-buscar-proveedor border border-gray-300 text-gray-600 hover:bg-gray-100 rounded" data-row="' + i + '" title="Buscar proveedor"><i class="fas fa-search"></i></button></div></td>');
+                else if (k === 'unidad') parts.push('<td class="col-unidad ' + cellClass + '"><input type="text" id="unidad_ro_' + i + '" name="unidad_' + i + '" class="' + inputClass + '" maxlength="50"></td>');
+                else if (k === 'dosis') parts.push('<td class="col-dosis ' + cellClass + '"><input type="text" id="dosis_' + i + '" name="dosis_' + i + '" class="' + inputClass + '"></td>');
+                else if (k === 'descripcion_vacuna') parts.push('<td id="td_descripcion_vacuna_' + i + '" class="' + cellClass + ' td-descripcion-vacuna" style="min-width:200px;"><div class="wrap-descripcion-vacuna"><textarea id="descripcion_vacuna_ro_' + i + '" name="descripcion_vacuna_' + i + '" class="' + inputClass + ' compact descripcion-vacuna-ta" style="min-width:140px;" placeholder="Editar o usar botón"></textarea><button type="button" class="btn-enfermedades-descripcion" data-row="' + i + '" title="Seleccionar enfermedades"><i class="fas fa-list-check"></i></button></div></td>');
+                else if (k === 'numeroFrascos') parts.push('<td class="col-frascos ' + cellClass + '"><input type="text" id="numeroFrascos_' + i + '" name="numeroFrascos_' + i + '" class="' + inputClass + '" maxlength="50"></td>');
+                else if (k === 'edad') parts.push('<td class="col-edad ' + cellClass + '" title="Una edad (ej: 2) o varias separadas por coma (ej: 2,4)"><input type="text" id="edad_' + i + '" name="edad_' + i + '" class="' + inputClass + '" maxlength="50"></td>');
+                else if (k === 'unidadDosis') parts.push('<td class="col-uniddosis ' + cellClass + '"><input type="text" id="unidadDosis_' + i + '" name="unidadDosis_' + i + '" class="' + inputClass + '" maxlength="50"></td>');
+                else if (k === 'area_galpon') parts.push('<td class="col-area-galpon ' + cellClass + '"><input type="number" id="area_galpon_' + i + '" name="area_galpon_' + i + '" class="' + inputClass + '" min="0"></td>');
+                else if (k === 'cantidad_por_galpon') parts.push('<td class="col-cantidad-galpon ' + cellClass + '"><input type="number" id="cantidad_por_galpon_' + i + '" name="cantidad_por_galpon_' + i + '" class="' + inputClass + '" min="0"></td>');
             });
             parts.push('<td class="col-quitar ' + cellClass + ' text-center"><button type="button" class="btn-quitar-fila border border-red-200 text-red-600 hover:bg-red-50 rounded" data-row="' + i + '" title="Quitar fila"><i class="fas fa-trash-alt"></i></button></td>');
             return parts.join('');
@@ -302,15 +358,116 @@ if (empty($_SESSION['active'])) {
         var currentCampos = null;
         var modalProductoRowIndex = -1;
         var modalProveedorRowIndex = -1;
+        var modalDescripcionRowIndex = -1;
         var modalProductoSearchTimer = null;
         var modalProveedorSearchTimer = null;
+        function abrirModalEnfermedadesDescripcion(rowIndex) {
+            modalDescripcionRowIndex = rowIndex;
+            var ta = document.getElementById('descripcion_vacuna_ro_' + rowIndex);
+            var textoActual = (ta && ta.value) ? ta.value.trim() : '';
+            var nombresPreseleccionados = [];
+            if (textoActual) {
+                var lineas = textoActual.split(/\r?\n/);
+                lineas.forEach(function(ln) {
+                    var t = ln.trim();
+                    if (t.indexOf('- ') === 0) t = t.substring(2).trim();
+                    else if (t.toLowerCase() === 'contra') return;
+                    if (t) nombresPreseleccionados.push(t);
+                });
+                if (nombresPreseleccionados.length === 0 && textoActual.indexOf(',') !== -1) {
+                    textoActual.split(',').forEach(function(s) { var x = s.trim(); if (x) nombresPreseleccionados.push(x); });
+                }
+            }
+            var cont = document.getElementById('wrapCheckboxEnfermedadesDescripcion');
+            var loading = document.getElementById('loadingEnfermedadesDescripcion');
+            cont.innerHTML = '';
+            loading.classList.remove('hidden');
+            fetch('../../configuracion/productos/get_enfermedades.php').then(function(r) { return r.json(); }).then(function(res) {
+                loading.classList.add('hidden');
+                if (!res.success || !res.results) { cont.innerHTML = '<p class="text-gray-500 text-sm">No se pudieron cargar las enfermedades.</p>'; return; }
+                var setNombres = {};
+                nombresPreseleccionados.forEach(function(n) { setNombres[n.toLowerCase().trim()] = true; });
+                (res.results || []).forEach(function(e) {
+                    var nom = (e.nom_enf || '').trim();
+                    var label = document.createElement('label');
+                    label.className = 'flex items-center gap-2 cursor-pointer';
+                    var cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.className = 'cb-enfermedad-descripcion';
+                    cb.setAttribute('data-nom-enf', nom);
+                    if (setNombres[nom.toLowerCase()]) cb.checked = true;
+                    var span = document.createElement('span');
+                    span.textContent = nom;
+                    span.className = 'truncate';
+                    label.appendChild(cb);
+                    label.appendChild(span);
+                    cont.appendChild(label);
+                });
+            }).catch(function() { loading.classList.add('hidden'); cont.innerHTML = '<p class="text-red-500 text-sm">Error al cargar.</p>'; });
+            document.getElementById('modalEnfermedadesDescripcion').classList.remove('hidden');
+        }
+        function cerrarModalEnfermedadesDescripcion() {
+            document.getElementById('modalEnfermedadesDescripcion').classList.add('hidden');
+            modalDescripcionRowIndex = -1;
+        }
+        document.getElementById('btnCerrarModalEnfermedadesDescripcion').addEventListener('click', cerrarModalEnfermedadesDescripcion);
+        document.getElementById('btnCancelarEnfermedadesDescripcion').addEventListener('click', cerrarModalEnfermedadesDescripcion);
+        document.getElementById('modalEnfermedadesDescripcion').addEventListener('click', function(e) { if (e.target.id === 'modalEnfermedadesDescripcion') cerrarModalEnfermedadesDescripcion(); });
+        document.getElementById('btnAceptarEnfermedadesDescripcion').addEventListener('click', function() {
+            var row = modalDescripcionRowIndex;
+            if (row < 0) { cerrarModalEnfermedadesDescripcion(); return; }
+            var cont = document.getElementById('wrapCheckboxEnfermedadesDescripcion');
+            var seleccionados = [];
+            cont.querySelectorAll('.cb-enfermedad-descripcion:checked').forEach(function(cb) {
+                var n = cb.getAttribute('data-nom-enf');
+                if (n) seleccionados.push(n);
+            });
+            var texto = seleccionados.length > 0 ? 'Contra\n' + seleccionados.map(function(n) { return '- ' + n; }).join('\n') : '';
+            var ta = document.getElementById('descripcion_vacuna_ro_' + row);
+            if (ta) { ta.value = texto; autoResizeTextarea(ta); }
+            if (solicitudesData[row]) solicitudesData[row].descripcionVacuna = texto;
+            cerrarModalEnfermedadesDescripcion();
+        });
         function autoResizeTextarea(ta) {
             if (!ta || !(ta.classList.contains('multiline') || ta.classList.contains('descripcion-vacuna-ta'))) return;
             ta.style.height = 'auto';
             var maxH = ta.classList.contains('descripcion-vacuna-ta') ? 280 : 120;
             ta.style.height = Math.max(36, Math.min(ta.scrollHeight, maxH)) + 'px';
         }
+        document.getElementById('solicitudesContainer').addEventListener('input', function(e) {
+            var ta = e.target;
+            if (ta && (ta.tagName === 'TEXTAREA') && (ta.classList.contains('multiline') || ta.classList.contains('descripcion-vacuna-ta'))) autoResizeTextarea(ta);
+        });
         document.getElementById('solicitudesContainer').addEventListener('click', function(e) {
+            var btnInfoEdad = e.target.closest('.btn-info-edad');
+            if (btnInfoEdad) {
+                e.preventDefault();
+                e.stopPropagation();
+                var pop = document.getElementById('popoverInfoEdadFlotante');
+                if (!pop) {
+                    pop = document.createElement('div');
+                    pop.id = 'popoverInfoEdadFlotante';
+                    pop.textContent = 'Puede colocar una edad (ej: 2) o varias edades separadas por comas (ej: 2, 4, 6).';
+                    document.body.appendChild(pop);
+                }
+                var isVisible = pop.classList.contains('visible');
+                if (isVisible) {
+                    pop.classList.remove('visible');
+                } else {
+                    var rect = btnInfoEdad.getBoundingClientRect();
+                    var pad = 8;
+                    pop.style.left = rect.left + 'px';
+                    pop.style.top = (rect.bottom + 6) + 'px';
+                    pop.classList.add('visible');
+                    var w = pop.offsetWidth, h = pop.offsetHeight;
+                    var left = parseFloat(pop.style.left) || 0, top = parseFloat(pop.style.top) || 0;
+                    left = Math.max(pad, Math.min(left, window.innerWidth - w - pad));
+                    top = Math.max(pad, Math.min(top, window.innerHeight - h - pad));
+                    pop.style.left = left + 'px';
+                    pop.style.top = top + 'px';
+                }
+                return;
+            }
             var btnProd = e.target.closest('.btn-buscar-celda');
             if (btnProd) {
                 var row = parseInt(btnProd.getAttribute('data-row'), 10);
@@ -331,6 +488,19 @@ if (empty($_SESSION['active'])) {
                 document.getElementById('modalProveedorResultados').innerHTML = '<p class="text-gray-500 text-sm p-2">Escriba para buscar proveedor.</p>';
                 document.getElementById('modalBuscarProveedor').classList.remove('hidden');
                 setTimeout(function() { document.getElementById('modalProveedorBuscar').focus(); }, 100);
+                return;
+            }
+            var btnEnf = e.target.closest('.btn-enfermedades-descripcion');
+            if (btnEnf) {
+                var row = parseInt(btnEnf.getAttribute('data-row'), 10);
+                if (isNaN(row)) return;
+                abrirModalEnfermedadesDescripcion(row);
+            }
+        });
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.btn-info-edad')) {
+                var pop = document.getElementById('popoverInfoEdadFlotante');
+                if (pop) pop.classList.remove('visible');
             }
         });
         document.getElementById('btnCerrarModalProducto').addEventListener('click', function() {
@@ -456,16 +626,10 @@ if (empty($_SESSION['active'])) {
                 }
                 var unid = document.getElementById('unidad_ro_' + rowIndex); if (unid) unid.value = data.unidad || '';
                 var dosisInp = document.getElementById('dosis_' + rowIndex); if (dosisInp) dosisInp.value = data.dosis || '';
-                var tdDesc = document.getElementById('td_descripcion_vacuna_' + rowIndex);
                 var descVac = document.getElementById('descripcion_vacuna_ro_' + rowIndex);
-                if (data.esVacuna) {
-                    if (tdDesc) tdDesc.style.display = '';
-                    if (descVac) { descVac.value = descTexto; autoResizeTextarea(descVac); }
-                    var thDesc = document.getElementById('th_descripcion_vacuna'); if (thDesc) thDesc.style.display = '';
-                } else {
-                    if (tdDesc) tdDesc.style.display = 'none';
-                    if (descVac) descVac.value = '';
-                    updateVisibilidadColumnaDescripcion();
+                if (descVac) {
+                    descVac.value = descTexto;
+                    autoResizeTextarea(descVac);
                 }
                 var ud = document.getElementById('unidadDosis_' + rowIndex); var nf = document.getElementById('numeroFrascos_' + rowIndex);
                 if (ud && nf) {
@@ -502,7 +666,7 @@ if (empty($_SESSION['active'])) {
                     tr.className = 'border-b border-gray-200';
                     tr.innerHTML = buildRowHtml(currentCampos, i);
                     tbody.appendChild(tr);
-                    var inpUb = document.getElementById('ubicacion_' + i); if (inpUb && solicitudesData[i].ubicacion) inpUb.value = solicitudesData[i].ubicacion;
+                    var inpUb = document.getElementById('ubicacion_' + i); if (inpUb && solicitudesData[i].ubicacion) { inpUb.value = solicitudesData[i].ubicacion; autoResizeTextarea(inpUb); }
                     var inpDosis = document.getElementById('dosis_' + i); if (inpDosis && solicitudesData[i].dosis) inpDosis.value = solicitudesData[i].dosis;
                     var inpCodProv = document.getElementById('codProveedor_' + i); var inpProv = document.getElementById('proveedor_' + i);
                     if (inpCodProv && solicitudesData[i].codProveedor) inpCodProv.value = solicitudesData[i].codProveedor;
@@ -513,7 +677,6 @@ if (empty($_SESSION['active'])) {
                     }
                     var inpDescVac = document.getElementById('descripcion_vacuna_ro_' + i);
                     if (inpDescVac && solicitudesData[i].descripcionVacuna) { inpDescVac.value = solicitudesData[i].descripcionVacuna; autoResizeTextarea(inpDescVac); }
-                    var tdDescI = document.getElementById('td_descripcion_vacuna_' + i); if (tdDescI) tdDescI.style.display = solicitudesData[i].esVacuna ? '' : 'none';
                     var inpEdad = document.getElementById('edad_' + i); if (inpEdad && solicitudesData[i].edad !== undefined && solicitudesData[i].edad !== '') inpEdad.value = String(solicitudesData[i].edad);
                     var ud = document.getElementById('unidadDosis_' + i); var nf = document.getElementById('numeroFrascos_' + i);
                     if (sigla === 'PL' || sigla === 'GR') { if (ud) ud.disabled = true; if (nf) nf.disabled = true; }
@@ -540,7 +703,7 @@ if (empty($_SESSION['active'])) {
                     var tr = tbody.querySelectorAll('tr')[i];
                     if (tr) {
                         tr.innerHTML = buildRowHtml(currentCampos, i);
-                        var inpUb = document.getElementById('ubicacion_' + i); if (inpUb && solicitudesData[i] && solicitudesData[i].ubicacion) inpUb.value = solicitudesData[i].ubicacion;
+                        var inpUb = document.getElementById('ubicacion_' + i); if (inpUb && solicitudesData[i] && solicitudesData[i].ubicacion) { inpUb.value = solicitudesData[i].ubicacion; autoResizeTextarea(inpUb); }
                         var inpDosis = document.getElementById('dosis_' + i); if (inpDosis && solicitudesData[i] && solicitudesData[i].dosis) inpDosis.value = solicitudesData[i].dosis;
                         var inpCodProv = document.getElementById('codProveedor_' + i); var inpProv = document.getElementById('proveedor_' + i);
                         if (inpCodProv && solicitudesData[i].codProveedor) inpCodProv.value = solicitudesData[i].codProveedor;
@@ -551,7 +714,6 @@ if (empty($_SESSION['active'])) {
                         }
                         var inpDescVac = document.getElementById('descripcion_vacuna_ro_' + i);
                         if (inpDescVac && solicitudesData[i] && solicitudesData[i].descripcionVacuna) { inpDescVac.value = solicitudesData[i].descripcionVacuna; autoResizeTextarea(inpDescVac); }
-                        var tdDescI = document.getElementById('td_descripcion_vacuna_' + i); if (tdDescI && solicitudesData[i]) tdDescI.style.display = solicitudesData[i].esVacuna ? '' : 'none';
                         var inpEdad = document.getElementById('edad_' + i); if (inpEdad && solicitudesData[i] && solicitudesData[i].edad !== undefined && solicitudesData[i].edad !== '') inpEdad.value = String(solicitudesData[i].edad);
                         var inpProd = document.getElementById('producto_' + i); var inpProdText = document.getElementById('producto_text_' + i);
                         if (inpProd && solicitudesData[i].codProducto) inpProd.value = solicitudesData[i].codProducto;

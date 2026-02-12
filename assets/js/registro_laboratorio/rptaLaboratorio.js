@@ -25,7 +25,8 @@ function loadSidebar(page = 1) {
     const mesUnico = encodeURIComponent(document.getElementById("mesUnico")?.value || "");
     const mesInicio = encodeURIComponent(document.getElementById("mesInicio")?.value || "");
     const mesFin = encodeURIComponent(document.getElementById("mesFin")?.value || "");
-    const estado = encodeURIComponent(document.getElementById("filtroEstado")?.value || "pendiente");
+    const estadoVal = (document.getElementById("filtroEstado")?.value || "").trim();
+    const estado = encodeURIComponent(estadoVal === "" ? "todos" : estadoVal);
     const filtroLab = encodeURIComponent(document.getElementById("filtroLab")?.value || "");
     const q = encodeURIComponent(document.getElementById("searchInput")?.value?.trim() || "");
 
@@ -439,24 +440,46 @@ document.getElementById('modalResultadoPendiente').addEventListener('click', fun
         cerrarModalPendiente();
     }
 });
-/** render simple paginación */
-function renderPagination(page, total, limit) {
-    const totalPages = Math.max(1, Math.ceil(total / limit));
+/** render simple paginación con texto "Mostrando X–Y de Z" y selector de cantidad */
+function renderPagination(page, total, pageLimit) {
+    const totalPages = Math.max(1, Math.ceil(total / pageLimit));
+    const start = total === 0 ? 0 : (page - 1) * pageLimit + 1;
+    const end = Math.min(page * pageLimit, total);
     const container = document.getElementById("paginationControls");
+    if (!container) return;
+
+    const limitOptions = [10, 25, 50];
+    const optionsHtml = limitOptions.map(n => `<option value="${n}" ${n === pageLimit ? 'selected' : ''}>${n}</option>`).join('');
 
     container.innerHTML = `
-        <button onclick="if(${page} > 1) loadSidebar(${page - 1});"
-            class="px-3 py-1 rounded ${page <= 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-200'}">
-            ← Anterior
-        </button>
-
-        <span>Página ${page} de ${totalPages}</span>
-
-        <button onclick="if(${page} < ${totalPages}) loadSidebar(${page + 1});"
-            class="px-3 py-1 rounded ${page >= totalPages ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gray-200'}">
-            Siguiente →
-        </button>
+        <div class="flex flex-wrap items-center gap-2 text-xs md:text-sm">
+            <span class="text-gray-600">Mostrando ${start}–${end} de ${total}</span>
+            <label class="inline-flex items-center gap-1">
+                <span class="text-gray-500">Mostrar</span>
+                <select id="rptaLabLimitSelect" class="px-2 py-1 border border-gray-300 rounded text-sm cursor-pointer" onchange="setRptaLabLimit(parseInt(this.value,10))">
+                    ${optionsHtml}
+                </select>
+            </label>
+        </div>
+        <div class="flex items-center gap-2">
+            <button type="button" onclick="if(${page} > 1) loadSidebar(${page - 1});"
+                class="px-3 py-1 rounded border border-gray-300 text-sm ${page <= 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}">
+                ← Anterior
+            </button>
+            <span class="text-gray-600">Pág. ${page} de ${totalPages}</span>
+            <button type="button" onclick="if(${page} < ${totalPages}) loadSidebar(${page + 1});"
+                class="px-3 py-1 rounded border border-gray-300 text-sm ${page >= totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}">
+                Siguiente →
+            </button>
+        </div>
     `;
+}
+
+function setRptaLabLimit(newLimit) {
+    if (newLimit > 0 && newLimit <= 100) {
+        limit = newLimit;
+        loadSidebar(1);
+    }
 }
 
 /** aplica filtros (llama loadSidebar a página 1) */
@@ -1416,7 +1439,7 @@ async function cargarArchivosCompletados(codigoEnvio, pos) {
                     <button
                         type="button"
                         title="Previsualizar PDF"
-                        onclick="abrirModalPdf('../../${f.ruta}', '${escapeHtml(f.nombre)}')"
+                        onclick="abrirModalPdf('${f.ruta}', '${escapeHtml(f.nombre)}')"
                         class="text-blue-600 hover:text-blue-800 text-xl">
                         👁️
                     </button>
@@ -1426,7 +1449,7 @@ async function cargarArchivosCompletados(codigoEnvio, pos) {
                 <button
                     type="button"
                     title="Descargar archivo"
-                    onclick="descargarArchivo('../../${f.ruta}', '${escapeHtml(f.nombre)}')"
+                    onclick="descargarArchivo('${f.ruta}', '${escapeHtml(f.nombre)}')"
                     class="text-green-600 hover:text-green-800 text-xl">
                     ⬇️
                 </button>
@@ -1454,28 +1477,11 @@ async function cargarArchivosCompletados(codigoEnvio, pos) {
     });
 }
 
-async function descargarArchivo(ruta, nombre) {
-    try {
-        // Validar existencia (HEAD es liviano)
-        const res = await fetch("../../" + ruta, { method: "HEAD" });
-
-        if (!res.ok) {
-            alert("❌ El archivo no existe o fue movido del servidor.");
-            return;
-        }
-
-        // Forzar descarga solo si existe
-        const a = document.createElement("a");
-        a.href = ".././" + ruta;
-        a.download = nombre;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-
-    } catch (err) {
-        if (typeof SwalAlert === 'function') SwalAlert('No se pudo verificar el archivo.', 'error'); else alert("❌ No se pudo verificar el archivo.");
-        console.error(err);
-    }
+function descargarArchivo(ruta, nombre) {
+    if (!ruta || !ruta.trim()) return;
+    // Quitar prefijo ../../ si lo trae (compatibilidad). No rechazar ".." dentro del nombre (ej. p.m..png).
+    var rutaParam = ruta.replace(/^\.\.\/\.\.\//, '').trim();
+    window.location.href = '../seguimiento/descargar_archivo.php?ruta=' + encodeURIComponent(rutaParam);
 }
 
 function limpiarArchivosAdjuntos() {

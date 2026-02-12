@@ -25,6 +25,7 @@ if (!$conexion) {
     <!-- Font Awesome -->
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../css/dashboard-config.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
