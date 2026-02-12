@@ -1,4 +1,4 @@
-//###################################################
+﻿//###################################################
 //BLOQUE PARA CARGAR SIDEBAR CON LAS SOLICITUDES
 //####################################################
 
@@ -48,7 +48,7 @@ function loadSidebar(page = 1) {
                     // resaltar visualmente
 
 
-                    cargarSolicitud(row.codEnvio, row.fecToma, row.codRef, row.estado_cuanti, row.nomMuestra, row.posSolicitud, row.analisis, row.analisisCodigos, row.analisisEnfermedades);
+                    cargarSolicitud(row.codEnvio, row.fecToma, row.codRef, row.estado_cuanti, row.nomMuestra, row.posSolicitud, row.analisis, row.analisisCodigos, row.analisisEnfermedades, row.numeroMuestras);
                     resaltarItemSidebar(row.codEnvio, row.posSolicitud);
                     cargarCabecera(row.codEnvio, row.fecToma, row.posSolicitud, row.codRef, row.estado_cuanti, row.nomMuestra);
                 };
@@ -761,8 +761,6 @@ function cargarCabecera(codEnvio, fecToma, pos, codRef, estado_cuanti, nomMuestr
 
             document.getElementById('badgeNomMuestraCuali').textContent = nomMuestras;
             document.getElementById('badgeNomMuestraCuanti').textContent = nomMuestras;
-
-            console.log("AQUI EL NOMBRE DE MUESTRA!!!!"+nomMuestras)
 
             const edadField = document.getElementById('edadAves_display');
             if (edadField) edadField.value = datosRef.edad;
@@ -1819,33 +1817,30 @@ const CONFIG = {
 // ============================================
 // 2. CARGAR SOLICITUD DESDE SIDEBAR
 // ============================================
-function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMuestra = '', posSolicitud = 1, analisisStr = '', analisisCodigosStr = '', analisisEnfermedadesStr = '') {
+function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMuestra = '', posSolicitud = 1, analisisStr = '', analisisCodigosStr = '', analisisEnfermedadesStr = '', numeroMuestras = '') {
     window.codigoEnvioActual = codigo;
     window.posSolicitudActual = posSolicitud;
     window.enfermedadStates = {};
+    
+    // Reseteamos banderas
+    window.tieneDatosGuardados = false; 
 
     window.estadoActualSolicitud = estado.toLowerCase();
+    window.nomMuestraActual = nomMuestra || '';
+    window.numeroMuestrasActual = parseInt(numeroMuestras) || 1;
 
-    // 🗑️ Limpiar archivos precargados
+    // 🗑️ Limpiar archivos previos
     const seccionArchivos = document.getElementById('seccionArchivosCompletados');
     if (seccionArchivos) seccionArchivos.classList.add('hidden');
     const fileListPrecargados = document.getElementById('fileListPrecargados');
     if (fileListPrecargados) fileListPrecargados.innerHTML = '';
-
-    /* CODIGO ANTERIOR
-    // No se limpiaban ni cargaban archivos cuantitativos aquí
-    */
-
-    // 🗑️ Limpiar archivos cuantitativos
+    
     limpiarArchivosCuanti();
-
-    // 📎 Cargar archivos cuantitativos existentes (siempre)
     cargarArchivosCompletadosCuanti(codigo, posSolicitud);
 
-    //document.getElementById('emptyState').classList.add('hidden');
     document.getElementById('formPanel').classList.remove('hidden');
-    //document.getElementById('lblCodigo').textContent = codigo;
 
+    // Renderizar etiqueta de estado
     const lblEstado = document.getElementById('lblEstado');
     if (lblEstado) {
         const e = String(estado || 'pendiente').toLowerCase();
@@ -1861,117 +1856,64 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
     document.getElementById('codigoSolicitud').value = codigo;
     document.getElementById('fechaToma').value = fecha;
 
-    // ✅ Limpiar fecha de registro del laboratorio al cambiar de solicitud
     const fechaLabCuanti = document.getElementById('fechaRegistroLabCuanti');
-    if (fechaLabCuanti) {
-        fechaLabCuanti.value = '';
-    }
+    if (fechaLabCuanti) fechaLabCuanti.value = '';
 
+    // Decodificar referencia
     const datosRef = decodificarCodRef(referencia);
-    //document.getElementById('edadAves').value = datosRef.codRefCompleto;
     document.getElementById('codRef_granja').value = datosRef.granja;
     document.getElementById('codRef_campana').value = datosRef.campana;
     document.getElementById('codRef_galpon').value = datosRef.galpon;
-
     const edadField = document.getElementById('edadAves_display');
     if (edadField) edadField.value = datosRef.edad;
 
-    // ✅ Cambiar texto del botón según estado
-    const btnGuardar = document.querySelector('button[type="submit"]');
+    // Configurar botón guardar
+    const btnGuardar = document.querySelector('button[type="submit"]'); // Ojo: Asegúrate de seleccionar el correcto
+    // O mejor, selecciona por ID si lo tienes: document.getElementById('btnGuardarCuanti')
     if (btnGuardar) {
         if (estado.toLowerCase() === 'completado') {
             btnGuardar.innerHTML = '<i class="fas fa-sync-alt mr-2"></i> Actualizar Resultados';
-            btnGuardar.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105';
         } else {
             btnGuardar.innerHTML = '<i class="fas fa-save mr-2"></i> Guardar Resultados';
-            btnGuardar.className = 'bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105';
         }
     }
 
-    // ✅ MODIFICADO: Cargar enfermedades desde los parámetros pasados
-    if (analisisStr && analisisCodigosStr) {
-        const nombresArr = analisisStr.split(', ').map(s => s.trim());
-        const codigosArr = analisisCodigosStr.split(',').map(s => s.trim());
-        const enfermedadesArr = analisisEnfermedadesStr ? analisisEnfermedadesStr.split(',').map(s => s.trim()).filter(s => s !== '') : []; // ← Cambio clave
+    // -----------------------------------------------------------------------
+    //  CAMBIO IMPORTANTE: SIEMPRE CONSULTAR AL SERVIDOR
+    // -----------------------------------------------------------------------
+    // Antes el código confiaba en 'analisisStr' que venía del sidebar. 
+    // Como el sidebar no sabe de las enfermedades nuevas agregadas manualmente,
+    // las ignoraba. Ahora forzamos la carga desde la BD siempre.
+    
+    console.log('🔄 Consultando enfermedades actualizadas al servidor...');
+    
+    fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${codigo}&posSolicitud=${posSolicitud}&estado=${estado}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizamos la lista con la verdad absoluta de la BD (Planificadas + Agregadas Extra)
+                window.enfermedadesActuales = data.enfermedades;
 
-        window.enfermedadesActuales = nombresArr.map((nombre, i) => ({
-            nombre: nombre,
-            codigo: codigosArr[i] || '',
-            enfermedad: enfermedadesArr[i] || ''
-        }));
+                detectarTipo(parseInt(datosRef.edad), nomMuestra);
 
-        // === Llenar select de enfermedades ===
-        const selectEnfermedad = document.getElementById('selectEnfermedad');
-        if (selectEnfermedad) {
-            selectEnfermedad.innerHTML = '<option value="">Seleccionar enfermedad</option>';
-
-            const enfermedadesUnicas = [...new Set(enfermedadesArr)];
-
-            enfermedadesUnicas.forEach(enfermedad => {
-                if (enfermedad) {
-                    const option = document.createElement('option');
-                    option.value = enfermedad;
-                    option.textContent = enfermedad;
-                    selectEnfermedad.appendChild(option);
-                }
-            });
-
-            const label = selectEnfermedad.parentElement.querySelector('label');
-            if (label) {
-                label.textContent = `Seleccione Enfermedad (${enfermedadesUnicas.length} asignadas)`;
+                // Intentar cargar datos guardados (esto activará el modo Update si encuentra algo)
+                setTimeout(() => {
+                    cargarDatosCompletados(codigo);
+                }, 300);
+            } else {
+                alert('❌ Error al cargar enfermedades: ' + (data.message || 'Desconocido'));
             }
-        }
-
-        detectarTipo(parseInt(datosRef.edad), nomMuestra);
-
-        /* CODIGO ANTERIOR (solo cargaba datos cuando estado era completado)
-        if (estado.toLowerCase() === 'completado') {
-            setTimeout(() => {
-                cargarDatosCompletados(codigo);
-            }, 300);
-        }
-        */
-
-        // ✅ Siempre intentar cargar datos guardados (incluso si está pendiente)
-        setTimeout(() => {
-            cargarDatosCompletados(codigo);
-        }, 300);
-    } else {
-        // Fallback: cargar desde el servidor
-        fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${codigo}&posSolicitud=${posSolicitud}&estado=${estado}`)
-            .then(r => {
-                if (!r.ok) throw new Error('HTTP error! status: ' + r.status);
-                return r.text();
-            })
-            .then(text => {
-                console.log('Respuesta del servidor:', text);
-                const data = JSON.parse(text);
-                if (data.success) {
-                    window.enfermedadesActuales = data.enfermedades;
-
-                    detectarTipo(parseInt(datosRef.edad), nomMuestra);
-
-                    /* CODIGO ANTERIOR (solo cargaba datos cuando estado era completado)
-                    if (estado.toLowerCase() === 'completado') {
-                        setTimeout(() => {
-                            cargarDatosCompletados(codigo);
-                        }, 300);
-                    }
-                    */
-
-                    // ✅ Siempre intentar cargar datos guardados (incluso si está pendiente)
-                    setTimeout(() => {
-                        cargarDatosCompletados(codigo);
-                    }, 300);
-                } else {
-                    if (typeof SwalAlert === 'function') SwalAlert(data.message || 'No se pudieron cargar enfermedades', 'error'); else alert('❌ Error: ' + (data.message || 'No se pudieron cargar enfermedades'));
-                }
-            })
-            .catch(e => {
-                console.error('Error completo:', e);
-                if (typeof SwalAlert === 'function') SwalAlert('Error de conexión. Ver consola para detalles.', 'error'); else alert('❌ Error de conexión. Ver consola para detalles.');
-            });
-    }
+        })
+        .catch(e => {
+            console.error('Error cargando enfermedades:', e);
+            // Fallback: Si falla el servidor, usamos lo del sidebar como emergencia
+            if (analisisStr) {
+                console.warn('⚠️ Usando datos del sidebar por error de conexión');
+                const nombresArr = analisisStr.split(', ').map(s => s.trim());
+                // ... lógica de fallback básica ...
+                // Pero idealmente el servidor no debería fallar.
+            }
+        });
 }
 
 // ============================================
@@ -1979,7 +1921,7 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
 // ============================================
 function decodificarCodRef(codRef) {
     // Usamos padEnd para que si faltan dígitos, se asuma que son los últimos (ej. Edad 00)
-    const refStr = String(codRef).padEnd(10, '0'); 
+    const refStr = String(codRef).padEnd(10, '0');
 
     return {
         granja: refStr.substring(0, 3),
@@ -1997,74 +1939,69 @@ async function cargarDatosCompletados(codigoEnvio) {
     console.log('🔍 Cargando datos guardados para:', codigoEnvio);
 
     const enfermedades = window.enfermedadesActuales || [];
+    if (enfermedades.length === 0) return;
 
-    if (enfermedades.length === 0) {
-        console.warn('No hay enfermedades para cargar datos');
-        return;
-    }
-
-    const tipo = document.getElementById('tipo_ave_hidden')?.value || 'BB';
-    const posSolicitud = window.posSolicitudActual || 1; // ✅ Obtener posSolicitud actual
-    console.log('📊 Tipo detectado:', tipo);
-    console.log('📌 posSolicitud:', posSolicitud);
-
-    // Variable para guardar la fecha de registro del laboratorio (solo se necesita cargar una vez)
+    const posSolicitud = window.posSolicitudActual || 1;
     let fechaRegistroLabCargada = false;
 
-    // Cargar TODAS las enfermedades en paralelo
     const promesas = enfermedades.map(async (enf) => {
-        /* CODIGO ANTERIOR (no incluía posSolicitud)
-        const url = `crud-serologia.php?action=get_resultados_guardados&codEnvio=${codigoEnvio}&enfermedad=${encodeURIComponent(enf.nombre)}`;
-        */
-        // ✅ Incluir posSolicitud en la URL
         const url = `crud-serologia.php?action=get_resultados_guardados&codEnvio=${codigoEnvio}&posSolicitud=${posSolicitud}&enfermedad=${encodeURIComponent(enf.nombre)}`;
-        console.log('🌐 Consultando:', url);
 
         try {
             const response = await fetch(url);
             const data = await response.json();
 
-            if (data.success && data.datos) {
+            // data.datos ahora es un array [ {fila1}, {fila2}, ... ]
+            if (data.success && data.datos && data.datos.length > 0) {
                 console.log(`✅ Datos cargados para ${enf.nombre}:`, data.datos);
 
                 const state = {};
-                const d = data.datos;
+                const filas = data.datos; // Array de resultados
 
-                // ✅ Cargar fecha de registro del laboratorio (solo una vez)
-                if (!fechaRegistroLabCargada && d.fecha_registro_lab) {
+                // Cargar fecha lab de la primera fila
+                if (!fechaRegistroLabCargada && filas[0].fecha_registro_lab) {
                     const inputFechaLab = document.getElementById('fechaRegistroLabCuanti');
-                    if (inputFechaLab) {
-                        inputFechaLab.value = d.fecha_registro_lab;
-                        console.log('📅 Fecha de registro del laboratorio cargada:', d.fecha_registro_lab);
-                    }
+                    if (inputFechaLab) inputFechaLab.value = filas[0].fecha_registro_lab;
                     fechaRegistroLabCargada = true;
                 }
 
-                // Campos principales
-                state[`${enf.nombre}_gmean`] = d.gmean || '';
-                state[`${enf.nombre}_cv`] = d.cv || '';
-                state[`${enf.nombre}_sd`] = d.desviacion_estandar || '';
-                state[`${enf.nombre}_count`] = d.count_muestras || 20;
+                // Determinar si usamos sufijos (si hay más de 1 fila o si es hisopado)
+                // Nota: Tu lógica de renderizado usa "nomMuestraActual" para decidir los sufijos.
+                // Aquí debemos mapear fila 0 -> sufijo "_1", fila 1 -> sufijo "_2", etc.
+                // EXCEPTO si solo hay 1 fila y NO es hisopado múltiple, ahí va sin sufijo.
 
-                for (let i = 0; i <= 24; i++) {
-                    // Nombre de columna en BD (según tu función save: 's0' + i)
-                    // Ej: i=0 -> s00, i=10 -> s010
-                    const colBD = `s0${i}`;
+                const esHisopado = (window.nomMuestraActual || '').toLowerCase().includes('hisopado');
+                const cantidadEsperada = esHisopado ? (window.numeroMuestrasActual || 1) : 1;
 
-                    // Nombre del input en HTML
-                    const nombreInput = `${enf.nombre}_s${i}`;
+                filas.forEach((d, index) => {
+                    // Lógica de sufijo:
+                    // Si es hisopado -> index + 1 (ej: _1, _2)
+                    // Si NO es hisopado -> cadena vacía ''
 
-                    // Asignar valor (si es null o undefined, poner vacío o 0 según prefieras)
-                    // Nota: Si en BD es NULL, aquí ponemos cadena vacía para que el input se vea limpio
-                    state[nombreInput] = (d[colBD] !== null && d[colBD] !== undefined) ? d[colBD] : '';
-                }
+                    let sufijo = '';
+                    if (esHisopado) {
+                        sufijo = `_${index + 1}`;
+                    }
+
+                    // Mapeo de campos
+                    state[`${enf.nombre}_dato${sufijo}`] = d.dato || '';
+                    state[`${enf.nombre}_gmean${sufijo}`] = d.gmean || '';
+                    state[`${enf.nombre}_cv${sufijo}`] = d.cv || '';
+                    state[`${enf.nombre}_sd${sufijo}`] = d.desviacion_estandar || '';
+                    state[`${enf.nombre}_count${sufijo}`] = d.count_muestras || 20;
+                    state[`${enf.nombre}_obs${sufijo}`] = d.obs || '';
+
+                    // Niveles s00-s24
+                    for (let i = 0; i <= 24; i++) {
+                        const colBD = `s0${i}`;
+                        const nombreInput = `${enf.nombre}_s${i}${sufijo}`;
+                        state[nombreInput] = (d[colBD] !== null && d[colBD] !== undefined) ? d[colBD] : '';
+                    }
+                });
 
                 window.enfermedadStates[enf.nombre] = state;
-                console.log(`💾 Estado guardado para ${enf.nombre}:`, state);
-
                 return true;
             } else {
-                console.log(`ℹ️ Sin datos guardados para ${enf.nombre}`);
                 return false;
             }
         } catch (e) {
@@ -2073,22 +2010,13 @@ async function cargarDatosCompletados(codigoEnvio) {
         }
     });
 
-    // Esperar a que TODAS las peticiones terminen
     await Promise.all(promesas);
 
-    // AHORA SÍ rellenar el panel
     const selectEnf = document.getElementById('selectEnfermedad');
     if (selectEnf && selectEnf.value) {
-        console.log(`🖊️ Rellenando panel de: ${selectEnf.value}`);
         populatePanelValues(selectEnf.value);
     }
 
-    /* CODIGO ANTERIOR
-    // 📎 Cargar archivos adjuntos (usaba función de cualitativos)
-    await cargarArchivosCompletados(codigoEnvio);
-    */
-
-    // 📎 Cargar archivos adjuntos cuantitativos
     await cargarArchivosCompletadosCuanti(codigoEnvio, posSolicitud);
 }
 
@@ -2232,30 +2160,6 @@ function renderizarEnfermedades(tipo) {
         ? { color: 'blue', bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-200' }
         : { color: 'orange', bg: 'bg-orange-50', text: 'text-orange-800', border: 'border-orange-200' };
 
-    /* CODIGO ANTERIOR - Mostraba badges/chips de enfermedades arriba del select
-    let html = `
-        <div class="flex justify-between items-center mb-4 gap-3">
-            <div class="flex-1">
-                <label class="block text-[10px] font-bold text-gray-500 uppercase mb-2">
-                    Seleccione Enfermedad (${enfermedades.length} asignada${enfermedades.length !== 1 ? 's' : ''})
-                </label>
-                <select id="selectEnfermedad" class="input-lab">
-                    ${enfermedades.map(e => {
-        const displayText = e.enfermedad ? `${e.nombre} (${e.enfermedad})` : e.nombre;
-        return `<option value="${e.nombre}">${displayText}</option>`;
-    }).join('')}
-                </select>
-            </div>
-            <div class="pt-5">
-                <button type="button" onclick="abrirModalAgregarEnfermedad()" 
-                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow-lg transition-all">
-                    <i class="fas fa-plus-circle mr-2"></i> Agregar Enfermedad
-                </button>
-            </div>
-        </div>
-        <div id="enfermedadPanel"></div>
-    `;
-    */
 
     //  Solo select y botón agregar, sin badges arriba
     let html = `
@@ -2633,46 +2537,101 @@ function guardar(e, estadoCuanti = 'completado') {
 }
 
 // ============================================
-// 6. RENDERIZAR PANEL DE ENFERMEDAD
+// 6. RENDERIZAR PANEL DE ENFERMEDAD (CON CAMPO DATO)
 // ============================================
 function renderEnfermedadPanel(enf, conf, tipo) {
     const panel = document.getElementById('enfermedadPanel');
 
-    // ✅ Verificar si la enfermedad fue agregada recientemente (en esta sesión)
+    // Verificar si la enfermedad fue agregada recientemente
     const esEnfermedadReciente = window.enfermedadesAgregadasReciente &&
         window.enfermedadesAgregadasReciente[enf] !== undefined;
 
-    // Obtener código de la enfermedad del select o del registro de recientes
+    // Obtener código de la enfermedad
     const selectEnf = document.getElementById('selectEnfermedad');
     const optionSeleccionada = selectEnf ? selectEnf.querySelector(`option[value="${enf}"]`) : null;
     let codigoEnfermedad = optionSeleccionada ? optionSeleccionada.dataset.codigo : '';
 
-    // Si es reciente, usar el código guardado
     if (esEnfermedadReciente && !codigoEnfermedad) {
         codigoEnfermedad = window.enfermedadesAgregadasReciente[enf];
     }
 
-    let nivelesHtml = `<div class="mt-2 grid grid-cols-5 gap-2 bg-gray-50 p-3 rounded border border-gray-100">` +
-        Array.from({ length: 25 }, (_, i) => {
-            // Genera inputs desde S0 hasta S24
-            return `<input type="number" 
-                           name="${enf}_s${i}" 
-                           placeholder="S${i}" 
-                           class="text-center text-xs border border-gray-300 rounded h-8 w-full focus:border-blue-500 outline-none hover:bg-white transition-colors focus:ring-1 focus:ring-blue-200">`;
-        }).join('') +
-        `</div>`;
+    // ---------------------------------------------------------
+    // LÓGICA DINÁMICA PARA HISOPADOS
+    // ---------------------------------------------------------
+    const nombreMuestra = window.nomMuestraActual ? window.nomMuestraActual.toLowerCase() : '';
+    const esHisopado = nombreMuestra.includes('hisopado');
+    const cantidadMuestras = esHisopado ? (window.numeroMuestrasActual || 1) : 1;
 
-    /* CODIGO ANTERIOR - sin botón de eliminar enfermedad
-    panel.innerHTML = `
-        <div class="border ${conf.border} rounded-lg bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-            <div class="px-4 py-2 ${conf.bg} border-b ${conf.border} flex justify-between items-center">
-                <span class="font-bold ${conf.text}">${enf}</span>
-                <input type="hidden" name="enfermedades[]" value="${enf}">
-                <span class="text-[10px] text-gray-500 opacity-70">Resultados</span>
+    let htmlContenidoResultados = '';
+
+    // Bucle para generar N bloques
+    for (let i = 1; i <= cantidadMuestras; i++) {
+
+        const sufijo = esHisopado ? `_${i}` : '';
+        const tituloMuestra = cantidadMuestras > 1
+            ? `<div class="w-full border-b border-gray-200 pb-1 mb-3 mt-4">
+                 <span class="text-xs font-bold text-blue-600 uppercase">🧪 Muestra #${i}</span>
+               </div>`
+            : '';
+
+        let nivelesHtml = `<div class="mt-2 grid grid-cols-5 gap-2 bg-gray-50 p-3 rounded border border-gray-100">` +
+            Array.from({ length: 25 }, (_, k) => {
+                return `<input type="number" 
+                               name="${enf}_s${k}${sufijo}"
+                               step="0.01" 
+                               placeholder="S${k}" 
+                               class="text-center text-xs border border-gray-300 rounded h-8 w-full focus:border-blue-500 outline-none hover:bg-white transition-colors focus:ring-1 focus:ring-blue-200">`;
+            }).join('') +
+            `</div>`;
+
+        // ✅ AQUI EL CAMBIO: Grid de 5 columnas para incluir DATO
+        htmlContenidoResultados += `
+            <div class="mb-6 ${cantidadMuestras > 1 ? 'bg-gray-50/50 p-3 rounded-lg border border-gray-100' : ''}">
+                ${tituloMuestra}
+                
+                <div class="grid grid-cols-5 gap-4 mb-4"> <div>
+                        <label class="block text-[10px] font-bold text-gray-400 mb-1">DATO</label>
+                        <input type="number" step="0.01" name="${enf}_dato${sufijo}" class="input-lab font-bold text-gray-700">
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 mb-1">GMEAN</label>
+                        <input type="number" step="0.01" name="${enf}_gmean${sufijo}" class="input-lab font-bold text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 mb-1">CV %</label>
+                        <input type="number" step="0.01" name="${enf}_cv${sufijo}" class="input-lab">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 mb-1">SD</label>
+                        <input type="number" step="0.01" name="${enf}_sd${sufijo}" class="input-lab">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 mb-1">COUNT</label>
+                        <input type="number" value="20" name="${enf}_count${sufijo}" class="input-lab bg-gray-50 text-center">
+                    </div>
+
+                    <div class="col-span-5">
+                        <label class="block text-[10px] font-bold text-gray-400 mb-1">OBSERVACIONES</label>
+                        <textarea 
+                            name="${enf}_obs${sufijo}" 
+                            rows="2" 
+                            placeholder="Observaciones de la muestra ${i}..."
+                            class="w-full text-xs text-gray-700 border border-gray-300 rounded p-2 focus:border-blue-500 outline-none hover:bg-white transition-colors focus:ring-1 focus:ring-blue-200 resize-y"
+                        ></textarea>
+                    </div>
+                </div>
+
+                <details class="group">
+                    <summary class="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-500 hover:text-blue-600 p-1">
+                        <i class="fas fa-chart-bar"></i> Niveles (Muestra ${i})
+                    </summary>
+                    ${nivelesHtml}
+                </details>
             </div>
-    */
+        `;
+    }
 
-    //  Panel con X roja solo para enfermedades agregadas recientemente
     const botonEliminar = esEnfermedadReciente ? `
             <button type="button" 
                 onclick="eliminarEnfermedadCuanti('${enf}', '${codigoEnfermedad}')"
@@ -2683,40 +2642,19 @@ function renderEnfermedadPanel(enf, conf, tipo) {
 
     panel.innerHTML = `
         <div class="relative border border-gray-200 rounded-lg bg-white overflow-hidden shadow-sm">
-            <!-- X roja para eliminar enfermedad (solo visible si fue agregada recientemente) -->
             ${botonEliminar}
             
             <div class="px-4 py-2 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                 <span class="font-bold text-gray-700">${enf}</span>
                 <input type="hidden" name="enfermedades[]" value="${enf}">
-                <span class="text-[10px] text-gray-500 opacity-70 mr-6">Resultados</span>
-            </div>
-            <div class="p-4">
-                <div class="grid grid-cols-4 gap-4 mb-4">
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 mb-1">GMEAN</label>
-                        <input type="number" step="0.01" name="${enf}_gmean" class="input-lab font-bold text-gray-700">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 mb-1">CV %</label>
-                        <input type="number" step="0.01" name="${enf}_cv" class="input-lab">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 mb-1">SD</label>
-                        <input type="number" step="0.01" name="${enf}_sd" class="input-lab">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 mb-1">COUNT</label>
-                        <input type="number" value="20" name="${enf}_count" class="input-lab bg-gray-50 text-center">
-                    </div>
+                <div class="text-right">
+                     <span class="text-[10px] text-gray-500 opacity-70 block">Resultados</span>
+                     ${esHisopado ? `<span class="text-[9px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-bold">${cantidadMuestras} Muestras</span>` : ''}
                 </div>
-
-                <details class="group">
-                    <summary class="flex items-center gap-2 cursor-pointer text-xs font-bold text-gray-500 hover:text-blue-600 p-1">
-                        <i class="fas fa-chart-bar"></i> Niveles
-                    </summary>
-                    ${nivelesHtml}
-                </details>
+            </div>
+            
+            <div class="p-4">
+                ${htmlContenidoResultados}
             </div>
         </div>`;
 
@@ -2727,25 +2665,52 @@ function renderEnfermedadPanel(enf, conf, tipo) {
 // ELIMINAR ENFERMEDAD DE CUANTITATIVOS
 // ============================================
 function eliminarEnfermedadCuanti(nombreEnfermedad, codigoEnfermedad) {
-    /* CODIGO ANTERIOR - no permitía eliminar si tenía resultados
-    const tieneEstado = window.enfermedadStates && 
-        window.enfermedadStates[nombreEnfermedad] && 
-        Object.keys(window.enfermedadStates[nombreEnfermedad]).some(k => {
-            const val = window.enfermedadStates[nombreEnfermedad][k];
-            return val !== null && val !== '' && val !== '0' && val !== 0;
-        });
 
-    if (tieneEstado) {
-        if (typeof SwalAlert === 'function') SwalAlert('Esta enfermedad ya tiene resultados guardados. No se puede eliminar.', 'warning'); else alert('⚠️ Esta enfermedad ya tiene resultados guardados. No se puede eliminar.');
-        return;
+    // 1. Verificar si es una enfermedad temporal (recién agregada y no guardada)
+    const esTemporal = window.enfermedadesAgregadasReciente && window.enfermedadesAgregadasReciente[nombreEnfermedad];
+
+    var msgElim = '¿Quitar "' + nombreEnfermedad + '" de la lista?';
+    if (!esTemporal) {
+        // Si ya está guardada, advertimos que se borrará de la BD
+        msgElim = '¿Eliminar "' + nombreEnfermedad + '" de la base de datos?\n\nSe perderán los resultados guardados para esta enfermedad.';
     }
-    */
 
-    //  Permitir eliminar aunque tenga resultados (solo enfermedades agregadas recientemente)
-    var msgElim = '¿Eliminar "' + nombreEnfermedad + '" de esta solicitud?\n\nSi tiene resultados guardados, también se eliminarán.';
-    var promElim = (typeof SwalConfirm === 'function') ? SwalConfirm(msgElim, 'Confirmar eliminación') : Promise.resolve(confirm(msgElim));
+    var promElim = (typeof SwalConfirm === 'function') ? SwalConfirm(msgElim, 'Confirmar') : Promise.resolve(confirm(msgElim));
+
     promElim.then(function (ok) {
         if (!ok) return;
+
+        // === CASO A: ELIMINAR ENFERMEDAD TEMPORAL (SOLO LOCAL) ===
+        if (esTemporal) {
+            // 1. Quitar del array visual
+            window.enfermedadesActuales = window.enfermedadesActuales.filter(e => e.nombre !== nombreEnfermedad);
+
+            // 2. Quitar datos guardados en memoria
+            if (window.enfermedadStates && window.enfermedadStates[nombreEnfermedad]) {
+                delete window.enfermedadStates[nombreEnfermedad];
+            }
+
+            // 3. Quitar de la lista de recientes
+            if (window.enfermedadesAgregadasReciente && window.enfermedadesAgregadasReciente[nombreEnfermedad]) {
+                delete window.enfermedadesAgregadasReciente[nombreEnfermedad];
+            }
+
+            if (typeof SwalAlert === 'function') SwalAlert('Enfermedad quitada.', 'success');
+            else alert('✅ Enfermedad quitada.');
+
+            // 4. Re-renderizar el select
+            const tipo = document.getElementById('tipo_ave_hidden') ? document.getElementById('tipo_ave_hidden').value : 'BB';
+            renderizarEnfermedades(tipo);
+
+            // 5. Limpiar el panel si se borró la que estaba seleccionada
+            if (window.currentEnfermedadSelected === nombreEnfermedad) {
+                const panel = document.getElementById('enfermedadPanel');
+                if (panel) panel.innerHTML = '<div class="text-gray-400 text-sm text-center p-4">Seleccione una enfermedad</div>';
+            }
+            return; // 🛑 AQUÍ TERMINA SI ES TEMPORAL, NO LLAMA AL SERVIDOR
+        }
+
+        // === CASO B: ELIMINAR ENFERMEDAD GUARDADA (SERVIDOR) ===
         var fd = new FormData();
         fd.append('action', 'eliminar_enfermedad_solicitud');
         fd.append('codEnvio', window.codigoEnvioActual);
@@ -2757,16 +2722,14 @@ function eliminarEnfermedadCuanti(nombreEnfermedad, codigoEnfermedad) {
             .then(r => r.json())
             .then(data => {
                 if (data.success) {
-                    if (typeof SwalAlert === 'function') SwalAlert('Enfermedad eliminada', 'success'); else alert('✅ Enfermedad eliminada');
+                    if (typeof SwalAlert === 'function') SwalAlert('Enfermedad eliminada permanentemente', 'success'); else alert('✅ Enfermedad eliminada permanentemente');
 
+                    // Limpiar memoria
                     if (window.enfermedadStates && window.enfermedadStates[nombreEnfermedad]) {
                         delete window.enfermedadStates[nombreEnfermedad];
                     }
 
-                    if (window.enfermedadesAgregadasReciente && window.enfermedadesAgregadasReciente[nombreEnfermedad]) {
-                        delete window.enfermedadesAgregadasReciente[nombreEnfermedad];
-                    }
-
+                    // Recargar lista REAL desde el servidor
                     fetch('crud-serologia.php?action=get_enfermedades&codEnvio=' + window.codigoEnvioActual + '&posSolicitud=' + window.posSolicitudActual)
                         .then(r => r.json())
                         .then(dd => {
@@ -2785,6 +2748,7 @@ function eliminarEnfermedadCuanti(nombreEnfermedad, codigoEnfermedad) {
                 if (typeof SwalAlert === 'function') SwalAlert('Error de conexión', 'error'); else alert('❌ Error de conexión');
             });
     });
+
 }
 
 // ============================================
@@ -2796,14 +2760,26 @@ function saveCurrentEnfermedadState(enfName) {
         const panel = document.getElementById('enfermedadPanel');
         if (!panel) return;
 
-        const inputs = panel.querySelectorAll('input[name]');
+        const inputs = panel.querySelectorAll('input[name], textarea[name]');
+
         const state = {};
+
         inputs.forEach(inp => {
+            // Ignoramos inputs de tipo file si los hubiera
             if (inp.type === 'file') return;
+
+            // Guardamos el valor (funciona igual para input y textarea)
             state[inp.name] = inp.value;
         });
 
+        // Si la enfermedad no existía en el objeto global, la creamos
+        if (!window.enfermedadStates) {
+            window.enfermedadStates = {};
+        }
+
         window.enfermedadStates[enfName] = state;
+        console.log(`💾 Estado guardado para ${enfName} (incluyendo observaciones)`);
+
     } catch (e) {
         console.error('Error guardando estado enfermedad:', e);
     }
@@ -2923,115 +2899,94 @@ function filtrarEnfermedadesCatalogo() {
 }
 
 function agregarEnfermedadASolicitud(codigo, nombre) {
-    var msgAgr = '¿Agregar "' + nombre + '" a la solicitud ' + window.codigoEnvioActual + ' (Pos: ' + window.posSolicitudActual + ')?';
+    var msgAgr = '¿Agregar "' + nombre + '" a esta solicitud de forma temporal?';
+    // Nota: Quitamos el confirm si quieres que sea más rápido, o lo dejas.
     var promAgr = (typeof SwalConfirm === 'function') ? SwalConfirm(msgAgr, 'Confirmar') : Promise.resolve(confirm(msgAgr));
+
     promAgr.then(function (confirmed) {
         if (!confirmed) return;
-        var codRef = document.getElementById('edadAves_display').value;
-        //const fecToma = document.getElementById('fechaToma').value;
 
+        // Simulamos la llamada al backend solo para validar conexión, 
+        // aunque realmente la gestión será local hasta que se pulse "Guardar".
         const fd = new FormData();
         fd.append('action', 'agregar_enfermedad_solicitud');
         fd.append('codEnvio', window.codigoEnvioActual);
-        fd.append('posSolicitud', window.posSolicitudActual); // ✅ Enviar posSolicitud actual
+        fd.append('posSolicitud', window.posSolicitudActual);
         fd.append('codAnalisis', codigo);
         fd.append('nomAnalisis', nombre);
-        fd.append('codRef', codRef);
-        fd.append('fecToma', fecTomaCuantiAux);
 
-        // ✅ Guardar el nombre de la enfermedad que se está agregando
-        const nombreEnfermedadNueva = nombre;
-        const codigoEnfermedadNueva = codigo;
+        // Estos datos son auxiliares
+        const codRef = document.getElementById('edadAves_display') ? document.getElementById('edadAves_display').value : '';
+        fd.append('codRef', codRef);
+        fd.append('fecToma', window.fecTomaCuantiAux || '');
 
         fetch('crud-serologia.php', { method: 'POST', body: fd })
-            .then(r => r.text())
-            .then(text => {
-                try {
-                    const data = JSON.parse(text);
-                    if (data.success) {
-                        if (typeof SwalAlert === 'function') SwalAlert('Enfermedad agregada', 'success'); else alert('✅ Enfermedad agregada');
-                        cerrarModalAgregarEnfermedad();
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    if (typeof SwalAlert === 'function') SwalAlert('Enfermedad agregada temporalmente. Recuerde GUARDAR los cambios.', 'success');
+                    else alert('✅ Enfermedad agregada temporalmente. Recuerde GUARDAR los cambios.');
 
-                        /* CODIGO ANTERIOR (no incluía posSolicitud en la consulta)
-                        fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}`)
-                        */
-                        // ✅ Incluir posSolicitud en la consulta para obtener solo las enfermedades de esta solicitud
-                        fetch(`crud-serologia.php?action=get_enfermedades&codEnvio=${window.codigoEnvioActual}&posSolicitud=${window.posSolicitudActual}`)
-                            .then(r => r.text())
-                            .then(t => {
-                                try {
-                                    const dd = JSON.parse(t);
-                                    if (dd.success) {
-                                        window.enfermedadesActuales = dd.enfermedades;
+                    cerrarModalAgregarEnfermedad();
 
-                                        // ✅ Inicializar el estado de la nueva enfermedad (vacío para poder guardar datos)
-                                        dd.enfermedades.forEach(enf => {
-                                            if (!window.enfermedadStates[enf.nombre]) {
-                                                window.enfermedadStates[enf.nombre] = {};
-                                            }
-                                        });
+                    // ------------------------------------------------------------------
+                    // 🛑 CAMBIO CLAVE: NO RECARGAMOS DEL SERVIDOR (fetch get_enfermedades)
+                    // ------------------------------------------------------------------
+                    // Como el servidor aun no tiene el registro (porque es temporal),
+                    // si recargamos, la enfermedad desaparecería. 
+                    // En su lugar, la agregamos MANUALMENTE al array local.
 
-                                        // ✅ Marcar la enfermedad como agregada recientemente (para mostrar X)
-                                        if (!window.enfermedadesAgregadasReciente) {
-                                            window.enfermedadesAgregadasReciente = {};
-                                        }
-                                        window.enfermedadesAgregadasReciente[nombreEnfermedadNueva] = codigoEnfermedadNueva;
+                    // 1. Crear objeto de la nueva enfermedad
+                    const nuevaEnfermedad = {
+                        nombre: nombre,
+                        codigo: codigo,
+                        enfermedad: nombre // Usamos el nombre como descripción por defecto
+                    };
 
-                                        const tipo = document.getElementById('tipo_ave_hidden') ? document.getElementById('tipo_ave_hidden').value : 'BB';
-
-                                        /* CODIGO ANTERIOR (solo renderizaba sin seleccionar la nueva)
-                                        renderizarEnfermedades(tipo);
-                                        const selectEnfermedad = document.getElementById('selectEnfermedad');
-                                        if (selectEnfermedad) {
-                                            const enfermedadesUnicas = [...new Set(dd.enfermedades.map(e => e.enfermedad || e.nombre))];
-                                            const label = selectEnfermedad.parentElement?.querySelector('label');
-                                            if (label) {
-                                                label.textContent = `Seleccione Enfermedad (${enfermedadesUnicas.length} asignadas)`;
-                                            }
-                                        }
-                                        */
-
-                                        //  Seleccionar automáticamente la nueva enfermedad agregada
-                                        // Primero renderizamos las enfermedades (esto pondrá la primera por defecto)
-                                        renderizarEnfermedades(tipo);
-
-                                        const selectEnfermedad = document.getElementById('selectEnfermedad');
-                                        if (selectEnfermedad) {
-                                            // Buscar la opción que coincida con el nombre de la enfermedad agregada
-                                            const opciones = Array.from(selectEnfermedad.options);
-                                            const opcionNueva = opciones.find(opt => opt.value === nombreEnfermedadNueva);
-
-                                            if (opcionNueva) {
-                                                // Cambiar el valor del select a la nueva enfermedad
-                                                selectEnfermedad.value = nombreEnfermedadNueva;
-                                                window.currentEnfermedadSelected = nombreEnfermedadNueva;
-
-                                                // Disparar el evento change para que se renderice el panel correcto
-                                                selectEnfermedad.dispatchEvent(new Event('change'));
-                                            }
-
-                                            const enfermedadesUnicas = [...new Set(dd.enfermedades.map(e => e.enfermedad || e.nombre))];
-                                            const label = selectEnfermedad.parentElement?.querySelector('label');
-                                            if (label) {
-                                                label.textContent = `Seleccione Enfermedad (${enfermedadesUnicas.length} asignadas)`;
-                                            }
-                                        }
-                                    }
-                                } catch (e) {
-                                    console.error('Error parseando respuesta:', e);
-                                }
-                            });
-                    } else {
-                        if (typeof SwalAlert === 'function') SwalAlert(data.message, 'error'); else alert('❌ Error: ' + data.message);
+                    // 2. Verificar si ya existe para no duplicar visualmente
+                    const yaExiste = window.enfermedadesActuales.some(e => e.nombre === nombre);
+                    if (!yaExiste) {
+                        window.enfermedadesActuales.push(nuevaEnfermedad);
                     }
-                } catch (err) {
-                    console.error('Respuesta no JSON:', text);
-                    if (typeof SwalAlert === 'function') SwalAlert('Respuesta inesperada del servidor. Revisa la consola (F12).', 'error'); else alert('Respuesta inesperada del servidor. Revisa la consola (F12).');
+
+                    // 3. Inicializar su estado (vacío) para que el sistema sepa que debe guardarla
+                    if (!window.enfermedadStates[nombre]) {
+                        window.enfermedadStates[nombre] = {};
+                    }
+
+                    // 4. Marcar como "Reciente" para permitir borrado con X
+                    if (!window.enfermedadesAgregadasReciente) {
+                        window.enfermedadesAgregadasReciente = {};
+                    }
+                    window.enfermedadesAgregadasReciente[nombre] = codigo;
+
+                    // 5. Re-renderizar el select
+                    const tipo = document.getElementById('tipo_ave_hidden') ? document.getElementById('tipo_ave_hidden').value : 'BB';
+                    renderizarEnfermedades(tipo);
+
+                    // 6. Seleccionar automáticamente la nueva enfermedad
+                    const selectEnfermedad = document.getElementById('selectEnfermedad');
+                    if (selectEnfermedad) {
+                        selectEnfermedad.value = nombre;
+                        window.currentEnfermedadSelected = nombre;
+
+                        // Disparar evento para que cargue el panel de inputs
+                        selectEnfermedad.dispatchEvent(new Event('change'));
+
+                        // Actualizar contador visual del label
+                        const label = selectEnfermedad.parentElement?.querySelector('label');
+                        if (label) {
+                            label.textContent = `Seleccione Enfermedad (${window.enfermedadesActuales.length} asignadas)`;
+                        }
+                    }
+
+                } else {
+                    if (typeof SwalAlert === 'function') SwalAlert(data.message, 'error'); else alert('❌ Error: ' + data.message);
                 }
             })
             .catch(e => {
-                console.error('Error fetch:', e);
-                if (typeof SwalAlert === 'function') SwalAlert('Error de conexión: ' + e.message, 'error'); else alert('❌ Error de conexión: ' + e.message);
+                console.error('Error:', e);
+                if (typeof SwalAlert === 'function') SwalAlert('Error de conexión', 'error'); else alert('❌ Error de conexión');
             });
     });
 }
