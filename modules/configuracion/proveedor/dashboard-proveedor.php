@@ -13,6 +13,7 @@ $conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
+include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 
 // Proveedores = registros de ccte con proveedor_programa = 1, código longitud 11 y solo numérico
 $query = "SELECT codigo, nombre, codigo_proveedor FROM ccte WHERE COALESCE(proveedor_programa, 0) = 1 AND LENGTH(TRIM(codigo)) = 11 AND codigo REGEXP '^[0-9]{11}$' ORDER BY nombre";
@@ -34,6 +35,7 @@ $result_proveedores = mysqli_query($conexion, $query);
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="../../../assets/js/i18n/datatables-es.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
     <style>
@@ -52,8 +54,6 @@ $result_proveedores = mysqli_query($conexion, $query);
             .dashboard-actions { flex-direction: column; align-items: stretch; }
             .dashboard-actions .btn, .dashboard-actions button { width: 100%; justify-content: center; }
             #tablaProveedorWrapper { padding: 0.75rem; border-radius: 1rem; }
-            .data-table th, .data-table td { padding: 0.5rem 0.75rem; font-size: 0.8125rem; }
-            .data-table th:first-child, .data-table td:first-child { min-width: 2.5rem; }
             .text-center.mt-12 { margin-top: 2rem; padding: 0 0.5rem; }
         }
         /* Modal responsivo */
@@ -192,9 +192,9 @@ $result_proveedores = mysqli_query($conexion, $query);
         var $table = jQuery('#tablaProveedor');
         if ($table.length && !$table.hasClass('dataTable')) {
             jQuery('#tablaProveedor').DataTable({
-                pageLength: 10,
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'Todos']],
-                language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+                pageLength: 20,
+                lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, 'Todos']],
+                language: window.DATATABLES_LANG_ES || {},
                 order: [[1, 'asc']],
                 columnDefs: [{ orderable: false, targets: [0, 4] }],
                 dom: '<"dt-top-row"<"flex items-center gap-6" l><"flex items-center gap-2" f>>rt<"dt-bottom-row"<"text-sm text-gray-600" i><"text-sm text-gray-600" p>>',

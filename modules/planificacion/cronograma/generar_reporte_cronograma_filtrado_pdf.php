@@ -13,6 +13,7 @@ $mesUnico = trim((string)($_GET['mesUnico'] ?? ''));
 $mesInicio = trim((string)($_GET['mesInicio'] ?? ''));
 $mesFin = trim((string)($_GET['mesFin'] ?? ''));
 $codTipo = trim((string)($_GET['codTipo'] ?? ''));
+$porFechaEjecucion = !empty($_GET['porFechaEjecucion']);
 
 $rango = null;
 if ($periodoTipo !== '' && $periodoTipo !== 'TODOS') {
@@ -68,7 +69,7 @@ $sql .= $joinTipo;
 $sql .= " WHERE " . ($whereTipo ?: " 1=1 ");
 
 if ($rango !== null && isset($rango['desde'], $rango['hasta'])) {
-    $campoFechaFiltro = $tieneFechaHoraRegistro ? 'c.fechaHoraRegistro' : 'c.fechaEjecucion';
+    $campoFechaFiltro = ($porFechaEjecucion || !$tieneFechaHoraRegistro) ? 'c.fechaEjecucion' : 'c.fechaHoraRegistro';
     $sql .= " AND DATE(" . $campoFechaFiltro . ") >= ? AND DATE(" . $campoFechaFiltro . ") <= ? ";
     $params[] = $rango['desde'];
     $params[] = $rango['hasta'];
@@ -149,13 +150,17 @@ if (empty($logo) && file_exists(__DIR__ . '/../../logo.png')) {
 $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     body{font-family:"Segoe UI",Arial,sans-serif;font-size:9pt;color:#1e293b;margin:0;padding:12px 14px;}
     .fecha-hora-arriba{position:absolute;top:12px;right:14px;font-size:9pt;color:#475569;z-index:10;}
-    .data-table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed;border:3px solid #64748b;}
+    .data-table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed;border:2px solid #cbd5e1;}
     .data-table th,.data-table td{padding:4px 6px;border:1px solid #cbd5e1;vertical-align:top;text-align:left;background:#fff;overflow:hidden;}
     .data-table thead th{background-color:#2563eb !important;color:#fff !important;font-weight:bold;}
-    .data-table tbody tr.borde-grueso-codprograma{border-bottom:2px solid #64748b;}
-    .data-table tbody tr.borde-grueso-codprograma td{border-bottom:2px solid #64748b;}
+    .data-table tbody tr.borde-grueso-codprograma{border-bottom:2px solid #cbd5e1;}
+    .data-table tbody tr.borde-grueso-codprograma td{border-bottom:2px solid #cbd5e1;}
 </style></head><body style="position:relative;">';
 
+$tituloReporte = 'REPORTE ASIGNACIÓN DE PROGRAMAS';
+if ($rango !== null && isset($rango['desde'], $rango['hasta']) && $rango['desde'] === $rango['hasta']) {
+    $tituloReporte = 'REPORTE CRONOGRAMAS DEL ' . fechaDDMMYYYY($rango['desde']);
+}
 $html .= '<div class="fecha-hora-arriba">' . htmlspecialchars($fechaReporte) . '</div>';
 $html .= '<table width="100%" style="border-collapse: collapse; border: 1px solid #cbd5e1; margin-bottom: 10px; margin-top: 28px;">';
 $html .= '<tr>';
@@ -164,13 +169,14 @@ if (!empty($logo)) {
 } else {
     $html .= '<td style="width: 20%; text-align: left; padding: 8px 10px; background-color: #fff; font-size: 8pt; white-space: nowrap; border: 1px solid #cbd5e1;">GRANJA RINCONADA DEL SUR S.A.</td>';
 }
-$html .= '<td style="width: 60%; text-align: center; padding: 8px 10px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px; border: 1px solid #cbd5e1;">REPORTE ASIGNACIÓN DE PROGRAMAS</td>';
+$html .= '<td style="width: 60%; text-align: center; padding: 8px 10px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px; border: 1px solid #cbd5e1;">' . htmlspecialchars($tituloReporte) . '</td>';
 $html .= '<td style="width: 20%; background-color: #fff; border: 1px solid #cbd5e1;"></td></tr></table>';
 
-$pctColCronoFilt = round(100 / 9, 2);
+// Anchos: N°, Cód, Granja, Nom.Granja, Campaña, Galpón, Fec.Carga, Fec.Ejec, Edad (más estrecha)
+$colWidths = [5, 13, 11, 14, 11, 11, 14, 14, 7];
 $html .= '<table class="data-table"><colgroup>';
-for ($i = 0; $i < 9; $i++) $html .= '<col style="width:' . $pctColCronoFilt . '%"/>';
-$html .= '</colgroup><thead><tr><th>N°</th><th>Cód. Programa</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Fec. Carga</th><th>Fec. Ejecución</th><th>Edad de aplicación</th></tr></thead><tbody>';
+foreach ($colWidths as $w) $html .= '<col style="width:' . $w . '%"/>';
+$html .= '</colgroup><thead><tr><th>N°</th><th>Cód. Programa</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Fec. Carga</th><th>Fec. Ejecución</th><th>Edad</th></tr></thead><tbody>';
 if (empty($filas)) {
     $html .= '<tr><td colspan="9" style="text-align:center;color:#64748b;">Sin registros con los filtros aplicados.</td></tr>';
 } else {

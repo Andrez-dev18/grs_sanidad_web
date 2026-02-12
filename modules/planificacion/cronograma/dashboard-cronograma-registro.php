@@ -131,7 +131,7 @@ if (empty($_SESSION['active'])) {
         .tabs-crono-resultado .tab-btn.active { color: #2563eb; border-bottom-color: #2563eb; }
         .tab-panel-crono { display: none; }
         .tab-panel-crono.active { display: block; }
-        /* Crono Granjas: mismo estilo lista/iconos y controles que reportes */
+        /* Crono Granjas: un solo toolbar (Mostrar + Buscar) visible en lista e iconos; estilos alineados con dashboard-config */
         #cronoGranjasWrapperEspecifico[data-vista="iconos"] .view-lista-wrap-crono,
         #cronoGranjasWrapperZonas[data-vista="iconos"] .view-lista-wrap-crono { display: none !important; }
         #cronoGranjasWrapperEspecifico[data-vista="iconos"] .view-tarjetas-wrap-crono,
@@ -141,30 +141,61 @@ if (empty($_SESSION['active'])) {
         #cronoGranjasWrapperEspecifico .view-tarjetas-wrap-crono,
         #cronoGranjasWrapperZonas .view-tarjetas-wrap-crono { display: none; }
         .crono-granjas-toolbar-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; }
-        .crono-dt-controls, .crono-iconos-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
-        .crono-iconos-controls { display: none; }
-        #cronoGranjasWrapperEspecifico[data-vista="iconos"] .crono-dt-controls,
-        #cronoGranjasWrapperZonas[data-vista="iconos"] .crono-dt-controls { display: none; }
-        #cronoGranjasWrapperEspecifico[data-vista="iconos"] .crono-iconos-controls,
-        #cronoGranjasWrapperZonas[data-vista="iconos"] .crono-iconos-controls { display: flex; }
-        .crono-cards-controls-top, .crono-cards-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; font-size: 0.875rem; color: #4b5563; }
+        .crono-dt-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
         .crono-cards-controls-top { margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid #e5e7eb; }
-        .crono-cards-pagination { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb; }
-        .crono-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; padding: 0.5rem 0; }
-        .crono-card-item { background: #fff; border: 1px solid #e5e7eb; border-radius: 1rem; padding: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        /* Paginación lista e iconos: misma estructura que reportes (dt-bottom-row + dataTables_*); estilos en dashboard-config.css */
+        .crono-cards-pagination.dt-bottom-row { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
+        /* Grid y tarjetas: usar estilos globales .cards-grid.cards-grid-iconos (dashboard-vista-tabla-iconos.css) para responsividad */
+        .view-tarjetas-wrap-crono { max-width: 100%; min-width: 0; box-sizing: border-box; }
+        .crono-card-item { background: #fff; border: 1px solid #e5e7eb; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .crono-card-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .crono-card-item .card-codigo { font-weight: 700; font-size: 1rem; color: #1e40af; margin-bottom: 0.5rem; }
         .crono-card-item .card-row { font-size: 0.8rem; color: #4b5563; margin-bottom: 0.25rem; }
         .crono-card-item .card-row .label { color: #6b7280; }
-        .crono-cards-pagination .paginate_button { padding: 0.5rem 1rem; margin: 0 0.25rem; border-radius: 0.5rem; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 0.875rem; }
-        .crono-cards-pagination .paginate_button:hover:not(.disabled) { background: #eff6ff; color: #1d4ed8; }
-        .crono-cards-pagination .paginate_button.current { background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%); color: white; border-color: #1e40af; }
-        .crono-cards-pagination .paginate_button.disabled { opacity: 0.5; cursor: not-allowed; }
-        .tabla-crono-toolbar-bottom .paginate_button_wrap { display: inline-flex; align-items: center; gap: 0.25rem; }
-        .tabla-crono-toolbar-bottom .paginate_button { padding: 0.5rem 1rem; margin: 0 0.25rem; border-radius: 0.5rem; border: 1px solid #d1d5db; background: #fff; cursor: pointer; font-size: 0.875rem; }
-        .tabla-crono-toolbar-bottom .paginate_button:hover:not(.disabled) { background: #eff6ff; color: #1d4ed8; }
-        .tabla-crono-toolbar-bottom .paginate_button.current { background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%); color: white; border-color: #1e40af; }
-        .tabla-crono-toolbar-bottom .paginate_button.disabled { opacity: 0.5; cursor: not-allowed; }
+        /* Dentro del modal de edición (iframe): sin gris, contenedor plano y contenido compacto arriba */
+        body.en-modal-editar-crono { background: transparent !important; padding: 0 !important; }
+        body.en-modal-editar-crono .cronograma-form-wrap {
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin-bottom: 0 !important;
+        }
+        body.en-modal-editar-crono .w-full.max-w-full {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+        }
+        body.en-modal-editar-crono .cronograma-form-wrap > div {
+            padding: 0.5rem 0.75rem !important;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem !important;
+        }
+        body.en-modal-editar-crono .cronograma-form-wrap label { margin-bottom: 0.25rem !important; font-size: 0.8125rem !important; }
+        body.en-modal-editar-crono .cronograma-form-wrap .form-control {
+            padding: 0.375rem 0.5rem !important;
+            font-size: 0.8125rem !important;
+            min-height: 32px;
+        }
+        body.en-modal-editar-crono .cronograma-form-wrap .grid { gap: 0.5rem 0.75rem !important; }
+        body.en-modal-editar-crono .cronograma-form-wrap #cronoZona[multiple] { min-height: 56px !important; }
+        body.en-modal-editar-crono .cronograma-form-wrap .bloque-especifico.space-y-4 { margin-top: 0.5rem !important; }
+        body.en-modal-editar-crono .cronograma-form-wrap .bloque-especifico.space-y-4 .grid { gap: 0.5rem !important; }
+        body.en-modal-editar-crono .cronograma-form-wrap .btn-primary { padding: 0.375rem 0.75rem !important; font-size: 0.8125rem !important; }
+        body.en-modal-editar-crono .select2-container { height: 32px !important; }
+        body.en-modal-editar-crono .select2-container .select2-selection--single {
+            min-height: 32px !important;
+            height: 32px !important;
+            padding: 0.25rem 0.5rem !important;
+        }
+        body.en-modal-editar-crono .select2-container .select2-selection--single .select2-selection__rendered { line-height: 20px !important; }
+        body.en-modal-editar-crono .select2-container .select2-selection--single .select2-selection__arrow,
+        body.en-modal-editar-crono .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 30px !important;
+            top: 1px !important;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -199,19 +230,21 @@ if (empty($_SESSION['active'])) {
         </div>
     </div>
     <div class="w-full max-w-full py-4 px-4 sm:px-6 lg:px-8 box-border">
-        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
+        <div class="cronograma-form-wrap mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
             <div class="p-6 space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de programa *</label>
-                    <select id="cronoTipo" class="form-control">
-                        <option value="">Seleccione tipo...</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Código del programa *</label>
-                    <select id="cronoPrograma" class="form-control" style="width:100%;" disabled>
-                        <option value="">Primero seleccione el tipo de programa</option>
-                    </select>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de programa *</label>
+                        <select id="cronoTipo" class="form-control">
+                            <option value="">Seleccione tipo...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Código del programa *</label>
+                        <select id="cronoPrograma" class="form-control" style="width:100%;" disabled>
+                            <option value="">Primero seleccione el tipo de programa</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -222,6 +255,17 @@ if (empty($_SESSION['active'])) {
                         <label class="block text-sm font-medium text-gray-700 mb-1">Año *</label>
                         <select id="cronoAnio" class="form-control"></select>
                     </div>
+                </div>
+                <div id="panelProgramaInfo" class="hidden mt-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+                    <h4 class="text-sm font-semibold text-gray-800 mb-3"> Información del programa</h4>
+                    <div id="panelProgramaInfoCab" class="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm"></div>
+                    <div class="table-wrapper overflow-x-auto">
+                        <table class="tabla-fechas-crono config-table w-full text-sm" id="tablaPanelProgramaInfo">
+                            <thead id="panelProgramaInfoThead"></thead>
+                            <tbody id="panelProgramaInfoBody"></tbody>
+                        </table>
+                    </div>
+                    <p id="panelProgramaInfoSinReg" class="hidden text-gray-500 text-sm mt-2">Sin registros en el detalle del programa.</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1.5">
@@ -262,14 +306,8 @@ if (empty($_SESSION['active'])) {
                     <div id="fechasResultado" class="hidden mt-2 p-3 rounded-lg text-sm">
                         <div class="tabs-crono-resultado">
                             <button type="button" class="tab-btn active" data-tab="granjas" data-context="especifico">Granjas</button>
-                            <button type="button" class="tab-btn" data-tab="programa" data-context="especifico">Programa</button>
                         </div>
                         <div id="tabPanelGranjasEspecifico" class="tab-panel-crono active"></div>
-                        <div id="tabPanelProgramaEspecifico" class="tab-panel-crono">
-                            <div id="programaCabEspecifico" class="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm"></div>
-                            <div class="table-wrapper overflow-x-auto"><table class="tabla-fechas-crono config-table w-full text-sm" id="tablaProgramaEspecifico"><thead id="programaTheadEspecifico"></thead><tbody id="programaBodyEspecifico"></tbody></table></div>
-                            <p id="programaSinRegEspecifico" class="hidden text-gray-500 text-sm mt-2">Sin registros en el detalle del programa.</p>
-                        </div>
                     </div>
                 </div>
                 <div id="bloqueAsignarZonas" class="bloque-especifico" style="display:none;">
@@ -279,27 +317,28 @@ if (empty($_SESSION['active'])) {
                     <div id="fechasResultadoZonas" class="hidden mt-2 p-3 rounded-lg text-sm">
                         <div class="tabs-crono-resultado">
                             <button type="button" class="tab-btn active" data-tab="granjas" data-context="zonas">Granjas</button>
-                            <button type="button" class="tab-btn" data-tab="programa" data-context="zonas">Programa</button>
                         </div>
                         <div id="tabPanelGranjasZonas" class="tab-panel-crono active"></div>
-                        <div id="tabPanelProgramaZonas" class="tab-panel-crono">
-                            <div id="programaCabZonas" class="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm"></div>
-                            <div class="table-wrapper overflow-x-auto"><table class="tabla-fechas-crono config-table w-full text-sm" id="tablaProgramaZonas"><thead id="programaTheadZonas"></thead><tbody id="programaBodyZonas"></tbody></table></div>
-                            <p id="programaSinRegZonas" class="hidden text-gray-500 text-sm mt-2">Sin registros en el detalle del programa.</p>
-                        </div>
                     </div>
                 </div>
             </div>
-            <div class="px-6 pb-6 flex gap-3 justify-end">
+            <div id="cronogramaFooter" class="px-6 pb-6 flex gap-3 justify-end">
                 <button type="button" id="btnLimpiarCrono" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium">Limpiar</button>
                 <button type="button" id="btnGuardarCrono" class="btn-primary" disabled>
-                    <i class="fas fa-save"></i> Guardar cronograma
+                    <i class="fas fa-save"></i> Guardar Asignación
                 </button>
             </div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            var editar = params.get('editar') === '1';
+            var numCron = (params.get('numCronograma') || '').trim();
+            window._modoEditarCrono = editar && numCron !== '' && window.self !== window.top;
+            window._numCronogramaEditar = numCron;
+        })();
         let fechasAsignadas = [];
         let paresCargaEjecucion = []; // [{ edad, fechaCarga, fechaEjecucion }] para modo zona
         let itemsEspecifico = [];
@@ -307,6 +346,12 @@ if (empty($_SESSION['active'])) {
         var programasMap = {};
         var granjasMap = {}; // codigo (3 chars) -> nombre granja
         var edadProgramaCrono = null; // primera edad del programa (siempre registrar)
+
+        if (window._modoEditarCrono) {
+            document.body.classList.add('en-modal-editar-crono');
+            var foot = document.getElementById('cronogramaFooter');
+            if (foot) foot.style.display = 'none';
+        }
 
         function formatoDDMMYYYY(ymd) {
             if (!ymd) return '';
@@ -357,23 +402,50 @@ if (empty($_SESSION['active'])) {
             if (k === 'cantidad_por_galpon') return (d.cantidadPorGalpon !== null && d.cantidadPorGalpon !== undefined && d.cantidadPorGalpon !== '' ? d.cantidadPorGalpon : '');
             return '';
         }
-        function cargarTabProgramaEnResultadoCrono(codPrograma, cabElId, theadId, tbodyId, sinRegId) {
-            var cabEl = document.getElementById(cabElId);
-            var theadEl = document.getElementById(theadId);
-            var tbodyEl = document.getElementById(tbodyId);
-            var sinRegEl = document.getElementById(sinRegId);
-            if (!cabEl || !theadEl || !tbodyEl || !sinRegEl) return;
+        function keyDetalleSinEdad(d, colsSinEdad) {
+            var parts = [];
+            colsSinEdad.forEach(function(k) { parts.push(valorCeldaDetalleCrono(k, d)); });
+            return parts.join('\t');
+        }
+        function agruparDetallesPorEdadPanel(detalles, colsSinNum) {
+            if (!detalles || detalles.length === 0) return [];
+            var colsSinEdad = colsSinNum.filter(function(k) { return k !== 'edad'; });
+            var map = {};
+            detalles.forEach(function(d) {
+                var key = keyDetalleSinEdad(d, colsSinEdad);
+                if (!map[key]) map[key] = [];
+                map[key].push(d);
+            });
+            var out = [];
+            Object.keys(map).forEach(function(key) {
+                var group = map[key];
+                var first = group[0];
+                var ages = [];
+                group.forEach(function(r) {
+                    var e = r.edad;
+                    if (e !== null && e !== undefined && (e + '').trim() !== '') ages.push((e + '').trim());
+                });
+                var merged = Object.assign({}, first);
+                merged.edad = ages.length > 0 ? ages.join(' - ') : (first.edad !== null && first.edad !== undefined ? (first.edad + '') : '');
+                out.push(merged);
+            });
+            return out;
+        }
+        function rellenarProgramaCabDetalle(codPrograma, cabEl, theadEl, tbodyEl, sinRegEl, onDone) {
+            if (!cabEl || !theadEl || !tbodyEl || !sinRegEl) { if (onDone) onDone(); return; }
             cabEl.innerHTML = '<span class="text-gray-500">Cargando...</span>';
             theadEl.innerHTML = '';
             tbodyEl.innerHTML = '';
             sinRegEl.classList.add('hidden');
             if (!codPrograma || String(codPrograma).trim() === '') {
                 cabEl.innerHTML = '<span class="text-gray-500">No hay programa seleccionado.</span>';
+                if (onDone) onDone();
                 return;
             }
             fetch('../programas/get_programa_cab_detalle.php?codigo=' + encodeURIComponent(codPrograma)).then(function(r) { return r.json(); }).then(function(res) {
                 if (!res.success) {
                     cabEl.innerHTML = '<span class="text-red-600">' + esc(res.message || 'Error al cargar programa.') + '</span>';
+                    if (onDone) onDone();
                     return;
                 }
                 var cab = res.cab || {};
@@ -385,7 +457,6 @@ if (empty($_SESSION['active'])) {
                 if (cab.descripcion) { cabHtml += '<dt class="font-medium col-span-2">Descripción</dt><dd class="col-span-2">' + esc(cab.descripcion) + '</dd>'; }
                 cabHtml += '</dl>';
                 cabEl.innerHTML = cabHtml;
-                // Mismo orden de columnas que tab Programas del listado: dinámicas por sigla, edad al final
                 var sigla = (res.sigla || 'PL').toUpperCase();
                 if (sigla === 'NEC') sigla = 'NC';
                 var cols = columnasPorSiglaReporte[sigla] || columnasPorSiglaReporte['PL'];
@@ -394,17 +465,19 @@ if (empty($_SESSION['active'])) {
                     colsSinNum = colsSinNum.filter(function(k) { return k !== 'edad'; });
                     colsSinNum.push('edad');
                 }
-                var thCells = '<th class="px-3 py-2 text-left">Código</th><th class="px-3 py-2 text-left">Nombre programa</th><th class="px-3 py-2 text-left">Despliegue</th><th class="px-3 py-2 text-left">Descripción</th>';
+                var thCells = '<th class="px-3 py-2 text-left">N°</th><th class="px-3 py-2 text-left">Código</th><th class="px-3 py-2 text-left">Nombre programa</th><th class="px-3 py-2 text-left">Despliegue</th><th class="px-3 py-2 text-left">Descripción</th>';
                 colsSinNum.forEach(function(k) { thCells += '<th class="px-3 py-2 text-left">' + (labelsReporteCrono[k] || k) + '</th>'; });
                 theadEl.innerHTML = '<tr>' + thCells + '</tr>';
                 tbodyEl.innerHTML = '';
                 if (detalles.length === 0) {
                     sinRegEl.classList.remove('hidden');
                 } else {
-                    detalles.forEach(function(d) {
+                    var filasAgrupadas = agruparDetallesPorEdadPanel(detalles, colsSinNum);
+                    filasAgrupadas.forEach(function(d, idx) {
                         var tr = document.createElement('tr');
                         tr.className = 'border-b border-gray-200';
-                        var td = '<td class="px-3 py-2">' + esc(cab.codigo) + '</td><td class="px-3 py-2">' + esc(cab.nombre) + '</td><td class="px-3 py-2">' + esc(cab.despliegue || '') + '</td><td class="px-3 py-2">' + esc(cab.descripcion || '') + '</td>';
+                        var num = idx + 1;
+                        var td = '<td class="px-3 py-2">' + num + '</td><td class="px-3 py-2">' + esc(cab.codigo) + '</td><td class="px-3 py-2">' + esc(cab.nombre) + '</td><td class="px-3 py-2">' + esc(cab.despliegue || '') + '</td><td class="px-3 py-2">' + esc(cab.descripcion || '') + '</td>';
                         colsSinNum.forEach(function(k) {
                             td += '<td class="px-3 py-2"' + (k === 'descripcion_vacuna' ? ' style="white-space:pre-wrap;"' : '') + '>' + valorCeldaDetalleCrono(k, d) + '</td>';
                         });
@@ -412,9 +485,26 @@ if (empty($_SESSION['active'])) {
                         tbodyEl.appendChild(tr);
                     });
                 }
+                if (onDone) onDone();
             }).catch(function() {
                 cabEl.innerHTML = '<span class="text-red-600">Error al cargar el programa.</span>';
+                if (onDone) onDone();
             });
+        }
+
+        function cargarPanelProgramaInfo(codPrograma) {
+            var panel = document.getElementById('panelProgramaInfo');
+            var cabEl = document.getElementById('panelProgramaInfoCab');
+            var theadEl = document.getElementById('panelProgramaInfoThead');
+            var tbodyEl = document.getElementById('panelProgramaInfoBody');
+            var sinRegEl = document.getElementById('panelProgramaInfoSinReg');
+            if (!panel) return;
+            if (!codPrograma || String(codPrograma).trim() === '') {
+                panel.classList.add('hidden');
+                return;
+            }
+            panel.classList.remove('hidden');
+            rellenarProgramaCabDetalle(codPrograma, cabEl, theadEl, tbodyEl, sinRegEl);
         }
         function abrirModalVerProgramaDetalleCrono(codigo, posDetalle) {
             if (!codigo) return;
@@ -497,9 +587,6 @@ if (empty($_SESSION['active'])) {
             if (tab === 'granjas') {
                 var panel = ctx === 'zonas' ? document.getElementById('tabPanelGranjasZonas') : document.getElementById('tabPanelGranjasEspecifico');
                 if (panel) panel.classList.add('active');
-            } else if (tab === 'programa') {
-                var panel = ctx === 'zonas' ? document.getElementById('tabPanelProgramaZonas') : document.getElementById('tabPanelProgramaEspecifico');
-                if (panel) panel.classList.add('active');
             }
         });
         function mostrarCarga(mostrar) {
@@ -524,7 +611,7 @@ if (empty($_SESSION['active'])) {
             var prevClass = prevDisabled ? ' disabled' : '';
             var nextClass = nextDisabled ? ' disabled' : '';
             var html = '<span class="dataTables_info">' + infoText + '</span>';
-            html += '<span class="paginate_button_wrap" style="display:inline-flex;align-items:center;gap:0.25rem;">';
+            html += '<span class="dataTables_paginate paginate_button_wrap">';
             html += '<span class="paginate_button previous' + prevClass + '" data-crono-pagenav="prev" data-context="' + tipo + '" role="button">Anterior</span>';
             html += '<span class="paginate_button current" role="button">Pág. ' + page + ' de ' + totalPag + '</span>';
             html += '<span class="paginate_button next' + nextClass + '" data-crono-pagenav="next" data-context="' + tipo + '" role="button">Siguiente</span>';
@@ -545,7 +632,9 @@ if (empty($_SESSION['active'])) {
             filaPage.forEach(function(r, i) {
                 var num = start + i + 1;
                 cardsHtml += '<div class="crono-card-item card-item">';
-                cardsHtml += '<div class="card-codigo card-codigo">#' + num + ' · ' + esc(r.codPrograma || '—') + '</div>';
+                cardsHtml += '<div class="card-numero-row">#' + num + '</div>';
+                cardsHtml += '<div class="card-codigo">' + esc(r.codPrograma || '—') + '</div>';
+                cardsHtml += '<div class="card-contenido"><div class="card-campos">';
                 cardsHtml += '<div class="card-row"><span class="label">Granja:</span> ' + esc(r.granja || '—') + '</div>';
                 cardsHtml += '<div class="card-row"><span class="label">Nom. Granja:</span> ' + esc(r.nomGranja || '—') + '</div>';
                 cardsHtml += '<div class="card-row"><span class="label">Campaña:</span> ' + esc(r.campania || '—') + '</div>';
@@ -557,7 +646,7 @@ if (empty($_SESSION['active'])) {
                 cardsHtml += '<div class="card-row"><span class="label">Edad:</span> ' + esc(r.edad || '—') + '</div>';
                 cardsHtml += '<div class="card-row"><span class="label">Fec. Carga:</span> ' + esc(r.fechaCarga || '—') + '</div>';
                 cardsHtml += '<div class="card-row"><span class="label">Fec. Ejecución:</span> ' + esc(r.fechaEjec || '—') + '</div>';
-                cardsHtml += '</div>';
+                cardsHtml += '</div></div></div>';
             });
             container.innerHTML = cardsHtml;
             if (pagEl) {
@@ -581,9 +670,7 @@ if (empty($_SESSION['active'])) {
             var tbodyId = isZonas ? 'tbodyGranjasZonas' : 'tbodyGranjasEspecifico';
             var pagId = isZonas ? 'paginacionGranjasZonas' : 'paginacionGranjasEspecifico';
             var searchId = isZonas ? 'searchGranjasZonas' : 'searchGranjasEspecifico';
-            var searchIdIconos = isZonas ? 'searchGranjasZonasIconos' : 'searchGranjasEspecificoIconos';
             var sizeSelectId = isZonas ? 'granjasSizeZonas' : 'granjasSizeEspecifico';
-            var sizeSelectIdIconos = isZonas ? 'granjasSizeZonasIconos' : 'granjasSizeEspecificoIconos';
             var cardsTopId = isZonas ? 'cardsControlsTopGranjasZonas' : 'cardsControlsTopGranjasEspecifico';
             var cardsContainerId = isZonas ? 'cardsContainerGranjasZonas' : 'cardsContainerGranjasEspecifico';
             var cardsPagId = isZonas ? 'cardsPaginationGranjasZonas' : 'cardsPaginationGranjasEspecifico';
@@ -594,27 +681,23 @@ if (empty($_SESSION['active'])) {
                 '<label class="inline-flex items-center gap-2" style="margin:0;"><span>Mostrar</span><select id="' + sizeSelectId + '" data-granjas-size data-context="' + tipo + '"><option value="20"' + sizeOpts + '>20</option><option value="50"' + sizeOpts50 + '>50</option><option value="100"' + sizeOpts100 + '>100</option></select><span>registros</span></label>' +
                 '<label class="inline-flex items-center gap-2" style="margin:0;"><span>Buscar:</span><input type="text" class="buscar-granjas" id="' + searchId + '" placeholder="Buscar..." autocomplete="off" data-context="' + tipo + '" style="padding:0.5rem 1rem;border:1px solid #d1d5db;border-radius:0.5rem;min-width:180px;"></label>' +
                 '</div>';
-            var controlsIconos = '<div class="crono-iconos-controls">' +
-                '<label class="inline-flex items-center gap-2" style="margin:0;"><span>Mostrar</span><select id="' + sizeSelectIdIconos + '" data-granjas-size data-context="' + tipo + '"><option value="20"' + sizeOpts + '>20</option><option value="50"' + sizeOpts50 + '>50</option><option value="100"' + sizeOpts100 + '>100</option></select><span>registros</span></label>' +
-                '<label class="inline-flex items-center gap-2" style="margin:0;"><span>Buscar:</span><input type="text" class="buscar-granjas" id="' + searchIdIconos + '" placeholder="Buscar..." autocomplete="off" data-context="' + tipo + '" style="padding:0.5rem 1rem;border:1px solid #d1d5db;border-radius:0.5rem;min-width:180px;"></label>' +
-                '</div>';
             var html = (totalTexto ? '<p class="text-gray-600 text-sm mb-3">' + totalTexto + '</p>' : '') +
-                '<div class="tabla-crono-wrapper" id="' + wrapperId + '" data-vista="lista">' +
+                '<div class="tabla-crono-wrapper dataTables_wrapper" id="' + wrapperId + '" data-vista="lista">' +
                 '<div class="crono-granjas-toolbar-row">' +
-                '<div class="view-toggle-group flex items-center gap-2">' +
+                '<div class="view-toggle-group flex items-center gap-2">' +   
                 '<button type="button" class="view-toggle-btn active" data-crono-view="lista" data-context="' + tipo + '" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>' +
                 '<button type="button" class="view-toggle-btn" data-crono-view="iconos" data-context="' + tipo + '" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>' +
-                '</div>' + controlsLista + controlsIconos + '</div>' +
-                '<div class="view-tarjetas-wrap-crono px-4 pb-4 overflow-x-hidden">' +
+                '</div>' + controlsLista + '</div>' +
+                '<div class="view-tarjetas-wrap-crono view-tarjetas-wrap px-4 pb-4 overflow-x-hidden">' +
                 '<div id="' + cardsTopId + '" class="crono-cards-controls-top"></div>' +
-                '<div id="' + cardsContainerId + '" class="crono-cards-grid cards-grid-iconos"></div>' +
-                '<div id="' + cardsPagId + '" class="crono-cards-pagination" data-context="' + tipo + '"></div>' +
+                '<div id="' + cardsContainerId + '" class="cards-grid cards-grid-iconos"></div>' +
+                '<div id="' + cardsPagId + '" class="crono-cards-pagination dt-bottom-row dataTables_wrapper" data-context="' + tipo + '"></div>' +
                 '</div>' +
                 '<div class="view-lista-wrap-crono">' +
                 '<div class="table-wrapper overflow-x-auto">' +
-                '<table class="tabla-fechas-crono config-table w-full text-sm border-collapse" id="' + tableId + '"><thead>' + thead + '</thead><tbody id="' + tbodyId + '"></tbody></table>' +
+                '<table class="tabla-fechas-crono data-table config-table w-full text-sm border-collapse" id="' + tableId + '"><thead>' + thead + '</thead><tbody id="' + tbodyId + '"></tbody></table>' +
                 '</div>' +
-                '<div id="' + pagId + '" class="tabla-crono-toolbar-bottom" data-context="' + tipo + '"></div>' +
+                '<div id="' + pagId + '" class="tabla-crono-toolbar-bottom dt-bottom-row dataTables_wrapper" data-context="' + tipo + '"></div>' +
                 '</div></div>';
             panel.innerHTML = html;
             var wrapper = document.getElementById(wrapperId);
@@ -672,33 +755,13 @@ if (empty($_SESSION['active'])) {
                 if (prevBtn && !prevBtn.classList.contains('disabled')) prevBtn.addEventListener('click', function() { renderGranjasPage(tipo, page - 1); });
                 if (nextBtn && !nextBtn.classList.contains('disabled')) nextBtn.addEventListener('click', function() { renderGranjasPage(tipo, page + 1); });
             }
-            var searchIds = isZonas ? ['searchGranjasZonas', 'searchGranjasZonasIconos'] : ['searchGranjasEspecifico', 'searchGranjasEspecificoIconos'];
-            searchIds.forEach(function(id) { var el = document.getElementById(id); if (el) el.value = searchQ; });
+            var searchEl = document.getElementById(isZonas ? 'searchGranjasZonas' : 'searchGranjasEspecifico');
+            if (searchEl) searchEl.value = searchQ;
+            var sizeEl = document.getElementById(isZonas ? 'granjasSizeZonas' : 'granjasSizeEspecifico');
+            if (sizeEl) sizeEl.value = String(PAGE_SIZE_GRANJAS);
             var wrapper = document.getElementById(wrapperId);
             if (wrapper && wrapper.getAttribute('data-vista') === 'iconos') {
                 renderCronoGranjasCards(filaPage, tipo, total, totalPag, page);
-                var cardsTopId = isZonas ? 'cardsControlsTopGranjasZonas' : 'cardsControlsTopGranjasEspecifico';
-                var cardsTop = document.getElementById(cardsTopId);
-                var cardsTopId = isZonas ? 'cardsControlsTopGranjasZonas' : 'cardsControlsTopGranjasEspecifico';
-                if (cardsTop && !cardsTop.hasChildNodes()) {
-                    cardsTop.innerHTML = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select data-granjas-size data-context="' + tipo + '"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>registros</span></label>' +
-                        '<label class="inline-flex items-center gap-2"><span>Buscar:</span><input type="text" class="buscar-granjas" placeholder="Buscar..." data-context="' + tipo + '" style="padding:0.5rem 1rem;border:1px solid #d1d5db;border-radius:0.5rem;min-width:180px;"></label>';
-                    var topEl = document.getElementById(cardsTopId);
-                    if (topEl) {
-                        topEl.querySelectorAll('[data-granjas-size]').forEach(function(sel) {
-                            sel.addEventListener('change', function() { PAGE_SIZE_GRANJAS = parseInt(this.value, 10) || 20; renderGranjasPage(tipo, 1); });
-                        });
-                        topEl.querySelectorAll('.buscar-granjas').forEach(function(inp) {
-                            inp.addEventListener('input', function() { if (tipo === 'zonas') window._searchGranjasZonas = this.value; else window._searchGranjasEspecifico = this.value; renderGranjasPage(tipo, 1); });
-                        });
-                    }
-                }
-                if (cardsTop) {
-                    var selTop = cardsTop.querySelector('select[data-granjas-size]');
-                    if (selTop) selTop.value = String(PAGE_SIZE_GRANJAS);
-                    var inpTop = cardsTop.querySelector('input.buscar-granjas');
-                    if (inpTop) inpTop.value = searchQ;
-                }
             }
         }
 
@@ -840,7 +903,10 @@ if (empty($_SESSION['active'])) {
                     sel.appendChild(opt);
                 });
                 initSelect2CronoPrograma();
-                jQuery('#cronoPrograma').off('select2:select').on('select2:select', function() { actualizarNombrePrograma(); });
+                jQuery('#cronoPrograma').off('select2:select').on('select2:select', function() {
+                    actualizarNombrePrograma();
+                    cargarPanelProgramaInfo((jQuery(this).val() || '').toString().trim());
+                });
             }).catch(function() {
                 sel.innerHTML = '<option value="">Error de conexión</option>';
             });
@@ -951,10 +1017,12 @@ if (empty($_SESSION['active'])) {
             cargarProgramas(codTipo);
             document.getElementById('cronoNomProgramaDisplay').value = '';
             if (jQuery('#cronoPrograma').data('select2')) jQuery('#cronoPrograma').val('').trigger('change');
+            document.getElementById('panelProgramaInfo').classList.add('hidden');
         });
 
         document.getElementById('cronoPrograma').addEventListener('change', function() {
             actualizarNombrePrograma();
+            cargarPanelProgramaInfo((this.value || '').toString().trim());
         });
 
         function actualizarVisibilidadZonas() {
@@ -1111,7 +1179,6 @@ if (empty($_SESSION['active'])) {
                         var totalTexto = '<strong>Total:</strong> ' + filas.length + ' registro(s)';
                         renderTablaGranjasPaginada(filas, panelGranjas, 'zonas', totalTexto);
                     }
-                    cargarTabProgramaEnResultadoCrono(codPrograma, 'programaCabZonas', 'programaTheadZonas', 'programaBodyZonas', 'programaSinRegZonas');
                     div.classList.remove('hidden');
                     document.getElementById('btnGuardarCrono').disabled = fechasAsignadas.length === 0;
                 })
@@ -1176,7 +1243,6 @@ if (empty($_SESSION['active'])) {
                         var totalTexto = '<strong>Zona:</strong> Especifico &nbsp;·&nbsp; <strong>Total:</strong> ' + filas.length + ' registro(s)';
                         renderTablaGranjasPaginada(filas, panelGranjas, 'especifico', totalTexto);
                     }
-                    cargarTabProgramaEnResultadoCrono(codPrograma, 'programaCabEspecifico', 'programaTheadEspecifico', 'programaBodyEspecifico', 'programaSinRegEspecifico');
                     div.classList.remove('hidden');
                     document.getElementById('btnGuardarCrono').disabled = fechasAsignadas.length === 0;
                 })
@@ -1184,8 +1250,121 @@ if (empty($_SESSION['active'])) {
                 .finally(function() { mostrarCarga(false); });
         });
 
+        function enviarCronogramaPayload(payload, esActualizar) {
+            var url = esActualizar ? 'actualizar_cronograma.php' : 'guardar_cronograma.php';
+            if (esActualizar) payload.numCronograma = parseInt(window._numCronogramaEditar, 10);
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success) {
+                        if (window._modoEditarCrono) {
+                            try { window.parent.postMessage({ tipo: 'mostrarSwal', icon: 'success', title: 'Actualizado', text: res.message, cerrarAlConfirmar: true }, '*'); } catch (e) {}
+                            try { window.parent.postMessage({ tipo: 'cronogramaActualizado' }, '*'); } catch (e) {}
+                        } else {
+                            Swal.fire({ icon: 'success', title: 'Guardado', text: res.message }).then(function() { limpiarFormulario(); });
+                        }
+                    } else {
+                        if (window._modoEditarCrono) {
+                            try { window.parent.postMessage({ tipo: 'mostrarSwal', icon: 'error', title: 'Error', text: res.message || 'No se pudo guardar.' }, '*'); } catch (e) {}
+                        } else {
+                            Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudo guardar.' });
+                        }
+                    }
+                })
+                .catch(function() {
+                    if (window._modoEditarCrono) {
+                        try { window.parent.postMessage({ tipo: 'mostrarSwal', icon: 'error', title: 'Error', text: 'Error de conexión.' }, '*'); } catch (e) {}
+                    } else {
+                        Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión.' });
+                    }
+                });
+        }
+
+        window.submitFormCronograma = function() {
+            if (fechasAsignadas.length === 0) return;
+            var codPrograma = document.getElementById('cronoPrograma').value.trim();
+            var nomPrograma = (programasMap[codPrograma] && programasMap[codPrograma].nombre) ? programasMap[codPrograma].nombre : '';
+            var selZona = document.getElementById('cronoZona');
+            var zonasSel = Array.from(selZona.selectedOptions).map(function(o) { return o.value; }).filter(Boolean);
+            var tieneEspecifico = zonasSel.indexOf('Especifico') !== -1;
+            var payload = { codPrograma: codPrograma, nomPrograma: nomPrograma };
+            if (tieneEspecifico && itemsEspecifico.length > 0) {
+                var granjaCod = document.getElementById('cronoGranja').value ? String(document.getElementById('cronoGranja').value).trim().substring(0, 3) : '';
+                var nomGranjaSel = granjasMap[granjaCod] || '';
+                var itemsConNomGranjaYEdad = itemsEspecifico.map(function(it) {
+                    var g = (it.granja != null) ? String(it.granja).trim().substring(0, 3) : granjaCod;
+                    return {
+                        granja: g,
+                        nomGranja: nomGranjaSel || (granjasMap[g] || ''),
+                        campania: (it.campania != null) ? String(it.campania).trim() : '',
+                        galpon: (it.galpon != null) ? String(it.galpon).trim() : '',
+                        edad: edadProgramaCrono != null ? edadProgramaCrono : (it.edad != null ? parseInt(it.edad, 10) : null),
+                        fechas: (it.fechas || []).map(function(f) {
+                            var fe = (f && typeof f === 'object') ? f : {};
+                            var campaniaFe = (fe.campania != null) ? String(fe.campania).trim() : ((it.campania != null) ? String(it.campania).trim() : '');
+                            return { edad: fe.edad != null ? fe.edad : (edadProgramaCrono != null ? edadProgramaCrono : null), fechaCarga: fe.fechaCarga, fechaEjecucion: fe.fechaEjecucion, campania: campaniaFe };
+                        })
+                    };
+                });
+                payload.zona = 'Especifico';
+                payload.items = itemsConNomGranjaYEdad;
+                enviarCronogramaPayload(payload, !!window._modoEditarCrono);
+            } else {
+                var zona = zonasSel.join(',');
+                var subzona = '';
+                document.querySelectorAll('.chk-subzona:checked').forEach(function(c) {
+                    if (subzona) subzona += ',';
+                    subzona += c.getAttribute('data-dato');
+                });
+                var zonaSubzonaPorPar = {};
+                document.querySelectorAll('.chk-subzona:checked').forEach(function(c) {
+                    var raw = c.getAttribute('data-pairs');
+                    var zonaItem = (c.getAttribute('data-zona') || '').toString().trim();
+                    var subzonaItem = (c.getAttribute('data-dato') || '').toString().trim();
+                    if (raw) {
+                        try {
+                            var arr = JSON.parse(raw);
+                            (arr || []).forEach(function(p) {
+                                var ig = String(p.id_granja || p.idGranja || '').trim();
+                                var ia = String(p.id_galpon || p.idGalpon || '').trim();
+                                if (ig.length < 3) ig = ig.padStart(3, '0');
+                                zonaSubzonaPorPar[ig + '|' + ia] = { zona: zonaItem, subzona: subzonaItem };
+                            });
+                        } catch (e) {}
+                    }
+                });
+                var itemsZonasParaGuardar = (itemsZonas || []).map(function(it) {
+                    var key = String(it.granja || '').trim();
+                    if (key.length < 3) key = key.padStart(3, '0');
+                    key += '|' + (it.galpon || '');
+                    var zs = zonaSubzonaPorPar[key] || { zona: '', subzona: '' };
+                    return {
+                        granja: key.substring(0, 3),
+                        nomGranja: (granjasMap[it.granja] || '').toString().trim(),
+                        campania: (it.campania != null) ? String(it.campania).trim() : '',
+                        galpon: (it.galpon != null) ? String(it.galpon).trim() : '',
+                        zona: zs.zona,
+                        subzona: zs.subzona,
+                        fechas: (it.fechas || []).map(function(f) {
+                            var campaniaF = (f.campania != null) ? String(f.campania).trim() : ((it.campania != null) ? String(it.campania).trim() : '');
+                            return { edad: f.edad != null ? f.edad : null, fechaCarga: f.fechaCarga, fechaEjecucion: f.fechaEjecucion, campania: campaniaF };
+                        })
+                    };
+                });
+                payload.zona = zona;
+                payload.subzona = subzona;
+                payload.items = itemsZonasParaGuardar;
+                enviarCronogramaPayload(payload, !!window._modoEditarCrono);
+            }
+        };
+
         document.getElementById('btnGuardarCrono').addEventListener('click', function() {
             if (fechasAsignadas.length === 0) return;
+            if (window._modoEditarCrono) { window.submitFormCronograma(); return; }
             var codPrograma = document.getElementById('cronoPrograma').value.trim();
             var nomPrograma = (programasMap[codPrograma] && programasMap[codPrograma].nombre) ? programasMap[codPrograma].nombre : '';
             var selZona = document.getElementById('cronoZona');
@@ -1213,20 +1392,7 @@ if (empty($_SESSION['active'])) {
                 });
                 payload.zona = 'Especifico';
                 payload.items = itemsConNomGranjaYEdad;
-                fetch('guardar_cronograma.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                })
-                    .then(r => r.json())
-                    .then(res => {
-                        if (res.success) {
-                            Swal.fire({ icon: 'success', title: 'Guardado', text: res.message }).then(function() { limpiarFormulario(); });
-                        } else {
-                            Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudo guardar.' });
-                        }
-                    })
-                    .catch(function() { Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión.' }); });
+                enviarCronogramaPayload(payload, false);
                 return;
             }
 
@@ -1271,26 +1437,10 @@ if (empty($_SESSION['active'])) {
                         })
                 };
             });
-            fetch('guardar_cronograma.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    codPrograma: codPrograma,
-                    nomPrograma: nomPrograma,
-                    zona: zona,
-                    subzona: subzona,
-                    items: itemsZonasParaGuardar
-                })
-            })
-                .then(r => r.json())
-                .then(res => {
-                    if (res.success) {
-                        Swal.fire({ icon: 'success', title: 'Guardado', text: res.message }).then(function() { limpiarFormulario(); });
-                    } else {
-                        Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudo guardar.' });
-                    }
-                })
-                .catch(function() { Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión.' }); });
+            payload.zona = zona;
+            payload.subzona = subzona;
+            payload.items = itemsZonasParaGuardar;
+            enviarCronogramaPayload(payload, false);
         });
 
         function limpiarFormulario() {
@@ -1302,6 +1452,11 @@ if (empty($_SESSION['active'])) {
             if (jQuery('#cronoPrograma').data('select2')) jQuery('#cronoPrograma').val('').trigger('change');
             else document.getElementById('cronoPrograma').value = '';
             document.getElementById('cronoNomProgramaDisplay').value = '';
+            document.getElementById('panelProgramaInfo').classList.add('hidden');
+            document.getElementById('panelProgramaInfoCab').innerHTML = '';
+            document.getElementById('panelProgramaInfoThead').innerHTML = '';
+            document.getElementById('panelProgramaInfoBody').innerHTML = '';
+            document.getElementById('panelProgramaInfoSinReg').classList.add('hidden');
             llenarAnios();
             document.getElementById('cronoGranja').value = '';
             document.getElementById('cronoGalpon').innerHTML = '<option value="">Primero granja</option>';
@@ -1317,10 +1472,82 @@ if (empty($_SESSION['active'])) {
 
         document.getElementById('btnLimpiarCrono').addEventListener('click', limpiarFormulario);
 
+        function cargarDatosEdicion() {
+            if (!window._modoEditarCrono || !window._numCronogramaEditar) return;
+            fetch('get_cronograma.php?numCronograma=' + encodeURIComponent(window._numCronogramaEditar))
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (!res.success || !res.data) return;
+                    var d = res.data;
+                    var selTipo = document.getElementById('cronoTipo');
+                    var selPrograma = document.getElementById('cronoPrograma');
+                    selTipo.value = d.codTipo || '';
+                    fetch('get_programas.php?codTipo=' + encodeURIComponent(d.codTipo || ''))
+                        .then(function(r2) { return r2.json(); })
+                        .then(function(res2) {
+                            if (!res2.success) return;
+                            (res2.data || []).forEach(function(p) {
+                                var cod = (p.codigo != null) ? String(p.codigo).trim() : '';
+                                if (cod) programasMap[cod] = { nombre: (p.nombre != null) ? String(p.nombre) : '', nomTipo: (p.nomTipo != null) ? String(p.nomTipo) : '' };
+                            });
+                            selPrograma.innerHTML = '<option value="">Escriba código o nombre...</option>';
+                            (res2.data || []).forEach(function(p) {
+                                var cod = (p.codigo != null) ? String(p.codigo).trim() : '';
+                                if (cod === '') return;
+                                var opt = document.createElement('option');
+                                opt.value = cod;
+                                opt.textContent = p.label || (cod + ' - ' + (p.nombre || ''));
+                                selPrograma.appendChild(opt);
+                            });
+                            initSelect2CronoPrograma();
+                            if (jQuery(selPrograma).data('select2')) jQuery(selPrograma).val(d.codPrograma || '').trigger('change');
+                            else selPrograma.value = d.codPrograma || '';
+                            document.getElementById('cronoNomProgramaDisplay').value = d.nomPrograma || '';
+                            itemsEspecifico = d.items || [];
+                            fechasAsignadas = [];
+                            edadProgramaCrono = null;
+                            itemsEspecifico.forEach(function(it) {
+                                if (it.edad != null && it.edad !== '' && edadProgramaCrono == null) edadProgramaCrono = parseInt(it.edad, 10);
+                                (it.fechas || []).forEach(function(f) {
+                                    fechasAsignadas.push(f);
+                                    if ((f.edad != null && f.edad !== '') && edadProgramaCrono == null) edadProgramaCrono = parseInt(f.edad, 10);
+                                });
+                            });
+                            var selZona = document.getElementById('cronoZona');
+                            Array.from(selZona.options).forEach(function(o) { o.selected = (o.value === 'Especifico'); });
+                            actualizarVisibilidadZonas();
+                            document.getElementById('bloqueEspecifico').classList.add('visible');
+                            var div = document.getElementById('fechasResultado');
+                            var panelGranjas = document.getElementById('tabPanelGranjasEspecifico');
+                            if (panelGranjas) {
+                                var codPrograma = d.codPrograma || '';
+                                var filas = [];
+                                (itemsEspecifico || []).forEach(function(it) {
+                                    var nomG = (granjasMap[it.granja] || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;');
+                                    (it.fechas || []).forEach(function(f) {
+                                        var fe = (f && typeof f === 'object') ? f : {};
+                                        var campaniaFila = (fe.campania != null && String(fe.campania).trim() !== '') ? String(fe.campania).trim() : (it.campania || '—');
+                                        filas.push({ codPrograma: codPrograma, granja: it.granja || '—', nomGranja: nomG || '—', campania: campaniaFila, galpon: it.galpon || '—', edad: (fe.edad != null ? fe.edad : '—'), fechaCarga: formatoDDMMYYYY(fe.fechaCarga), fechaEjec: formatoDDMMYYYY(fe.fechaEjecucion) });
+                                    });
+                                });
+                                var totalTexto = '<strong>Zona:</strong> Especifico &nbsp;·&nbsp; <strong>Total:</strong> ' + filas.length + ' registro(s)';
+                                renderTablaGranjasPaginada(filas, panelGranjas, 'especifico', totalTexto);
+                            }
+                            div.classList.remove('hidden');
+                            document.getElementById('btnGuardarCrono').disabled = fechasAsignadas.length === 0;
+                        })
+                        .catch(function() {});
+                })
+                .catch(function() {});
+        }
+
         llenarAnios();
         cargarGranjas();
         cargarTiposPrograma();
         cargarZonas();
+        if (window._modoEditarCrono) {
+            setTimeout(cargarDatosEdicion, 900);
+        }
     </script>
 </body>
 </html>

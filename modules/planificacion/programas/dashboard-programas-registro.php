@@ -90,8 +90,9 @@ if (empty($_SESSION['active'])) {
         .tabla-detalle-compact .col-area-galpon .form-control,
         .tabla-detalle-compact .col-cantidad-galpon .form-control { min-width: 0; width: 100%; max-width: 100%; box-sizing: border-box; font-size: 0.8125rem; }
         #modalProveedorResultados { overflow-y: auto; overflow-x: hidden; max-height: 320px; min-height: 120px; }
-        /* Modal buscar producto: scroll en resultados */
-        #modalProductoResultados { overflow-y: auto; overflow-x: hidden; max-height: 320px; min-height: 120px; }
+        /* Modal buscar producto: más ancho y alto; scroll en resultados */
+        #modalBuscarProducto .modal-producto-inner { width: 100%; max-width: 56rem; max-height: 90vh; min-height: 420px; display: flex; flex-direction: column; overflow: hidden; }
+        #modalProductoResultados { overflow-y: auto; overflow-x: hidden; flex: 1; min-height: 200px; max-height: 420px; }
         #modalProductoResultados::-webkit-scrollbar { width: 8px; }
         #modalProductoResultados::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
         #modalProductoResultados::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
@@ -102,6 +103,11 @@ if (empty($_SESSION['active'])) {
         .th-edad-wrap { display: inline-flex; align-items: center; }
         #popoverInfoEdadFlotante { position: fixed; z-index: 9999; min-width: 200px; max-width: 260px; padding: 8px 10px; font-size: 0.75rem; line-height: 1.35; color: #374151; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); white-space: normal; display: none; }
         #popoverInfoEdadFlotante.visible { display: block; }
+        /* Dentro del modal (iframe): sin fondo gris, inputs directos sin contenedor con esquinas redondas */
+        body.en-modal-editar { background: #fff; }
+        body.en-modal-editar #formProgramaContainer { padding: 0.75rem 1rem; max-width: none; }
+        body.en-modal-editar #formProgramaContainer > div { border: none; border-radius: 0; box-shadow: none; margin-bottom: 0; overflow: visible; background: transparent; }
+        body.en-modal-editar #formPrograma { padding: 0; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -159,7 +165,7 @@ if (empty($_SESSION['active'])) {
                         <p id="solicitudesMsgTipo" class="hidden text-amber-600 text-xs mt-1">Seleccione primero el tipo de programa.</p>
                     </div>
                 </div>
-                <div class="mt-4 flex gap-2 justify-end border-t border-gray-200 pt-3">
+                <div id="formProgramaFooter" class="mt-4 flex gap-2 justify-end border-t border-gray-200 pt-3">
                     <button type="button" id="btnLimpiarForm" class="px-3 py-1.5 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 text-xs font-medium">Limpiar</button>
                     <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar</button>
                 </div>
@@ -168,13 +174,37 @@ if (empty($_SESSION['active'])) {
     </div>
     <!-- Modal buscar producto -->
     <div id="modalBuscarProducto" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
-            <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                <h3 class="text-sm font-semibold text-gray-800">Buscar producto</h3>
+        <div id="modalBuscarProductoInner" class="modal-producto-inner bg-white rounded-xl shadow-xl w-full flex flex-col overflow-hidden">
+            <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+                <h3 class="text-base font-semibold text-gray-800">Buscar producto</h3>
                 <button type="button" id="btnCerrarModalProducto" class="text-gray-500 hover:text-gray-700 text-xl leading-none">&times;</button>
             </div>
-            <div class="p-4">
-                <input type="text" id="modalProductoBuscar" class="form-control mb-3" placeholder="Escriba nombre o código del producto..." autocomplete="off">
+            <div class="p-4 flex flex-col flex-1 min-h-0">
+           
+                <div class="flex-shrink-0 mb-2">
+                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Filtros</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 flex-shrink-0">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Línea</label>
+                        <select id="modalProductoLinea" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 form-control">
+                            <option value="">Seleccionar</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Almacén</label>
+                        <select id="modalProductoAlmacen" class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300 form-control">
+                            <option value="">Seleccionar</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex-shrink-0 mb-2">
+                    <span class="text-xs font-medium text-gray-500 uppercase tracking-wide">Búsqueda</span>
+                </div>
+                <input type="text" id="modalProductoBuscar" class="form-control mb-3 flex-shrink-0" placeholder="Nombre o código del producto (opcional)" autocomplete="off">
+                <div class="flex flex-wrap gap-2 mb-3 flex-shrink-0">
+                    <button type="button" id="btnModalProductoLimpiar" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 text-sm font-medium hover:bg-gray-200">Limpiar todo</button>
+                </div>
                 <div id="modalProductoResultados" class="border border-gray-200 rounded text-sm"></div>
             </div>
         </div>
@@ -212,6 +242,102 @@ if (empty($_SESSION['active'])) {
     </div>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
+        (function() {
+            var params = new URLSearchParams(window.location.search);
+            if (params.get('editar') === '1' && params.get('codigo')) {
+                window._modoEditar = true;
+                window._codigoEditar = params.get('codigo').trim();
+            } else {
+                window._modoEditar = false;
+                window._codigoEditar = '';
+            }
+        })();
+        /** Agrupa detalles iguales salvo edad; devuelve filas con edad como "2,3,4" */
+        function agruparDetallesPorEdad(detalles) {
+            if (!detalles || detalles.length === 0) return [];
+            var map = {};
+            detalles.forEach(function(d) {
+                var key = [
+                    (d.ubicacion || ''), (d.codProducto || ''), (d.nomProducto || ''),
+                    (d.codProveedor || ''), (d.nomProveedor || ''), (d.unidades || ''),
+                    (d.dosis || ''), (d.unidadDosis || ''), (d.numeroFrascos || ''),
+                    (d.descripcionVacuna || ''), (d.areaGalpon !== null && d.areaGalpon !== undefined ? String(d.areaGalpon) : ''),
+                    (d.cantidadPorGalpon !== null && d.cantidadPorGalpon !== undefined ? String(d.cantidadPorGalpon) : '')
+                ].join('\t');
+                if (!map[key]) map[key] = { row: d, edades: [] };
+                var e = d.edad;
+                if (e !== null && e !== undefined && e !== '') map[key].edades.push(String(e).trim());
+            });
+            var out = [];
+            Object.keys(map).forEach(function(k) {
+                var g = map[k];
+                var r = {};
+                for (var p in g.row) if (g.row.hasOwnProperty(p)) r[p] = g.row[p];
+                r.edad = (g.edades.length > 0 ? g.edades.join(',') : (g.row.edad !== null && g.row.edad !== undefined ? String(g.row.edad) : ''));
+                out.push(r);
+            });
+            return out;
+        }
+        function cargarProgramaParaEditar() {
+            var codigo = window._codigoEditar;
+            if (!codigo) return Promise.resolve();
+            return fetch('get_programa_cab_detalle.php?codigo=' + encodeURIComponent(codigo))
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (!res.success || !res.cab) return;
+                    var cab = res.cab;
+                    var detalles = res.detalles || [];
+                    var sigla = (res.sigla || 'PL').toUpperCase();
+                    if (sigla === 'NEC') sigla = 'NC';
+                    document.getElementById('tipo').value = String(cab.codTipo || '');
+                    var tipoEl = document.getElementById('tipo');
+                    if (tipoEl.value) {
+                        document.getElementById('codigo').value = (cab.codigo || '').trim();
+                        document.getElementById('nombre').value = (cab.nombre || '').trim();
+                        document.getElementById('descripcion').value = (cab.descripcion || '').trim();
+                        document.getElementById('despliegue').value = (cab.despliegue || '').trim();
+                        document.getElementById('btnAgregarFila').classList.remove('hidden');
+                        document.getElementById('solicitudesContainer').classList.remove('hidden');
+                        currentCampos = getCamposActual();
+                        buildThead(currentCampos);
+                        var agrupados = agruparDetallesPorEdad(detalles);
+                        solicitudesData = {};
+                        agrupados.forEach(function(d, i) {
+                            solicitudesData[i] = {
+                                ubicacion: d.ubicacion || '',
+                                codProducto: d.codProducto || '',
+                                nomProducto: d.nomProducto || '',
+                                codProveedor: d.codProveedor || '',
+                                nomProveedor: d.nomProveedor || '',
+                                unidades: d.unidades || '',
+                                dosis: d.dosis || '',
+                                unidadDosis: d.unidadDosis || '',
+                                numeroFrascos: d.numeroFrascos || '',
+                                edad: d.edad,
+                                descripcionVacuna: d.descripcionVacuna || '',
+                                areaGalpon: d.areaGalpon,
+                                cantidadPorGalpon: d.cantidadPorGalpon
+                            };
+                        });
+                        var msgTipo = document.getElementById('solicitudesMsgTipo');
+                        if (msgTipo) msgTipo.classList.add('hidden');
+                        adjustSolicitudesRows(agrupados.length);
+                        agrupados.forEach(function(d, i) {
+                            var u = document.getElementById('unidad_ro_' + i);
+                            if (u) u.value = (d.unidades || '').trim();
+                            var nf = document.getElementById('numeroFrascos_' + i);
+                            if (nf) nf.value = (d.numeroFrascos || '').trim();
+                            var ud = document.getElementById('unidadDosis_' + i);
+                            if (ud) ud.value = (d.unidadDosis || '').trim();
+                            var ag = document.getElementById('area_galpon_' + i);
+                            if (ag && d.areaGalpon !== null && d.areaGalpon !== undefined) ag.value = d.areaGalpon;
+                            var cg = document.getElementById('cantidad_por_galpon_' + i);
+                            if (cg && d.cantidadPorGalpon !== null && d.cantidadPorGalpon !== undefined) cg.value = d.cantidadPorGalpon;
+                        });
+                    }
+                })
+                .catch(function() {});
+        }
         function cargarTipos() {
             return fetch('get_tipos_programa.php').then(r => r.json()).then(res => {
                 if (!res.success) return;
@@ -322,7 +448,7 @@ if (empty($_SESSION['active'])) {
                 else if (k === 'proveedor') parts.push('<td class="col-proveedor ' + cellClass + '"><input type="hidden" id="codProveedor_' + i + '" name="codProveedor_' + i + '" value=""><div class="wrap-producto-proveedor"><textarea id="proveedor_' + i + '" class="' + inputClass + ' compact multiline bg-gray-100" readonly rows="2"></textarea><button type="button" class="btn-lupa-detalle btn-buscar-proveedor border border-gray-300 text-gray-600 hover:bg-gray-100 rounded" data-row="' + i + '" title="Buscar proveedor"><i class="fas fa-search"></i></button></div></td>');
                 else if (k === 'unidad') parts.push('<td class="col-unidad ' + cellClass + '"><input type="text" id="unidad_ro_' + i + '" name="unidad_' + i + '" class="' + inputClass + '" maxlength="50"></td>');
                 else if (k === 'dosis') parts.push('<td class="col-dosis ' + cellClass + '"><input type="text" id="dosis_' + i + '" name="dosis_' + i + '" class="' + inputClass + '"></td>');
-                else if (k === 'descripcion_vacuna') parts.push('<td id="td_descripcion_vacuna_' + i + '" class="' + cellClass + ' td-descripcion-vacuna" style="min-width:200px;"><div class="wrap-descripcion-vacuna"><textarea id="descripcion_vacuna_ro_' + i + '" name="descripcion_vacuna_' + i + '" class="' + inputClass + ' compact descripcion-vacuna-ta" style="min-width:140px;" placeholder="Editar o usar botón"></textarea><button type="button" class="btn-enfermedades-descripcion" data-row="' + i + '" title="Seleccionar enfermedades"><i class="fas fa-list-check"></i></button></div></td>');
+                else if (k === 'descripcion_vacuna') parts.push('<td id="td_descripcion_vacuna_' + i + '" class="' + cellClass + ' td-descripcion-vacuna" style="min-width:200px;"><div class="wrap-descripcion-vacuna"><textarea id="descripcion_vacuna_ro_' + i + '" name="descripcion_vacuna_' + i + '" class="' + inputClass + ' compact descripcion-vacuna-ta bg-gray-100" style="min-width:140px;" readonly></textarea></div></td>');
                 else if (k === 'numeroFrascos') parts.push('<td class="col-frascos ' + cellClass + '"><input type="text" id="numeroFrascos_' + i + '" name="numeroFrascos_' + i + '" class="' + inputClass + '" maxlength="50"></td>');
                 else if (k === 'edad') parts.push('<td class="col-edad ' + cellClass + '" title="Una edad (ej: 2) o varias separadas por coma (ej: 2,4)"><input type="text" id="edad_' + i + '" name="edad_' + i + '" class="' + inputClass + '" maxlength="50"></td>');
                 else if (k === 'unidadDosis') parts.push('<td class="col-uniddosis ' + cellClass + '"><input type="text" id="unidadDosis_' + i + '" name="unidadDosis_' + i + '" class="' + inputClass + '" maxlength="50"></td>');
@@ -359,8 +485,54 @@ if (empty($_SESSION['active'])) {
         var modalProductoRowIndex = -1;
         var modalProveedorRowIndex = -1;
         var modalDescripcionRowIndex = -1;
+        var _modalSecundarioCount = 0;
+        function _notificarModalSecundarioAbierto() {
+            if (window.self === window.top) return;
+            _modalSecundarioCount++;
+            if (_modalSecundarioCount === 1) try { window.top.postMessage('expandEditarIframe', '*'); } catch (e) {}
+        }
+        function _notificarModalSecundarioCerrado() {
+            if (window.self === window.top) return;
+            _modalSecundarioCount--;
+            if (_modalSecundarioCount <= 0) { _modalSecundarioCount = 0; try { window.top.postMessage('restoreEditarIframe', '*'); } catch (e) {} }
+        }
         var modalProductoSearchTimer = null;
         var modalProveedorSearchTimer = null;
+        var modalProductoLineasCargadas = false;
+        var modalProductoAlmacenesCargados = false;
+        var baseUrlProductos = '../../configuracion/productos/';
+        function cargarLineasAlmacenesModalProducto() {
+            if (!modalProductoLineasCargadas) {
+                fetch(baseUrlProductos + 'get_lineas.php').then(function(r) { return r.json(); }).then(function(res) {
+                    if (!res.success || !res.data) return;
+                    var sel = document.getElementById('modalProductoLinea');
+                    if (!sel) return;
+                    sel.innerHTML = '<option value="">Seleccionar</option>';
+                    res.data.forEach(function(o) {
+                        var opt = document.createElement('option');
+                        opt.value = o.linea || '';
+                        opt.textContent = o.text || (o.linea + ' - ' + (o.descri || ''));
+                        sel.appendChild(opt);
+                    });
+                    modalProductoLineasCargadas = true;
+                }).catch(function() {});
+            }
+            if (!modalProductoAlmacenesCargados) {
+                fetch(baseUrlProductos + 'get_almacenes.php').then(function(r) { return r.json(); }).then(function(res) {
+                    if (!res.success || !res.data) return;
+                    var sel = document.getElementById('modalProductoAlmacen');
+                    if (!sel) return;
+                    sel.innerHTML = '<option value="">Seleccionar</option>';
+                    res.data.forEach(function(o) {
+                        var opt = document.createElement('option');
+                        opt.value = o.alma || '';
+                        opt.textContent = o.text || o.alma || '';
+                        sel.appendChild(opt);
+                    });
+                    modalProductoAlmacenesCargados = true;
+                }).catch(function() {});
+            }
+        }
         function abrirModalEnfermedadesDescripcion(rowIndex) {
             modalDescripcionRowIndex = rowIndex;
             var ta = document.getElementById('descripcion_vacuna_ro_' + rowIndex);
@@ -405,8 +577,10 @@ if (empty($_SESSION['active'])) {
                 });
             }).catch(function() { loading.classList.add('hidden'); cont.innerHTML = '<p class="text-red-500 text-sm">Error al cargar.</p>'; });
             document.getElementById('modalEnfermedadesDescripcion').classList.remove('hidden');
+            _notificarModalSecundarioAbierto();
         }
         function cerrarModalEnfermedadesDescripcion() {
+            _notificarModalSecundarioCerrado();
             document.getElementById('modalEnfermedadesDescripcion').classList.add('hidden');
             modalDescripcionRowIndex = -1;
         }
@@ -473,8 +647,13 @@ if (empty($_SESSION['active'])) {
                 var row = parseInt(btnProd.getAttribute('data-row'), 10);
                 if (isNaN(row)) return;
                 modalProductoRowIndex = row;
+                if (window.self !== window.top) {
+                    try { window.parent.postMessage({ tipo: 'abrirModalProducto', rowIndex: row }, '*'); } catch (err) {}
+                    return;
+                }
                 document.getElementById('modalProductoBuscar').value = '';
                 document.getElementById('modalProductoResultados').innerHTML = '<p class="text-gray-500 text-sm p-2">Escriba para buscar producto.</p>';
+                cargarLineasAlmacenesModalProducto();
                 document.getElementById('modalBuscarProducto').classList.remove('hidden');
                 setTimeout(function() { document.getElementById('modalProductoBuscar').focus(); }, 100);
                 return;
@@ -484,17 +663,15 @@ if (empty($_SESSION['active'])) {
                 var row = parseInt(btnProv.getAttribute('data-row'), 10);
                 if (isNaN(row)) return;
                 modalProveedorRowIndex = row;
+                if (window.self !== window.top) {
+                    try { window.parent.postMessage({ tipo: 'abrirModalProveedor', rowIndex: row }, '*'); } catch (err) {}
+                    return;
+                }
                 document.getElementById('modalProveedorBuscar').value = '';
                 document.getElementById('modalProveedorResultados').innerHTML = '<p class="text-gray-500 text-sm p-2">Escriba para buscar proveedor.</p>';
                 document.getElementById('modalBuscarProveedor').classList.remove('hidden');
                 setTimeout(function() { document.getElementById('modalProveedorBuscar').focus(); }, 100);
                 return;
-            }
-            var btnEnf = e.target.closest('.btn-enfermedades-descripcion');
-            if (btnEnf) {
-                var row = parseInt(btnEnf.getAttribute('data-row'), 10);
-                if (isNaN(row)) return;
-                abrirModalEnfermedadesDescripcion(row);
             }
         });
         document.addEventListener('click', function(e) {
@@ -510,45 +687,69 @@ if (empty($_SESSION['active'])) {
         document.getElementById('modalBuscarProducto').addEventListener('click', function(e) {
             if (e.target.id === 'modalBuscarProducto') { document.getElementById('modalBuscarProducto').classList.add('hidden'); modalProductoRowIndex = -1; }
         });
+        function ejecutarBusquedaModalProducto() {
+            var q = (document.getElementById('modalProductoBuscar') && document.getElementById('modalProductoBuscar').value) ? document.getElementById('modalProductoBuscar').value.trim() : '';
+            var lin = (document.getElementById('modalProductoLinea') && document.getElementById('modalProductoLinea').value) ? document.getElementById('modalProductoLinea').value.trim() : '';
+            var alma = (document.getElementById('modalProductoAlmacen') && document.getElementById('modalProductoAlmacen').value) ? document.getElementById('modalProductoAlmacen').value.trim() : '';
+            var cont = document.getElementById('modalProductoResultados');
+            if (!q && !lin && !alma) {
+                cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Seleccione línea y/o almacén o escriba para buscar producto.</p>';
+                return;
+            }
+            cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Buscando...</p>';
+            var url = 'get_productos_programa.php?q=' + encodeURIComponent(q) + (lin ? '&lin=' + encodeURIComponent(lin) : '') + (alma ? '&alma=' + encodeURIComponent(alma) : '');
+            fetch(url).then(function(r) { return r.json(); }).then(function(data) {
+                if (!data.success || !data.results || !data.results.length) {
+                    cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Sin resultados.</p>';
+                    return;
+                }
+                var html = '';
+                data.results.forEach(function(item) {
+                    var cod = item.codigo || item.id;
+                    var desc = (item.descri || item.text || '').replace(/^[^\s-]+\s*-\s*/, '');
+                    var esc = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+                    var labelHtml = '<strong>' + esc(cod) + '</strong> - ' + esc(desc);
+                    html += '<div class="modal-producto-item p-2 border-b border-gray-100 hover:bg-gray-100 cursor-pointer text-sm" data-id="' + (item.id || '').replace(/"/g, '&quot;') + '" data-codigo="' + (cod || '').replace(/"/g, '&quot;') + '" data-descri="' + (desc || '').replace(/"/g, '&quot;') + '">' + labelHtml + '</div>';
+                });
+                cont.innerHTML = html;
+                cont.querySelectorAll('.modal-producto-item').forEach(function(el) {
+                    el.onclick = function() {
+                        var id = this.getAttribute('data-id');
+                        var codigo = this.getAttribute('data-codigo');
+                        var descri = this.getAttribute('data-descri');
+                        var text = (codigo || '') + (descri ? '\n' + descri : '');
+                        var row = modalProductoRowIndex;
+                        var inpCod = document.getElementById('producto_' + row);
+                        var inpText = document.getElementById('producto_text_' + row);
+                        if (inpCod) inpCod.value = id || '';
+                        if (inpText) { inpText.value = text; autoResizeTextarea(inpText); }
+                        document.getElementById('modalBuscarProducto').classList.add('hidden');
+                        modalProductoRowIndex = -1;
+                        if (id) onProductoChange(row);
+                    };
+                });
+            }).catch(function() { cont.innerHTML = '<p class="text-red-500 text-sm p-2">Error al buscar.</p>'; });
+        }
+        document.getElementById('btnModalProductoLimpiar').addEventListener('click', function() {
+            if (document.getElementById('modalProductoLinea')) document.getElementById('modalProductoLinea').value = '';
+            if (document.getElementById('modalProductoAlmacen')) document.getElementById('modalProductoAlmacen').value = '';
+            if (document.getElementById('modalProductoBuscar')) document.getElementById('modalProductoBuscar').value = '';
+            var cont = document.getElementById('modalProductoResultados');
+            if (cont) cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Escriba para buscar producto.</p>';
+        });
+        function programarBusquedaModalProducto() {
+            if (modalProductoSearchTimer) clearTimeout(modalProductoSearchTimer);
+            modalProductoSearchTimer = setTimeout(ejecutarBusquedaModalProducto, 300);
+        }
+        document.getElementById('modalProductoLinea').addEventListener('change', programarBusquedaModalProducto);
+        document.getElementById('modalProductoAlmacen').addEventListener('change', programarBusquedaModalProducto);
         document.getElementById('modalProductoBuscar').addEventListener('input', function() {
             var q = (this.value || '').trim();
             var cont = document.getElementById('modalProductoResultados');
             if (modalProductoSearchTimer) clearTimeout(modalProductoSearchTimer);
             if (!q) { cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Escriba para buscar producto.</p>'; return; }
             cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Buscando...</p>';
-            modalProductoSearchTimer = setTimeout(function() {
-                fetch('get_productos_programa.php?q=' + encodeURIComponent(q)).then(function(r) { return r.json(); }).then(function(data) {
-                    if (!data.success || !data.results || !data.results.length) {
-                        cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Sin resultados.</p>';
-                        return;
-                    }
-                    var html = '';
-                    data.results.forEach(function(item) {
-                        var cod = item.codigo || item.id;
-                        var desc = (item.descri || item.text || '').replace(/^[^\s-]+\s*-\s*/, '');
-                        var esc = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
-                        var labelHtml = '<strong>' + esc(cod) + '</strong> - ' + esc(desc);
-                        html += '<div class="modal-producto-item p-2 border-b border-gray-100 hover:bg-gray-100 cursor-pointer text-sm" data-id="' + (item.id || '').replace(/"/g, '&quot;') + '" data-codigo="' + (cod || '').replace(/"/g, '&quot;') + '" data-descri="' + (desc || '').replace(/"/g, '&quot;') + '">' + labelHtml + '</div>';
-                    });
-                    cont.innerHTML = html;
-                    cont.querySelectorAll('.modal-producto-item').forEach(function(el) {
-                        el.onclick = function() {
-                            var id = this.getAttribute('data-id');
-                            var codigo = this.getAttribute('data-codigo');
-                            var descri = this.getAttribute('data-descri');
-                            var text = (codigo || '') + (descri ? '\n' + descri : '');
-                            var row = modalProductoRowIndex;
-                            var inpCod = document.getElementById('producto_' + row);
-                            var inpText = document.getElementById('producto_text_' + row);
-                            if (inpCod) inpCod.value = id || '';
-                            if (inpText) { inpText.value = text; autoResizeTextarea(inpText); }
-                            document.getElementById('modalBuscarProducto').classList.add('hidden');
-                            modalProductoRowIndex = -1;
-                            if (id) onProductoChange(row);
-                        };
-                    });
-                }).catch(function() { cont.innerHTML = '<p class="text-red-500 text-sm p-2">Error al buscar.</p>'; });
-            }, 250);
+            modalProductoSearchTimer = setTimeout(ejecutarBusquedaModalProducto, 250);
         });
         document.getElementById('btnCerrarModalProveedor').addEventListener('click', function() {
             document.getElementById('modalBuscarProveedor').classList.add('hidden');
@@ -833,7 +1034,8 @@ if (empty($_SESSION['active'])) {
         document.getElementById('btnAgregarFila').addEventListener('click', function() {
             var tbody = document.getElementById('solicitudesBody');
             if (!document.getElementById('tipo').value) {
-                Swal.fire({ icon: 'warning', title: 'Aviso', text: 'Seleccione primero el tipo de programa.' });
+                if (window._swalEnParent) window._swalEnParent('warning', 'Aviso', 'Seleccione primero el tipo de programa.');
+                else Swal.fire({ icon: 'warning', title: 'Aviso', text: 'Seleccione primero el tipo de programa.' });
                 return;
             }
             var current = tbody ? tbody.querySelectorAll('tr').length : 0;
@@ -863,37 +1065,97 @@ if (empty($_SESSION['active'])) {
             var despliegue = document.getElementById('despliegue') ? document.getElementById('despliegue').value.trim() : '';
             var descripcion = document.getElementById('descripcion') ? document.getElementById('descripcion').value.trim() : '';
             if (!codTipo || !codigo || !nombre) {
-                Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Complete tipo, código y nombre.' });
+                if (window._swalEnParent) window._swalEnParent('warning', 'Datos incompletos', 'Complete tipo, código y nombre.');
+                else Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Complete tipo, código y nombre.' });
                 return;
             }
             var detalles = getDetallesFromForm();
             if (detalles.length < 1) {
-                Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Debe haber al menos un detalle. Agregue una fila y complete edad (ej: 2 o 2,4).' });
+                if (window._swalEnParent) window._swalEnParent('warning', 'Datos incompletos', 'Debe haber al menos un detalle. Agregue una fila y complete edad (ej: 2 o 2,4).');
+                else Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Debe haber al menos un detalle. Agregue una fila y complete edad (ej: 2 o 2,4).' });
                 return;
             }
             var sigla = getSiglaActual();
             var payload = { codigo: codigo, nombre: nombre, codTipo: parseInt(codTipo, 10), nomTipo: nomTipo, sigla: sigla, despliegue: despliegue, descripcion: descripcion, detalles: detalles };
-            fetch('guardar_programa.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+            var url = (window._modoEditar) ? 'actualizar_programa.php' : 'guardar_programa.php';
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
                 .then(function(r) { return r.json(); })
                 .then(function(res) {
                     if (res.success) {
-                        Swal.fire({ icon: 'success', title: 'Guardado', text: res.message }).then(function() {
-                            document.getElementById('formPrograma').reset();
-                            document.getElementById('codigo').value = '';
-                            document.getElementById('solicitudesBody').innerHTML = '';
-                            document.getElementById('solicitudesThead').innerHTML = '';
-                            document.getElementById('btnAgregarFila').classList.add('hidden');
-                            document.getElementById('solicitudesContainer').classList.add('hidden');
-                            solicitudesData = {};
-                        });
+                        if (window._swalEnParent) {
+                            window._swalEnParent('success', window._modoEditar ? 'Actualizado' : 'Guardado', res.message, true);
+                        } else {
+                            Swal.fire({ icon: 'success', title: window._modoEditar ? 'Actualizado' : 'Guardado', text: res.message }).then(function() {
+                                document.getElementById('formPrograma').reset();
+                                document.getElementById('codigo').value = '';
+                                document.getElementById('solicitudesBody').innerHTML = '';
+                                document.getElementById('solicitudesThead').innerHTML = '';
+                                document.getElementById('btnAgregarFila').classList.add('hidden');
+                                document.getElementById('solicitudesContainer').classList.add('hidden');
+                                solicitudesData = {};
+                            });
+                        }
                     } else {
-                        Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudo guardar.' });
+                        if (window._swalEnParent) window._swalEnParent('error', 'Error', res.message || 'No se pudo guardar.');
+                        else Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudo guardar.' });
                     }
                 })
-                .catch(function() { Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión.' }); });
+                .catch(function() {
+                    if (window._swalEnParent) window._swalEnParent('error', 'Error', 'Error de conexión.');
+                    else Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión.' });
+                });
         });
 
-        cargarTipos();
+        cargarTipos().then(function() {
+            if (window._modoEditar && window._codigoEditar) {
+                cargarProgramaParaEditar();
+            }
+        });
+
+        // Cuando se abre en iframe (modal desde listado): SweetAlert en el padre para que se vea por fuera del modal
+        if (window._modoEditar && window.self !== window.top) {
+            window._swalEnParent = function(icon, title, text, cerrarAlConfirmar) {
+                try { window.parent.postMessage({ tipo: 'mostrarSwal', icon: icon || 'info', title: title || '', text: text || '', cerrarAlConfirmar: !!cerrarAlConfirmar }, '*'); } catch (e) {}
+            };
+        } else {
+            window._swalEnParent = null;
+        }
+        if (window._modoEditar && window.self !== window.top) {
+            document.body.classList.add('en-modal-editar');
+            var formFooter = document.getElementById('formProgramaFooter');
+            if (formFooter) formFooter.classList.add('hidden');
+            window.submitFormPrograma = function() {
+                var form = document.getElementById('formPrograma');
+                if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            };
+            window.addEventListener('message', function(e) {
+                if (e.data === 'limpiarFormPrograma') {
+                    var btn = document.getElementById('btnLimpiarForm');
+                    if (btn) btn.click();
+                }
+                if (e.data && e.data.tipo === 'productoSeleccionado') {
+                    var row = e.data.rowIndex;
+                    var id = e.data.id; var codigo = e.data.codigo; var descri = e.data.descri || '';
+                    var inpCod = document.getElementById('producto_' + row);
+                    var inpText = document.getElementById('producto_text_' + row);
+                    if (inpCod) inpCod.value = id || '';
+                    if (inpText) inpText.value = (codigo || '') + (descri ? '\n' + descri : '');
+                    if (typeof autoResizeTextarea === 'function' && inpText) autoResizeTextarea(inpText);
+                    if (id && typeof onProductoChange === 'function') onProductoChange(row);
+                }
+                if (e.data && e.data.tipo === 'proveedorSeleccionado') {
+                    var row = e.data.rowIndex;
+                    var codigo = e.data.codigo || ''; var nombre = e.data.nombre || '';
+                    var inpCod = document.getElementById('codProveedor_' + row);
+                    var inpNom = document.getElementById('proveedor_' + row);
+                    if (inpCod) inpCod.value = codigo;
+                    if (inpNom) {
+                        inpNom.value = codigo + (nombre ? '\n' + nombre : '');
+                        if (typeof autoResizeTextarea === 'function') autoResizeTextarea(inpNom);
+                    }
+                }
+            });
+        }
     </script>
 </body>
 </html>

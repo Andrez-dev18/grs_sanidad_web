@@ -17,6 +17,7 @@ $conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
+include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 ?>
 
 <!DOCTYPE html>
@@ -35,6 +36,7 @@ if (!$conexion) {
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="../../../assets/js/i18n/datatables-es.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
@@ -205,9 +207,9 @@ if (!$conexion) {
         var $t = jQuery('#tablaTipoPrograma');
         if ($t.length && !$t.hasClass('dataTable')) {
             $t.DataTable({
-                pageLength: 10,
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'Todos']],
-                language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+                pageLength: 20,
+                lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, 'Todos']],
+                language: window.DATATABLES_LANG_ES || {},
                 order: [[1, 'asc']],
                 columnDefs: [{ orderable: false, targets: [0, 3] }]
             });

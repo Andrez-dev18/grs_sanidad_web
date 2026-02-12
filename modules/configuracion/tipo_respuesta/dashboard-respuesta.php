@@ -17,6 +17,7 @@ $conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión.");
 }
+include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 ?>
 
 <!DOCTYPE html>
@@ -34,6 +35,7 @@ if (!$conexion) {
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="../../../assets/js/i18n/datatables-es.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
     <style>
@@ -167,44 +169,7 @@ if (!$conexion) {
             display: none;
         }
 
-        /* ✅ Encabezado de controles de DataTables: fondo blanco */
-.dataTables_wrapper .dataTables_filter,
-.dataTables_wrapper .dataTables_length {
-    background: white;
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #e5e7eb;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    color: #374151; /* gris oscuro */
-}
-
-.dataTables_wrapper .dataTables_filter label,
-.dataTables_wrapper .dataTables_length label {
-    font-weight: 500;
-    margin: 0;
-    color: #374151;
-}
-
-.dataTables_wrapper .dataTables_filter input {
-    border: 1px solid #d1d5db;
-    color: #374151;
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    background: white;
-}
-
-.dataTables_wrapper .dataTables_length select {
-    border: 1px solid #d1d5db;
-    color: #374151;
-    padding: 0.375rem 0.75rem;
-    border-radius: 0.375rem;
-    font-size: 0.875rem;
-    background: white;
-}
-
+        /* Tabla y DataTables: estilos generales en dashboard-config.css */
     </style>
 </head>
 
@@ -519,9 +484,9 @@ if (!$conexion) {
               $('#cardsPaginationResp').html(pagHtml);
           }
           tableRespuesta = $('#tablaRespuesta').DataTable({
-              language: { url: '../../../assets/i18n/es-ES.json' },
-              pageLength: 10,
-              lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+              language: window.DATATABLES_LANG_ES || {},
+              pageLength: 20,
+              lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, "Todos"]],
               order: [[0, 'asc']],
               drawCallback: function() { renderizarTarjetasResp(); }
           });

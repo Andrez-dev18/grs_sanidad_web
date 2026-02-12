@@ -118,7 +118,7 @@ if (is_array($items) && !empty($items)) {
     }
     $stmt->close();
     $conn->close();
-    echo json_encode(['success' => true, 'message' => 'Cronograma guardado correctamente.', 'total' => $total]);
+    echo json_encode(['success' => true, 'message' => 'Asignación guardada correctamente.', 'total' => $total]);
     exit;
 }
 
@@ -178,4 +178,4 @@ foreach ($pares as $f) {
 }
 $stmt->close();
 $conn->close();
-echo json_encode(['success' => true, 'message' => 'Cronograma guardado correctamente.']);
+echo json_encode(['success' => true, 'message' => 'Asignación guardada correctamente.']);

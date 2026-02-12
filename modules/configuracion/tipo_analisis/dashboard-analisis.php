@@ -17,6 +17,7 @@ $conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión.");
 }
+include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 ?>
 
 <!DOCTYPE html>
@@ -34,6 +35,7 @@ if (!$conexion) {
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>window.DATATABLES_LANG_ES = <?php echo $datatablesLangEs; ?>;</script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
@@ -171,82 +173,7 @@ if (!$conexion) {
         .table-wrapper::-webkit-scrollbar-thumb:hover {
             background: #64748b;
         }
-
-        .data-table {
-            width: 100% !important;
-            border-collapse: collapse;
-            min-width: 1200px;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 0.75rem 1rem;
-            text-align: left;
-            font-size: 0.875rem;
-            border-bottom: 1px solid #e5e7eb;
-            white-space: nowrap;
-        }
-
-        .data-table th {
-            background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
-            font-weight: 600;
-            color: #ffffff !important;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .dataTables_wrapper .dataTables_length,
-        .dataTables_wrapper .dataTables_filter,
-        .dataTables_wrapper .dataTables_info,
-        .dataTables_wrapper .dataTables_paginate {
-            padding: 1rem;
-        }
-
-        .dataTables_wrapper .dataTables_length select {
-            padding: 0.5rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            margin: 0 0.5rem;
-        }
-
-        .dataTables_wrapper .dataTables_filter input {
-            padding: 0.5rem 1rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            margin-left: 0.5rem;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            padding: 0.5rem 1rem !important;
-            margin: 0 0.25rem;
-            border-radius: 0.5rem;
-            border: 1px solid #d1d5db !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
-            color: white !important;
-            border: 1px solid #1e40af !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-            background: #eff6ff !important;
-            color: #1d4ed8 !important;
-        }
-
-        table.dataTable thead .sorting:before,
-        table.dataTable thead .sorting_asc:before,
-        table.dataTable thead .sorting_desc:before,
-        table.dataTable thead .sorting:after,
-        table.dataTable thead .sorting_asc:after,
-        table.dataTable thead .sorting_desc:after {
-            color: white !important;
-        }
-
-        .dataTables_wrapper {
-            overflow-x: visible !important;
-        }
+        /* Tabla y DataTables: estilos generales en dashboard-config.css */
     </style>
 </head>
 
@@ -429,9 +356,9 @@ if (!$conexion) {
             }
             $(document).ready(function () {
                 tableAnalisis = $('#tablaAnalisis').DataTable({
-                    language: { url: '../../../assets/i18n/es-ES.json' },
-                    pageLength: 10,
-                    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+                    language: window.DATATABLES_LANG_ES || {},
+                    pageLength: 20,
+                    lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, "Todos"]],
                     order: [[0, 'asc']],
                     columnDefs: [{ orderable: false, targets: [3] }],
                     dom: '<"dt-top-row"<"flex items-center gap-6" l><"flex items-center gap-2" f>>rt<"dt-bottom-row"<"text-sm text-gray-600" i><"text-sm text-gray-600" p>>',

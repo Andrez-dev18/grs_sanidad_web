@@ -73,7 +73,11 @@ function valorClaveDetalleReporte($k, $d) {
     if ($k === 'edad' || $k === 'num') return '';
     if ($k === 'ubicacion') return $d['ubicacion'] ?? '';
     if ($k === 'producto') return $d['nomProducto'] ?? ($d['codProducto'] ?? '');
-    if ($k === 'proveedor') return (trim((string)($d['codProveedor'] ?? '')) !== '' ? $d['codProveedor'] : ($d['nomProveedor'] ?? ''));
+    if ($k === 'proveedor') {
+        $codProv = trim((string)($d['codProveedor'] ?? ''));
+        $nomProv = trim((string)($d['nomProveedor'] ?? ''));
+        return $codProv !== '' ? ($nomProv !== '' ? $nomProv : $codProv) : ($d['nomProveedor'] ?? '');
+    }
     if ($k === 'unidad') return $d['unidades'] ?? '';
     if ($k === 'dosis') return $d['dosis'] ?? '';
     if ($k === 'descripcion_vacuna') return $d['descripcionVacuna'] ?? '';
@@ -138,15 +142,16 @@ $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
 </style></head><body style="position:relative;">';
 
 $html .= '<div class="fecha-hora-arriba">' . htmlspecialchars($fechaReporte) . '</div>';
-$html .= '<table width="100%" style="border-collapse: collapse; margin-bottom: 10px; margin-top: 24px;">';
+$bordeTitulo = 'border: 1px solid #64748b;';
+$html .= '<table width="100%" style="border-collapse: collapse; margin-bottom: 10px; margin-top: 24px; ' . $bordeTitulo . '">';
 $html .= '<tr>';
 if (!empty($logo)) {
-    $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap;">' . $logo . ' GRANJA RINCONADA DEL SUR S.A.</td>';
+    $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap; ' . $bordeTitulo . '">' . $logo . ' GRANJA RINCONADA DEL SUR S.A.</td>';
 } else {
-    $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap;">GRANJA RINCONADA DEL SUR S.A.</td>';
+    $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap; ' . $bordeTitulo . '">GRANJA RINCONADA DEL SUR S.A.</td>';
 }
-$html .= '<td style="width: 60%; text-align: center; padding: 5px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px;">REPORTE ' . htmlspecialchars(strtoupper($nombrePrograma)) . '</td>';
-$html .= '<td style="width: 20%; background-color: #fff;"></td></tr></table>';
+$html .= '<td style="width: 60%; text-align: center; padding: 5px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px; ' . $bordeTitulo . '">REPORTE ' . htmlspecialchars(strtoupper($nombrePrograma)) . '</td>';
+$html .= '<td style="width: 20%; background-color: #fff; ' . $bordeTitulo . '"></td></tr></table>';
 $html .= '<table class="data-table"><colgroup>';
 for ($i = 0; $i < $numCols; $i++) $html .= '<col style="width:' . $pctCol . '%"/>';
 $html .= '</colgroup><thead><tr>';
@@ -176,7 +181,9 @@ if (empty($detalles)) {
             } elseif ($k === 'producto') {
                 $html .= '<td>' . htmlspecialchars($d['nomProducto'] ?? ($d['codProducto'] ?? '')) . '</td>';
             } elseif ($k === 'proveedor') {
-                $proveedorVal = (trim((string)($d['codProveedor'] ?? '')) !== '') ? ($d['codProveedor'] ?? '') : ($d['nomProveedor'] ?? '');
+                $codProv = trim((string)($d['codProveedor'] ?? ''));
+                $nomProv = trim((string)($d['nomProveedor'] ?? ''));
+                $proveedorVal = $codProv !== '' ? ($nomProv !== '' ? $nomProv : $codProv) : ($d['nomProveedor'] ?? '');
                 $html .= '<td>' . htmlspecialchars($proveedorVal) . '</td>';
             } elseif ($k === 'unidad') {
                 $html .= '<td>' . htmlspecialchars($d['unidades'] ?? '') . '</td>';

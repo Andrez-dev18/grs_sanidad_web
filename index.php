@@ -548,12 +548,18 @@ if ($codigoUsuario) {
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma-registro.php', '📅 Asignación - Registro', 'Registro de cronograma')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Registro</a>
+                            <div class="text-gray-500 text-xs font-semibold uppercase tracking-wider mt-2">Cronograma</div>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma-listado.php', '📅 Asignación - Listado', 'Listado de cronogramas')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Listado</a>
+                           
+                            <a href="#"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/calendario/dashboard-calendario.php', '📅 Calendario', 'Vista de cronogramas por día, semana, mes y año')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Calendario</a>
                         </div>
                     </div>
                     
+                
                     <div class="menu-group">
                         <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                             onclick="toggleSubmenu('submenu-necropsia')">
@@ -688,7 +694,7 @@ if ($codigoUsuario) {
     <!-- Main Content -->
     <div class="content-wrapper">
         <!-- Top Bar -->
-        <header class="bg-white shadow-sm sticky top-0 z-50">
+        <header class="bg-white shadow-sm sticky top-0 z-50 border border-gray-200">
             <div class="px-4 py-4 flex items-center justify-between">
                 <div class="flex items-start gap-4">
                     <!-- Botón menú: desktop (colapsar) / mobile (abrir sidebar) -->

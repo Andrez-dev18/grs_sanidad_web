@@ -152,14 +152,26 @@
     color: #fff;
 }
 
-/* ========== Contenedor de tablas (estilo seguimiento): scroll suave y compacto ========== */
+/* ========== Contenedor de tablas: ancho disponible, scroll solo en pantallas pequeñas ========== */
 .table-wrapper {
-    overflow-x: auto;
     overflow-y: visible;
     width: 100%;
     max-width: 100%;
     border-radius: 1rem;
-    -webkit-overflow-scrolling: touch;
+    min-width: 0; /* permite que flex/grid reduzca en pantallas pequeñas */
+}
+/* Pantallas grandes: sin scroll horizontal, la tabla usa todo el ancho disponible */
+@media (min-width: 768px) {
+    .table-wrapper {
+        overflow-x: visible;
+    }
+}
+/* Pantallas pequeñas: scroll horizontal para no romper el layout */
+@media (max-width: 767px) {
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
 }
 .table-wrapper::-webkit-scrollbar {
     height: 8px;
@@ -176,13 +188,14 @@
     background: #64748b;
 }
 
-/* ========== Tablas unificadas: compactas, estilo seguimiento, menos scroll horizontal ========== */
-/* Base: todas .data-table y .config-table */
+/* ========== Tablas unificadas: distribuir ancho entre columnas, contenido visible (wrap) ========== */
+/* Base: table-layout auto reparte el ancho disponible según contenido; todo el texto se ve (wrap) */
 .data-table,
 .config-table,
 table.data-table,
 table.config-table {
     width: 100% !important;
+    max-width: 100%;
     border-collapse: collapse;
     font-size: 0.8125rem;
     table-layout: auto;
@@ -198,10 +211,13 @@ table.config-table {
     border: none;
     padding: 0.5rem 0.6rem;
     text-align: left;
-    white-space: nowrap;
     position: sticky;
     top: 0;
     z-index: 10;
+    white-space: normal;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
 }
 /* Esquinas superiores redondeadas de la cabecera (como en reportes) */
 .data-table thead tr:first-child th:first-child,
@@ -225,7 +241,10 @@ table.config-table {
     text-align: left;
     white-space: normal;
     word-break: break-word;
-    max-width: 1px;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: 100%;
 }
 .data-table tbody td.max-w-none,
 .config-table tbody td.max-w-none {
@@ -265,26 +284,11 @@ table.config-table {
     color: #1e40af;
 }
 
-/* Tablas por ID (reportes, seguimiento, necropsias, tracking, programas, cronograma, configuracion) */
-#tablaReportes thead th,
-#tabla thead th,
-#tablaResultados thead th,
-#tablaPendientes thead th,
-#tablaCronograma thead th,
-#tablaProgramas thead th,
-#tablaProveedor thead th,
-#tablaTipoPrograma thead th,
-#tablaVacuna thead th,
-#tablaRespuesta thead th,
-#tablaAnalisis thead th,
-#tablaPaquetes thead th,
-#tablaEnfermedades thead th,
-#tablaEmpTrans thead th,
-#tablaProductosMitm thead th,
-#tablaGranjasEspecifico thead th,
-#tablaGranjasZonas thead th,
-#tablaProgramaEspecifico thead th,
-#tablaProgramaZonas thead th {
+/* ========== Tablas unificadas por CLASE ==========
+ * Cualquier <table> con class="data-table config-table" obtiene este estilo.
+ * No hace falta añadir IDs al CSS: reportes, configuración, programas, cronograma, etc.
+ */
+.data-table.config-table thead th {
     background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%) !important;
     color: #ffffff !important;
     font-weight: 600 !important;
@@ -301,188 +305,52 @@ table.config-table {
     border: none !important;
 }
 
-/* Quitar color especial de la primera columna (DataTables añade .sorting_1 con box-shadow/fondo gris) */
-#tablaReportes .sorting_1,
-#tablaReportes .sorting_2,
-#tablaReportes .sorting_3,
-#tablaResultados .sorting_1,
-#tablaResultados .sorting_2,
-#tablaResultados .sorting_3,
-#tablaPendientes .sorting_1,
-#tablaPendientes .sorting_2,
-#tablaPendientes .sorting_3,
-#tabla .sorting_1,
-#tabla .sorting_2,
-#tabla .sorting_3,
-#tablaLaboratorio .sorting_1,
-#tablaLaboratorio .sorting_2,
-#tablaLaboratorio .sorting_3,
-#tablaAnalisis .sorting_1,
-#tablaAnalisis .sorting_2,
-#tablaAnalisis .sorting_3,
-#tablaPaquetes .sorting_1,
-#tablaPaquetes .sorting_2,
-#tablaPaquetes .sorting_3,
-#tablaRespuesta .sorting_1,
-#tablaRespuesta .sorting_2,
-#tablaRespuesta .sorting_3,
-#tablaEmpTrans .sorting_1,
-#tablaEmpTrans .sorting_2,
-#tablaEmpTrans .sorting_3,
-#tablaProveedor .sorting_1,
-#tablaProveedor .sorting_2,
-#tablaProveedor .sorting_3,
-#tablaEnfermedades .sorting_1,
-#tablaEnfermedades .sorting_2,
-#tablaEnfermedades .sorting_3,
-#tablaTipoPrograma .sorting_1,
-#tablaTipoPrograma .sorting_2,
-#tablaTipoPrograma .sorting_3,
-#tablaVacuna .sorting_1,
-#tablaVacuna .sorting_2,
-#tablaVacuna .sorting_3 {
+/* Quitar color gris de columnas ordenables (DataTables aplica box-shadow inset en .sorting_1/2/3) */
+.data-table.config-table .sorting_1,
+.data-table.config-table .sorting_2,
+.data-table.config-table .sorting_3,
+table.dataTable.display.data-table.config-table tbody tr>.sorting_1,
+table.dataTable.display.data-table.config-table tbody tr>.sorting_2,
+table.dataTable.display.data-table.config-table tbody tr>.sorting_3,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(odd)>.sorting_1,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(odd)>.sorting_2,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(odd)>.sorting_3,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(even)>.sorting_1,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(even)>.sorting_2,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(even)>.sorting_3,
+table.dataTable.display.data-table.config-table tbody tr:hover>.sorting_1,
+table.dataTable.display.data-table.config-table tbody tr:hover>.sorting_2,
+table.dataTable.display.data-table.config-table tbody tr:hover>.sorting_3 {
     box-shadow: none !important;
     background-color: inherit !important;
 }
-#tablaReportes tbody tr:nth-child(odd) .sorting_1,
-#tablaReportes tbody tr:nth-child(odd) .sorting_2,
-#tablaReportes tbody tr:nth-child(odd) .sorting_3,
-#tablaResultados tbody tr:nth-child(odd) .sorting_1,
-#tablaResultados tbody tr:nth-child(odd) .sorting_2,
-#tablaResultados tbody tr:nth-child(odd) .sorting_3,
-#tablaPendientes tbody tr:nth-child(odd) .sorting_1,
-#tablaPendientes tbody tr:nth-child(odd) .sorting_2,
-#tablaPendientes tbody tr:nth-child(odd) .sorting_3,
-#tabla tbody tr:nth-child(odd) .sorting_1,
-#tabla tbody tr:nth-child(odd) .sorting_2,
-#tabla tbody tr:nth-child(odd) .sorting_3,
-#tablaLaboratorio tbody tr:nth-child(odd) .sorting_1,
-#tablaLaboratorio tbody tr:nth-child(odd) .sorting_2,
-#tablaLaboratorio tbody tr:nth-child(odd) .sorting_3,
-#tablaAnalisis tbody tr:nth-child(odd) .sorting_1,
-#tablaAnalisis tbody tr:nth-child(odd) .sorting_2,
-#tablaAnalisis tbody tr:nth-child(odd) .sorting_3,
-#tablaPaquetes tbody tr:nth-child(odd) .sorting_1,
-#tablaPaquetes tbody tr:nth-child(odd) .sorting_2,
-#tablaPaquetes tbody tr:nth-child(odd) .sorting_3,
-#tablaRespuesta tbody tr:nth-child(odd) .sorting_1,
-#tablaRespuesta tbody tr:nth-child(odd) .sorting_2,
-#tablaRespuesta tbody tr:nth-child(odd) .sorting_3,
-#tablaEmpTrans tbody tr:nth-child(odd) .sorting_1,
-#tablaEmpTrans tbody tr:nth-child(odd) .sorting_2,
-#tablaEmpTrans tbody tr:nth-child(odd) .sorting_3,
-#tablaProveedor tbody tr:nth-child(odd) .sorting_1,
-#tablaProveedor tbody tr:nth-child(odd) .sorting_2,
-#tablaProveedor tbody tr:nth-child(odd) .sorting_3,
-#tablaEnfermedades tbody tr:nth-child(odd) .sorting_1,
-#tablaEnfermedades tbody tr:nth-child(odd) .sorting_2,
-#tablaEnfermedades tbody tr:nth-child(odd) .sorting_3,
-#tablaTipoPrograma tbody tr:nth-child(odd) .sorting_1,
-#tablaTipoPrograma tbody tr:nth-child(odd) .sorting_2,
-#tablaTipoPrograma tbody tr:nth-child(odd) .sorting_3,
-#tablaVacuna tbody tr:nth-child(odd) .sorting_1,
-#tablaVacuna tbody tr:nth-child(odd) .sorting_2,
-#tablaVacuna tbody tr:nth-child(odd) .sorting_3 {
+.data-table.config-table tbody tr:nth-child(odd) .sorting_1,
+.data-table.config-table tbody tr:nth-child(odd) .sorting_2,
+.data-table.config-table tbody tr:nth-child(odd) .sorting_3,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(odd)>.sorting_1,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(odd)>.sorting_2,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(odd)>.sorting_3 {
     background-color: #ffffff !important;
 }
-#tablaReportes tbody tr:nth-child(even) .sorting_1,
-#tablaReportes tbody tr:nth-child(even) .sorting_2,
-#tablaReportes tbody tr:nth-child(even) .sorting_3,
-#tablaResultados tbody tr:nth-child(even) .sorting_1,
-#tablaResultados tbody tr:nth-child(even) .sorting_2,
-#tablaResultados tbody tr:nth-child(even) .sorting_3,
-#tablaPendientes tbody tr:nth-child(even) .sorting_1,
-#tablaPendientes tbody tr:nth-child(even) .sorting_2,
-#tablaPendientes tbody tr:nth-child(even) .sorting_3,
-#tabla tbody tr:nth-child(even) .sorting_1,
-#tabla tbody tr:nth-child(even) .sorting_2,
-#tabla tbody tr:nth-child(even) .sorting_3,
-#tablaLaboratorio tbody tr:nth-child(even) .sorting_1,
-#tablaLaboratorio tbody tr:nth-child(even) .sorting_2,
-#tablaLaboratorio tbody tr:nth-child(even) .sorting_3,
-#tablaAnalisis tbody tr:nth-child(even) .sorting_1,
-#tablaAnalisis tbody tr:nth-child(even) .sorting_2,
-#tablaAnalisis tbody tr:nth-child(even) .sorting_3,
-#tablaPaquetes tbody tr:nth-child(even) .sorting_1,
-#tablaPaquetes tbody tr:nth-child(even) .sorting_2,
-#tablaPaquetes tbody tr:nth-child(even) .sorting_3,
-#tablaRespuesta tbody tr:nth-child(even) .sorting_1,
-#tablaRespuesta tbody tr:nth-child(even) .sorting_2,
-#tablaRespuesta tbody tr:nth-child(even) .sorting_3,
-#tablaEmpTrans tbody tr:nth-child(even) .sorting_1,
-#tablaEmpTrans tbody tr:nth-child(even) .sorting_2,
-#tablaEmpTrans tbody tr:nth-child(even) .sorting_3,
-#tablaProveedor tbody tr:nth-child(even) .sorting_1,
-#tablaProveedor tbody tr:nth-child(even) .sorting_2,
-#tablaProveedor tbody tr:nth-child(even) .sorting_3,
-#tablaEnfermedades tbody tr:nth-child(even) .sorting_1,
-#tablaEnfermedades tbody tr:nth-child(even) .sorting_2,
-#tablaEnfermedades tbody tr:nth-child(even) .sorting_3,
-#tablaTipoPrograma tbody tr:nth-child(even) .sorting_1,
-#tablaTipoPrograma tbody tr:nth-child(even) .sorting_2,
-#tablaTipoPrograma tbody tr:nth-child(even) .sorting_3,
-#tablaVacuna tbody tr:nth-child(even) .sorting_1,
-#tablaVacuna tbody tr:nth-child(even) .sorting_2,
-#tablaVacuna tbody tr:nth-child(even) .sorting_3 {
+.data-table.config-table tbody tr:nth-child(even) .sorting_1,
+.data-table.config-table tbody tr:nth-child(even) .sorting_2,
+.data-table.config-table tbody tr:nth-child(even) .sorting_3,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(even)>.sorting_1,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(even)>.sorting_2,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(even)>.sorting_3 {
     background-color: #f8fafc !important;
 }
-#tablaReportes tbody tr:hover .sorting_1,
-#tablaReportes tbody tr:hover .sorting_2,
-#tablaReportes tbody tr:hover .sorting_3,
-#tablaResultados tbody tr:hover .sorting_1,
-#tablaResultados tbody tr:hover .sorting_2,
-#tablaResultados tbody tr:hover .sorting_3,
-#tablaPendientes tbody tr:hover .sorting_1,
-#tablaPendientes tbody tr:hover .sorting_2,
-#tablaPendientes tbody tr:hover .sorting_3,
-#tabla tbody tr:hover .sorting_1,
-#tabla tbody tr:hover .sorting_2,
-#tabla tbody tr:hover .sorting_3,
-#tablaLaboratorio tbody tr:hover .sorting_1,
-#tablaLaboratorio tbody tr:hover .sorting_2,
-#tablaLaboratorio tbody tr:hover .sorting_3,
-#tablaAnalisis tbody tr:hover .sorting_1,
-#tablaAnalisis tbody tr:hover .sorting_2,
-#tablaAnalisis tbody tr:hover .sorting_3,
-#tablaPaquetes tbody tr:hover .sorting_1,
-#tablaPaquetes tbody tr:hover .sorting_2,
-#tablaPaquetes tbody tr:hover .sorting_3,
-#tablaRespuesta tbody tr:hover .sorting_1,
-#tablaRespuesta tbody tr:hover .sorting_2,
-#tablaRespuesta tbody tr:hover .sorting_3,
-#tablaEmpTrans tbody tr:hover .sorting_1,
-#tablaEmpTrans tbody tr:hover .sorting_2,
-#tablaEmpTrans tbody tr:hover .sorting_3,
-#tablaProveedor tbody tr:hover .sorting_1,
-#tablaProveedor tbody tr:hover .sorting_2,
-#tablaProveedor tbody tr:hover .sorting_3,
-#tablaEnfermedades tbody tr:hover .sorting_1,
-#tablaEnfermedades tbody tr:hover .sorting_2,
-#tablaEnfermedades tbody tr:hover .sorting_3,
-#tablaTipoPrograma tbody tr:hover .sorting_1,
-#tablaTipoPrograma tbody tr:hover .sorting_2,
-#tablaTipoPrograma tbody tr:hover .sorting_3,
-#tablaVacuna tbody tr:hover .sorting_1,
-#tablaVacuna tbody tr:hover .sorting_2,
-#tablaVacuna tbody tr:hover .sorting_3 {
+.data-table.config-table tbody tr:hover .sorting_1,
+.data-table.config-table tbody tr:hover .sorting_2,
+.data-table.config-table tbody tr:hover .sorting_3,
+table.dataTable.display.data-table.config-table tbody tr:hover>.sorting_1,
+table.dataTable.display.data-table.config-table tbody tr:hover>.sorting_2,
+table.dataTable.display.data-table.config-table tbody tr:hover>.sorting_3 {
     background-color: #eff6ff !important;
 }
 
-#tablaReportes tbody td,
-#tabla tbody td,
-#tablaResultados tbody td,
-#tablaPendientes tbody td,
-#tablaCronograma tbody td,
-#tablaProgramas tbody td,
-#tablaProveedor tbody td,
-#tablaTipoPrograma tbody td,
-#tablaVacuna tbody td,
-#tablaRespuesta tbody td,
-#tablaAnalisis tbody td,
-#tablaPaquetes tbody td,
-#tablaEnfermedades tbody td,
-#tablaEmpTrans tbody td,
-#tablaProductosMitm tbody td {
+/* Celdas y filas unificadas por clase */
+.data-table.config-table tbody td {
     font-size: 0.8125rem !important;
     color: #374151 !important;
     border-bottom: 1px solid #e5e7eb !important;
@@ -490,64 +358,16 @@ table.config-table {
     white-space: normal !important;
     word-break: break-word !important;
 }
-#tablaReportes tbody tr:nth-child(odd),
-#tabla tbody tr:nth-child(odd),
-#tablaResultados tbody tr:nth-child(odd),
-#tablaPendientes tbody tr:nth-child(odd),
-#tablaLaboratorio tbody tr:nth-child(odd),
-#tablaAnalisis tbody tr:nth-child(odd),
-#tablaPaquetes tbody tr:nth-child(odd),
-#tablaRespuesta tbody tr:nth-child(odd),
-#tablaEmpTrans tbody tr:nth-child(odd),
-#tablaProveedor tbody tr:nth-child(odd),
-#tablaEnfermedades tbody tr:nth-child(odd),
-#tablaTipoPrograma tbody tr:nth-child(odd),
-#tablaVacuna tbody tr:nth-child(odd) {
+.data-table.config-table tbody tr:nth-child(odd) {
     background-color: #ffffff !important;
 }
-#tablaReportes tbody tr:nth-child(even),
-#tabla tbody tr:nth-child(even),
-#tablaResultados tbody tr:nth-child(even),
-#tablaPendientes tbody tr:nth-child(even),
-#tablaLaboratorio tbody tr:nth-child(even),
-#tablaAnalisis tbody tr:nth-child(even),
-#tablaPaquetes tbody tr:nth-child(even),
-#tablaRespuesta tbody tr:nth-child(even),
-#tablaEmpTrans tbody tr:nth-child(even),
-#tablaProveedor tbody tr:nth-child(even),
-#tablaEnfermedades tbody tr:nth-child(even),
-#tablaTipoPrograma tbody tr:nth-child(even),
-#tablaVacuna tbody tr:nth-child(even) {
+.data-table.config-table tbody tr:nth-child(even) {
     background-color: #f8fafc !important;
 }
-#tablaReportes tbody tr:hover,
-#tabla tbody tr:hover,
-#tablaResultados tbody tr:hover,
-#tablaPendientes tbody tr:hover,
-#tablaLaboratorio tbody tr:hover,
-#tablaAnalisis tbody tr:hover,
-#tablaPaquetes tbody tr:hover,
-#tablaRespuesta tbody tr:hover,
-#tablaEmpTrans tbody tr:hover,
-#tablaProveedor tbody tr:hover,
-#tablaEnfermedades tbody tr:hover,
-#tablaTipoPrograma tbody tr:hover,
-#tablaVacuna tbody tr:hover {
+.data-table.config-table tbody tr:hover {
     background-color: #eff6ff !important;
 }
-#tablaReportes tbody tr:hover td,
-#tabla tbody tr:hover td,
-#tablaResultados tbody tr:hover td,
-#tablaPendientes tbody tr:hover td,
-#tablaLaboratorio tbody tr:hover td,
-#tablaAnalisis tbody tr:hover td,
-#tablaPaquetes tbody tr:hover td,
-#tablaRespuesta tbody tr:hover td,
-#tablaEmpTrans tbody tr:hover td,
-#tablaProveedor tbody tr:hover td,
-#tablaEnfermedades tbody tr:hover td,
-#tablaTipoPrograma tbody tr:hover td,
-#tablaVacuna tbody tr:hover td {
+.data-table.config-table tbody tr:hover td {
     color: #1e40af !important;
 }
 
@@ -558,44 +378,24 @@ table.config-table {
     overflow: hidden;
 }
 
-/* ========== Table wrapper global (igual que reportes): scroll horizontal y scrollbar ========== */
-.table-wrapper {
-    overflow-x: auto;
-    overflow-y: visible;
-    width: 100%;
-    border-radius: 1rem;
-}
-.table-wrapper::-webkit-scrollbar {
-    height: 10px;
-}
-.table-wrapper::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 10px;
-}
-.table-wrapper::-webkit-scrollbar-thumb {
-    background: #94a3b8;
-    border-radius: 10px;
-}
-.table-wrapper::-webkit-scrollbar-thumb:hover {
-    background: #64748b;
-}
+/* Table wrapper: estilos de scrollbar (el overflow se controla por media query más arriba) */
 
-/* Columnas del mismo ancho: programas (8 columnas) y cronograma (6 columnas) */
-#tablaProgramas {
+/* Columnas de ancho fijo por clase (sin depender de ID) */
+.data-table.config-table.tabla-fixed-8col {
     table-layout: fixed;
     width: 100% !important;
 }
-#tablaProgramas th,
-#tablaProgramas td {
+.data-table.config-table.tabla-fixed-8col th,
+.data-table.config-table.tabla-fixed-8col td {
     width: 12.5%;
 }
 
-#tablaCronograma {
+.data-table.config-table.tabla-fixed-6col {
     table-layout: fixed;
     width: 100% !important;
 }
-#tablaCronograma th,
-#tablaCronograma td {
+.data-table.config-table.tabla-fixed-6col th,
+.data-table.config-table.tabla-fixed-6col td {
     width: 16.666%;
 }
 
@@ -1015,6 +815,15 @@ table.dataTable thead .sorting_desc:after {
     border-bottom: 1px solid #e5e7eb;
     font-size: 0.875rem;
     color: #4b5563;
+}
+/* Sin línea extra antes de la primera tarjeta cuando el bloque superior está vacío */
+.dashboard-tabla-wrapper .view-tarjetas-wrap [id^="cardsControlsTop"]:empty,
+.dashboard-tabla-wrapper .view-tarjetas-wrap .cards-controls-top:empty {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    min-height: 0 !important;
 }
 .dashboard-tabla-wrapper .view-tarjetas-wrap [data-table],
 .dashboard-tabla-wrapper .view-tarjetas-wrap .cards-pagination,

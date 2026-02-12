@@ -17,6 +17,7 @@ $conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión.");
 }
+include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 ?>
 
 <!DOCTYPE html>
@@ -34,6 +35,7 @@ if (!$conexion) {
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="../../../assets/js/i18n/datatables-es.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
 
@@ -164,74 +166,7 @@ if (!$conexion) {
             background: #64748b;
         }
 
-        /* --- ESTILO DE DATATABLES --- */
-
-        /* ✅ Cabecera de controles: fondo blanco */
-        .dataTables_wrapper .dataTables_filter,
-        .dataTables_wrapper .dataTables_length {
-            background: white;
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            color: #374151;
-        }
-
-        .dataTables_wrapper .dataTables_filter label,
-        .dataTables_wrapper .dataTables_length label {
-            font-weight: 500;
-            margin: 0;
-            color: #374151;
-        }
-
-        .dataTables_wrapper .dataTables_filter input {
-            border: 1px solid #d1d5db;
-            color: #374151;
-            padding: 0.375rem 0.75rem;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            background: white;
-        }
-
-        .dataTables_wrapper .dataTables_length select {
-            border: 1px solid #d1d5db;
-            color: #374151;
-            padding: 0.375rem 0.75rem;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            background: white;
-        }
-
-        /* Cabecera y filas: estilos unificados vía dashboard-config.css (config-table) */
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            padding: 0.5rem 1rem !important;
-            margin: 0 0.25rem;
-            border-radius: 0.5rem;
-            border: 1px solid #d1d5db !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-            background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%) !important;
-            color: white !important;
-            border: 1px solid #1e40af !important;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-            background: #eff6ff !important;
-            color: #1d4ed8 !important;
-        }
-
-        table.dataTable thead .sorting:before,
-        table.dataTable thead .sorting_asc:before,
-        table.dataTable thead .sorting_desc:before,
-        table.dataTable thead .sorting:after,
-        table.dataTable thead .sorting_asc:after,
-        table.dataTable thead .sorting_desc:after {
-            color: white !important;
-        }
-
+        /* Tabla y DataTables: estilos generales en dashboard-config.css */
 
 
 
@@ -477,9 +412,9 @@ if (!$conexion) {
         <script>
             /*$(document).ready(function () {
                 var table = $('#tablaPaquetes').DataTable({
-                    language: { url: '../../../assets/i18n/es-ES.json' },
-                    pageLength: 10,
-                    lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+                    language: window.DATATABLES_LANG_ES || {},
+                    pageLength: 20,
+                    lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, "Todos"]],
                     order: [[0, 'asc']],
                     processing: true,
                     deferRender: true,
@@ -533,9 +468,9 @@ if (!$conexion) {
                 $('#cardsPaginationPaq').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : ('<span class="dataTables_info">Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>'));
             }
             tablePaquetes = $('#tablaPaquetes').DataTable({
-                language: { url: '../../../assets/i18n/es-ES.json' },
-                pageLength: 10,
-                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Todos"]],
+                language: window.DATATABLES_LANG_ES || {},
+                pageLength: 20,
+                lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, "Todos"]],
                 order: [[0, 'asc']],
                 columnDefs: [{ orderable: false, targets: [3] }],
                 drawCallback: function() { renderizarTarjetasPaq(); }

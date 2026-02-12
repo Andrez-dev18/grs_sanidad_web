@@ -37,7 +37,7 @@ if ($codigoUsuario) {
         $stmt->close();
     }
 }
-
+include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -56,6 +56,7 @@ if ($codigoUsuario) {
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>window.DATATABLES_LANG_ES = <?php echo $datatablesLangEs; ?>;</script>
 
     <style>
         /* Tus estilos existentes */
@@ -595,11 +596,9 @@ if ($codigoUsuario) {
                         d.ubicacion = ($('#filtroUbicacion').val() || '').trim();
                     }
                 },
-                language: {
-                    url: '../../../assets/i18n/es-ES.json'
-                },
-                pageLength: 10,
-                lengthMenu: [10, 25, 50, 100],
+                language: window.DATATABLES_LANG_ES || {},
+                pageLength: 20,
+                lengthMenu: [20, 25, 50, 100],
                 order: [
                     [7, 'desc']
                 ], // ordenar por fecha registro descendente (columna 7 = fechaHoraRegistro)
@@ -882,8 +881,9 @@ if ($codigoUsuario) {
             if ($.fn.DataTable && $.fn.DataTable.isDataTable('#tablaPendientes')) return;
             if (!document.getElementById('tablaPendientes')) return;
             tablePendientes = $('#tablaPendientes').DataTable({
-                pageLength: 10,
-                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                language: window.DATATABLES_LANG_ES || {},
+                pageLength: 20,
+                lengthMenu: [[20, 25, 50, 100], [20, 25, 50, 100]],
                 order: [[0, 'asc']],
                 columnDefs: [{ orderable: false, targets: [3] }],
                 drawCallback: function() {

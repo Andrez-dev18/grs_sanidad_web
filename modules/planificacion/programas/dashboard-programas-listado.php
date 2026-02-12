@@ -10,7 +10,7 @@ if (empty($_SESSION['active'])) {
     </script>';
     exit();
 }
-
+include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -27,6 +27,7 @@ if (empty($_SESSION['active'])) {
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>window.DATATABLES_LANG_ES = <?php echo $datatablesLangEs; ?>;</script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body {
@@ -98,7 +99,7 @@ if (empty($_SESSION['active'])) {
         .bloque-detalle { display: block; }
         .select2-container .select2-selection--single { height: 38px; border-radius: 0.5rem; border: 1px solid #d1d5db; padding: 4px 10px; }
         .select2-container { width: 100% !important; }
-        /* Modal */
+        /* Modal: overlay oscurece toda la pantalla (sin recortes) */
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -108,8 +109,15 @@ if (empty($_SESSION['active'])) {
             align-items: center;
             justify-content: center;
             padding: 1rem;
+            box-sizing: border-box;
         }
         .modal-overlay.hidden { display: none; }
+        /* Modal Editar: máxima altura posible, poco padding */
+        #modalEditarPrograma.modal-overlay {
+            align-items: flex-start;
+            padding: 0.5rem;
+            overflow-y: auto;
+        }
         .modal-box {
             background: white;
             border-radius: 1rem;
@@ -121,6 +129,44 @@ if (empty($_SESSION['active'])) {
             display: flex;
             flex-direction: column;
             overflow: hidden;
+        }
+        /* Overlay para buscar producto/proveedor: pantalla completa, no limitado por el modal */
+        #overlayProductoProveedor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            min-width: 100vw;
+            min-height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        #overlayProductoProveedor.hidden { display: none; }
+        #overlayProductoProveedor .overlay-inner {
+            background: #fff;
+            border-radius: 0.75rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            width: 100%;
+            max-width: 560px;
+            height: 85vh;
+            max-height: 85vh;
+            min-height: 400px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        #overlayProductoProveedor .overlay-inner iframe {
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            height: 100%;
+            border: 0;
         }
         .modal-header {
             padding: 1.25rem 1.5rem;
@@ -150,6 +196,65 @@ if (empty($_SESSION['active'])) {
             justify-content: flex-end;
             flex-shrink: 0;
             background: #fff;
+        }
+        /* Modal Editar: grid para que header, cuerpo y footer (Cancelar + Guardar) siempre visibles; footer encima del iframe */
+        #modalEditarProgramaBox.modal-editar-box {
+            max-width: 98%;
+            width: 1100px;
+            max-height: 98vh;
+            height: 98vh;
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr) auto;
+            grid-template-areas: "modal-editar-head" "modal-editar-body" "modal-editar-foot";
+        }
+        #modalEditarProgramaBox .modal-header { grid-area: modal-editar-head; }
+        .modal-editar-body {
+            grid-area: modal-editar-body;
+            min-height: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+        }
+        .modal-editar-iframe {
+            width: 100%;
+            height: 100%;
+            min-height: 200px;
+            border: 0;
+            display: block;
+        }
+        .modal-editar-footer {
+            grid-area: modal-editar-foot;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            min-height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding: 12px 1rem;
+            position: relative;
+            z-index: 10;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            overflow: visible;
+        }
+        .modal-editar-footer .modal-editar-btn {
+            flex-shrink: 0;
+            min-width: 100px;
+        }
+        #modalEditarBtnGuardar {
+            display: inline-flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            background: #059669 !important;
+            color: #ffffff !important;
+            border: 1px solid #047857 !important;
+        }
+        #modalEditarBtnGuardar:hover {
+            background: #047857 !important;
         }
     </style>
 </head>
@@ -253,7 +358,7 @@ if (empty($_SESSION['active'])) {
                 </div>
                 <div class="view-lista-wrap" id="viewListaProg">
             <div class="table-wrapper table-wrapper-borde">
-                <table id="tablaProgramas" class="data-table w-full text-sm config-table">
+                <table id="tablaProgramas" class="data-table w-full text-sm config-table tabla-fixed-8col">
                     <thead>
                         <tr>
                             <th class="px-4 py-3 text-left">N°</th>
@@ -296,6 +401,34 @@ if (empty($_SESSION['active'])) {
                 </div>
                 <p id="modalDetallesSinRegistros" class="hidden text-gray-500 text-sm mt-2">Sin registros en el detalle.</p>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar programa: cuerpo con iframe (formPrograma) y pie con botones siempre visible -->
+    <div id="modalEditarPrograma" class="modal-overlay hidden" aria-hidden="true">
+        <div id="modalEditarProgramaBox" class="modal-box rounded-2xl modal-editar-box" role="dialog" aria-modal="true">
+            <div class="modal-header flex-shrink-0">
+                <h3 class="text-lg font-semibold text-gray-800">Editar programa</h3>
+                <button type="button" id="modalEditarProgramaCerrar" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+            <div class="modal-body modal-editar-body flex-1 p-0 overflow-hidden flex flex-col">
+                <iframe id="iframeEditarPrograma" src="about:blank" class="modal-editar-iframe" title="Formulario editar programa"></iframe>
+            </div>
+            <div class="modal-footer modal-editar-footer flex-shrink-0 flex items-center justify-end gap-2 px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+                <button type="button" id="modalEditarBtnCancelar" class="modal-editar-btn px-3 py-1.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 text-sm font-medium">Cancelar</button>
+                <button type="button" id="modalEditarBtnGuardar" class="modal-editar-btn px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium inline-flex items-center gap-1.5"><i class="fas fa-save"></i> Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay producto/proveedor: fuera del modal, oscurece toda la pantalla -->
+    <div id="overlayProductoProveedor" class="hidden" aria-hidden="true">
+        <div class="overlay-inner" onclick="event.stopPropagation()">
+            <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-white">
+                <h3 id="overlayProductoProveedorTitulo" class="text-base font-semibold text-gray-800">Buscar</h3>
+                <button type="button" id="overlayProductoProveedorCerrar" class="text-gray-500 hover:text-gray-700 text-xl leading-none">&times;</button>
+            </div>
+            <iframe id="iframeProductoProveedor" src="about:blank" title="Buscar"></iframe>
         </div>
     </div>
 
@@ -385,15 +518,27 @@ if (empty($_SESSION['active'])) {
                             '<td class="px-4 py-3">' + esc(cab.nomTipo) + '</td>' +
                             '<td class="px-4 py-3">' + esc(cab.despliegue) + '</td>' +
                             '<td class="px-4 py-3">' + formatearFecha(cab.fechaHoraRegistro) + '</td>' +
-                            '<td class="px-4 py-3 text-center"><button type="button" class="btn-detalles-programa px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '" title="Ver detalle"><i class="fas fa-list mr-1"></i> Detalles</button></td>' +
-                            '<td class="px-4 py-3 text-center"><a href="' + reporteUrl + '" target="_blank" rel="noopener" class="inline-flex items-center justify-center w-9 h-9 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition" title="Ver reporte PDF"><i class="fas fa-file-pdf text-lg"></i></a></td>';
+                            '<td class="px-4 py-3 text-center"><button type="button" class="btn-detalles-programa px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium inline-flex items-center gap-2" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '" title="Ver"><i class="fas fa-eye"></i> Ver</button></td>' +
+                            '<td class="px-4 py-3 text-center"><div class="flex items-center justify-center gap-3">' +
+                            '<a class="text-red-600 hover:text-red-800" title="Ver reporte PDF" href="' + reporteUrl + '" target="_blank" rel="noopener"><i class="fa-solid fa-file-pdf"></i></a>' +
+                            '<button type="button" class="btn-editar-programa text-indigo-600 hover:text-indigo-800" title="Editar" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"><i class="fa-solid fa-edit"></i></button>' +
+                            '<button type="button" class="btn-eliminar-programa text-rose-600 hover:text-rose-800" title="Eliminar" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"><i class="fa-solid fa-trash"></i></button>' +
+                            '</div></td>';
                         tbody.appendChild(tr);
                     });
                     tbody.querySelectorAll('.btn-detalles-programa').forEach(function(btn) {
                         btn.addEventListener('click', function() { abrirModalDetalles(this.getAttribute('data-codigo')); });
                     });
+                    tbody.querySelectorAll('.btn-editar-programa').forEach(function(btn) {
+                        btn.addEventListener('click', function() { editarPrograma(this.getAttribute('data-codigo')); });
+                    });
+                    tbody.querySelectorAll('.btn-eliminar-programa').forEach(function(btn) {
+                        btn.addEventListener('click', function() { eliminarPrograma(this.getAttribute('data-codigo')); });
+                    });
                     $('#tablaProgramas').DataTable({
-                        language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+                        language: window.DATATABLES_LANG_ES || {},
+                        pageLength: 20,
+                        lengthMenu: [[20, 25, 50, 100], [20, 25, 50, 100]],
                         order: [[5, 'desc']],
                         dom: '<"dt-top-row"<"flex items-center gap-6" l><"flex items-center gap-2" f>>rt<"dt-bottom-row"<"text-sm text-gray-600" i><"text-sm text-gray-600" p>>',
                         initComplete: function() {
@@ -519,6 +664,92 @@ if (empty($_SESSION['active'])) {
             document.getElementById('modalDetallesPrograma').classList.add('hidden');
         }
 
+        function checkProgramaEnUso(codigo) {
+            return fetch('check_programa_en_uso.php?codigo=' + encodeURIComponent(codigo), { cache: 'no-store' })
+                .then(function(r) { return r.json(); })
+                .then(function(res) { return res.success && res.enUso; })
+                .catch(function() { return false; });
+        }
+
+        function editarPrograma(codigo) {
+            if (!codigo) return;
+            checkProgramaEnUso(codigo).then(function(enUso) {
+                if (enUso) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({ icon: 'warning', title: 'No se puede editar', text: 'Este programa no puede ser editado porque ya ha sido asignado en un cronograma.' });
+                    } else {
+                        alert('Este programa no puede ser editado porque ya ha sido asignado en un cronograma.');
+                    }
+                    return;
+                }
+                var modal = document.getElementById('modalEditarPrograma');
+                var iframe = document.getElementById('iframeEditarPrograma');
+                if (iframe) iframe.src = 'dashboard-programas-registro.php?codigo=' + encodeURIComponent(codigo) + '&editar=1';
+                if (modal) modal.classList.remove('hidden');
+            });
+        }
+
+        function cerrarModalEditarPrograma() {
+            var modal = document.getElementById('modalEditarPrograma');
+            var iframe = document.getElementById('iframeEditarPrograma');
+            if (iframe) iframe.src = 'about:blank';
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('modal-editar-expandido'); }
+            cargarListado();
+        }
+
+        function eliminarPrograma(codigo) {
+            if (!codigo) return;
+            checkProgramaEnUso(codigo).then(function(enUso) {
+                if (enUso) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({ icon: 'warning', title: 'No se puede eliminar', text: 'Este programa no puede ser eliminado porque ya ha sido asignado en un cronograma.' });
+                    } else {
+                        alert('Este programa no puede ser eliminado porque ya ha sido asignado en un cronograma.');
+                    }
+                    return;
+                }
+                var msg = '¿Está seguro de eliminar el programa \'' + (codigo || '').replace(/'/g, "\\'") + '\'?';
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Confirmar eliminación',
+                        text: msg,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, eliminar',
+                        cancelButtonText: 'Cancelar'
+                    }).then(function(result) {
+                        if (result.isConfirmed) {
+                            var form = new FormData();
+                            form.append('codigo', codigo);
+                            fetch('eliminar_programa.php', { method: 'POST', body: form })
+                                .then(function(r) { return r.json(); })
+                                .then(function(res) {
+                                    if (res.success) {
+                                        Swal.fire({ icon: 'success', title: 'Eliminado', text: res.message || 'Programa eliminado.' });
+                                        cargarListado();
+                                    } else {
+                                        Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudo eliminar.' });
+                                    }
+                                })
+                                .catch(function() { Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión.' }); });
+                        }
+                    });
+                } else {
+                    if (confirm(msg)) {
+                        var form = new FormData();
+                        form.append('codigo', codigo);
+                        fetch('eliminar_programa.php', { method: 'POST', body: form })
+                            .then(function(r) { return r.json(); })
+                            .then(function(res) {
+                                if (res.success) { cargarListado(); }
+                                else { alert(res.message || 'No se pudo eliminar.'); }
+                            })
+                            .catch(function() { alert('Error de conexión.'); });
+                    }
+                }
+            });
+        }
+
         function cargarTiposParaFiltro() {
             return fetch('get_tipos_programa.php').then(r => r.json()).then(function(res) {
                 if (!res.success || !res.data) return;
@@ -582,6 +813,75 @@ if (empty($_SESSION['active'])) {
         });
         document.getElementById('modalDetallesCerrar').addEventListener('click', cerrarModalDetalles);
         document.getElementById('modalDetallesPrograma').addEventListener('click', function(e) { if (e.target === this) cerrarModalDetalles(); });
+        var modalEditarCerrar = document.getElementById('modalEditarProgramaCerrar');
+        if (modalEditarCerrar) modalEditarCerrar.addEventListener('click', cerrarModalEditarPrograma);
+        var modalEditar = document.getElementById('modalEditarPrograma');
+        if (modalEditar) modalEditar.addEventListener('click', function(e) { if (e.target === modalEditar) cerrarModalEditarPrograma(); });
+        document.getElementById('modalEditarBtnCancelar').addEventListener('click', cerrarModalEditarPrograma);
+        document.getElementById('modalEditarBtnGuardar').addEventListener('click', function() {
+            var iframe = document.getElementById('iframeEditarPrograma');
+            if (iframe && iframe.contentWindow && typeof iframe.contentWindow.submitFormPrograma === 'function') {
+                iframe.contentWindow.submitFormPrograma();
+            }
+        });
+        function cerrarOverlayProductoProveedor() {
+            var ov = document.getElementById('overlayProductoProveedor');
+            var ifr = document.getElementById('iframeProductoProveedor');
+            if (ov) ov.classList.add('hidden');
+            if (ifr) ifr.src = 'about:blank';
+        }
+        document.getElementById('overlayProductoProveedorCerrar').addEventListener('click', cerrarOverlayProductoProveedor);
+        document.getElementById('overlayProductoProveedor').addEventListener('click', function(e) {
+            if (e.target.id === 'overlayProductoProveedor') cerrarOverlayProductoProveedor();
+        });
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.tipo === 'programaActualizado') { cerrarModalEditarPrograma(); }
+            if (e.data && e.data.tipo === 'abrirModalProducto') {
+                var rowIndex = e.data.rowIndex != null ? e.data.rowIndex : 0;
+                var ov = document.getElementById('overlayProductoProveedor');
+                document.getElementById('overlayProductoProveedorTitulo').textContent = 'Buscar producto';
+                document.getElementById('iframeProductoProveedor').src = 'modal_buscar_producto.php?rowIndex=' + encodeURIComponent(rowIndex);
+                if (ov && ov.parentNode !== document.body) document.body.appendChild(ov);
+                ov.classList.remove('hidden');
+            }
+            if (e.data && e.data.tipo === 'abrirModalProveedor') {
+                var rowIndex = e.data.rowIndex != null ? e.data.rowIndex : 0;
+                var ov = document.getElementById('overlayProductoProveedor');
+                document.getElementById('overlayProductoProveedorTitulo').textContent = 'Buscar proveedor';
+                document.getElementById('iframeProductoProveedor').src = 'modal_buscar_proveedor.php?rowIndex=' + encodeURIComponent(rowIndex);
+                if (ov && ov.parentNode !== document.body) document.body.appendChild(ov);
+                ov.classList.remove('hidden');
+            }
+            if (e.data && e.data.tipo === 'productoSeleccionado') {
+                var iframeEditar = document.getElementById('iframeEditarPrograma');
+                if (iframeEditar && iframeEditar.contentWindow) {
+                    try { iframeEditar.contentWindow.postMessage(e.data, '*'); } catch (err) {}
+                }
+                cerrarOverlayProductoProveedor();
+            }
+            if (e.data && e.data.tipo === 'proveedorSeleccionado') {
+                var iframeEditar = document.getElementById('iframeEditarPrograma');
+                if (iframeEditar && iframeEditar.contentWindow) {
+                    try { iframeEditar.contentWindow.postMessage(e.data, '*'); } catch (err) {}
+                }
+                cerrarOverlayProductoProveedor();
+            }
+            if (e.data && (e.data.tipo === 'cerrarModalProducto' || e.data.tipo === 'cerrarModalProveedor')) {
+                cerrarOverlayProductoProveedor();
+            }
+            if (e.data && e.data.tipo === 'mostrarSwal') {
+                var d = e.data;
+                var opts = { icon: d.icon || 'info', title: d.title || '', text: d.text || '' };
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire(opts).then(function() {
+                        if (d.cerrarAlConfirmar) cerrarModalEditarPrograma();
+                    });
+                } else {
+                    alert((d.title || '') + (d.text ? '\n' + d.text : ''));
+                    if (d.cerrarAlConfirmar) cerrarModalEditarPrograma();
+                }
+            }
+        });
 
         window._progIconosPage = 0;
         window._progIconosPageSize = 10;
@@ -628,13 +928,21 @@ if (empty($_SESSION['active'])) {
                     '<div class="card-row"><span class="label">Fecha:</span> ' + formatearFecha(cab.fechaHoraRegistro) + '</div>' +
                     '</div>' +
                     '<div class="card-acciones">' +
-                    '<button type="button" class="btn-detalles-programa px-2 py-1 text-blue-600 hover:bg-blue-50 rounded text-sm" data-codigo="' + codEsc + '" title="Detalles"><i class="fas fa-list mr-1"></i> Detalles</button>' +
-                    '<a href="' + reporteUrl + '" target="_blank" rel="noopener" class="inline-flex items-center px-2 py-1 text-red-600 hover:bg-red-50 rounded text-sm" title="PDF"><i class="fas fa-file-pdf"></i></a>' +
+                    '<button type="button" class="btn-detalles-programa cursor-pointer text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-2 transition" data-codigo="' + codEsc + '" title="Ver"><i class="fas fa-eye"></i> Ver</button>' +
+                    '<a class="text-red-600 hover:text-red-800" title="PDF" target="_blank" rel="noopener" href="' + reporteUrl + '"><i class="fa-solid fa-file-pdf"></i></a>' +
+                    '<button type="button" class="btn-editar-programa text-indigo-600 hover:text-indigo-800" title="Editar" data-codigo="' + codEsc + '"><i class="fa-solid fa-edit"></i></button>' +
+                    '<button type="button" class="btn-eliminar-programa text-rose-600 hover:text-rose-800" title="Eliminar" data-codigo="' + codEsc + '"><i class="fa-solid fa-trash"></i></button>' +
                     '</div></div>';
                 cont.appendChild(card);
             });
             cont.querySelectorAll('.btn-detalles-programa').forEach(function(btn) {
                 btn.addEventListener('click', function() { abrirModalDetalles(this.getAttribute('data-codigo')); });
+            });
+            cont.querySelectorAll('.btn-editar-programa').forEach(function(btn) {
+                btn.addEventListener('click', function() { editarPrograma(this.getAttribute('data-codigo')); });
+            });
+            cont.querySelectorAll('.btn-eliminar-programa').forEach(function(btn) {
+                btn.addEventListener('click', function() { eliminarPrograma(this.getAttribute('data-codigo')); });
             });
 
             window._progTotalPag = totalPag;

@@ -13,7 +13,7 @@ $conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
-
+include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 ?>
 
 <!DOCTYPE html>
@@ -42,16 +42,11 @@ if (!$conexion) {
         .select2-dropdown { border-radius: 0.5rem; border: 1px solid #d1d5db; }
         .select2-container--default .select2-results__option--highlighted[aria-selected] { background-color: #3b82f6; color: #fff; }
         .select2-container--default .select2-search--dropdown .select2-search__field { border: 1px solid #d1d5db; border-radius: 0.375rem; padding: 0.5rem 0.75rem; }
-        #tablaProductosMitm_wrapper .dataTables_length,
-        #tablaProductosMitm_wrapper .dataTables_filter,
-        #tablaProductosMitm_wrapper .dataTables_info,
-        #tablaProductosMitm_wrapper .dataTables_paginate { padding: 0.5rem 0; }
-        #tablaProductosMitm_wrapper .dataTables_paginate .paginate_button { padding: 0.35rem 0.75rem; margin: 0 2px; border-radius: 0.375rem; }
+        /* Tabla/DataTables: estilos generales en dashboard-config.css */
         @media (max-width: 640px) {
             .container.mx-auto { padding-left: 0.75rem; padding-right: 0.75rem; padding-top: 1rem; padding-bottom: 1.5rem; }
             .dashboard-actions.filtros-actions { flex-direction: column; align-items: stretch; }
             .dashboard-actions.filtros-actions button { width: 100%; justify-content: center; }
-            .data-table th, .data-table td { padding: 0.5rem 0.75rem; font-size: 0.8125rem; }
             .text-center.mt-12 { margin-top: 2rem; padding: 0 0.5rem; }
         }
         #modalEditarProducto { min-height: 100vh; min-height: 100dvh; align-items: center; justify-content: center; padding: 0.75rem; padding-top: max(0.75rem, env(safe-area-inset-top)); padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -215,6 +210,7 @@ if (!$conexion) {
     </div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>window.DATATABLES_LANG_ES = <?php echo $datatablesLangEs; ?>;</script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
     (function() {
@@ -351,9 +347,9 @@ if (!$conexion) {
                 renderizarTarjetasProductos();
                 aplicarVisibilidadVistaProductos();
                 jQuery('#tablaProductosMitm').DataTable({
-                    pageLength: 10,
-                    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'Todos']],
-                    language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+                    pageLength: 20,
+                    lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, 'Todos']],
+                    language: window.DATATABLES_LANG_ES || {},
                     order: [[0, 'asc']],
                     columnDefs: [{ orderable: false, targets: [8] }]
                 });

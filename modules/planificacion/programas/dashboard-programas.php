@@ -13,6 +13,7 @@ if (empty($_SESSION['active'])) {
 
 // La página no ejecuta consultas; los datos se cargan por AJAX (get_tipos_programa, guardar_programa, etc.).
 // No abrir conexión aquí para evitar agotar el límite de conexiones de MySQL.
+include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -289,7 +290,7 @@ if (empty($_SESSION['active'])) {
 
             <div class="px-6 pb-6 pt-4">
                 <div class="table-wrapper overflow-x-auto">
-                    <table id="tablaProgramas" class="data-table w-full text-sm config-table">
+                    <table id="tablaProgramas" class="data-table w-full text-sm config-table tabla-fixed-8col">
                         <thead>
                             <tr>
                                 <th class="px-4 py-3 text-left">N°</th>
@@ -795,7 +796,9 @@ if (empty($_SESSION['active'])) {
                         btn.addEventListener('click', function() { abrirModalDetalles(this.getAttribute('data-codigo')); });
                     });
                     $('#tablaProgramas').DataTable({
-                        language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+                        language: window.DATATABLES_LANG_ES || {},
+                        pageLength: 20,
+                        lengthMenu: [[20, 25, 50, 100], [20, 25, 50, 100]],
                         order: [[6, 'desc']]
                     });
                 })

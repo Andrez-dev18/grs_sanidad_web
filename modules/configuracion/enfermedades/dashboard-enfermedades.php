@@ -17,6 +17,7 @@ $conexion = conectar_joya();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
+include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 ?>
 
 <!DOCTYPE html>
@@ -34,6 +35,7 @@ if (!$conexion) {
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="../../../assets/js/i18n/datatables-es.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
     <style>
@@ -45,8 +47,6 @@ if (!$conexion) {
             .dashboard-actions { flex-direction: column; align-items: stretch; }
             .dashboard-actions .btn, .dashboard-actions button { width: 100%; justify-content: center; }
             #tablaEnfermedadesWrapper { padding: 0.75rem; border-radius: 1rem; }
-            .data-table th, .data-table td { padding: 0.5rem 0.75rem; font-size: 0.8125rem; }
-            .data-table th:first-child, .data-table td:first-child { min-width: 2.5rem; }
             .text-center.mt-12 { margin-top: 2rem; padding: 0 0.5rem; }
         }
         #enfermedadesModal { min-height: 100vh; min-height: 100dvh; align-items: center; justify-content: center; padding: 0.75rem; padding-top: max(0.75rem, env(safe-area-inset-top)); padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -167,9 +167,9 @@ if (!$conexion) {
         var $t = jQuery('#tablaEnfermedades');
         if ($t.length && !$t.hasClass('dataTable')) {
             $t.DataTable({
-                pageLength: 10,
-                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, 'Todos']],
-                language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' },
+                pageLength: 20,
+                lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, 'Todos']],
+                language: window.DATATABLES_LANG_ES || {},
                 order: [[1, 'asc']],
                 columnDefs: [{ orderable: false, targets: [0, 2] }]
             });

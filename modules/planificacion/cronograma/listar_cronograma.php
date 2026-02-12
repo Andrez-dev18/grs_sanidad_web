@@ -22,6 +22,7 @@ $mesInicio = trim((string)($_GET['mesInicio'] ?? ''));
 $mesFin = trim((string)($_GET['mesFin'] ?? ''));
 $codTipo = trim((string)($_GET['codTipo'] ?? ''));
 $mesEjecucion = trim((string)($_GET['mesEjecucion'] ?? ''));
+$porFechaEjecucion = !empty($_GET['porFechaEjecucion']);
 
 // Filtro por mes de ejecución (para calendario): prioridad sobre periodo de registro
 $rangoEjecucion = null;
@@ -77,9 +78,11 @@ if ($codTipo !== '') {
     $whereTipo = " 1=1 ";
     $params[] = $codTipo;
     $types .= 's';
+} else {
+    $joinTipo = " LEFT JOIN san_fact_programa_cab cab ON cab.codigo = c.codPrograma ";
 }
-
 $sql = "SELECT c.id, c.codPrograma, c.nomPrograma, c.granja, c.campania, c.galpon, c.fechaCarga, c.fechaEjecucion";
+if ($joinTipo !== '') $sql .= ", cab.codTipo AS codTipo";
 if ($tieneFechaHora) $sql .= ", c.fechaHoraRegistro";
 if ($tieneNomGranja) $sql .= ", c.nomGranja";
 if ($tieneEdad) $sql .= ", c.edad";
@@ -95,7 +98,7 @@ if ($rangoEjecucion !== null && isset($rangoEjecucion['desde'], $rangoEjecucion[
     $params[] = $rangoEjecucion['hasta'];
     $types .= 'ss';
 } elseif ($rango !== null && isset($rango['desde'], $rango['hasta'])) {
-    $campoFechaFiltro = $tieneFechaHora ? 'c.fechaHoraRegistro' : 'c.fechaEjecucion';
+    $campoFechaFiltro = ($porFechaEjecucion || !$tieneFechaHora) ? 'c.fechaEjecucion' : 'c.fechaHoraRegistro';
     $sql .= " AND DATE(" . $campoFechaFiltro . ") >= ? AND DATE(" . $campoFechaFiltro . ") <= ? ";
     $params[] = $rango['desde'];
     $params[] = $rango['hasta'];
@@ -140,7 +143,8 @@ while ($row = $res->fetch_assoc()) {
         'fechaEjecucion' => $row['fechaEjecucion'] ?? '',
         'edad' => $tieneEdad ? ($row['edad'] ?? '') : '',
         'posDetalle' => $tienePosDetalle ? ($row['posDetalle'] ?? '') : '',
-        'numCronograma' => $tieneNumCronograma ? (int)($row['numCronograma'] ?? 0) : 0
+        'numCronograma' => $tieneNumCronograma ? (int)($row['numCronograma'] ?? 0) : 0,
+        'codTipo' => isset($row['codTipo']) ? (string)$row['codTipo'] : null
     ];
 }
 if (isset($stmt)) $stmt->close();

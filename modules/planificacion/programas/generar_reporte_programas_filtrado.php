@@ -120,7 +120,11 @@ function valorClaveDetalleReporteFiltrado($k, $d) {
     if ($k === 'edad') return '';
     if ($k === 'ubicacion') return $d['ubicacion'] ?? '';
     if ($k === 'producto') return $d['nomProducto'] ?? ($d['codProducto'] ?? '');
-    if ($k === 'proveedor') return (trim((string)($d['codProveedor'] ?? '')) !== '' ? $d['codProveedor'] : ($d['nomProveedor'] ?? ''));
+    if ($k === 'proveedor') {
+        $codProv = trim((string)($d['codProveedor'] ?? ''));
+        $nomProv = trim((string)($d['nomProveedor'] ?? ''));
+        return $codProv !== '' ? ($nomProv !== '' ? $nomProv : $codProv) : ($d['nomProveedor'] ?? '');
+    }
     if ($k === 'unidad') return $d['unidades'] ?? '';
     if ($k === 'dosis') return $d['dosis'] ?? '';
     if ($k === 'descripcion_vacuna') return $d['descripcionVacuna'] ?? '';
@@ -168,11 +172,11 @@ $pctColFiltrado = round(100 / $numColsFiltrado, 2);
 $css = 'body{font-family:"Segoe UI",Arial,sans-serif;font-size:9pt;color:#1e293b;margin:0;padding:10px;position:relative;}
 .fecha-hora-arriba{position:absolute;top:8px;right:0;font-size:9pt;color:#475569;z-index:10;}
 .tabla-programa{margin-bottom:24px;}
-.data-table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed;border:3px solid #64748b;}
+.data-table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed;border:2px solid #cbd5e1;}
 .data-table th,.data-table td{padding:4px 6px;border:1px solid #cbd5e1;vertical-align:top;text-align:left;background:#fff;overflow:hidden;}
 .data-table thead th{background-color:#2563eb !important;color:#fff !important;font-weight:bold;}
-.data-table tbody tr.borde-grueso-codprograma{border-bottom:2px solid #64748b;}
-.data-table tbody tr.borde-grueso-codprograma td{border-bottom:2px solid #64748b;}
+.data-table tbody tr.borde-grueso-codprograma{border-bottom:2px solid #cbd5e1;}
+.data-table tbody tr.borde-grueso-codprograma td{border-bottom:2px solid #cbd5e1;}
 .titulo-programa{font-size:10pt;font-weight:bold;margin-bottom:6px;color:#334155;}';
 
 $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' . $css . '</style></head><body>';
@@ -233,7 +237,9 @@ foreach ($programasPorTipo as $codTipo => $lista) {
                 $html .= '<td>' . htmlspecialchars($codigo) . '</td><td>' . htmlspecialchars($cabNombre) . '</td><td>' . htmlspecialchars($cabDespliegue) . '</td><td>' . htmlspecialchars($cabDesc) . '</td>';
                 $html .= '<td>' . htmlspecialchars($d['ubicacion'] ?? '') . '</td>';
                 $html .= '<td>' . htmlspecialchars($d['nomProducto'] ?? ($d['codProducto'] ?? '')) . '</td>';
-                $proveedorVal = (trim((string)($d['codProveedor'] ?? '')) !== '') ? ($d['codProveedor'] ?? '') : ($d['nomProveedor'] ?? '');
+                $codProv = trim((string)($d['codProveedor'] ?? ''));
+                $nomProv = trim((string)($d['nomProveedor'] ?? ''));
+                $proveedorVal = $codProv !== '' ? ($nomProv !== '' ? $nomProv : $codProv) : ($d['nomProveedor'] ?? '');
                 $html .= '<td>' . htmlspecialchars($proveedorVal) . '</td>';
                 $html .= '<td>' . htmlspecialchars($d['unidades'] ?? '') . '</td>';
                 $html .= '<td>' . htmlspecialchars($d['dosis'] ?? '') . '</td>';

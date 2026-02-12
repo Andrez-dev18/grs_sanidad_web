@@ -94,15 +94,16 @@ $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
 </style></head><body style="position:relative;">';
 
 $html .= '<div class="fecha-hora-arriba">' . htmlspecialchars($fechaReporte) . '</div>';
-$html .= '<table width="100%" style="border-collapse: collapse; margin-bottom: 10px; margin-top: 28px;">';
+$bordeTitulo = 'border: 1px solid #64748b;';
+$html .= '<table width="100%" style="border-collapse: collapse; margin-bottom: 10px; margin-top: 28px; ' . $bordeTitulo . '">';
 $html .= '<tr>';
 if (!empty($logo)) {
-    $html .= '<td style="width: 20%; text-align: left; padding: 8px 10px; background-color: #fff; font-size: 8pt; white-space: nowrap;">' . $logo . ' GRANJA RINCONADA DEL SUR S.A.</td>';
+    $html .= '<td style="width: 20%; text-align: left; padding: 8px 10px; background-color: #fff; font-size: 8pt; white-space: nowrap; ' . $bordeTitulo . '">' . $logo . ' GRANJA RINCONADA DEL SUR S.A.</td>';
 } else {
-    $html .= '<td style="width: 20%; text-align: left; padding: 8px 10px; background-color: #fff; font-size: 8pt; white-space: nowrap;">GRANJA RINCONADA DEL SUR S.A.</td>';
+    $html .= '<td style="width: 20%; text-align: left; padding: 8px 10px; background-color: #fff; font-size: 8pt; white-space: nowrap; ' . $bordeTitulo . '">GRANJA RINCONADA DEL SUR S.A.</td>';
 }
-$html .= '<td style="width: 60%; text-align: center; padding: 8px 10px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px;">REPORTE CRONOGRAMA</td>';
-$html .= '<td style="width: 20%; background-color: #fff;"></td></tr></table>';
+$html .= '<td style="width: 60%; text-align: center; padding: 8px 10px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px; ' . $bordeTitulo . '">REPORTE CRONOGRAMA</td>';
+$html .= '<td style="width: 20%; background-color: #fff; ' . $bordeTitulo . '"></td></tr></table>';
 
 $html .= '<table class="data-table"><colgroup>';
 $html .= '<col style="width:4%"/><col style="width:12%"/><col style="width:10%"/><col style="width:12%"/><col style="width:10%"/><col style="width:10%"/><col style="width:6%"/><col style="width:12%"/><col style="width:14%"/>';

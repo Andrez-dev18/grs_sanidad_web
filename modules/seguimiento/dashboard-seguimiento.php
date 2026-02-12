@@ -408,6 +408,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     }
 }
 
+include_once __DIR__ . '/../../includes/datatables_lang_es.php';
 
 ?>
 
@@ -1530,6 +1531,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     </div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script>window.DATATABLES_LANG_ES = <?php echo $datatablesLangEs; ?>;</script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../assets/js/sweetalert-helpers.js"></script>
@@ -1584,8 +1586,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     var $controls = $('#segDtControls');
                     if ($controls.length && $length.length && $filter.length) {
                         $controls.append($length, $filter);
-                        var vista = $('#tablaSeguimientoWrapper').attr('data-vista') || 'lista';
-                        $controls.toggle(vista === 'lista');
+                        $controls.show();
                     }
                 },
                 dom: `
@@ -1759,11 +1760,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     className: 'text-center',
                     orderable: false,
                     render: function (data, type, row) {
-                        return `<button 
-                            class="text-blue-600 hover:text-blue-800 transition"
-                            title="Ver detalle"
+                        return `<button type="button"
+                            class="btn-detalles cursor-pointer text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-2 transition"
+                            title="Ver"
                             onclick="verDetalle('${row.codEnvio}')">
-                            <i class="fa-solid fa-eye text-lg"></i>
+                            <i class="fas fa-eye"></i> Ver
                         </button>`;
                     }
                 },
@@ -1802,13 +1803,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 rowCallback: function (row, data) {
                     $(row).addClass('hover:bg-gray-50 transition');
                 },
-                language: {
-                    url: '../../assets/i18n/es-ES.json'
-                },
-                pageLength: 5,
+                language: window.DATATABLES_LANG_ES || {},
+                pageLength: 20,
                 lengthMenu: [
-                    [5, 10, 15, 20, 25],
-                    [5, 10, 15, 20, 25]
+                    [10, 20, 25, 50, 100],
+                    [10, 20, 25, 50, 100]
                 ],
                 drawCallback: function () {
                     if (typeof renderizarTarjetasSeguimiento === 'function') renderizarTarjetasSeguimiento();
@@ -1825,12 +1824,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                     $('#segIconosControls').hide();
                     $('#viewTarjetasSeg').addClass('hidden').css('display', 'none');
                     $('#tablaSeguimientoWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
+                    if (table) table.page.len(20).draw(false);
                 } else {
-                    $('#segDtControls').hide();
-                    $('#segIconosControls').show();
+                    // Mantener Mostrar + Buscar siempre visibles (mismo toolbar en ambas vistas)
+                    $('#segDtControls').show();
+                    $('#segIconosControls').hide();
                     $('#tablaSeguimientoWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
                     $('#viewTarjetasSeg').removeClass('hidden').css('display', 'block');
                     $('#cardsContainerSeg').attr('data-vista-cards', 'iconos');
+                    if (table) table.page.len(10).draw(false);
                     if (typeof renderizarTarjetasSeguimiento === 'function') renderizarTarjetasSeguimiento();
                 }
             }
@@ -1889,48 +1891,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                         '<div class="card-row"><span class="label">Estado:</span> ' + escapeHtmlSeg(row.estado || '') + '</div>' +
                         '</div>' +
                         '<div class="card-acciones">' +
-                        '<button type="button" class="text-blue-600 hover:text-blue-800 transition" title="Detalle" onclick="verDetalle(\'' + codRaw + '\')"><i class="fas fa-eye"></i></button>' +
+                        '<button type="button" class="btn-detalles cursor-pointer text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-2 transition" title="Ver" onclick="verDetalle(\'' + codRaw + '\')"><i class="fas fa-eye"></i> Ver</button>' +
                         '<button type="button" class="text-amber-600 hover:text-amber-800 transition" title="Historial" onclick="verHistorial(\'' + codRaw + '\')"><i class="fa-solid fa-clock-rotate-left"></i></button>' +
                         '<button type="button" class="text-indigo-600 hover:text-indigo-800 transition" title="Editar" onclick="verificarYEditar(\'' + codRaw + '\')"><i class="fa-solid fa-edit"></i></button>' +
                         '<button type="button" class="text-red-600 hover:text-red-800 transition" title="PDF" onclick="generarReportePDF(\'' + codRaw + '\')"><i class="fa-solid fa-file-pdf"></i></button>' +
                         '</div></div></div>';
                     cont.append(card);
                 });
-                var len = api.page.len();
-                var lengthOptions = [5, 10, 15, 20, 25];
-                var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
-                    lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
-                    '</select><span>registros</span></label>';
                 var vista = $('#tablaSeguimientoWrapper').attr('data-vista') || '';
                 if (vista === 'iconos') {
-                    var $toolbarRow = $('#segIconosControls .iconos-toolbar-row');
-                    if (!$toolbarRow.length) {
-                        var $filter = $('#segDtControls .dataTables_filter').detach();
-                        var iconosRow = '<div class="iconos-toolbar-row flex flex-wrap items-center gap-3">' + lengthSelect + '</div>';
-                        $('#segIconosControls').html(iconosRow);
-                        if ($filter.length) $('#segIconosControls .iconos-toolbar-row').append($filter);
-                        $('#segIconosControls .cards-length-select').on('change', function() {
-                            var val = parseInt($(this).val(), 10);
-                            if (table) table.page.len(val).draw(false);
-                        });
-                    } else {
-                        var $sel = $toolbarRow.find('.cards-length-select');
-                        if ($sel.length) $sel.find('option').remove().end().append(lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join(''));
-                    }
+                    // Un solo toolbar (segDtControls) con Mostrar + Buscar visible en lista e iconos; solo actualizar paginación inferior
                     $('#cardsControlsTopSeg').empty();
                     $('#cardsPaginationSeg').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : '');
-                } else {
-                    var navBtns = '<div class="flex gap-2">' +
-                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaResultados\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
-                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaResultados\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
-                        '</div>';
-                    var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' + navBtns + '</div>';
-                    $('#cardsControlsTopSeg').html(controlsHtml);
-                    $('#cardsPaginationSeg').html(controlsHtml);
-                    $('#cardsControlsTopSeg .cards-length-select, #cardsPaginationSeg .cards-length-select').on('change', function() {
-                        var val = parseInt($(this).val(), 10);
-                        if (table) table.page.len(val).draw(false);
-                    });
                 }
             }
             actualizarVistaInicialSeg();

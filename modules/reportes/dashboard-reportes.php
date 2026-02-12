@@ -20,6 +20,9 @@ if (!$conexion) {
 
 $codigoUsuario = $_SESSION['usuario'] ?? '';
 $rolReportes = 'user';
+
+include_once __DIR__ . '/../../includes/datatables_lang_es.php';
+
 if ($codigoUsuario) {
     $sqlRol = "SELECT rol_sanidad FROM usuario WHERE codigo = ?";
     $stmtRol = $conexion->prepare($sqlRol);
@@ -56,7 +59,7 @@ if ($codigoUsuario) {
 <link rel="stylesheet" href="../../css/dashboard-config.css">
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
+<script>window.DATATABLES_LANG_ES = <?php echo $datatablesLangEs; ?>;</script>
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="../../assets/js/sweetalert-helpers.js"></script>
@@ -1861,7 +1864,7 @@ if ($codigoUsuario) {
                                 <div class="card-row"><span class="label">Aut Por:</span> ${escapeHtml(row.autorizadoPor || '')}</div>
                             </div>
                             <div class="card-acciones">
-                                <button type="button" class="btn-detalles text-blue-600 hover:text-blue-800" data-codigo="${cod}" title="Ver"><i class="fas fa-eye"></i></button>
+                                <button type="button" class="btn-detalles cursor-pointer text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-2 transition" data-codigo="${cod}" title="Ver"><i class="fas fa-eye"></i> Ver</button>
                                 <a class="text-red-600 hover:text-red-800" title="PDF Tabla" target="_blank" href="generar_pdf_tabla.php?codigo=${codEnc}"><i class="fa-solid fa-file-pdf"></i></a>
                                 <a class="text-red-600 hover:text-red-800" title="PDF Resumen" target="_blank" href="generar_pdf_resumen.php?codigo=${codEnc}"><i class="fa-solid fa-file-lines"></i></a>
                                 <button type="button" class="btn-enviar-correo text-blue-600 hover:text-blue-800" title="Correo" data-codigo="${cod}"><i class="fa-solid fa-paper-plane"></i></button>
@@ -2056,9 +2059,9 @@ if ($codigoUsuario) {
                     }
                 ],
                 columnDefs: [{ orderable: false, targets: [0, 8, 9] }],
-                language: { url: '../../assets/i18n/es-ES.json' },
-                pageLength: 10,
-                lengthMenu: [[10, 25, 50], [10, 25, 50]]
+                language: window.DATATABLES_LANG_ES || {},
+                pageLength: 20,
+                lengthMenu: [[20, 25, 50, 100], [20, 25, 50, 100]]
             });
         }
 

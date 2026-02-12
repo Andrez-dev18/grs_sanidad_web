@@ -13,8 +13,15 @@ if (!$conn) {
     exit;
 }
 
-// Búsqueda en mitm por descripción (sugerencias al escribir). Ya no se usa producto_programa.
+// Búsqueda en mitm por descripción (sugerencias al escribir). Filtros opcionales: línea (lin), almacén (alma).
 $q = isset($_GET['q']) ? trim($_GET['q']) : (isset($_POST['q']) ? trim($_POST['q']) : '');
+$lin = isset($_GET['lin']) ? trim((string)$_GET['lin']) : '';
+$alma = isset($_GET['alma']) ? trim((string)$_GET['alma']) : '';
+
+$tieneLin = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'lin'");
+$tieneLin = $tieneLin && $tieneLin->num_rows > 0;
+$tieneAlma = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'alma'");
+$tieneAlma = $tieneAlma && $tieneAlma->num_rows > 0;
 
 $results = [];
 $sql = "SELECT m.codigo, m.descri FROM mitm m WHERE 1=1";
@@ -25,6 +32,16 @@ if (strlen($q) >= 1) {
     $params[] = '%' . $q . '%';
     $params[] = '%' . $q . '%';
     $types .= 'ss';
+}
+if ($tieneLin && $lin !== '') {
+    $sql .= " AND m.lin = ?";
+    $params[] = $lin;
+    $types .= 's';
+}
+if ($tieneAlma && $alma !== '') {
+    $sql .= " AND m.alma = ?";
+    $params[] = $alma;
+    $types .= 's';
 }
 $sql .= " ORDER BY m.descri LIMIT 50";
 

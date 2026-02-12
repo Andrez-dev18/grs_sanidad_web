@@ -9,6 +9,7 @@ if (empty($_SESSION['active'])) {
 include_once '../../../../conexion_grs_joya/conexion.php';
 $conn = conectar_joya();
 if (!$conn) die("Error de conexión: " . mysqli_connect_error());
+include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -25,6 +26,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script>window.DATATABLES_LANG_ES = <?php echo $datatablesLangEs; ?>;</script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -79,7 +81,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
                 </button>
             </div>
             <div class="table-wrapper p-4">
-                <table id="tablaCronograma" class="data-table w-full text-sm config-table">
+                <table id="tablaCronograma" class="data-table w-full text-sm config-table tabla-fixed-6col">
                     <thead>
                         <tr>
                             <th class="px-4 py-3 text-left">N°</th>
@@ -177,7 +179,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             <div class="modal-footer">
                 <button type="button" id="btnCancelarCrono" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm font-medium">Cancelar</button>
                 <button type="button" id="btnGuardarCrono" class="btn-primary" disabled>
-                    <i class="fas fa-save"></i> Guardar cronograma
+                    <i class="fas fa-save"></i>  Guardar Asignación
                 </button>
             </div>
         </div>
@@ -379,7 +381,12 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
                         '<a href="' + reporteUrl + '" target="_blank" rel="noopener" class="inline-flex items-center px-2 py-1 rounded border border-red-300 text-red-700 hover:bg-red-50 text-xs ml-1" title="Reporte PDF"><i class="fas fa-file-pdf mr-1"></i>PDF</a></td>';
                     tbody.appendChild(tr);
                 });
-                $('#tablaCronograma').DataTable({ language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/es-ES.json' }, order: [[1, 'asc']] });
+                $('#tablaCronograma').DataTable({
+                    language: window.DATATABLES_LANG_ES || {},
+                    pageLength: 20,
+                    lengthMenu: [[20, 25, 50, 100], [20, 25, 50, 100]],
+                    order: [[1, 'asc']]
+                });
             }).catch(() => {});
         }
 
