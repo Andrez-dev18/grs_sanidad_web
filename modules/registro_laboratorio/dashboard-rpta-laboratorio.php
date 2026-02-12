@@ -599,6 +599,11 @@ $result = $conexion->query($query);
                                             Pendiente
                                         </span>
 
+                                        <span id="badgeNomMuestraCuali" class="inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide
+                                                bg-blue-100 text-blue-800 ring-2 ring-blue-300">
+                                            Sueros
+                                        </span>
+
                                         <!-- Switch -->
                                         <label class="relative inline-flex items-center cursor-pointer hidden">
                                             <input onchange="confirmarCambioCuali(this)" type="checkbox"
@@ -686,6 +691,12 @@ $result = $conexion->query($query);
                                         <span id="badgeStatusCuanti" class="inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide
                                                 bg-yellow-100 text-yellow-800 ring-2 ring-yellow-300">
                                             Pendiente
+                                        </span>
+
+                                        <!-- Badge estado -->
+                                        <span id="badgeNomMuestraCuanti" class="inline-block px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide
+                                                bg-blue-100 text-blue-800 ring-2 ring-blue-300">
+                                            Sueros
                                         </span>
 
                                         <!-- Switch -->

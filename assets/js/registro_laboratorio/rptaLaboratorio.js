@@ -48,9 +48,9 @@ function loadSidebar(page = 1) {
                     // resaltar visualmente
 
 
-                    cargarSolicitud(row.codEnvio, row.fecToma, row.codRef, row.estado_cuanti, row.nomMuestras, row.posSolicitud, row.analisis, row.analisisCodigos, row.analisisEnfermedades);
+                    cargarSolicitud(row.codEnvio, row.fecToma, row.codRef, row.estado_cuanti, row.nomMuestra, row.posSolicitud, row.analisis, row.analisisCodigos, row.analisisEnfermedades);
                     resaltarItemSidebar(row.codEnvio, row.posSolicitud);
-                    cargarCabecera(row.codEnvio, row.fecToma, row.posSolicitud, row.codRef, row.estado_cuanti, row.nomMuestras);
+                    cargarCabecera(row.codEnvio, row.fecToma, row.posSolicitud, row.codRef, row.estado_cuanti, row.nomMuestra);
                 };
 
                 btn.innerHTML = `
@@ -758,6 +758,11 @@ function cargarCabecera(codEnvio, fecToma, pos, codRef, estado_cuanti, nomMuestr
             document.getElementById('codRef_galpon').value = datosRef.galpon;
 
             document.getElementById('edadAves_display').value = datosRef.edad;
+
+            document.getElementById('badgeNomMuestraCuali').textContent = nomMuestras;
+            document.getElementById('badgeNomMuestraCuanti').textContent = nomMuestras;
+
+            console.log("AQUI EL NOMBRE DE MUESTRA!!!!"+nomMuestras)
 
             const edadField = document.getElementById('edadAves_display');
             if (edadField) edadField.value = datosRef.edad;
@@ -1973,13 +1978,15 @@ function cargarSolicitud(codigo, fecha, referencia, estado = 'pendiente', nomMue
 // 1. DECODIFICAR CÓDIGO REF
 // ============================================
 function decodificarCodRef(codRef) {
-    const refStr = String(codRef).padStart(10, '0');
+    // Usamos padEnd para que si faltan dígitos, se asuma que son los últimos (ej. Edad 00)
+    const refStr = String(codRef).padEnd(10, '0'); 
+
     return {
         granja: refStr.substring(0, 3),
         campana: refStr.substring(3, 6),
         galpon: refStr.substring(6, 8),
         edad: refStr.substring(8, 10),
-        codRefCompleto: parseInt(refStr, 10)
+        codRefCompleto: parseInt(refStr, 10) // Esto te dará el número completo (6660620000)
     };
 }
 
