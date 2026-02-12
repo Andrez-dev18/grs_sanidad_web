@@ -169,55 +169,41 @@ try {
     // ==================== GET RESULTADOS GUARDADOS ====================
     elseif ($action == 'get_resultados_guardados') {
         $codEnvio = $_GET['codEnvio'] ?? '';
-        $posSolicitud = $_GET['posSolicitud'] ?? ''; // 
+        $posSolicitud = $_GET['posSolicitud'] ?? ''; 
         $enfermedad = $_GET['enfermedad'] ?? '';
 
         if (empty($codEnvio) || empty($enfermedad)) {
             throw new Exception('Parámetros incompletos');
         }
 
-        /* CODIGO ANTERIOR (no filtraba por posSolicitud)
-    $q = "SELECT * FROM san_analisis_pollo_bb_adulto 
-          WHERE codigo_envio = ? AND enfermedad = ? 
-          LIMIT 1";
-    $stmt = $conexion->prepare($q);
-    $stmt->bind_param("ss", $codEnvio, $enfermedad);
-    */
-
-        // ✅ Filtrar por posSolicitud si se proporciona
+        // Consultar TODAS las filas que coincidan (quitamos LIMIT 1)
         if (!empty($posSolicitud)) {
             $q = "SELECT * FROM san_analisis_pollo_bb_adulto 
-              WHERE codigo_envio = ? AND posSolicitud = ? AND enfermedad = ? 
-              LIMIT 1";
+                  WHERE codigo_envio = ? AND posSolicitud = ? AND enfermedad = ? 
+                  ORDER BY id_analisis ASC"; // Ordenar por ID para mantener el orden 1, 2, 3...
 
             $stmt = $conexion->prepare($q);
-            if (!$stmt) {
-                throw new Exception('Error preparando consulta: ' . $conexion->error);
-            }
-
             $stmt->bind_param("sis", $codEnvio, $posSolicitud, $enfermedad);
         } else {
-            // Mantener compatibilidad si no se envía posSolicitud
             $q = "SELECT * FROM san_analisis_pollo_bb_adulto 
-              WHERE codigo_envio = ? AND enfermedad = ? 
-              LIMIT 1";
-
+                  WHERE codigo_envio = ? AND enfermedad = ? 
+                  ORDER BY id_analisis ASC";
             $stmt = $conexion->prepare($q);
-            if (!$stmt) {
-                throw new Exception('Error preparando consulta: ' . $conexion->error);
-            }
-
             $stmt->bind_param("ss", $codEnvio, $enfermedad);
         }
 
         $stmt->execute();
         $res = $stmt->get_result();
-        $datos = $res->fetch_assoc();
+        
+        $todosLosDatos = [];
+        while($row = $res->fetch_assoc()){
+            $todosLosDatos[] = $row;
+        }
 
         ob_end_clean();
         echo json_encode([
             'success' => true,
-            'datos' => $datos
+            'datos' => $todosLosDatos // Ahora devolvemos un array de objetos
         ]);
         exit;
     }
@@ -349,17 +335,25 @@ try {
         exit;
     }
 
-    // BLOQUE 1: CREATE (GUARDAR NUEVO)
-    elseif ($action == 'create') {
-        error_log("📥 [CREATE] Iniciando guardado...");
+   // =======================================================================
+    // BLOQUE UNIFICADO: GUARDAR / ACTUALIZAR (Lógica Blindada)
+    // =======================================================================
+    // Nota: Fusionamos la lógica crítica porque el JS a veces manda 'create' cuando debería ser 'update'.
+    // Esta lógica hace un "REPLACE" (Borrar previo -> Insertar nuevo) para evitar duplicados siempre.
+    
+    elseif ($action == 'create' || $action == 'update') {
+        $modo = strtoupper($action);
+        error_log("🚀 [$modo] Iniciando procesamiento robusto...");
+        
         mysqli_begin_transaction($conexion);
 
         try {
-            // --- 1. Recibir Datos Generales ---
+            // --- 1. Recibir Datos Generales y FORZAR TIPOS ---
+            $posSolicitud = isset($_POST['posSolicitud']) ? (int)$_POST['posSolicitud'] : 1;
+            
             $tipo = $_POST['tipo_ave'] ?? '';
-            $cod = $_POST['codigo_solicitud'] ?? '';
+            $cod = trim($_POST['codigo_solicitud'] ?? '');
             $fec = $_POST['fecha_toma'] ?? '';
-            $posSolicitud = $_POST['posSolicitud'] ?? 1;
 
             // Saneamiento edad
             $edad_raw = $_POST['edad_aves'] ?? '';
@@ -373,7 +367,7 @@ try {
 
             if (empty($cod)) throw new Exception('Código de solicitud requerido');
 
-            // Otros campos
+            // Otros campos generales
             $planta = $_POST['planta_incubacion'] ?? NULL;
             $lote = $_POST['lote'] ?? NULL;
             $granja = $_POST['codigo_granja'] ?? NULL;
@@ -391,439 +385,165 @@ try {
                 throw new Exception('No se encontraron enfermedades para guardar');
             }
 
-            // --- 2. Mapeo de Códigos ---
+            // --- 2. Limpiar Array de Enfermedades (Evitar duplicados del JS) ---
+            // array_unique es CRUCIAL aquí porque el JS te está mandando ['Coli', 'Coli', 'Otras', 'Otras']
+            $receivedNames = array_values(array_unique($_POST['enfermedades']));
+            
+            // --- 3. Mapeo de Códigos ---
             $nameToCode = [];
-            $receivedNames = $_POST['enfermedades'];
-            $stmtGetCode = $conexion->prepare("SELECT codigo FROM san_dim_analisis WHERE nombre = ? LIMIT 1");
-            foreach ($receivedNames as $nm) {
+            if (!empty($receivedNames)) {
+                $placeholders = implode(',', array_fill(0, count($receivedNames), '?'));
+                $types = str_repeat('s', count($receivedNames));
+                $stmtGetCode = $conexion->prepare("SELECT nombre, codigo FROM san_dim_analisis WHERE nombre IN ($placeholders)");
                 if ($stmtGetCode) {
-                    $stmtGetCode->bind_param('s', $nm);
+                    $stmtGetCode->bind_param($types, ...$receivedNames);
                     $stmtGetCode->execute();
                     $resCode = $stmtGetCode->get_result();
-                    if ($rowc = $resCode->fetch_assoc()) {
-                        $nameToCode[$nm] = $rowc['codigo'];
+                    while ($rowc = $resCode->fetch_assoc()) {
+                        $nameToCode[$rowc['nombre']] = $rowc['codigo'];
                     }
+                    $stmtGetCode->close();
                 }
             }
-            if ($stmtGetCode) $stmtGetCode->close();
 
-            $enfermedadesGuardadas = 0;
-            $enfermedadesRecibidas = array_unique($_POST['enfermedades']);
-            $enfermedadesProcesadas = [];
+            $enfermedadesProcesadas = 0;
 
-            // --- 3. Procesar Enfermedades ---
-            foreach ($enfermedadesRecibidas as $enf) {
+            // --- 4. Procesar Cada Enfermedad ---
+            foreach ($receivedNames as $enf) {
                 $enf = trim($enf);
-                if (empty($enf) || in_array($enf, $enfermedadesProcesadas)) continue;
+                if (empty($enf)) continue;
 
-                // Verificar duplicado
-                $stmtCheck = $conexion->prepare("SELECT id_analisis FROM san_analisis_pollo_bb_adulto WHERE codigo_envio = ? AND posSolicitud = ? AND enfermedad = ?");
-                $stmtCheck->bind_param("sis", $cod, $posSolicitud, $enf);
-                $stmtCheck->execute();
-                if ($stmtCheck->get_result()->num_rows > 0) {
-                    $stmtCheck->close();
-                    continue;
-                }
-                $stmtCheck->close();
+                // 🔴 CORRECCIÓN CLAVE: PHP convierte espacios y puntos en guiones bajos en $_POST keys.
+                // "Otras Afecciones" -> se convierte en clave "Otras_Afecciones_gmean_1"
+                $enfKey = str_replace([' ', '.'], '_', $enf); 
 
-                // Datos Estadísticos
-                $g = (isset($_POST[$enf . '_gmean']) && $_POST[$enf . '_gmean'] !== '') ? (float)$_POST[$enf . '_gmean'] : NULL;
-                $c = (isset($_POST[$enf . '_cv']) && $_POST[$enf . '_cv'] !== '') ? (float)$_POST[$enf . '_cv'] : NULL;
-                $s = (isset($_POST[$enf . '_sd']) && $_POST[$enf . '_sd'] !== '') ? (float)$_POST[$enf . '_sd'] : NULL;
-                $cnt = isset($_POST[$enf . '_count']) ? (int)$_POST[$enf . '_count'] : 20;
+                // --- 4.1 LIMPIEZA DE SEGURIDAD (DELETE BEFORE INSERT) ---
+                // Independientemente de si es create o update, borramos lo viejo para esa enfermedad
+                // para evitar duplicados si el usuario reenvía el formulario.
+                $qDel = "DELETE FROM san_analisis_pollo_bb_adulto WHERE codigo_envio = ? AND posSolicitud = ? AND TRIM(enfermedad) = TRIM(?)";
+                $stmtDel = $conexion->prepare($qDel);
+                $stmtDel->bind_param("sis", $cod, $posSolicitud, $enf);
+                $stmtDel->execute();
+                $stmtDel->close();
 
-                // CodRef
-                $codRefCompleto = !empty($_POST['codRef_completo']) ? $_POST['codRef_completo']
-                    : str_pad($granja ?? '', 3, '0', STR_PAD_LEFT) . str_pad($camp ?? '', 3, '0', STR_PAD_LEFT) . str_pad($galp ?? '', 2, '0', STR_PAD_LEFT) . str_pad($edad ?? '', 2, '0', STR_PAD_LEFT);
-
-                // Columnas Base
-                $baseCols = [
-                    'codigo_envio',
-                    'posSolicitud',
-                    'codRef',
-                    'fecha_toma_muestra',
-                    'edad_aves',
-                    'tipo_ave',
-                    'planta_incubacion',
-                    'lote',
-                    'codigo_granja',
-                    'codigo_campana',
-                    'numero_galpon',
-                    'edad_reproductora',
-                    'condicion',
-                    'estado',
-                    'numero_informe',
-                    'fecha_informe',
-                    'fecha_registro_lab',
-                    'usuario_registro',
-                    'fecha_solicitud',
-                    'enfermedad',
-                    'codigo_enfermedad',
-                    'gmean',
-                    'cv',
-                    'desviacion_estandar',
-                    'count_muestras'
-                ];
-
-                // --- 4. LÓGICA DE NIVELES (0-24) ---
-                $levelCols = [];
-                $levelValues = [];
-                for ($i = 0; $i <= 24; $i++) {
-                    $levelCols[] = 's0' . $i; // DB: s00..s024
-                    $postKey = $enf . '_s' . $i; // Frontend: ENF_s0..ENF_s24
-                    $val = (isset($_POST[$postKey]) && $_POST[$postKey] !== '') ? (float)$_POST[$postKey] : NULL;
-                    $levelValues[] = $val;
-                }
-
-                $allCols = array_merge($baseCols, $levelCols);
-                $codigo_enf = $nameToCode[$enf] ?? null;
-
-                $values = [
-                    $cod,
-                    $posSolicitud,
-                    $codRefCompleto,
-                    $fec,
-                    $edad,
-                    $tipo,
-                    $planta,
-                    $lote,
-                    $granja,
-                    $camp,
-                    $galp,
-                    $edRep,
-                    $cond,
-                    $est,
-                    $inf,
-                    $fecInf,
-                    $fechaRegistroLab,
-                    $user,
-                    null,
-                    $enf,
-                    $codigo_enf,
-                    $g,
-                    $c,
-                    $s,
-                    $cnt
-                ];
-                foreach ($levelValues as $lv) $values[] = $lv;
-
-                // Insertar (Filtrando columnas válidas)
-                $existingCols = [];
-                $resCols = $conexion->query("SHOW COLUMNS FROM san_analisis_pollo_bb_adulto");
-                while ($rc = $resCols->fetch_assoc()) $existingCols[] = $rc['Field'];
-
-                $filteredCols = [];
-                $filteredValues = [];
-                foreach ($allCols as $idx => $colName) {
-                    if (in_array($colName, $existingCols, true)) {
-                        $filteredCols[] = $colName;
-                        $filteredValues[] = array_key_exists($idx, $values) ? $values[$idx] : null;
+                // --- 4.2 DETECTAR MUESTRAS (Hisopados 1..N) ---
+                $indicesMuestras = [];
+                // Buscamos usando $enfKey (con guiones bajos)
+                foreach ($_POST as $key => $val) {
+                    if (strpos($key, $enfKey . '_gmean_') === 0) {
+                        $parts = explode('_', $key);
+                        $idx = end($parts);
+                        if (is_numeric($idx)) $indicesMuestras[] = (int)$idx;
                     }
                 }
 
-                $placeholders = array_fill(0, count($filteredCols), '?');
-                $sqlInsert = "INSERT INTO san_analisis_pollo_bb_adulto (" . implode(', ', $filteredCols) . ") VALUES (" . implode(', ', $placeholders) . ")";
-                $stmtInsert = $conexion->prepare($sqlInsert);
-                if (!$stmtInsert) throw new Exception('Error prepare INSERT: ' . $conexion->error);
-
-                $types = str_repeat('s', count($filteredValues));
-                $stmtInsert->bind_param($types, ...$filteredValues);
-
-                if (!$stmtInsert->execute()) throw new Exception('Error execute INSERT: ' . $stmtInsert->error);
-
-                $enfermedadesProcesadas[] = $enf;
-                $enfermedadesGuardadas++;
-            }
-
-            // --- 5. Archivos ---
-            $archivos_guardados = 0;
-            if (isset($_FILES['archivoPdf']) && !empty($_FILES['archivoPdf']['name'][0])) {
-                $uploadDir = '../../uploads/resultados/';
-                if (!file_exists($uploadDir)) mkdir($uploadDir, 0777, true);
-
-                $stmtArch = $conexion->prepare("INSERT INTO san_fact_resultado_archivo (codEnvio, posSolicitud, archRuta, tipo, fechaRegistro, usuarioRegistrador) VALUES (?, ?, ?, 'cuantitativo', NOW(), ?)");
-                $archivos = $_FILES['archivoPdf'];
-
-                for ($i = 0; $i < count($archivos['name']); $i++) {
-                    if ($archivos['error'][$i] === UPLOAD_ERR_OK) {
-                        $ext = pathinfo($archivos['name'][$i], PATHINFO_EXTENSION);
-                        $nombreFinal = $cod . '_' . $posSolicitud . '_' . pathinfo($archivos['name'][$i], PATHINFO_FILENAME) . '_' . time() . '.' . $ext;
-
-                        if (move_uploaded_file($archivos['tmp_name'][$i], $uploadDir . $nombreFinal)) {
-                            $rutaRel = 'uploads/resultados/' . $nombreFinal;
-                            $stmtArch->bind_param("siss", $cod, $posSolicitud, $rutaRel, $user);
-                            if ($stmtArch->execute()) $archivos_guardados++;
-                        }
-                    }
-                }
-            }
-
-            // Actualizar estado y cerrar
-            $stmtUpd = $conexion->prepare("UPDATE san_fact_solicitud_det SET estado_cuanti = ? WHERE codEnvio = ? AND posSolicitud = ?");
-            $estadoC = $_POST['estadoCuanti'] ?? 'completado';
-            $stmtUpd->bind_param("ssi", $estadoC, $cod, $posSolicitud);
-            $stmtUpd->execute();
-
-            insertarHistorial($conexion, $cod, $posSolicitud, 'registro_resultados_cuantitativos', 'cuantitativo', "Enf: " . implode(',', $enfermedadesRecibidas), $user);
-
-            mysqli_commit($conexion);
-            echo json_encode(['success' => true, 'message' => "Guardado OK ($enfermedadesGuardadas enf, $archivos_guardados arch)"]);
-            exit;
-        } catch (Exception $e) {
-            mysqli_rollback($conexion);
-            echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
-        }
-    }
-
-    // BLOQUE 2: UPDATE (ACTUALIZAR)
-    elseif ($action == 'update') {
-        error_log("🔄 [UPDATE] Iniciando actualización...");
-        mysqli_begin_transaction($conexion);
-
-        try {
-            // --- 1. Recibir Datos Generales ---
-            $tipo = $_POST['tipo_ave'] ?? '';
-            $cod = $_POST['codigo_solicitud'] ?? '';
-            $fec = $_POST['fecha_toma'] ?? '';
-            $posSolicitud = $_POST['posSolicitud'] ?? 1;
-
-            // Saneamiento edad
-            $edad_raw = $_POST['edad_aves'] ?? '';
-            $edad = 0;
-            if ($edad_raw !== '') {
-                $digits = preg_replace('/\D/', '', (string)$edad_raw);
-                if ($digits !== '') {
-                    $edad = (strlen($digits) > 3) ? (int)substr($digits, -2) : (int)$digits;
-                }
-            }
-
-            if (empty($cod)) throw new Exception('Código de solicitud requerido');
-
-            // Otros campos
-            $planta = $_POST['planta_incubacion'] ?? NULL;
-            $lote = $_POST['lote'] ?? NULL;
-            $granja = $_POST['codigo_granja'] ?? NULL;
-            $camp = $_POST['codigo_campana'] ?? NULL;
-            $galp = preg_replace('/\D/', '', $_POST['numero_galpon'] ?? '') ?: null;
-            $edRep = preg_replace('/\D/', '', $_POST['edad_reproductora'] ?? '') ?: null;
-            $cond = $_POST['condicion'] ?? '';
-            $est = $_POST['estado'] ?? 'ANALIZADO';
-            $inf = $_POST['numero_informe'] ?? '';
-            $fecInf = $_POST['fecha_informe'] ?? NULL;
-            $fechaRegistroLab = !empty($_POST['fecha_registro_lab']) ? $_POST['fecha_registro_lab'] : NULL;
-            $user = $_SESSION['usuario'] ?? 'SISTEMA';
-
-            if (!isset($_POST['enfermedades']) || !is_array($_POST['enfermedades'])) {
-                throw new Exception('No se encontraron enfermedades para actualizar');
-            }
-
-            // --- 2. Mapeo de Códigos ---
-            $nameToCode = [];
-            $receivedNames = $_POST['enfermedades'];
-            $stmtGetCode = $conexion->prepare("SELECT codigo FROM san_dim_analisis WHERE nombre = ? LIMIT 1");
-            foreach ($receivedNames as $nm) {
-                if ($stmtGetCode) {
-                    $stmtGetCode->bind_param('s', $nm);
-                    $stmtGetCode->execute();
-                    $resCode = $stmtGetCode->get_result();
-                    if ($rowc = $resCode->fetch_assoc()) {
-                        $nameToCode[$nm] = $rowc['codigo'];
-                    }
-                }
-            }
-            if ($stmtGetCode) $stmtGetCode->close();
-
-            $enfermedadesActualizadas = 0;
-            $enfermedadesRecibidas = array_unique($_POST['enfermedades']);
-            $enfermedadesProcesadas = [];
-
-            // --- 3. Procesar Enfermedades ---
-            foreach ($enfermedadesRecibidas as $enf) {
-                $enf = trim($enf);
-                if (empty($enf) || in_array($enf, $enfermedadesProcesadas)) continue;
-
-                // Datos Estadísticos
-                $g = (isset($_POST[$enf . '_gmean']) && $_POST[$enf . '_gmean'] !== '') ? (float)$_POST[$enf . '_gmean'] : NULL;
-                $c = (isset($_POST[$enf . '_cv']) && $_POST[$enf . '_cv'] !== '') ? (float)$_POST[$enf . '_cv'] : NULL;
-                $s = (isset($_POST[$enf . '_sd']) && $_POST[$enf . '_sd'] !== '') ? (float)$_POST[$enf . '_sd'] : NULL;
-                $cnt = isset($_POST[$enf . '_count']) ? (int)$_POST[$enf . '_count'] : 20;
-
-                // CodRef
-                $codRefCompleto = !empty($_POST['codRef_completo']) ? $_POST['codRef_completo']
-                    : str_pad($granja ?? '', 3, '0', STR_PAD_LEFT) . str_pad($camp ?? '', 3, '0', STR_PAD_LEFT) . str_pad($galp ?? '', 2, '0', STR_PAD_LEFT) . str_pad($edad ?? '', 2, '0', STR_PAD_LEFT);
-
-                // Columnas Base
-                $baseCols = [
-                    'codigo_envio',
-                    'posSolicitud',
-                    'codRef',
-                    'fecha_toma_muestra',
-                    'edad_aves',
-                    'tipo_ave',
-                    'planta_incubacion',
-                    'lote',
-                    'codigo_granja',
-                    'codigo_campana',
-                    'numero_galpon',
-                    'edad_reproductora',
-                    'condicion',
-                    'estado',
-                    'numero_informe',
-                    'fecha_informe',
-                    'fecha_registro_lab',
-                    'usuario_registro',
-                    'fecha_solicitud',
-                    'enfermedad',
-                    'codigo_enfermedad',
-                    'gmean',
-                    'cv',
-                    'desviacion_estandar',
-                    'count_muestras'
-                ];
-
-                // --- 4. LÓGICA DE NIVELES (0-24) ---
-                $levelCols = [];
-                $levelValues = [];
-                for ($i = 0; $i <= 24; $i++) {
-                    $levelCols[] = 's0' . $i; // DB: s00..s024
-                    $postKey = $enf . '_s' . $i; // Frontend: ENF_s0..ENF_s24
-                    $val = (isset($_POST[$postKey]) && $_POST[$postKey] !== '') ? (float)$_POST[$postKey] : NULL;
-                    $levelValues[] = $val;
-                }
-
-                $allCols = array_merge($baseCols, $levelCols);
-                $codigo_enf = $nameToCode[$enf] ?? null;
-
-                $values = [
-                    $cod,
-                    $posSolicitud,
-                    $codRefCompleto,
-                    $fec,
-                    $edad,
-                    $tipo,
-                    $planta,
-                    $lote,
-                    $granja,
-                    $camp,
-                    $galp,
-                    $edRep,
-                    $cond,
-                    $est,
-                    $inf,
-                    $fecInf,
-                    $fechaRegistroLab,
-                    $user,
-                    null,
-                    $enf,
-                    $codigo_enf,
-                    $g,
-                    $c,
-                    $s,
-                    $cnt
-                ];
-                foreach ($levelValues as $lv) $values[] = $lv;
-
-                // Filtrar columnas válidas
-                $existingCols = [];
-                $resCols = $conexion->query("SHOW COLUMNS FROM san_analisis_pollo_bb_adulto");
-                while ($rc = $resCols->fetch_assoc()) $existingCols[] = $rc['Field'];
-
-                $filteredCols = [];
-                $filteredValues = [];
-                foreach ($allCols as $idx => $colName) {
-                    if (in_array($colName, $existingCols, true)) {
-                        $filteredCols[] = $colName;
-                        $filteredValues[] = array_key_exists($idx, $values) ? $values[$idx] : null;
-                    }
-                }
-
-                // Verificar si existe para UPDATE o INSERT
-                $stmtCheck = $conexion->prepare("SELECT codigo_envio FROM san_analisis_pollo_bb_adulto WHERE codigo_envio = ? AND posSolicitud = ? AND enfermedad = ? LIMIT 1");
-                $stmtCheck->bind_param("sis", $cod, $posSolicitud, $enf);
-                $stmtCheck->execute();
-                $resCheck = $stmtCheck->get_result();
-
-                if ($resCheck->num_rows > 0) {
-                    // --- UPDATE ---
-                    $updateParts = [];
-                    foreach ($filteredCols as $colName) {
-                        if (!in_array($colName, ['codigo_envio', 'enfermedad', 'posSolicitud'])) {
-                            $updateParts[] = "$colName = ?";
-                        }
-                    }
-                    $sqlUpdate = "UPDATE san_analisis_pollo_bb_adulto SET " . implode(', ', $updateParts) . " WHERE codigo_envio = ? AND posSolicitud = ? AND enfermedad = ?";
-                    $stmtUpdate = $conexion->prepare($sqlUpdate);
-
-                    $updateValues = [];
-                    foreach ($filteredCols as $idx => $colName) {
-                        if (!in_array($colName, ['codigo_envio', 'enfermedad', 'posSolicitud'])) {
-                            $updateValues[] = $filteredValues[$idx];
-                        }
-                    }
-                    $updateValues[] = $cod;
-                    $updateValues[] = $posSolicitud;
-                    $updateValues[] = $enf;
-
-                    $types = str_repeat('s', count($updateValues));
-                    $stmtUpdate->bind_param($types, ...$updateValues);
-                    $stmtUpdate->execute();
+                if (empty($indicesMuestras)) {
+                    $indicesMuestras = ['']; 
                 } else {
-                    // --- INSERT (Para nuevas enfermedades en update) ---
-                    $placeholders = array_fill(0, count($filteredCols), '?');
-                    $sqlInsert = "INSERT INTO san_analisis_pollo_bb_adulto (" . implode(', ', $filteredCols) . ") VALUES (" . implode(', ', $placeholders) . ")";
-                    $stmtInsert = $conexion->prepare($sqlInsert);
-
-                    $types = str_repeat('s', count($filteredValues));
-                    $stmtInsert->bind_param($types, ...$filteredValues);
-                    $stmtInsert->execute();
+                    sort($indicesMuestras);
+                    $indicesMuestras = array_unique($indicesMuestras); // Doble seguridad
                 }
 
-                $enfermedadesProcesadas[] = $enf;
-                $enfermedadesActualizadas++;
+                // --- 4.3 INSERTAR ---
+                foreach ($indicesMuestras as $sufijoRaw) {
+                    $sufijo = ($sufijoRaw !== '') ? '_' . $sufijoRaw : '';
+                    
+                    // Función helper para sacar datos del POST de forma segura usando la clave corregida
+                    $getVal = function($suffix2) use ($enfKey, $sufijo) {
+                        $k = $enfKey . $suffix2 . $sufijo; // Ej: Otras_Afecciones_dato_1
+                        return (isset($_POST[$k]) && $_POST[$k] !== '') ? $_POST[$k] : NULL;
+                    };
+
+                    $dato = $getVal('_dato') !== NULL ? (float)$getVal('_dato') : NULL;
+                    $g    = $getVal('_gmean') !== NULL ? (float)$getVal('_gmean') : NULL;
+                    $c    = $getVal('_cv') !== NULL ? (float)$getVal('_cv') : NULL;
+                    $s    = $getVal('_sd') !== NULL ? (float)$getVal('_sd') : NULL;
+                    $cnt  = $getVal('_count') !== NULL ? (int)$getVal('_count') : 20;
+                    $obs  = $getVal('_obs'); // Texto, no float
+
+                    $codRefCompleto = !empty($_POST['codRef_completo']) ? $_POST['codRef_completo']
+                        : str_pad($granja ?? '', 3, '0', STR_PAD_LEFT) . str_pad($camp ?? '', 3, '0', STR_PAD_LEFT) . str_pad($galp ?? '', 2, '0', STR_PAD_LEFT) . str_pad($edad ?? '', 2, '0', STR_PAD_LEFT);
+
+                    // Niveles
+                    $levelValues = [];
+                    for ($i = 0; $i <= 24; $i++) {
+                        $val = $getVal('_s' . $i);
+                        $levelValues[] = ($val !== NULL) ? (float)$val : NULL;
+                    }
+
+                    $codigo_enf = $nameToCode[$enf] ?? null;
+
+                    // QUERY
+                    $cols = ['codigo_envio', 'posSolicitud', 'codRef', 'fecha_toma_muestra', 'edad_aves', 'tipo_ave', 
+                             'planta_incubacion', 'lote', 'codigo_granja', 'codigo_campana', 'numero_galpon', 'edad_reproductora', 
+                             'condicion', 'estado', 'numero_informe', 'fecha_informe', 'fecha_registro_lab', 'usuario_registro', 
+                             'enfermedad', 'codigo_enfermedad', 'dato', 'gmean', 'cv', 'desviacion_estandar', 'count_muestras', 'obs'];
+                    
+                    for ($i=0; $i<=24; $i++) $cols[] = "s0$i";
+
+                    $vals = [$cod, $posSolicitud, $codRefCompleto, $fec, $edad, $tipo, 
+                             $planta, $lote, $granja, $camp, $galp, $edRep, 
+                             $cond, $est, $inf, $fecInf, $fechaRegistroLab, $user, 
+                             $enf, $codigo_enf, $dato, $g, $c, $s, $cnt, $obs];
+                    
+                    $vals = array_merge($vals, $levelValues);
+
+                    $placeholders = implode(',', array_fill(0, count($cols), '?'));
+                    $colNames = implode(',', $cols);
+                    $types = str_repeat('s', count($vals));
+
+                    $stmtInsert = $conexion->prepare("INSERT INTO san_analisis_pollo_bb_adulto ($colNames) VALUES ($placeholders)");
+                    if(!$stmtInsert) throw new Exception("Error prepare INSERT: " . $conexion->error);
+                    
+                    $stmtInsert->bind_param($types, ...$vals);
+                    if (!$stmtInsert->execute()) throw new Exception("Error execute: " . $stmtInsert->error);
+                }
+                $enfermedadesProcesadas++;
             }
 
-            // --- 5. Archivos ---
-            $archivos_guardados = 0;
+            // --- 5. Archivos (Sin cambios, pero incluido para integridad) ---
+             $archivos_guardados = 0;
             if (isset($_FILES['archivoPdf']) && !empty($_FILES['archivoPdf']['name'][0])) {
                 $uploadDir = '../../uploads/resultados/';
                 if (!file_exists($uploadDir)) mkdir($uploadDir, 0777, true);
-
                 $stmtArch = $conexion->prepare("INSERT INTO san_fact_resultado_archivo (codEnvio, posSolicitud, archRuta, tipo, fechaRegistro, usuarioRegistrador) VALUES (?, ?, ?, 'cuantitativo', NOW(), ?)");
                 $archivos = $_FILES['archivoPdf'];
-
                 for ($i = 0; $i < count($archivos['name']); $i++) {
                     if ($archivos['error'][$i] === UPLOAD_ERR_OK) {
                         $nombreOriginal = basename($archivos['name'][$i]);
-                        // Check duplicate
-                        $patron = 'uploads/resultados/' . $cod . '_' . $posSolicitud . '_' . pathinfo($nombreOriginal, PATHINFO_FILENAME) . '%';
+                        // Check duplicado simple
                         $chk = $conexion->prepare("SELECT id FROM san_fact_resultado_archivo WHERE codEnvio = ? AND posSolicitud = ? AND archRuta LIKE ?");
-                        $chk->bind_param("sis", $cod, $posSolicitud, $patron);
+                        $pat = "%".$nombreOriginal;
+                        $chk->bind_param("sis", $cod, $posSolicitud, $pat);
                         $chk->execute();
-                        if ($chk->get_result()->num_rows > 0) continue;
-
-                        $ext = pathinfo($nombreOriginal, PATHINFO_EXTENSION);
-                        $nombreFinal = $cod . '_' . $posSolicitud . '_' . pathinfo($nombreOriginal, PATHINFO_FILENAME) . '_' . time() . '.' . $ext;
-
-                        if (move_uploaded_file($archivos['tmp_name'][$i], $uploadDir . $nombreFinal)) {
-                            $rutaRel = 'uploads/resultados/' . $nombreFinal;
-                            $stmtArch->bind_param("siss", $cod, $posSolicitud, $rutaRel, $user);
-                            if ($stmtArch->execute()) $archivos_guardados++;
+                        if($chk->get_result()->num_rows == 0) {
+                             $ext = pathinfo($nombreOriginal, PATHINFO_EXTENSION);
+                             $nombreFinal = $cod . '_' . $posSolicitud . '_' . pathinfo($nombreOriginal, PATHINFO_FILENAME) . '_' . time() . '.' . $ext;
+                             if (move_uploaded_file($archivos['tmp_name'][$i], $uploadDir . $nombreFinal)) {
+                                 $rutaRel = 'uploads/resultados/' . $nombreFinal;
+                                 $stmtArch->bind_param("siss", $cod, $posSolicitud, $rutaRel, $user);
+                                 if ($stmtArch->execute()) $archivos_guardados++;
+                             }
                         }
+                        $chk->close();
                     }
                 }
             }
 
-            // Actualizar estado y cerrar
+            // Actualizar estado general DET
             $stmtUpd = $conexion->prepare("UPDATE san_fact_solicitud_det SET estado_cuanti = ? WHERE codEnvio = ? AND posSolicitud = ?");
             $estadoC = $_POST['estadoCuanti'] ?? 'completado';
             $stmtUpd->bind_param("ssi", $estadoC, $cod, $posSolicitud);
             $stmtUpd->execute();
 
-            insertarHistorial($conexion, $cod, $posSolicitud, 'actualizacion_resultados_cuantitativos', 'cuantitativo', "Act: " . implode(',', $enfermedadesRecibidas), $user);
+            // Historial
+            $tipoHistorial = ($action == 'create') ? 'registro_resultados_cuantitativos' : 'actualizacion_resultados_cuantitativos';
+            insertarHistorial($conexion, $cod, $posSolicitud, $tipoHistorial, 'cuantitativo', "Enf procesadas: $enfermedadesProcesadas", $user);
 
             mysqli_commit($conexion);
-            echo json_encode(['success' => true, 'message' => "Actualización OK ($enfermedadesActualizadas enf, $archivos_guardados arch)"]);
+            echo json_encode(['success' => true, 'message' => "Proceso Exitoso ($enfermedadesProcesadas enf)"]);
             exit;
+
         } catch (Exception $e) {
             mysqli_rollback($conexion);
             echo json_encode(['success' => false, 'message' => 'Error: ' . $e->getMessage()]);
