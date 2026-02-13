@@ -521,6 +521,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                             '<td class="px-4 py-3 text-center"><button type="button" class="btn-detalles-programa px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium inline-flex items-center gap-2" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '" title="Ver"><i class="fas fa-eye"></i> Ver</button></td>' +
                             '<td class="px-4 py-3 text-center"><div class="flex items-center justify-center gap-3">' +
                             '<a class="text-red-600 hover:text-red-800" title="Ver reporte PDF" href="' + reporteUrl + '" target="_blank" rel="noopener"><i class="fa-solid fa-file-pdf"></i></a>' +
+                            '<button type="button" class="btn-copiar-programa text-emerald-600 hover:text-emerald-800" title="Copiar" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"><i class="fa-solid fa-copy"></i></button>' +
                             '<button type="button" class="btn-editar-programa text-indigo-600 hover:text-indigo-800" title="Editar" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"><i class="fa-solid fa-edit"></i></button>' +
                             '<button type="button" class="btn-eliminar-programa text-rose-600 hover:text-rose-800" title="Eliminar" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"><i class="fa-solid fa-trash"></i></button>' +
                             '</div></td>';
@@ -531,6 +532,9 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     });
                     tbody.querySelectorAll('.btn-editar-programa').forEach(function(btn) {
                         btn.addEventListener('click', function() { editarPrograma(this.getAttribute('data-codigo')); });
+                    });
+                    tbody.querySelectorAll('.btn-copiar-programa').forEach(function(btn) {
+                        btn.addEventListener('click', function() { copiarPrograma(this.getAttribute('data-codigo')); });
                     });
                     tbody.querySelectorAll('.btn-eliminar-programa').forEach(function(btn) {
                         btn.addEventListener('click', function() { eliminarPrograma(this.getAttribute('data-codigo')); });
@@ -687,6 +691,73 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 if (iframe) iframe.src = 'dashboard-programas-registro.php?codigo=' + encodeURIComponent(codigo) + '&editar=1';
                 if (modal) modal.classList.remove('hidden');
             });
+        }
+
+        function copiarPrograma(codigo) {
+            if (!codigo) return;
+            var confirmar = function() {
+                return fetch('get_programa_cab_detalle.php?codigo=' + encodeURIComponent(codigo), { cache: 'no-store' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(res) {
+                        if (!res.success || !res.cab) throw new Error(res.message || 'No se pudo obtener el programa.');
+                        var cab = res.cab || {};
+                        var detalles = Array.isArray(res.detalles) ? res.detalles : [];
+                        var codTipo = parseInt(cab.codTipo, 10) || 0;
+                        var sigla = (res.sigla || '').toString().trim();
+                        var urlCodigo = codTipo > 0
+                            ? ('generar_codigo_nec.php?codTipo=' + encodeURIComponent(codTipo))
+                            : ('generar_codigo_nec.php?sigla=' + encodeURIComponent(sigla));
+                        return fetch(urlCodigo, { cache: 'no-store' })
+                            .then(function(r2) { return r2.json(); })
+                            .then(function(resCod) {
+                                if (!resCod.success || !resCod.codigo) throw new Error(resCod.message || 'No se pudo generar código.');
+                                var payload = {
+                                    codigo: resCod.codigo,
+                                    nombre: cab.nombre || '',
+                                    codTipo: parseInt(cab.codTipo, 10) || 0,
+                                    nomTipo: cab.nomTipo || '',
+                                    despliegue: cab.despliegue || '',
+                                    descripcion: cab.descripcion || '',
+                                    detalles: detalles
+                                };
+                                return fetch('guardar_programa.php', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(payload)
+                                }).then(function(r3) { return r3.json(); })
+                                  .then(function(resSave) {
+                                      if (!resSave.success) throw new Error(resSave.message || 'No se pudo copiar el programa.');
+                                      return resCod.codigo;
+                                  });
+                            });
+                    });
+            };
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'question',
+                    title: 'Copiar programa',
+                    text: 'Se creará una copia del programa con un nuevo código. ¿Continuar?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, copiar',
+                    cancelButtonText: 'Cancelar'
+                }).then(function(result) {
+                    if (!result.isConfirmed) return;
+                    confirmar()
+                        .then(function(nuevoCodigo) {
+                            Swal.fire({ icon: 'success', title: 'Copiado', text: 'Programa copiado como ' + nuevoCodigo + '.' });
+                            cargarListado();
+                        })
+                        .catch(function(err) {
+                            Swal.fire({ icon: 'error', title: 'Error', text: (err && err.message) ? err.message : 'No se pudo copiar el programa.' });
+                        });
+                });
+            } else {
+                if (!confirm('Se creará una copia del programa con un nuevo código. ¿Continuar?')) return;
+                confirmar()
+                    .then(function() { cargarListado(); })
+                    .catch(function(err) { alert((err && err.message) ? err.message : 'No se pudo copiar el programa.'); });
+            }
         }
 
         function cerrarModalEditarPrograma() {
@@ -930,6 +1001,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     '<div class="card-acciones">' +
                     '<button type="button" class="btn-detalles-programa cursor-pointer text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-2 transition" data-codigo="' + codEsc + '" title="Ver"><i class="fas fa-eye"></i> Ver</button>' +
                     '<a class="text-red-600 hover:text-red-800" title="PDF" target="_blank" rel="noopener" href="' + reporteUrl + '"><i class="fa-solid fa-file-pdf"></i></a>' +
+                    '<button type="button" class="btn-copiar-programa text-emerald-600 hover:text-emerald-800" title="Copiar" data-codigo="' + codEsc + '"><i class="fa-solid fa-copy"></i></button>' +
                     '<button type="button" class="btn-editar-programa text-indigo-600 hover:text-indigo-800" title="Editar" data-codigo="' + codEsc + '"><i class="fa-solid fa-edit"></i></button>' +
                     '<button type="button" class="btn-eliminar-programa text-rose-600 hover:text-rose-800" title="Eliminar" data-codigo="' + codEsc + '"><i class="fa-solid fa-trash"></i></button>' +
                     '</div></div>';
@@ -940,6 +1012,9 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             });
             cont.querySelectorAll('.btn-editar-programa').forEach(function(btn) {
                 btn.addEventListener('click', function() { editarPrograma(this.getAttribute('data-codigo')); });
+            });
+            cont.querySelectorAll('.btn-copiar-programa').forEach(function(btn) {
+                btn.addEventListener('click', function() { copiarPrograma(this.getAttribute('data-codigo')); });
             });
             cont.querySelectorAll('.btn-eliminar-programa').forEach(function(btn) {
                 btn.addEventListener('click', function() { eliminarPrograma(this.getAttribute('data-codigo')); });

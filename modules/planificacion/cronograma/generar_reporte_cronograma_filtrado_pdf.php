@@ -47,6 +47,12 @@ $chk3 = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'posDetalle'")
 $tienePosDetalle = $chk3 && $chk3->num_rows > 0;
 $chkFhr = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'fechaHoraRegistro'");
 $tieneFechaHoraRegistro = $chkFhr && $chkFhr->num_rows > 0;
+$chkZona = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'zona'");
+$tieneZona = $chkZona && $chkZona->num_rows > 0;
+$chkSubzona = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'subzona'");
+$tieneSubzona = $chkSubzona && $chkSubzona->num_rows > 0;
+$chkNumCrono = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'numCronograma'");
+$tieneNumCronograma = $chkNumCrono && $chkNumCrono->num_rows > 0;
 
 $joinTipo = '';
 $whereTipo = '';
@@ -64,6 +70,9 @@ $sql = "SELECT c.codPrograma, c.nomPrograma, c.granja, c.campania, c.galpon, c.f
 if ($tieneNomGranja) $sql .= ", c.nomGranja";
 if ($tieneEdad) $sql .= ", c.edad";
 if ($tienePosDetalle) $sql .= ", c.posDetalle";
+if ($tieneZona) $sql .= ", c.zona";
+if ($tieneSubzona) $sql .= ", c.subzona";
+if ($tieneNumCronograma) $sql .= ", c.numCronograma";
 $sql .= " FROM san_fact_cronograma c";
 $sql .= $joinTipo;
 $sql .= " WHERE " . ($whereTipo ?: " 1=1 ");
@@ -76,7 +85,7 @@ if ($rango !== null && isset($rango['desde'], $rango['hasta'])) {
     $types .= 'ss';
 }
 
-$sql .= " ORDER BY c.codPrograma, c.granja, c.campania, c.galpon, c.fechaEjecucion ASC";
+$sql .= " ORDER BY " . ($tieneNumCronograma ? "c.numCronograma ASC, " : "") . "c.codPrograma, c.granja, c.campania, c.galpon, c.fechaEjecucion ASC";
 
 $filas = [];
 if (count($params) > 0) {
@@ -97,6 +106,9 @@ if (count($params) > 0) {
                 'posDetalle' => $tienePosDetalle ? ($row['posDetalle'] ?? '') : '',
                 'fechaCarga' => $row['fechaCarga'] ?? '',
                 'fechaEjecucion' => $row['fechaEjecucion'] ?? '',
+                'zona' => $tieneZona ? ($row['zona'] ?? '') : '',
+                'subzona' => $tieneSubzona ? ($row['subzona'] ?? '') : '',
+                'numCronograma' => $tieneNumCronograma ? (int)($row['numCronograma'] ?? 0) : 0,
             ];
         }
         $stmt->close();
@@ -116,6 +128,9 @@ if (count($params) > 0) {
                 'posDetalle' => $tienePosDetalle ? ($row['posDetalle'] ?? '') : '',
                 'fechaCarga' => $row['fechaCarga'] ?? '',
                 'fechaEjecucion' => $row['fechaEjecucion'] ?? '',
+                'zona' => $tieneZona ? ($row['zona'] ?? '') : '',
+                'subzona' => $tieneSubzona ? ($row['subzona'] ?? '') : '',
+                'numCronograma' => $tieneNumCronograma ? (int)($row['numCronograma'] ?? 0) : 0,
             ];
         }
     }
@@ -172,33 +187,77 @@ if (!empty($logo)) {
 $html .= '<td style="width: 60%; text-align: center; padding: 8px 10px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px; border: 1px solid #cbd5e1;">' . htmlspecialchars($tituloReporte) . '</td>';
 $html .= '<td style="width: 20%; background-color: #fff; border: 1px solid #cbd5e1;"></td></tr></table>';
 
-// Anchos: N°, Cód, Granja, Nom.Granja, Campaña, Galpón, Fec.Carga, Fec.Ejec, Edad (más estrecha)
-$colWidths = [5, 13, 11, 14, 11, 11, 14, 14, 7];
-$html .= '<table class="data-table"><colgroup>';
-foreach ($colWidths as $w) $html .= '<col style="width:' . $w . '%"/>';
-$html .= '</colgroup><thead><tr><th>N°</th><th>Cód. Programa</th><th>Granja</th><th>Nom. Granja</th><th>Campaña</th><th>Galpón</th><th>Fec. Carga</th><th>Fec. Ejecución</th><th>Edad</th></tr></thead><tbody>';
-if (empty($filas)) {
-    $html .= '<tr><td colspan="9" style="text-align:center;color:#64748b;">Sin registros con los filtros aplicados.</td></tr>';
+// Agrupar por numCronograma para títulos (si existe la columna)
+$grupos = [];
+if ($tieneNumCronograma && !empty($filas)) {
+    foreach ($filas as $f) {
+        $numC = (int)($f['numCronograma'] ?? 0);
+        if (!isset($grupos[$numC])) $grupos[$numC] = [];
+        $grupos[$numC][] = $f;
+    }
 } else {
-    $totalFilas = count($filas);
-    foreach ($filas as $i => $f) {
-        $edad = ($f['edad'] !== '' && $f['edad'] !== null) ? $f['edad'] : '—';
-        $esUltimaFilaPrograma = ($i === $totalFilas - 1) || (isset($filas[$i + 1]) && ($filas[$i + 1]['codPrograma'] ?? '') !== ($f['codPrograma'] ?? ''));
-        $claseTr = $esUltimaFilaPrograma ? ' class="borde-grueso-codprograma"' : '';
-        $html .= '<tr' . $claseTr . '>';
-        $html .= '<td>' . ($i + 1) . '</td>';
-        $html .= '<td>' . htmlspecialchars($f['codPrograma']) . '</td>';
-        $html .= '<td>' . htmlspecialchars($f['granja']) . '</td>';
-        $html .= '<td>' . htmlspecialchars($f['nomGranja']) . '</td>';
-        $html .= '<td>' . htmlspecialchars($f['campania']) . '</td>';
-        $html .= '<td>' . htmlspecialchars($f['galpon']) . '</td>';
-        $html .= '<td>' . htmlspecialchars(fechaDDMMYYYY($f['fechaCarga'])) . '</td>';
-        $html .= '<td>' . htmlspecialchars(fechaDDMMYYYY($f['fechaEjecucion'])) . '</td>';
-        $html .= '<td>' . htmlspecialchars($edad) . '</td>';
-        $html .= '</tr>';
+    $grupos[0] = $filas;
+}
+
+// Anchos en orden: N°, Cód., Nombre Programa, Zona?, Subzona?, Granja, Nom.Granja, Campaña, Galpón, Fec.Carga, Fec.Ejec, Edad
+$colWidths = [4, 8, 12, 8, 8, 8, 12, 9, 8, 11, 11, 2];
+$colWidthsOrdered = [ $colWidths[0], $colWidths[1], $colWidths[2] ];
+if ($tieneZona) $colWidthsOrdered[] = $colWidths[3];
+if ($tieneSubzona) $colWidthsOrdered[] = $colWidths[4];
+$colWidthsOrdered = array_merge($colWidthsOrdered, array_slice($colWidths, 5));
+$numCols = count($colWidthsOrdered);
+$anchoUniformePct = $numCols > 0 ? round(100 / $numCols, 4) : 0;
+$cellWidthStyle = 'width:' . $anchoUniformePct . '%;min-width:' . $anchoUniformePct . '%;max-width:' . $anchoUniformePct . '%;';
+
+$html .= '<style>.crono-titulo-seccion{display:block;margin-top:16px;margin-bottom:8px;padding:0;font-weight:bold;font-size:11pt;color:#1e293b;}.crono-titulo-seccion:first-of-type{margin-top:0;}</style>';
+
+if (empty($filas)) {
+    $html .= '<table class="data-table"><tbody><tr><td colspan="' . $numCols . '" style="text-align:center;color:#64748b;">Sin registros con los filtros aplicados.</td></tr></tbody></table>';
+} else {
+    $numCronogramaCorrelativo = 0;
+    foreach ($grupos as $numCronograma => $filasGrupo) {
+        $numCronogramaCorrelativo++;
+        $nPorTabla = 0;
+        $primera = $filasGrupo[0] ?? null;
+        $programaTexto = trim(($primera['codPrograma'] ?? '') . ' ' . ($primera['nomPrograma'] ?? ''));
+        $tituloCrono = 'Cronograma ' . $numCronogramaCorrelativo . ' — Programa: ' . htmlspecialchars($programaTexto ?: '—');
+        $html .= '<div class="crono-titulo-seccion">' . $tituloCrono . '</div>';
+        $html .= '<table class="data-table" style="width:100%;table-layout:fixed;"><thead><tr>';
+        $html .= '<th style="' . $cellWidthStyle . '">N°</th>';
+        $html .= '<th style="' . $cellWidthStyle . '">Cód. Programa</th>';
+        $html .= '<th style="' . $cellWidthStyle . '">Nombre Programa</th>';
+        if ($tieneZona) $html .= '<th style="' . $cellWidthStyle . '">Zona</th>';
+        if ($tieneSubzona) $html .= '<th style="' . $cellWidthStyle . '">Subzona</th>';
+        $html .= '<th style="' . $cellWidthStyle . '">Granja</th>';
+        $html .= '<th style="' . $cellWidthStyle . '">Nom. Granja</th>';
+        $html .= '<th style="' . $cellWidthStyle . '">Campaña</th>';
+        $html .= '<th style="' . $cellWidthStyle . '">Galpón</th>';
+        $html .= '<th style="' . $cellWidthStyle . '">Fec. Carga</th>';
+        $html .= '<th style="' . $cellWidthStyle . '">Fec. Ejecución</th>';
+        $html .= '<th style="' . $cellWidthStyle . '">Edad</th>';
+        $html .= '</tr></thead><tbody>';
+        foreach ($filasGrupo as $i => $f) {
+            $nPorTabla++;
+            $edad = ($f['edad'] !== '' && $f['edad'] !== null) ? $f['edad'] : '—';
+            $html .= '<tr>';
+            $html .= '<td style="' . $cellWidthStyle . '">' . $nPorTabla . '</td>';
+            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['codPrograma']) . '</td>';
+            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['nomPrograma']) . '</td>';
+            if ($tieneZona) $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['zona'] ?? '') . '</td>';
+            if ($tieneSubzona) $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['subzona'] ?? '') . '</td>';
+            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['granja']) . '</td>';
+            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['nomGranja']) . '</td>';
+            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['campania']) . '</td>';
+            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['galpon']) . '</td>';
+            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars(fechaDDMMYYYY($f['fechaCarga'])) . '</td>';
+            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars(fechaDDMMYYYY($f['fechaEjecucion'])) . '</td>';
+            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($edad) . '</td>';
+            $html .= '</tr>';
+        }
+        $html .= '</tbody></table>';
     }
 }
-$html .= '</tbody></table></body></html>';
+$html .= '</body></html>';
 
 $tempDir = __DIR__ . '/../../../pdf_tmp';
 if (!is_dir($tempDir)) @mkdir($tempDir, 0775, true);
@@ -217,6 +276,8 @@ try {
         'tempDir' => $tempDir,
         'defaultfooterline' => 0,
     ]);
+    // Evita que mPDF reduzca cada tabla de forma distinta según contenido.
+    $mpdf->shrink_tables_to_fit = 0;
     $mpdf->SetFooter('<div style="text-align:center;font-size:9pt;font-weight:normal;">{PAGENO} de {nbpg}</div>');
     $mpdf->WriteHTML($html);
     $nombreArchivo = 'cronograma_filtrado_' . date('Ymd_His') . '.pdf';

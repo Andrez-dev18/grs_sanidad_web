@@ -234,6 +234,13 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         var d = new Date();
         return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
     })();
+    (function() {
+        var m = (window.location.search || '').match(/[?&]fecha=(\d{4}-\d{2}-\d{2})/);
+        if (m && m[1]) {
+            fechaNavegacion = m[1];
+            calFechaElegida = m[1];
+        }
+    })();
 
     function parseFecha(ymd) {
         var p = (ymd || '').toString().trim().split('-');

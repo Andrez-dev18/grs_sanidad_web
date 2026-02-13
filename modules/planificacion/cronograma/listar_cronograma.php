@@ -67,6 +67,10 @@ $chk4 = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'posDetalle'")
 $tienePosDetalle = $chk4 && $chk4->num_rows > 0;
 $chk5 = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'numCronograma'");
 $tieneNumCronograma = $chk5 && $chk5->num_rows > 0;
+$chk6 = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'zona'");
+$tieneZona = $chk6 && $chk6->num_rows > 0;
+$chk7 = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'subzona'");
+$tieneSubzona = $chk7 && $chk7->num_rows > 0;
 
 $joinTipo = '';
 $whereTipo = '';
@@ -88,6 +92,8 @@ if ($tieneNomGranja) $sql .= ", c.nomGranja";
 if ($tieneEdad) $sql .= ", c.edad";
 if ($tienePosDetalle) $sql .= ", c.posDetalle";
 if ($tieneNumCronograma) $sql .= ", c.numCronograma";
+if ($tieneZona) $sql .= ", c.zona";
+if ($tieneSubzona) $sql .= ", c.subzona";
 $sql .= " FROM san_fact_cronograma c";
 $sql .= $joinTipo;
 $sql .= " WHERE " . ($whereTipo ?: " 1=1 ");
@@ -144,7 +150,9 @@ while ($row = $res->fetch_assoc()) {
         'edad' => $tieneEdad ? ($row['edad'] ?? '') : '',
         'posDetalle' => $tienePosDetalle ? ($row['posDetalle'] ?? '') : '',
         'numCronograma' => $tieneNumCronograma ? (int)($row['numCronograma'] ?? 0) : 0,
-        'codTipo' => isset($row['codTipo']) ? (string)$row['codTipo'] : null
+        'codTipo' => isset($row['codTipo']) ? (string)$row['codTipo'] : null,
+        'zona' => $tieneZona ? ($row['zona'] ?? '') : '',
+        'subzona' => $tieneSubzona ? ($row['subzona'] ?? '') : ''
     ];
 }
 if (isset($stmt)) $stmt->close();

@@ -122,16 +122,20 @@ if ($codigoUsuario) {
             scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
             scrollbar-width: thin;
         }
+
         .sidebar-nav::-webkit-scrollbar {
             width: 8px;
         }
+
         .sidebar-nav::-webkit-scrollbar-track {
             background: transparent;
         }
+
         .sidebar-nav::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.35);
             border-radius: 4px;
         }
+
         .sidebar-nav::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.5);
         }
@@ -286,7 +290,7 @@ if ($codigoUsuario) {
 
             .sidebar:not(.collapsed) {
                 transform: translateX(0);
-                box-shadow: 8px 0 24px rgba(0,0,0,0.15);
+                box-shadow: 8px 0 24px rgba(0, 0, 0, 0.15);
             }
 
             /* Iframe y main ocupan todo el ancho en móvil */
@@ -295,6 +299,7 @@ if ($codigoUsuario) {
                 width: 100% !important;
                 max-width: 100%;
             }
+
             /* En móvil el modal de calendario puede ocupar toda la pantalla (sidebar está oculto) */
             #dashboardFrame.iframe-fullscreen {
                 left: 0 !important;
@@ -326,6 +331,7 @@ if ($codigoUsuario) {
             border: none;
             background: #f9fafb;
         }
+
         /* Iframe a pantalla completa cuando un modal interno (ej. Calendario) está abierto; no cubre el sidebar para no cambiarlo */
         #dashboardFrame.iframe-fullscreen {
             position: fixed !important;
@@ -337,6 +343,7 @@ if ($codigoUsuario) {
             z-index: 99999 !important;
             transition: left 0.3s ease, width 0.3s ease;
         }
+
         .content-wrapper.sidebar-collapsed #dashboardFrame.iframe-fullscreen {
             left: var(--sidebar-mini-width) !important;
             width: calc(100vw - var(--sidebar-mini-width)) !important;
@@ -380,19 +387,19 @@ if ($codigoUsuario) {
                 justify-content: center;
             }
 
-            .sidebar.collapsed .menu-item > span {
+            .sidebar.collapsed .menu-item>span {
                 flex-direction: column;
                 align-items: center;
                 justify-content: center;
                 gap: 6px;
             }
 
-            .sidebar.collapsed .menu-item > span > i {
+            .sidebar.collapsed .menu-item>span>i {
                 font-size: 18px;
                 width: auto;
             }
 
-            .sidebar.collapsed .menu-item > span > span {
+            .sidebar.collapsed .menu-item>span>span {
                 text-align: center;
                 font-size: 11px;
                 line-height: 1.1;
@@ -404,7 +411,7 @@ if ($codigoUsuario) {
             }
 
             /* Ocultar chevron lateral en mini (se expande igual al click) */
-            .sidebar.collapsed .menu-item > i {
+            .sidebar.collapsed .menu-item>i {
                 display: none;
             }
 
@@ -509,7 +516,7 @@ if ($codigoUsuario) {
                                 class="submenu-link menu-link block text-gray-400 hover:text-white">Seguimiento</a>
                         </div>
                     </div>
-                   
+
                     <div class="menu-group">
                         <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                             onclick="toggleSubmenu('submenu-laboratorio')">
@@ -552,14 +559,17 @@ if ($codigoUsuario) {
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma-listado.php', '📅 Asignación - Listado', 'Listado de cronogramas')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Listado</a>
-                           
+
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/calendario/dashboard-calendario.php', '📅 Calendario', 'Vista de cronogramas por día, semana, mes y año')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Calendario</a>
+                            <!--a href="#"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/comparativo/dashboard-comparativo.php', '⚖️ Comparativo', 'Necropsias vs Cronograma: planificado o eventual por fecha')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Comparativo</a-->
                         </div>
                     </div>
-                    
-                
+
+
                     <div class="menu-group">
                         <button class="menu-item flex items-center justify-between w-full px-4 py-3 text-white rounded-lg"
                             onclick="toggleSubmenu('submenu-necropsia')">
@@ -577,7 +587,7 @@ if ($codigoUsuario) {
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/necropsias/dashboard-necropsias-listado.php', '📄 Listado de Necropsias', 'Listado de Necropsias')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white">Listado</a>
-                                <a href="#"
+                            <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/necropsias/dashboard-reporte-comparativo.php', '📊 Reporte Comparativo', 'Compare los resultados de las necropsias de los galpones seleccionados.')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white">Reporte</a>
                         </div>
@@ -612,18 +622,18 @@ if ($codigoUsuario) {
                         <a href="#"
                             onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/seguimiento_envios/dashboard-tracking-muestra.php','Seguimiento de envios', 'Visualice el seguimiento de muestra')"
                             class="submenu-link menu-link block text-gray-400 hover:text-white">
-                             Seguimiento
+                            Seguimiento
                         </a>
                         <a href="#"
                             onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/reporte/dashboard-reporte-tracking.php','🧪 Pendientes de entregas', 'Administre los pendientes y demas.')"
                             class="submenu-link menu-link block text-gray-400 hover:text-white">
                             Pendientes
-                        </a>                       
+                        </a>
                     </div>
                 </div>
             </div>
             <?php if (!$isTransportista): ?>
-                
+
 
                 <!-- ADMINISTRACIÓN -->
                 <div class="nav-section">
@@ -663,9 +673,7 @@ if ($codigoUsuario) {
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/correo_contacto/dashboard-correo-contactos.php','📧 Correo y Contactos', 'Administre  tu cuenta de correo y tus contactos para envío de ')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white">Correo y Contactos</a>
-
                             <div class="border-t border-gray-600 my-2 pt-2"></div>
-
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipoPrograma/dashboard-tipo-programa.php','📋 Tipos de Programa', 'Administre los tipos de programa')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white">Tipos de Programa</a>
@@ -678,6 +686,9 @@ if ($codigoUsuario) {
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/enfermedades/dashboard-enfermedades.php','🩺 Enfermedades', 'Gestione las enfermedades')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white">Enfermedades</a>
+                            <a href="#"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/notificaciones_whatsapp/dashboard-notificaciones-whatsapp.php','📱 Número telefónico', 'Configure su número para recordatorios por WhatsApp')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">Número telefónico</a>
                         </div>
                     </div>
                 </div>
@@ -709,33 +720,56 @@ if ($codigoUsuario) {
                     </div>
                 </div>
 
-                <!-- User Dropdown -->
-                <details class="relative">
-                    <summary class="flex items-center gap-3 cursor-pointer select-none list-none">
-                        <div class="text-right">
-                            <p id="userName" class="text-sm font-semibold text-gray-700">
-                                <?php echo htmlspecialchars($_SESSION['usuario'] ?? 'usuario'); ?>
-                            </p>
-                            <p id="rolUser" class="text-xs text-gray-500">
-                                <?php echo htmlspecialchars($_SESSION['nombre'] ?? 'nombre'); ?>
-                            </p>
+                <!-- Notificaciones + Usuario (juntos) -->
+                <div class="flex items-center gap-1">
+                    <div class="relative flex items-center" id="notifWrapper">
+                        <button type="button" class="p-2 rounded-lg hover:bg-gray-100 relative transition-colors" aria-label="Notificaciones" id="btnNotif" onclick="toggleNotifDropdown()">
+                            <i class="fas fa-bell text-gray-600 text-lg"></i>
+                            <span id="notifBadge" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] rounded-full w-5 h-5 hidden flex items-center justify-center">0</span>
+                        </button>
+                        <div id="notifDropdown" class="hidden absolute top-full mt-2 w-96 max-w-[calc(100vw-1.5rem)] right-0 bg-white border border-gray-200 rounded-2xl shadow-lg z-50 overflow-hidden">
+                            <div class="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between rounded-t-2xl">
+                                <span class="font-semibold text-gray-800">Eventos del cronograma</span>
+                                <a href="#" onclick="irACalendario(); return false;" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Ver calendario</a>
+                            </div>
+                            <div class="p-3 max-h-80 overflow-y-auto">
+                                <p class="text-sm font-medium text-gray-700 mb-1">Hoy: <span id="notifHoy">0</span></p>
+                                <ul id="listHoy" class="text-sm text-gray-600 mb-3 space-y-2 cursor-pointer"></ul>
+                                <p class="text-sm font-medium text-gray-700 mb-1">Próximos 7 días: <span id="notifProximos">0</span></p>
+                                <ul id="listProximos" class="text-sm text-gray-600 space-y-2 cursor-pointer"></ul>
+                                <p id="notifSinEventos" class="text-sm text-gray-500 hidden">No hay eventos para hoy ni próximos días.</p>
+                            </div>
                         </div>
-                        <div
-                            class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                            <i class="fas fa-user text-white"></i>
-                        </div>
-                    </summary>
-
-                    <div class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg">
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            <i class="fas fa-user text-gray-500 mr-2"></i> Perfil
-                        </a>
-                        <hr class="border-gray-200 my-1" />
-                        <a href="#" onclick="logout()" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
-                            <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
-                        </a>
                     </div>
-                </details>
+
+                    <!-- User Dropdown -->
+                    <details class="relative">
+                        <summary class="flex items-center gap-3 cursor-pointer select-none list-none">
+                            <div class="text-right">
+                                <p id="userName" class="text-sm font-semibold text-gray-700">
+                                    <?php echo htmlspecialchars($_SESSION['usuario'] ?? 'usuario'); ?>
+                                </p>
+                                <p id="rolUser" class="text-xs text-gray-500">
+                                    <?php echo htmlspecialchars($_SESSION['nombre'] ?? 'nombre'); ?>
+                                </p>
+                            </div>
+                            <div
+                                class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                        </summary>
+
+                        <div class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user text-gray-500 mr-2"></i> Perfil
+                            </a>
+                            <hr class="border-gray-200 my-1" />
+                            <a href="#" onclick="logout()" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión
+                            </a>
+                        </div>
+                    </details>
+                </div>
             </div>
         </header>
 
@@ -845,6 +879,130 @@ if ($codigoUsuario) {
             }
         });
 
+        function toggleNotifDropdown() {
+            const dd = document.getElementById('notifDropdown');
+            const btn = document.getElementById('btnNotif');
+            if (!dd || !btn) return;
+            if (dd.classList.contains('hidden')) {
+                var rect = btn.getBoundingClientRect();
+                dd.style.position = 'fixed';
+                dd.style.top = (rect.bottom + 8) + 'px';
+                dd.style.right = (window.innerWidth - rect.right) + 'px';
+                dd.style.left = 'auto';
+                dd.style.width = 'min(24rem, calc(100vw - 1.5rem))';
+                dd.classList.remove('hidden');
+            } else {
+                dd.classList.add('hidden');
+            }
+        }
+
+        function irACalendario(fechaYMD) {
+            document.getElementById('notifDropdown').classList.add('hidden');
+            var url = 'modules/planificacion/calendario/dashboard-calendario.php';
+            if (fechaYMD && /^\d{4}-\d{2}-\d{2}$/.test(String(fechaYMD))) {
+                url += '?fecha=' + encodeURIComponent(fechaYMD);
+            }
+            var calLink = document.querySelector('[onclick*="dashboard-calendario.php"]');
+            if (calLink) {
+                markActiveElement(calLink);
+                loadDashboardAndData(url, '📅 Calendario', 'Vista de cronogramas por día, semana, mes y año');
+            } else {
+                loadDashboardAndData(url, '📅 Calendario', 'Vista de cronogramas por día, semana, mes y año');
+            }
+        }
+
+        function fechaDDMMYYYY(str) {
+            if (!str || str.length < 10) return str;
+            var d = str.substring(8, 10),
+                m = str.substring(5, 7),
+                y = str.substring(0, 4);
+            return d + '/' + m + '/' + y;
+        }
+
+        document.addEventListener('click', function(e) {
+            const wrapper = document.getElementById('notifWrapper');
+            const dd = document.getElementById('notifDropdown');
+            if (wrapper && dd && !wrapper.contains(e.target)) {
+                dd.classList.add('hidden');
+            }
+        });
+
+        function loadResumenEventos() {
+            fetch('modules/planificacion/cronograma/get_resumen_eventos.php')
+                .then(function(r) {
+                    return r.json();
+                })
+                .then(function(data) {
+                    var hoy = data.hoy || 0;
+                    var proximos = data.proximos || 0;
+                    var total = hoy + proximos;
+
+                    document.getElementById('notifHoy').textContent = hoy;
+                    document.getElementById('notifProximos').textContent = proximos;
+
+                    var badge = document.getElementById('notifBadge');
+                    if (total > 0) {
+                        badge.textContent = total > 99 ? '99+' : total;
+                        badge.classList.remove('hidden');
+                        badge.style.display = 'flex';
+                        if (total >= 10) {
+                            badge.classList.remove('w-5', 'h-5');
+                            badge.classList.add('w-6', 'h-6', 'text-[10px]');
+                        } else {
+                            badge.classList.remove('w-6', 'h-6', 'text-[10px]');
+                            badge.classList.add('w-5', 'h-5');
+                        }
+                    } else {
+                        badge.classList.add('hidden');
+                        badge.style.display = 'none';
+                    }
+
+                    var listHoy = document.getElementById('listHoy');
+                    var listProximos = document.getElementById('listProximos');
+                    var sinEventos = document.getElementById('notifSinEventos');
+                    listHoy.innerHTML = '';
+                    listProximos.innerHTML = '';
+
+                    if (data.eventosHoy && data.eventosHoy.length) {
+                        data.eventosHoy.forEach(function(ev) {
+                            var li = document.createElement('li');
+                            li.className = 'hover:bg-gray-100 rounded-lg px-2 py-2 cursor-pointer border border-transparent hover:border-gray-200';
+                            var fechaKey = (ev.fechaEjecucion || '').substring(0, 10);
+                            li.setAttribute('data-fecha', fechaKey);
+                            li.innerHTML = '<div class="font-medium text-gray-800">' + (ev.codPrograma || '') + ' — ' + (ev.nomPrograma || '') + '</div>' +
+                                '<div class="text-xs text-gray-500 mt-0.5">Granja: ' + (ev.nomGranja || ev.granja || '—') + ' · Campaña: ' + (ev.campania || '—') + ' · Galpón: ' + (ev.galpon || '—') + (ev.edad !== undefined && ev.edad !== '' ? ' · Edad: ' + ev.edad : '') + '</div>';
+                            li.onclick = function() {
+                                irACalendario(fechaKey);
+                            };
+                            listHoy.appendChild(li);
+                        });
+                    }
+                    if (data.eventosProximos && data.eventosProximos.length) {
+                        data.eventosProximos.forEach(function(ev) {
+                            var li = document.createElement('li');
+                            li.className = 'hover:bg-gray-100 rounded-lg px-2 py-2 cursor-pointer border border-transparent hover:border-gray-200';
+                            var fechaStr = (ev.fechaEjecucion || '').substring(0, 10);
+                            li.setAttribute('data-fecha', fechaStr);
+                            li.innerHTML = '<div class="text-xs text-blue-600 font-medium">' + fechaDDMMYYYY(fechaStr) + '</div>' +
+                                '<div class="font-medium text-gray-800">' + (ev.codPrograma || '') + ' — ' + (ev.nomPrograma || '') + '</div>' +
+                                '<div class="text-xs text-gray-500 mt-0.5">Granja: ' + (ev.nomGranja || ev.granja || '—') + ' · Campaña: ' + (ev.campania || '—') + ' · Galpón: ' + (ev.galpon || '—') + (ev.edad !== undefined && ev.edad !== '' ? ' · Edad: ' + ev.edad : '') + '</div>';
+                            li.onclick = function() {
+                                irACalendario(fechaStr);
+                            };
+                            listProximos.appendChild(li);
+                        });
+                    }
+                    if (total === 0) {
+                        sinEventos.classList.remove('hidden');
+                    } else {
+                        sinEventos.classList.add('hidden');
+                    }
+                })
+                .catch(function() {
+                    document.getElementById('notifBadge').classList.add('hidden');
+                });
+        }
+
         // Inicialización al cargar la página
         window.addEventListener('DOMContentLoaded', () => {
             const sidebar = document.getElementById('sidebar');
@@ -862,6 +1020,8 @@ if ($codigoUsuario) {
                 contentWrapper.classList.add('sidebar-collapsed');
                 overlay.classList.remove('active');
             }
+
+            loadResumenEventos();
 
             // Cargar dashboard por defecto
             const defaultMenuItem = document.querySelector('[onclick*="modules/dashboard/dashboard-dashboard.php"]');
