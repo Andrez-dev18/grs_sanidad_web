@@ -176,44 +176,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
         $sql = "
         SELECT 
-            id_analisis,
-            codigo_envio,
-            enfermedad,
-            codigo_enfermedad,
-            tipo_ave,
-            fecha_toma_muestra,
-            edad_aves,
-            planta_incubacion,
-            lote,
-            codigo_granja,
-            codigo_campana,
-            numero_galpon,
-            edad_reproductora,
-            condicion,
-            dato,
-            gmean,
-            desviacion_estandar,
-            cv,
-            count_muestras,
-            t01, t02, t03, t04, t05, t06, t07, t08, t09, t10,
-            t11, t12, t13, t14, t15, t16, t17, t18, t19, t20,
-            t21, t22, t23, t24, t25,
-            titulo_promedio,
-            lcs,
-            lcc,
-            lci,
-            coef_variacion,
-            std_1,
-            std_2,
-            s01, s02, s03, s04, s05, s06,
-            obs,
-            numero_informe,
-            fecha_informe,
-            estado,
-            usuario_registro,
-            fecha_solicitud
-            FROM san_analisis_pollo_bb_adulto
-            WHERE codigo_envio = ?
+            a.id_analisis,
+            a.codigo_envio,
+            d.nomMuestra,
+            a.enfermedad,
+            a.codigo_enfermedad,
+            a.tipo_ave,
+            a.fecha_toma_muestra,
+            a.edad_aves,
+            a.planta_incubacion,
+            a.lote,
+            a.codigo_granja,
+            a.codigo_campana,
+            a.numero_galpon,
+            a.edad_reproductora,
+            a.condicion,
+            a.dato,
+            a.gmean,
+            a.desviacion_estandar,
+            a.cv,
+            a.count_muestras,
+            a.t01, a.t02, a.t03, a.t04, a.t05, a.t06, a.t07, a.t08, a.t09, a.t10,
+            a.t11, a.t12, a.t13, a.t14, a.t15, a.t16, a.t17, a.t18, a.t19, a.t20,
+            a.t21, a.t22, a.t23, a.t24, a.t25,
+            a.titulo_promedio,
+            a.lcs,
+            a.lcc,
+            a.lci,
+            a.coef_variacion,
+            a.std_1,
+            a.std_2,
+            a.s01, a.s02, a.s03, a.s04, a.s05, a.s06,
+            a.obs,
+            a.numero_informe,
+            a.fecha_informe,
+            a.estado,
+            a.usuario_registro,
+            a.fecha_solicitud
+            FROM san_analisis_pollo_bb_adulto AS a
+            INNER JOIN san_fact_solicitud_det AS d ON a.codigo_envio = d.codEnvio
+            WHERE a.codigo_envio = ?
             ORDER BY id_analisis ASC
         ";
 
@@ -245,6 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 echo "<tr class='hover:bg-gray-50'>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['id_analisis']) . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['codigo_envio']) . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['nomMuestra']) . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['enfermedad'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['codigo_enfermedad'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2'><span class='inline-block px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700'>" . htmlspecialchars($row['tipo_ave'] ?? 'N/A') . "</span></td>
@@ -257,6 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['numero_galpon'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['edad_reproductora'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['condicion'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center font-semibold'>" . htmlspecialchars($row['dato'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center font-semibold'>" . htmlspecialchars($row['gmean'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['desviacion_estandar'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['cv'] ?? 'N/A') . "</td>
@@ -299,6 +303,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['s04'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['s05'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['s06'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['obs'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['numero_informe'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['fecha_informe'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>
@@ -1033,6 +1038,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                         </th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
                                             Código Envío</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
+                                            Muestra</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
                                             Enfermedad</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
