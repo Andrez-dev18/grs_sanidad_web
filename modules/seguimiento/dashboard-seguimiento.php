@@ -119,17 +119,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
         $sql = "
         SELECT 
-            codEnvio,
-            posSolicitud,
-            codRef,
-            fecToma,
-            analisis_nombre,
-            resultado,
-            usuarioRegistrador,
-            fechaLabRegistro,
-            obs
-        FROM san_fact_resultado_analisis
-        WHERE codEnvio = ?
+            r.codEnvio,
+            r.posSolicitud,
+            r.codRef,
+            r.fecToma,
+            d.nomMuestra,
+            r.analisis_nombre,
+            r.resultado,
+            r.usuarioRegistrador,
+            r.fechaLabRegistro,
+            r.obs
+        FROM san_fact_resultado_analisis AS r
+        INNER JOIN `san_fact_solicitud_det` AS d ON r.codEnvio = d.codEnvio
+        WHERE r.codEnvio = ?
         ORDER BY posSolicitud ASC
     ";
 
@@ -145,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 <td class='px-4 py-2'>" . htmlspecialchars($row['posSolicitud']) . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['codRef']) . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['fecToma']) . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['nomMuestra']) . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['analisis_nombre']) . "</td>
                 <td class='px-4 py-2'>
                     <span class='inline-block px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700'>
@@ -187,6 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             numero_galpon,
             edad_reproductora,
             condicion,
+            dato,
             gmean,
             desviacion_estandar,
             cv,
@@ -202,6 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
             std_1,
             std_2,
             s01, s02, s03, s04, s05, s06,
+            obs,
             numero_informe,
             fecha_informe,
             estado,
@@ -996,6 +1001,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
                                             Fecha Toma</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
+                                            Muestra</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
                                             Análisis</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
                                             Resultado</th>
@@ -1050,6 +1057,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                             Edad Reproductora</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
                                             Condición</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">
+                                            Dato</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">
                                             Gmean</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">
@@ -1134,6 +1143,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                             S05</th>
                                         <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">
                                             S06</th>
+                                        <th class="px-4 py-3 text-center font-semibold text-gray-700 whitespace-nowrap">
+                                            OBS</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
                                             Número Informe</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
