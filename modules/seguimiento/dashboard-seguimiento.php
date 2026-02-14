@@ -249,7 +249,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 <td class='px-4 py-2'>" . htmlspecialchars($row['codigo_envio']) . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['nomMuestra']) . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['enfermedad'] ?? 'N/A') . "</td>
-                <td class='px-4 py-2'>" . htmlspecialchars($row['codigo_enfermedad'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2'><span class='inline-block px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700'>" . htmlspecialchars($row['tipo_ave'] ?? 'N/A') . "</span></td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['fecha_toma_muestra'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['edad_aves'] ?? 'N/A') . "</td>
@@ -1042,8 +1041,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                                             Muestra</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
                                             Enfermedad</th>
-                                        <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
-                                            Cód Enfermedad</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
                                             Tipo Ave</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
