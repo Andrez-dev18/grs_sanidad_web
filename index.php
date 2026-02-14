@@ -461,22 +461,22 @@ if ($codigoUsuario) {
                             onclick="toggleSubmenu('submenu-dashboard')">
                             <span class="flex items-center gap-3">
                                 <i class="fas fa-chart-line"></i>
-                                <span class="font-medium">Dashboards</span>
+                                <span class="font-medium">1.- Dashboards</span>
                             </span>
                             <i class="fas fa-chevron-down text-sm"></i>
                         </button>
                         <div id="submenu-dashboard" class="submenu hidden pl-10 mt-2 space-y-2">
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/dashboard/dashboard-dashboard.php', '📊 Dashboard',  'Resumen visual de los datos registrados en el sistema')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">General</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">1.1.- General</a>
 
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/dashboard-indicadores/dashboard-indicadores.php', '📊 Dashboard Indicadores', 'Resumen visual de los datos registrados en el sistema')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Indicadores</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">1.2.- Indicadores</a>
 
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/dashboard/dashboard-tracking.php','🧪 Dashboard Tracking', 'Resumen visual de los estados de entrega y pedidos.')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Tracking</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">1.3.- Tracking</a>
 
                         </div>
                     </div>
@@ -491,22 +491,22 @@ if ($codigoUsuario) {
                             onclick="toggleSubmenu('submenu-muestras')">
                             <span class="flex items-center gap-3">
                                 <i class="fas fa-vial"></i>
-                                <span class="font-medium">Muestras</span>
+                                <span class="font-medium">2.- Muestras</span>
                             </span>
                             <i class="fas fa-chevron-down text-sm"></i>
                         </button>
                         <div id="submenu-muestras" class="submenu hidden pl-10 mt-2 space-y-2">
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/registro_muestra/dashboard-registro-muestras.php', '📋 Registro de Muestras', 'Registro del pedido de muestra')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Registro</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">2.1.- Registro</a>
 
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/reportes/dashboard-reportes.php', '📄 Listado de Muestras', 'Listado de registros enviados (muestras)')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Listado</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">2.2.- Listado</a>
 
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/seguimiento/dashboard-seguimiento.php', '📊 Seguimiento de Muestras', 'Seguimiento de los resultados cualitativo y cuantitativo registrados en el sistema')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Seguimiento</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">2.3.- Seguimiento</a>
                         </div>
                     </div>
                    
@@ -515,14 +515,14 @@ if ($codigoUsuario) {
                             onclick="toggleSubmenu('submenu-laboratorio')">
                             <span class="flex items-center gap-3">
                                 <i class="fa-solid fa-atom"></i>
-                                <span class="font-medium">Laboratorio</span>
+                                <span class="font-medium">3.- Laboratorio</span>
                             </span>
                             <i class="fas fa-chevron-down text-sm"></i>
                         </button>
                         <div id="submenu-laboratorio" class="submenu hidden pl-10 mt-2 space-y-2">
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/registro_laboratorio/dashboard-rpta-laboratorio.php', '🧪 Resultados de Laboratorio', 'Registro de la respuesta del laboratorio')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Resultados</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">3.1.- Resultados</a>
                         </div>
 
                     </div>
@@ -532,25 +532,25 @@ if ($codigoUsuario) {
                             onclick="toggleSubmenu('submenu-planificacion')">
                             <span class="flex items-center gap-3">
                                 <i class="fas fa-calendar"></i>
-                                <span class="font-medium">Planificación</span>
+                                <span class="font-medium">4.- Planificación</span>
                             </span>
                             <i class="fas fa-chevron-down text-sm"></i>
                         </button>
                         <div id="submenu-planificacion" class="submenu hidden pl-10 mt-2 space-y-2">
-                            <div class="text-gray-500 text-xs font-semibold uppercase tracking-wider mt-2 first:mt-0">Programa</div>
+                            <div class="text-gray-500 text-xs font-semibold uppercase tracking-wider mt-2 first:mt-0">4.1.- Programa</div>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/programas/dashboard-programas-registro.php', '📋 Programa - Registro', 'Registro de programas de planificación')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Registro</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">4.2.- Registro</a>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/programas/dashboard-programas-listado.php', '📋 Programa - Listado', 'Filtros y listado de programas')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Listado</a>
-                            <div class="text-gray-500 text-xs font-semibold uppercase tracking-wider mt-2">Asignación</div>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">4.3.- Listado</a>
+                            <div class="text-gray-500 text-xs font-semibold uppercase tracking-wider mt-2">4.4.- Asignación</div>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma-registro.php', '📅 Asignación - Registro', 'Registro de cronograma')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Registro</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">4.5.- Registro</a>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma-listado.php', '📅 Asignación - Listado', 'Listado de cronogramas')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">Listado</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white pl-2">4.6.- Listado</a>
                         </div>
                     </div>
                     
@@ -559,21 +559,21 @@ if ($codigoUsuario) {
                             onclick="toggleSubmenu('submenu-necropsia')">
                             <span class="flex items-center gap-3">
                                 <i class="fa-solid fa-feather-pointed"></i>
-                                <span class="font-medium">Necropsias</span>
+                                <span class="font-medium">5.- Necropsias</span>
                             </span>
                             <i class="fas fa-chevron-down text-sm"></i>
                         </button>
                         <div id="submenu-necropsia" class="submenu hidden pl-10 mt-2 space-y-2">
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/necropsias/dashboard-necropsias-registro.php', '📋 Registro de Necropsias', 'Complete los campos y presione Guardar.')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Registro</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">5.1.- Registro</a>
 
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/necropsias/dashboard-necropsias-listado.php', '📄 Listado de Necropsias', 'Listado de Necropsias')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Listado</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">5.2.- Listado</a>
                                 <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/necropsias/dashboard-reporte-comparativo.php', '📊 Reporte Comparativo', 'Compare los resultados de las necropsias de los galpones seleccionados.')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Reporte</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">5.3.- Reporte</a>
                         </div>
                     </div>
                 </div>
@@ -590,7 +590,7 @@ if ($codigoUsuario) {
                         <span class="flex items-center gap-3">
                             <i class="fa-solid fa-location-dot"></i>
                             <span class="font-medium">
-                                Tracking
+                                6.- Tracking
                             </span>
                         </span>
                         <i class="fas fa-chevron-down text-sm"></i>
@@ -601,17 +601,17 @@ if ($codigoUsuario) {
                         <a href="#"
                             onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/escaneo/dashboard-escaneoQR.php','Escaneo QR', 'Escaneo tracking')"
                             class="submenu-link menu-link block text-gray-400 hover:text-white">
-                            Escaneo
+                            6.1.- Escaneo
                         </a>
                         <a href="#"
                             onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/seguimiento_envios/dashboard-tracking-muestra.php','Seguimiento de envios', 'Visualice el seguimiento de muestra')"
                             class="submenu-link menu-link block text-gray-400 hover:text-white">
-                             Seguimiento
+                            6.2.- Seguimiento
                         </a>
                         <a href="#"
                             onclick="selectMenuItem(this); loadDashboardAndData('modules/tracking/reporte/dashboard-reporte-tracking.php','🧪 Pendientes de entregas', 'Administre los pendientes y demas.')"
                             class="submenu-link menu-link block text-gray-400 hover:text-white">
-                            Pendientes
+                            6.3.- Pendientes
                         </a>                       
                     </div>
                 </div>
@@ -629,7 +629,7 @@ if ($codigoUsuario) {
                             onclick="toggleSubmenu('submenu-maestros-sistema')">
                             <span class="flex items-center gap-3">
                                 <i class="fas fa-cogs w-5"></i>
-                                <span class="font-medium">Configuración</span>
+                                <span class="font-medium">7.- Configuración</span>
                             </span>
                             <i class="fas fa-chevron-down text-sm"></i>
                         </button>
@@ -638,40 +638,40 @@ if ($codigoUsuario) {
 
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/empTransporte/dashboard-empresas-transporte.php','🚚 Empresas de transporte', 'Administre las empresas de transporte registradas en el sistema')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Empresas de transporte</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">7.1.- Empresas de transporte</a>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/laboratorio/dashboard-laboratorio.php','🔬 Laboratorio', 'Administre los laboratorios registrados en el sistema')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Laboratorios</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">7.2.- Laboratorios</a>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipo_muestra/dashboard-tipo-muestra.php','🧪 Tipo muestra', 'Administre los tipos de muestra registrados en el sistema')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Tipos de Muestra</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">7.3.- Tipos de Muestra</a>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipo_analisis/dashboard-analisis.php','🔍 Analisis', 'Administre los analisis registrados en el sistema')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Tipos de Analisis</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">7.4.- Tipos de Analisis</a>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/paquete_analisis/dashboard-paquete-analisis.php','📦 Paquete analisis', 'Administre los paquetes de analisis registrados en el sistema')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Paquetes de Analisis</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">7.5.- Paquetes de Analisis</a>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipo_respuesta/dashboard-respuesta.php','🛠️ Tipos de Respuesta', 'Administre los tipos de respuestas registrados de los analisis')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Tipos de Respuesta</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">7.6.- Tipos de Respuesta</a>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/correo_contacto/dashboard-correo-contactos.php','📧 Correo y Contactos', 'Administre  tu cuenta de correo y tus contactos para envío de ')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Correo y Contactos</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">7.7.- Correo y Contactos</a>
 
                             <div class="border-t border-gray-600 my-2 pt-2"></div>
 
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/tipoPrograma/dashboard-tipo-programa.php','📋 Tipos de Programa', 'Administre los tipos de programa')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Tipos de Programa</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">7.8.- Tipos de Programa</a>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/proveedor/dashboard-proveedor.php','📦 Proveedor', 'Administre proveedores')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Proveedor</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">7.9.- Proveedor</a>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/productos/dashboard-productos.php','📦 Productos', 'Asigne proveedores a productos')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Productos</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">7.10.- Productos</a>
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/enfermedades/dashboard-enfermedades.php','🩺 Enfermedades', 'Gestione las enfermedades')"
-                                class="submenu-link menu-link block text-gray-400 hover:text-white">Enfermedades</a>
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">7.11.- Enfermedades</a>
                         </div>
                     </div>
                 </div>
