@@ -2,7 +2,7 @@
 
 session_start();
 if (empty($_SESSION['active'])) {
-    echo '<script>var u="../../login.php";if(window.top!==window.self){window.top.location.href=u;}else{window.location.href=u;}</script>';
+    header('Location: login.php');
     exit();
 }
 
@@ -23,7 +23,7 @@ if (!$conexion) {
     <title>Dashboard - indicadores</title>
 
     <!-- Tailwind CSS -->
-    <link href="../../css/output.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
 
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="../../assets/fontawesome/css/all.min.css">
@@ -77,132 +77,7 @@ if (!$conexion) {
 </head>
 
 <body class="bg-gray-50">
-    <div class="container mx-auto px-6 py-12">
-
-        <!-- CARD FILTROS PLEGABLE -->
-        <div class="mb-4 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-
-            <!-- HEADER -->
-            <button type="button" onclick="toggleFiltros()"
-                class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">
-
-                <div class="flex items-center gap-2">
-                    <span class="text-lg">🔎</span>
-                    <h3 class="text-base font-semibold text-gray-800">
-                        Filtros
-                    </h3>
-                </div>
-
-                <!-- ICONO -->
-                <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
-                    fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-            </button>
-
-            <!-- CONTENIDO PLEGABLE -->
-            <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
-
-                <!-- GRID DE FILTROS -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-
-                    <!-- Granja -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Granja(s)</label>
-
-                        <div class="relative">
-                            <button type="button" id="dropdownGranjaBtn"
-                                class="w-full px-3 py-2 text-sm text-left bg-white border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center">
-                                <span id="dropdownGranjaText" class="text-gray-500">Seleccionar
-                                    granjas...</span>
-                                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-
-                            <!-- Dropdown con checkboxes -->
-                            <div id="dropdownGranjaMenu"
-                                class="fixed z-50 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto hidden">
-                                <div class="p-2">
-                                    <?php
-                                    $sql = "
-                                            SELECT codigo, nombre
-                                            FROM ccos
-                                            WHERE LENGTH(codigo)=3
-                                            AND swac='A'
-                                            AND LEFT(codigo,1)='6'
-                                            AND codigo NOT IN ('650','668','669','600')
-                                            ORDER BY nombre
-                                            ";
-
-                                    $res = mysqli_query($conexion, $sql);
-
-                                    if ($res && mysqli_num_rows($res) > 0) {
-                                        while ($row = mysqli_fetch_assoc($res)) {
-                                            echo '
-                                                <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
-                                                    <input type="checkbox" 
-                                                        name="filtroGranja[]" 
-                                                        value="' . htmlspecialchars($row['codigo']) . '" 
-                                                        class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-                                                        <span class="ml-3 text-sm text-gray-700">' . htmlspecialchars($row['nombre']) . '</span>
-                                                </label>';
-                                        }
-                                    }
-                                    ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Galpón -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Galpón</label>
-                        <select id="filtroGalpon"
-                            class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                            <option value="">Seleccionar</option>
-                            <?php
-                            for ($i = 1; $i <= 13; $i++) {
-                                $valor = str_pad($i, 2, '0', STR_PAD_LEFT); // 01, 02, ...
-                                echo "<option value=\"$valor\">$valor</option>";
-                            }
-                            ?>
-                        </select>
-                    </div>
-
-                    <!-- Edad -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Edad</label>
-
-                        <div class="flex gap-2">
-                            <input type="number" id="filtroEdadDesde" placeholder="Desde" min="0"
-                                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-
-                            <input type="number" id="filtroEdadHasta" placeholder="Hasta" min="0"
-                                class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- ACCIONES -->
-                <div class="mt-6 flex flex-wrap justify-end gap-4">
-
-                    <button type="button" id="btnAplicarFiltros"
-                        class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
-                        Filtrar
-                    </button>
-
-                    <button type="button" id="btnLimpiarFiltros"
-                        class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200">
-                        Limpiar
-                    </button>
-                </div>
-
-            </div>
-        </div>
+    <div class="container-fluid py-4 mx-8">
 
         <!-- GRÁFICOS ESTADÍSTICOS -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -281,8 +156,169 @@ if (!$conexion) {
                     Top 10 análisis con más resultados registrados
                 </p>
             </div>
-
         </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="col-span-1 lg:col-span-2 mt-10">
+                <h2 class="text-2xl font-bold text-gray-800 border-b-2 border-red-500 pb-2 mb-6">
+                    <i class="fas fa-notes-medical mr-2"></i>Estadísticas de Necropsias
+                </h2>
+                <!-- CARD FILTROS PLEGABLE -->
+                <div class="mb-4 bg-white border border-gray-200 rounded-2xl shadow-sm overflow-visible">
+
+                    <!-- HEADER -->
+                    <button type="button" onclick="toggleFiltros()"
+                        class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">
+
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">🔎</span>
+                            <h3 class="text-base font-semibold text-gray-800">
+                                Filtros
+                            </h3>
+                        </div>
+
+                        <!-- ICONO -->
+                        <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
+                            fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <!-- CONTENIDO PLEGABLE -->
+                    <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
+
+                        <!-- GRID DE FILTROS -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+
+                            <!-- Granja -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Granja(s)</label>
+
+                                <div class="relative">
+                                    <button type="button" id="dropdownGranjaBtn"
+                                        class="w-full px-3 py-2 text-sm text-left bg-white border border-gray-300 rounded-lg shadow-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 flex justify-between items-center">
+                                        <span id="dropdownGranjaText" class="text-gray-500">Seleccionar
+                                            granjas...</span>
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </button>
+
+                                    <!-- Dropdown con checkboxes -->
+                                    <div id="dropdownGranjaMenu"
+                                        class="absolute z-50 mt-1 w-72 bg-white border border-gray-200 rounded-lg shadow-xl max-h-60 overflow-y-auto hidden">
+                                        <div class="p-2">
+                                            <?php
+                                            $sql = "
+                                            SELECT codigo, nombre
+                                            FROM ccos
+                                            WHERE LENGTH(codigo)=3
+                                            AND swac='A'
+                                            AND LEFT(codigo,1)='6'
+                                            AND codigo NOT IN ('650','668','669','600')
+                                            ORDER BY nombre
+                                            ";
+
+                                            $res = mysqli_query($conexion, $sql);
+
+                                            if ($res && mysqli_num_rows($res) > 0) {
+                                                while ($row = mysqli_fetch_assoc($res)) {
+                                                    echo '
+                                                <label class="flex items-center px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                                                    <input type="checkbox" 
+                                                        name="filtroGranja[]" 
+                                                        value="' . htmlspecialchars($row['codigo']) . '" 
+                                                        class="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                                        <span class="ml-3 text-sm text-gray-700">' . htmlspecialchars($row['nombre']) . '</span>
+                                                </label>';
+                                                }
+                                            }
+                                            ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Galpón -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Galpón</label>
+                                <select id="filtroGalpon"
+                                    class="w-full px-3 py-2 text-sm rounded-lg border border-gray-300">
+                                    <option value="">Seleccionar</option>
+                                    <?php
+                                    for ($i = 1; $i <= 13; $i++) {
+                                        $valor = str_pad($i, 2, '0', STR_PAD_LEFT); // 01, 02, ...
+                                        echo "<option value=\"$valor\">$valor</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+
+                        </div>
+
+                        <!-- ACCIONES -->
+                        <div class="mt-6 flex flex-wrap justify-end gap-4">
+
+                            <button type="button" id="btnAplicarFiltros"
+                                class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                                Filtrar
+                            </button>
+
+                            <button type="button" id="btnLimpiarFiltros"
+                                class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200">
+                                Limpiar
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Impacto por Sistema</h3>
+                <p class="text-sm text-gray-500 mb-4">Severidad promedio (%) por sistema.</p>
+                <div class="relative h-64">
+                    <canvas id="graficoNecropsiaSistemas"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-800">Detalle por Nivel (Órgano)</h3>
+                        <p class="text-sm text-gray-500">Selecciona un nivel para ver sus parámetros específicos.</p>
+                    </div>
+
+                    <select id="selectNivelNecropsia" class="border border-gray-300 rounded-lg px-4 py-2 bg-gray-50 text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
+                        <option value="">Cargando niveles...</option>
+                    </select>
+                </div>
+
+                <div class="relative h-80">
+                    <canvas id="graficoNecropsiaDinamico"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6 col-span-1 lg:col-span-2">
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Top 10 Hallazgos Frecuentes</h3>
+                <p class="text-sm text-gray-500 mb-4">Lesiones específicas más reportadas.</p>
+                <div class="relative h-80">
+                    <canvas id="graficoNecropsiaHallazgos"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6 col-span-1 lg:col-span-2">
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Necropsias por Granja</h3>
+                <p class="text-sm text-gray-500 mb-4">Volumen de registros realizados.</p>
+                <div class="relative h-64 flex justify-center">
+                    <canvas id="graficoNecropsiaGranjas"></canvas>
+                </div>
+            </div>
+        </div>
+
+
 
         <!-- Footer dinámico -->
         <div class="text-center mt-12">
@@ -553,7 +589,7 @@ if (!$conexion) {
         }
 
 
-    // === GRÁFICO 4: ANÁLISIS CON MÁS/MENOS RESULTADOS ===
+        // === GRÁFICO 4: ANÁLISIS CON MÁS/MENOS RESULTADOS ===
         let graficoAnalisisResultados = null;
         let modoAnalisis = 'mas'; // 'mas' o 'menos'
 
@@ -625,7 +661,276 @@ if (!$conexion) {
         cargarGraficoAnalisisResultados('mas');
     </script>
 
-    </div>
+    <script>
+        // Variable global para almacenar las instancias de los gráficos
+        // Esto es vital para poder "destruirlos" antes de volver a dibujar cuando filtres
+        let chartInstances = {
+            sistemas: null,
+            granjas: null,
+            hallazgos: null,
+            dinamico: null
+        };
+
+        // Eventos al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Cargar datos iniciales
+            cargarEstadisticasNecropsia();
+
+            // 2. Evento Botón Filtrar
+            document.getElementById('btnAplicarFiltros').addEventListener('click', function() {
+                cargarEstadisticasNecropsia();
+            });
+
+            // 3. Evento Botón Limpiar
+            document.getElementById('btnLimpiarFiltros').addEventListener('click', function() {
+                // Resetear checkboxes
+                document.querySelectorAll('input[name="filtroGranja[]"]').forEach(cb => cb.checked = false);
+                // Resetear select galpón
+                document.getElementById('filtroGalpon').value = "";
+                // Resetear texto del dropdown
+                const dropText = document.getElementById('dropdownGranjaText');
+                if (dropText) {
+                    dropText.textContent = 'Seleccionar granjas...';
+                    dropText.classList.add('text-gray-500');
+                }
+
+                // Recargar sin filtros
+                cargarEstadisticasNecropsia();
+            });
+        });
+
+        async function cargarEstadisticasNecropsia() {
+            try {
+        const params = new URLSearchParams();
+
+        // 1. Obtener Granjas y actualizar texto del botón
+        const granjasCheckboxes = document.querySelectorAll('input[name="filtroGranja[]"]:checked');
+        const granjasSeleccionadas = Array.from(granjasCheckboxes).map(cb => cb.value);
+        
+        const dropText = document.getElementById('dropdownGranjaText');
+        if (granjasSeleccionadas.length > 0) {
+            params.append('granjas', granjasSeleccionadas.join(','));
+            dropText.textContent = `${granjasSeleccionadas.length} seleccionadas`;
+            dropText.classList.remove('text-gray-500');
+        } else {
+            dropText.textContent = 'Seleccionar granjas...';
+            dropText.classList.add('text-gray-500');
+        }
+
+        // 2. Obtener Galpón
+        const galpon = document.getElementById('filtroGalpon').value;
+        if (galpon) {
+            params.append('galpon', galpon);
+        }
+
+        // 3. Petición (Asegúrate de que la ruta sea correcta)
+        const response = await fetch(`estadisticas_necropsia.php?${params.toString()}`);
+        
+        // Validar si la respuesta es OK antes de parsear JSON
+        if (!response.ok) throw new Error('Error en la respuesta del servidor');
+        
+        const datos = await response.json();
+        if (!datos) return;
+
+        // Renderizado de gráficos (tus funciones actuales están bien)
+        renderChartSistemas(datos.sistemas);
+        renderChartGranjas(datos.granjas);
+        renderChartHallazgos(datos.hallazgos);
+        manejarGraficoDinamico(datos.dinamico);
+
+    } catch (error) {
+        console.error("Error cargando estadísticas:", error);
+    }
+        }
+
+        // =========================================================
+        // FUNCIONES DE RENDERIZADO INDIVIDUALES (Para orden)
+        // =========================================================
+
+        function renderChartSistemas(data) {
+            const ctx = document.getElementById('graficoNecropsiaSistemas').getContext('2d');
+
+            // Destruir anterior si existe
+            if (chartInstances.sistemas) {
+                chartInstances.sistemas.destroy();
+            }
+
+            chartInstances.sistemas = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Severidad Promedio (%)',
+                        data: data.data,
+                        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '% Afectación'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChartGranjas(data) {
+            const ctx = document.getElementById('graficoNecropsiaGranjas').getContext('2d');
+
+            if (chartInstances.granjas) {
+                chartInstances.granjas.destroy();
+            }
+
+            chartInstances.granjas = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.data,
+                        backgroundColor: ['#3B82F6', '#EF4444', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1', '#14B8A6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderChartHallazgos(data) {
+            const ctx = document.getElementById('graficoNecropsiaHallazgos').getContext('2d');
+
+            if (chartInstances.hallazgos) {
+                chartInstances.hallazgos.destroy();
+            }
+
+            chartInstances.hallazgos = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Frecuencia (N° Lotes)',
+                        data: data.data,
+                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                        borderColor: 'rgba(239, 68, 68, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function manejarGraficoDinamico(datosDinamicos) {
+            const selectNivel = document.getElementById('selectNivelNecropsia');
+            const ctx = document.getElementById('graficoNecropsiaDinamico').getContext('2d');
+
+            // 1. Limpiar y Llenar el Select
+            // Guardamos la selección actual si existe para intentar mantenerla tras filtrar
+            const seleccionPrevia = selectNivel.value;
+            selectNivel.innerHTML = '';
+
+            const niveles = Object.keys(datosDinamicos);
+
+            if (niveles.length > 0) {
+                niveles.forEach(nivel => {
+                    const option = document.createElement('option');
+                    option.value = nivel;
+                    option.text = nivel;
+                    selectNivel.appendChild(option);
+                });
+
+                // Intentar mantener selección o ir al primero
+                if (seleccionPrevia && niveles.includes(seleccionPrevia)) {
+                    selectNivel.value = seleccionPrevia;
+                } else {
+                    selectNivel.value = niveles[0];
+                }
+
+                // Dibujar el gráfico inicial
+                dibujarBarraDinamica(selectNivel.value, datosDinamicos, ctx);
+            } else {
+                selectNivel.innerHTML = '<option>Sin datos</option>';
+                if (chartInstances.dinamico) chartInstances.dinamico.destroy();
+            }
+
+            // 2. Re-asignar el evento change (Para evitar duplicidad, lo removemos primero si fuera necesario, 
+            // pero como reemplazamos el innerHTML del select, es mejor usar una función externa nombrada)
+            selectNivel.onchange = (e) => {
+                dibujarBarraDinamica(e.target.value, datosDinamicos, ctx);
+            };
+        }
+
+        function dibujarBarraDinamica(nivel, datosCompletos, ctx) {
+            const info = datosCompletos[nivel];
+            if (!info) return;
+
+            if (chartInstances.dinamico) {
+                chartInstances.dinamico.destroy();
+            }
+
+            chartInstances.dinamico = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: info.labels,
+                    datasets: [{
+                        label: `% Promedio en ${nivel}`,
+                        data: info.data,
+                        backgroundColor: 'rgba(99, 102, 241, 0.6)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+
 </body>
 
 </html>
