@@ -272,16 +272,16 @@ table.config-table {
     background-color: #f8fafc;
 }
 
-/* Hover fila */
+/* Hover fila: no pintar (uniforme en todos los listados: reportes, cronograma, programas, seguimiento, necropsias) */
 .data-table tbody tr:hover,
 .config-table tbody tr:hover,
 .data-table.config-table tbody tr:hover {
-    background-color: #eff6ff !important;
+    background-color: inherit !important;
 }
 .data-table tbody tr:hover td,
 .config-table tbody tr:hover td,
 .data-table.config-table tbody tr:hover td {
-    color: #1e40af;
+    color: inherit !important;
 }
 
 /* ========== Tablas unificadas por CLASE ==========
@@ -346,7 +346,21 @@ table.dataTable.display.data-table.config-table tbody tr:nth-child(even)>.sortin
 table.dataTable.display.data-table.config-table tbody tr:hover>.sorting_1,
 table.dataTable.display.data-table.config-table tbody tr:hover>.sorting_2,
 table.dataTable.display.data-table.config-table tbody tr:hover>.sorting_3 {
-    background-color: #eff6ff !important;
+    background-color: inherit !important;
+}
+
+/* Global: evitar sombreado/color distinto en columnas ordenadas (incluye configuración) */
+.dataTables_wrapper table.dataTable tbody td.sorting_1,
+.dataTables_wrapper table.dataTable tbody td.sorting_2,
+.dataTables_wrapper table.dataTable tbody td.sorting_3,
+.dataTables_wrapper table.dataTable.display tbody tr>.sorting_1,
+.dataTables_wrapper table.dataTable.display tbody tr>.sorting_2,
+.dataTables_wrapper table.dataTable.display tbody tr>.sorting_3,
+.dataTables_wrapper table.dataTable.order-column tbody tr>.sorting_1,
+.dataTables_wrapper table.dataTable.order-column tbody tr>.sorting_2,
+.dataTables_wrapper table.dataTable.order-column tbody tr>.sorting_3 {
+    background-color: inherit !important;
+    box-shadow: none !important;
 }
 
 /* Celdas y filas unificadas por clase */
@@ -358,17 +372,32 @@ table.dataTable.display.data-table.config-table tbody tr:hover>.sorting_3 {
     white-space: normal !important;
     word-break: break-word !important;
 }
-.data-table.config-table tbody tr:nth-child(odd) {
+.data-table.config-table tbody tr:nth-child(odd),
+.data-table.config-table tbody tr.odd,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(odd),
+table.dataTable.display.data-table.config-table tbody tr.odd {
     background-color: #ffffff !important;
+    box-shadow: none !important;
 }
-.data-table.config-table tbody tr:nth-child(even) {
+.data-table.config-table tbody tr:nth-child(even),
+.data-table.config-table tbody tr.even,
+table.dataTable.display.data-table.config-table tbody tr:nth-child(even),
+table.dataTable.display.data-table.config-table tbody tr.even {
     background-color: #f8fafc !important;
+    box-shadow: none !important;
 }
-.data-table.config-table tbody tr:hover {
-    background-color: #eff6ff !important;
+.data-table.config-table tbody tr:hover,
+table.dataTable.display.data-table.config-table tbody tr:hover {
+    background-color: inherit !important;
 }
-.data-table.config-table tbody tr:hover td {
-    color: #1e40af !important;
+.data-table.config-table tbody tr:hover td,
+table.dataTable.display.data-table.config-table tbody tr:hover td {
+    color: inherit !important;
+}
+/* Celdas: anular box-shadow de rayas que DataTables aplica por defecto */
+table.dataTable.display.data-table.config-table tbody tr.odd > td,
+table.dataTable.display.data-table.config-table tbody tr.even > td {
+    box-shadow: none !important;
 }
 
 /* Contorno externo de tablas en pantalla (listados): borde fino */
@@ -405,6 +434,24 @@ table.dataTable.display.data-table.config-table tbody tr:hover>.sorting_3 {
 .dataTables_wrapper .dataTables_info,
 .dataTables_wrapper .dataTables_paginate {
     padding: 0.5rem 0.75rem;
+}
+/* Evitar parpadeo de controles nativos cuando se reubican al toolbar personalizado */
+.toolbar-vista-row ~ .view-lista-wrap .dataTables_wrapper > .dataTables_length,
+.toolbar-vista-row ~ .view-lista-wrap .dataTables_wrapper > .dataTables_filter,
+.reportes-toolbar-row ~ .view-lista-wrap .dataTables_wrapper > .dataTables_length,
+.reportes-toolbar-row ~ .view-lista-wrap .dataTables_wrapper > .dataTables_filter,
+.toolbar-vista-row ~ .view-lista-wrap .dataTables_wrapper .dt-top-row .dataTables_length,
+.toolbar-vista-row ~ .view-lista-wrap .dataTables_wrapper .dt-top-row .dataTables_filter,
+.reportes-toolbar-row ~ .view-lista-wrap .dataTables_wrapper .dt-top-row .dataTables_length,
+.reportes-toolbar-row ~ .view-lista-wrap .dataTables_wrapper .dt-top-row .dataTables_filter,
+#tablaReportes_wrapper > .dataTables_length,
+#tablaReportes_wrapper > .dataTables_filter {
+    display: none !important;
+}
+/* En tablas homologadas, ocultar toda la fila superior nativa para evitar flash visual */
+.toolbar-vista-row ~ .view-lista-wrap .dataTables_wrapper .dt-top-row,
+.reportes-toolbar-row ~ .view-lista-wrap .dataTables_wrapper .dt-top-row {
+    display: none !important;
 }
 .dataTables_wrapper .dataTables_length label,
 .dataTables_wrapper .dataTables_filter label {
@@ -491,6 +538,23 @@ table.dataTable thead .sorting:after,
 table.dataTable thead .sorting_asc:after,
 table.dataTable thead .sorting_desc:after {
     color: #fff !important;
+}
+
+/* Configuración: sin UI de ordenamiento en cabeceras */
+.dashboard-tabla-wrapper table.dataTable thead .sorting:before,
+.dashboard-tabla-wrapper table.dataTable thead .sorting_asc:before,
+.dashboard-tabla-wrapper table.dataTable thead .sorting_desc:before,
+.dashboard-tabla-wrapper table.dataTable thead .sorting:after,
+.dashboard-tabla-wrapper table.dataTable thead .sorting_asc:after,
+.dashboard-tabla-wrapper table.dataTable thead .sorting_desc:after {
+    display: none !important;
+    content: none !important;
+}
+.dashboard-tabla-wrapper table.dataTable thead th.sorting,
+.dashboard-tabla-wrapper table.dataTable thead th.sorting_asc,
+.dashboard-tabla-wrapper table.dataTable thead th.sorting_desc {
+    cursor: default !important;
+    pointer-events: none;
 }
 
 /* ========== Vista Lista/Iconos: toolbar unificado (reportes, seguimiento, necropsias, tracking, programas, cronograma) ========== */
@@ -615,6 +679,45 @@ table.dataTable thead .sorting_desc:after {
     border-color: #2563eb;
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
+
+/* Select de "Mostrar" unificado para lista/iconos (patrón reusable) */
+.dt-toolbar-length-select,
+.toolbar-dt-controls .dt-toolbar-length-select,
+.toolbar-iconos-controls .dt-toolbar-length-select,
+#reportesDtControls .dt-toolbar-length-select,
+#reportesIconosControls .dt-toolbar-length-select,
+#segDtControls .dt-toolbar-length-select,
+#segIconosControls .dt-toolbar-length-select,
+#necDtControls .dt-toolbar-length-select,
+#necIconosControls .dt-toolbar-length-select,
+#trackDtControls .dt-toolbar-length-select,
+#trackIconosControls .dt-toolbar-length-select,
+#cronoDtControls .dt-toolbar-length-select,
+#cronoIconosControls .dt-toolbar-length-select,
+#progDtControls .dt-toolbar-length-select,
+#progIconosControls .dt-toolbar-length-select,
+#pendDtControls .dt-toolbar-length-select,
+#pendIconosControls .dt-toolbar-length-select {
+    padding: 0.5rem 1rem !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 0.5rem !important;
+    font-size: 0.875rem !important;
+    color: #374151 !important;
+    background: #ffffff !important;
+    cursor: pointer;
+    min-height: 2.25rem;
+    box-sizing: border-box;
+    -webkit-appearance: auto;
+    appearance: auto;
+}
+.dt-toolbar-length-select:hover {
+    border-color: #9ca3af !important;
+}
+.dt-toolbar-length-select:focus {
+    outline: none;
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
+}
 .toolbar-dt-controls .dataTables_filter input,
 #reportesDtControls .dataTables_filter input,
 #segDtControls .dataTables_filter input,
@@ -672,6 +775,41 @@ table.dataTable thead .sorting_desc:after {
     align-items: center;
     gap: 0.5rem;
 }
+.toolbar-iconos-controls .dataTables_length,
+.toolbar-iconos-controls .dataTables_filter,
+#reportesIconosControls .dataTables_length,
+#reportesIconosControls .dataTables_filter,
+#segIconosControls .dataTables_length,
+#segIconosControls .dataTables_filter,
+#necIconosControls .dataTables_length,
+#necIconosControls .dataTables_filter,
+#trackIconosControls .dataTables_length,
+#trackIconosControls .dataTables_filter,
+#cronoIconosControls .dataTables_length,
+#cronoIconosControls .dataTables_filter,
+#progIconosControls .dataTables_length,
+#progIconosControls .dataTables_filter,
+#pendIconosControls .dataTables_length,
+#pendIconosControls .dataTables_filter {
+    margin: 0;
+    padding: 0;
+}
+.toolbar-iconos-controls .dataTables_length select,
+#reportesIconosControls .dataTables_length select,
+#segIconosControls .dataTables_length select,
+#necIconosControls .dataTables_length select,
+#trackIconosControls .dataTables_length select,
+#cronoIconosControls .dataTables_length select,
+#progIconosControls .dataTables_length select,
+#pendIconosControls .dataTables_length select,
+.toolbar-iconos-controls .js-reportes-len,
+#reportesIconosControls .js-reportes-len,
+#segIconosControls .js-reportes-len,
+#necIconosControls .js-reportes-len,
+#trackIconosControls .js-reportes-len,
+#cronoIconosControls .js-reportes-len,
+#progIconosControls .js-reportes-len,
+#pendIconosControls .js-reportes-len,
 .toolbar-iconos-controls .cards-length-select,
 #reportesIconosControls .cards-length-select,
 #segIconosControls .cards-length-select,
@@ -684,8 +822,52 @@ table.dataTable thead .sorting_desc:after {
     border: 1px solid #d1d5db;
     border-radius: 0.5rem;
     font-size: 0.875rem;
+    color: #374151;
+    background: #ffffff;
+    cursor: pointer;
+    border-style: solid;
+    -webkit-appearance: auto;
+    appearance: auto;
     min-height: 2.25rem;
     box-sizing: border-box;
+}
+.toolbar-iconos-controls .dataTables_length select:hover,
+#reportesIconosControls .dataTables_length select:hover,
+#segIconosControls .dataTables_length select:hover,
+#necIconosControls .dataTables_length select:hover,
+#trackIconosControls .dataTables_length select:hover,
+#cronoIconosControls .dataTables_length select:hover,
+#progIconosControls .dataTables_length select:hover,
+#pendIconosControls .dataTables_length select:hover,
+.toolbar-iconos-controls .js-reportes-len:hover,
+#reportesIconosControls .js-reportes-len:hover,
+#segIconosControls .js-reportes-len:hover,
+#necIconosControls .js-reportes-len:hover,
+#trackIconosControls .js-reportes-len:hover,
+#cronoIconosControls .js-reportes-len:hover,
+#progIconosControls .js-reportes-len:hover,
+#pendIconosControls .js-reportes-len:hover {
+    border-color: #9ca3af;
+}
+.toolbar-iconos-controls .dataTables_length select:focus,
+#reportesIconosControls .dataTables_length select:focus,
+#segIconosControls .dataTables_length select:focus,
+#necIconosControls .dataTables_length select:focus,
+#trackIconosControls .dataTables_length select:focus,
+#cronoIconosControls .dataTables_length select:focus,
+#progIconosControls .dataTables_length select:focus,
+#pendIconosControls .dataTables_length select:focus,
+.toolbar-iconos-controls .js-reportes-len:focus,
+#reportesIconosControls .js-reportes-len:focus,
+#segIconosControls .js-reportes-len:focus,
+#necIconosControls .js-reportes-len:focus,
+#trackIconosControls .js-reportes-len:focus,
+#cronoIconosControls .js-reportes-len:focus,
+#progIconosControls .js-reportes-len:focus,
+#pendIconosControls .js-reportes-len:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 .toolbar-iconos-controls .dataTables_filter input,
 #reportesIconosControls .dataTables_filter input,

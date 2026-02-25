@@ -10,37 +10,32 @@ $alma = trim((string)($_GET['alma'] ?? ''));
 $tcodprove = trim((string)($_GET['tcodprove'] ?? ''));
 $descri = trim((string)($_GET['descri'] ?? ''));
 
-// Sin al menos un filtro no generar PDF (miles de registros)
 if ($lin === '' && $alma === '' && $tcodprove === '' && $descri === '') {
     header('Content-Type: text/html; charset=UTF-8');
     header('HTTP/1.1 400 Bad Request');
     exit('Debe usar al menos un filtro (Línea, Almacén, Proveedor o Descripción) para generar el PDF. Sin filtros el reporte incluiría miles de registros.');
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) exit('Error de conexión');
 
-$tieneLin = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'lin'");
-$tieneAlma = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'alma'");
-$tieneLin = $tieneLin && $tieneLin->fetch_assoc();
-$tieneAlma = $tieneAlma && $tieneAlma->fetch_assoc();
+$chkLin = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'lin'");
+$tieneLin = $chkLin && $chkLin->num_rows > 0;
+$chkAlma = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'alma'");
+$tieneAlma = $chkAlma && $chkAlma->num_rows > 0;
 
-$sql = "SELECT m.codigo, m.descri, m.tcodprove, m.dosis, c.nombre AS nombre_proveedor";
-$sqlFrom = " FROM mitm m LEFT JOIN ccte c ON c.codigo = m.tcodprove";
-$sqlWhere = " WHERE 1=1";
-$params = [];
-$types = '';
-if ($tieneLin && $lin !== '') { $sqlWhere .= " AND m.lin = ?"; $params[] = $lin; $types .= 's'; }
-if ($tieneAlma && $alma !== '') { $sqlWhere .= " AND m.alma = ?"; $params[] = $alma; $types .= 's'; }
-if ($tcodprove !== '') { $sqlWhere .= " AND m.tcodprove = ?"; $params[] = $tcodprove; $types .= 's'; }
-if ($descri !== '') { $sqlWhere .= " AND m.descri LIKE ?"; $params[] = '%' . $descri . '%'; $types .= 's'; }
-$chkUnidad = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'unidad'");
-$tieneUnidad = $chkUnidad && $chkUnidad->fetch_assoc();
-if ($tieneUnidad) $sql .= ", m.unidad";
+$sql = "SELECT m.codigo, m.descri, m.tcodprove, m.dosis, m.unidad";
 if ($tieneLin) $sql .= ", m.lin";
 if ($tieneAlma) $sql .= ", m.alma";
-$sql .= $sqlFrom . $sqlWhere . " ORDER BY m.descri ASC";
+$sql .= ", c.nombre AS nombre_proveedor FROM mitm m LEFT JOIN ccte c ON c.codigo = m.tcodprove WHERE 1=1";
+$params = [];
+$types = '';
+if ($tieneLin && $lin !== '') { $sql .= " AND m.lin = ?"; $params[] = $lin; $types .= 's'; }
+if ($tieneAlma && $alma !== '') { $sql .= " AND m.alma = ?"; $params[] = $alma; $types .= 's'; }
+if ($tcodprove !== '') { $sql .= " AND m.tcodprove = ?"; $params[] = $tcodprove; $types .= 's'; }
+if ($descri !== '') { $sql .= " AND (m.descri LIKE ? OR m.codigo LIKE ?)"; $params[] = '%' . $descri . '%'; $params[] = '%' . $descri . '%'; $types .= 'ss'; }
+$sql .= " ORDER BY m.descri ASC";
 
 $stmt = $conn->prepare($sql);
 if ($stmt) {
@@ -49,7 +44,7 @@ if ($stmt) {
     $res = $stmt->get_result();
     $lista = [];
     while ($row = $res->fetch_assoc()) {
-        $item = ['codigo' => $row['codigo'], 'descri' => $row['descri'], 'nombre_proveedor' => $row['nombre_proveedor'] ?? '', 'dosis' => $row['dosis'] ?? '', 'unidad' => $tieneUnidad ? ($row['unidad'] ?? '') : '', 'lin' => $tieneLin ? ($row['lin'] ?? '') : '', 'alma' => $tieneAlma ? ($row['alma'] ?? '') : ''];
+        $item = ['codigo' => $row['codigo'], 'descri' => $row['descri'], 'nombre_proveedor' => trim((string)($row['nombre_proveedor'] ?? '')), 'dosis' => trim((string)($row['dosis'] ?? '')), 'unidad' => trim((string)($row['unidad'] ?? '')), 'lin' => $tieneLin ? (string)($row['lin'] ?? '') : '', 'alma' => $tieneAlma ? (string)($row['alma'] ?? '') : ''];
         $lista[] = $item;
     }
     $stmt->close();

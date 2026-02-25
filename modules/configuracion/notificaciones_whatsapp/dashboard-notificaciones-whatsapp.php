@@ -10,6 +10,8 @@ if (empty($_SESSION['active'])) {
     </script>';
     exit();
 }
+
+include_once '../../../../conexion_grs/conexion.php';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -61,7 +63,7 @@ if (empty($_SESSION['active'])) {
                             <i class="fas fa-save mr-2"></i> Guardar
                         </button>
                         <button type="button" id="btnEnviarPrueba"
-                            class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition inline-flex items-center gap-2 border-0 cursor-pointer">
+                            class="hidden px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition inline-flex items-center gap-2 border-0 cursor-pointer">
                             <i class="fab fa-whatsapp"></i> Enviar prueba
                         </button>
                     </div>
@@ -91,6 +93,8 @@ if (empty($_SESSION['active'])) {
             var telefono = codigoPais + numero;
             var formData = new FormData();
             formData.append('telefono', telefono);
+            formData.append('codigoPais', codigoPais);
+            formData.append('numero', numero);
 
             fetch('whatsapp_config.php', {
                 method: 'POST',
@@ -149,10 +153,11 @@ if (empty($_SESSION['active'])) {
             fetch('whatsapp_config.php?action=get')
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
-                    if (!data || !data.telefono) return;
-                    var t = data.telefono.replace(/\D/g, '');
                     var sel = document.getElementById('codigoPais');
                     var inp = document.getElementById('telefono');
+                    if (!data) return;
+                    if (!data.telefono) return;
+                    var t = String(data.telefono).replace(/\D/g, '');
                     for (var i = 0; i < codigosPais.length; i++) {
                         var cod = codigosPais[i];
                         if (t.indexOf(cod) === 0 && t.length > cod.length) {

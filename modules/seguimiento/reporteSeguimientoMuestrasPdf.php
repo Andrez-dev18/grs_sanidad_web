@@ -1,8 +1,8 @@
 <?php
 require_once  '../../vendor/autoload.php'; // Composer autoload para mPDF
 
-include_once '../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 
 if (!isset($_GET['codEnvio'])) {
     die('Código de envío no proporcionado');

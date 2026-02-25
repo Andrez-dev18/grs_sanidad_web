@@ -6,8 +6,8 @@ if (empty($_SESSION['active'])) {
     exit;
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
     exit;
@@ -19,10 +19,11 @@ if ($codigo === '') {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT m.codigo, m.descri, m.tcodprove, m.dosis, c.nombre AS nombre_proveedor 
+
+$stmt = $conn->prepare("SELECT m.codigo, m.descri, m.tcodprove, m.dosis, m.unidad, c.nombre AS nombre_proveedor 
                        FROM mitm m 
                        LEFT JOIN ccte c ON c.codigo = m.tcodprove 
-                       WHERE m.codigo = ?");
+                       WHERE m.codigo = ? LIMIT 1");
 $stmt->bind_param("s", $codigo);
 $stmt->execute();
 $res = $stmt->get_result();
@@ -35,20 +36,11 @@ if (!$row) {
     exit;
 }
 
-$unidad = '';
-$chkUnidad = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'unidad'");
-if ($chkUnidad && $chkUnidad->fetch_assoc()) {
-    $stU = $conn->prepare("SELECT unidad FROM mitm WHERE codigo = ? LIMIT 1");
-    if ($stU) {
-        $stU->bind_param("s", $codigo);
-        $stU->execute();
-        $rU = $stU->get_result();
-        if ($rU && $ru = $rU->fetch_assoc()) $unidad = trim((string)($ru['unidad'] ?? ''));
-        $stU->close();
-    }
-}
+$tcodprove = $row['tcodprove'] ?? null;
+$codProveedor = ($tcodprove === null || trim((string)$tcodprove) === '') ? '' : trim((string)$tcodprove);
+$unidad = trim((string)($row['unidad'] ?? ''));
+$nomProveedor = trim((string)($row['nombre_proveedor'] ?? ''));
 
-// Es vacuna si existe en san_rel_vacuna_enfermedad (codVacuna = código mitm, o codProducto si migrado)
 $esVacuna = false;
 $descripcionVacuna = '';
 $chkVac = @$conn->query("SHOW COLUMNS FROM san_rel_vacuna_enfermedad LIKE 'codVacuna'");
@@ -71,11 +63,11 @@ if ($stE) {
 
 echo json_encode([
     'success' => true,
-    'nomProducto' => (string)($row['descri'] ?? ''),
-    'codProveedor' => (string)($row['tcodprove'] ?? ''),
-    'nomProveedor' => (string)($row['nombre_proveedor'] ?? ''),
+    'nomProducto' => trim((string)($row['descri'] ?? '')),
+    'codProveedor' => $codProveedor,
+    'nomProveedor' => $nomProveedor,
     'unidad' => $unidad,
-    'dosis' => (string)($row['dosis'] ?? ''),
+    'dosis' => trim((string)($row['dosis'] ?? '')),
     'esVacuna' => $esVacuna,
     'descripcionVacuna' => $descripcionVacuna
 ]);

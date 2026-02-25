@@ -1,6 +1,6 @@
 <?php
 session_start();
-include_once '../conexion_grs_joya/conexion.php';
+include_once '../conexion_grs/conexion.php';
 include_once 'includes/historial_acciones.php';
 
 header('Content-Type: application/json; charset=utf-8');
@@ -21,7 +21,7 @@ if (empty($usuario) || empty($clave)) {
     exit();
 }
 
-$conexion = conectar_joya();
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión a la base de datos']);
     exit();

@@ -6,8 +6,8 @@ ini_set('log_errors', 1);
 date_default_timezone_set('America/Lima');
 
 ob_start();
-include_once '../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 ob_end_clean();
 
 if (!$conn) {

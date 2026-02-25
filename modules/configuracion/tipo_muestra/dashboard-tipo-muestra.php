@@ -13,8 +13,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -355,6 +355,58 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 
     <script>
         var tableTipoMuestra;
+        var searchDebounceTM = null;
+        var TM_LENGTH_OPTIONS = [20, 25, 50, 100];
+        var tmPageLengthSel = 20;
+
+        function normalizarPageLengthTM(v) {
+            var n = parseInt(v, 10);
+            return TM_LENGTH_OPTIONS.indexOf(n) >= 0 ? n : 20;
+        }
+
+        function renderizarControlesDtTM($container, rowClass) {
+            if (!$container || !$container.length || !tableTipoMuestra) return;
+            var rowSelector = '.' + rowClass;
+            if (!$container.find(rowSelector).length) {
+                var html = '<div class="' + rowClass + ' flex flex-wrap items-center gap-3">' +
+                    '<div class="dataTables_length"><label>Mostrar ' +
+                    '<select class="js-tm-len dt-toolbar-length-select cards-length-select">' +
+                    '<option value="20">20</option><option value="25">25</option><option value="50">50</option><option value="100">100</option>' +
+                    '</select> registros</label></div>' +
+                    '<div class="dataTables_filter"><label>Buscar <input type="search" class="js-tm-search" placeholder=""></label></div>' +
+                    '</div>';
+                $container.html(html);
+            }
+            if (!$container.data('tmControlsBound')) {
+                $container.on('change.tm', '.js-tm-len', function () {
+                    var val = parseInt($(this).val(), 10);
+                    if (tableTipoMuestra && !isNaN(val)) {
+                        tmPageLengthSel = normalizarPageLengthTM(val);
+                        tableTipoMuestra.page.len(tmPageLengthSel).draw(false);
+                    }
+                });
+                $container.on('input.tm', '.js-tm-search', function () {
+                    var val = ($(this).val() || '').toString();
+                    if (searchDebounceTM) clearTimeout(searchDebounceTM);
+                    searchDebounceTM = setTimeout(function () {
+                        if (tableTipoMuestra && tableTipoMuestra.search() !== val) tableTipoMuestra.search(val).draw();
+                    }, 220);
+                });
+                $container.data('tmControlsBound', true);
+            }
+            var len = String(tableTipoMuestra.page.len());
+            var search = tableTipoMuestra.search() || '';
+            var $len = $container.find('.js-tm-len');
+            var $search = $container.find('.js-tm-search');
+            if ($len.val() !== len) $len.val(len);
+            if (!$search.is(':focus') && $search.val() !== search) $search.val(search);
+        }
+
+        function sincronizarControlesTM() {
+            if (!tableTipoMuestra) return;
+            renderizarControlesDtTM($('#tipoMuestraDtControls'), 'tipo-muestra-dt-toolbar-row');
+            renderizarControlesDtTM($('#tipoMuestraIconosControls'), 'tipo-muestra-iconos-toolbar-row');
+        }
 
         function actualizarVistaInicialTM() {
             var w = $(window).width();
@@ -364,6 +416,10 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 $('#btnViewIconosTM').toggleClass('active', w$.attr('data-vista') === 'iconos');
                 $('#btnViewTablaTM').toggleClass('active', w$.attr('data-vista') === 'tabla');
             }
+            var vista = w$.attr('data-vista') || 'tabla';
+            $('#tipoMuestraDtControls').toggle(vista === 'tabla');
+            $('#tipoMuestraIconosControls').toggle(vista === 'iconos');
+            sincronizarControlesTM();
         }
 
         function renderizarTarjetasTM() {
@@ -401,19 +457,23 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             });
             var info = api.page.info();
             $('#cardsPaginationTM').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : ('<span class="dataTables_info">Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>'));
+            sincronizarControlesTM();
         }
         $(document).ready(function() {
             tableTipoMuestra = $('#tabla').DataTable({
+                dom: 'rtip',
                 language: (typeof window.DATATABLES_LANG_ES !== 'undefined' ? window.DATATABLES_LANG_ES : {}),
-                pageLength: 20,
-                lengthMenu: [
-                    [20, 25, 50, 100, -1],
-                    [20, 25, 50, 100, "Todos"]
-                ],
+                pageLength: normalizarPageLengthTM(tmPageLengthSel),
+                lengthMenu: [[20, 25, 50, 100], [20, 25, 50, 100]],
+                ordering: false,
                 order: [[0, 'asc']],
+                orderClasses: false,
                 columnDefs: [{ orderable: false, targets: [4] }],
                 drawCallback: function() {
                     renderizarTarjetasTM();
+                },
+                initComplete: function() {
+                    sincronizarControlesTM();
                 }
             });
             actualizarVistaInicialTM();
@@ -421,11 +481,17 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 $('#tablaTipoMuestraWrapper').attr('data-vista', 'iconos');
                 $('#btnViewIconosTM').addClass('active');
                 $('#btnViewTablaTM').removeClass('active');
+                $('#tipoMuestraDtControls').hide();
+                $('#tipoMuestraIconosControls').show();
+                sincronizarControlesTM();
             });
             $('#btnViewTablaTM').on('click', function() {
                 $('#tablaTipoMuestraWrapper').attr('data-vista', 'tabla');
                 $('#btnViewTablaTM').addClass('active');
                 $('#btnViewIconosTM').removeClass('active');
+                $('#tipoMuestraDtControls').show();
+                $('#tipoMuestraIconosControls').hide();
+                sincronizarControlesTM();
             });
             $(window).on('resize', function() {
                 if (!$('#tablaTipoMuestraWrapper').attr('data-vista')) return;

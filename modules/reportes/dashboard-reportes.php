@@ -12,8 +12,8 @@ if (empty($_SESSION['active'])) {
 }
 
 // Conexión (para poblar filtros)
-include_once '../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -383,7 +383,7 @@ if ($codigoUsuario) {
 
         .cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 1rem;
             padding: 0.5rem 0;
         }
@@ -456,14 +456,14 @@ if ($codigoUsuario) {
                 </div>
 
                 <!-- ICONO -->
-                <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300 rotate-180"
+                <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
 
             <!-- CONTENIDO PLEGABLE (desplegado por defecto) -->
-            <div id="contenidoFiltros" class="px-6 pb-6 pt-4">
+            <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
                 <!-- Fila 1: Periodo -->
                 <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
                     <div class="flex-shrink-0" style="min-width: 200px;">
@@ -611,8 +611,8 @@ if ($codigoUsuario) {
 
         <!-- Rol para mostrar Eliminar solo a admin -->
         <p id="idRolUserReportes" data-rol="<?= htmlspecialchars($rolReportes) ?>" class="hidden"></p>
-        <!-- Tabla -->
-        <div class="bg-white rounded-xl shadow-md p-5" id="tablaReportesWrapper" data-vista="">
+        <!-- Tabla: clase global tabla-listado-wrapper = mismo aspecto en todos los listados -->
+        <div class="tabla-listado-wrapper bg-white rounded-xl shadow-md p-5" id="tablaReportesWrapper" data-vista="">
             <div class="card-body p-0 mt-5">
                 <!-- Toolbar siempre visible: Lista/Iconos + controles tabla (solo en vista lista) -->
                 <div class="reportes-toolbar-row flex flex-wrap items-center justify-between gap-3 mb-3" id="reportesToolbarRow">
@@ -1802,13 +1802,13 @@ if ($codigoUsuario) {
             const esLista = (vista === 'lista');
             $('#tablaReportesWrapper').attr('data-vista', vista);
             if (esLista) {
-                var $filter = $('#reportesIconosControls .dataTables_filter').detach();
-                if ($filter.length) $('#reportesDtControls').append($filter);
+                sincronizarControlesDtReportes();
                 $('#reportesDtControls').show();
                 $('#reportesIconosControls').hide();
                 $('#viewTarjetas').addClass('hidden').css('display', 'none');
                 $('#tablaReportesWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
             } else {
+                sincronizarControlesDtReportes();
                 $('#reportesDtControls').hide();
                 $('#reportesIconosControls').show();
                 $('#tablaReportesWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
@@ -1828,6 +1828,62 @@ if ($codigoUsuario) {
                 $('#cardsContainer').attr('data-vista-cards', 'iconos');
                 aplicarVisibilidadVistaReportes(vistaInicial);
             }
+        }
+
+        let searchDebounceTimerReportes = null;
+        const REPORTES_LENGTH_OPTIONS = [20, 25, 50, 100];
+        let reportesPageLengthSeleccionado = 20;
+
+        function normalizarPageLengthReportes(valor) {
+            const n = parseInt(valor, 10);
+            return REPORTES_LENGTH_OPTIONS.indexOf(n) >= 0 ? n : 20;
+        }
+
+        function renderizarControlesDtReportes($container, rowClass) {
+            if (!$container || !$container.length || !tableReportes) return;
+
+            var rowSelector = '.' + rowClass;
+            if (!$container.find(rowSelector).length) {
+                var html = '<div class="' + rowClass + ' flex flex-wrap items-center gap-3">' +
+                    '<div class="dataTables_length"><label>Mostrar ' +
+                    '<select class="js-reportes-len dt-toolbar-length-select cards-length-select">' +
+                    '<option value="20">20</option><option value="25">25</option><option value="50">50</option><option value="100">100</option>' +
+                    '</select> registros</label></div>' +
+                    '<div class="dataTables_filter"><label>Buscar <input type="search" class="js-reportes-search" placeholder=""></label></div>' +
+                    '</div>';
+                $container.html(html);
+            }
+
+            if (!$container.data('reportesControlsBound')) {
+                $container.on('change.reportes', '.js-reportes-len', function () {
+                    var val = parseInt($(this).val(), 10);
+                    if (tableReportes && !isNaN(val)) {
+                        reportesPageLengthSeleccionado = normalizarPageLengthReportes(val);
+                        tableReportes.page.len(reportesPageLengthSeleccionado).draw(false);
+                    }
+                });
+                $container.on('input.reportes', '.js-reportes-search', function () {
+                    var val = ($(this).val() || '').toString();
+                    if (searchDebounceTimerReportes) clearTimeout(searchDebounceTimerReportes);
+                    searchDebounceTimerReportes = setTimeout(function () {
+                        if (tableReportes && tableReportes.search() !== val) tableReportes.search(val).draw();
+                    }, 220);
+                });
+                $container.data('reportesControlsBound', true);
+            }
+
+            var len = String(tableReportes.page.len());
+            var search = tableReportes.search() || '';
+            var $len = $container.find('.js-reportes-len');
+            var $search = $container.find('.js-reportes-search');
+            if ($len.val() !== len) $len.val(len);
+            if (!$search.is(':focus') && $search.val() !== search) $search.val(search);
+        }
+
+        function sincronizarControlesDtReportes() {
+            if (!tableReportes) return;
+            renderizarControlesDtReportes($('#reportesDtControls'), 'reportes-dt-toolbar-row');
+            renderizarControlesDtReportes($('#reportesIconosControls'), 'reportes-iconos-toolbar-row');
         }
 
         function renderizarTarjetas() {
@@ -1877,34 +1933,9 @@ if ($codigoUsuario) {
                 `;
                 cont.append(card);
             });
-            const len = api.page.len();
-            const lengthOptions = [10, 25, 50];
-            const lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
-                lengthOptions.map(n => '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>').join('') +
-                '</select><span>registros</span></label>';
-            const navInfo = '<span class="reportes-nav-info text-sm text-gray-600">Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>';
-            const navBtns = '<div class="flex gap-2 flex-shrink-0">' +
-                '<button type="button" class="reportes-nav-prev px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + '>Anterior</button>' +
-                '<button type="button" class="reportes-nav-next px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + '>Siguiente</button>' +
-                '</div>';
+            sincronizarControlesDtReportes();
             var vista = $('#tablaReportesWrapper').attr('data-vista') || '';
             if (vista === 'iconos') {
-                var $toolbarRow = $('#reportesIconosControls .reportes-iconos-toolbar-row');
-                if (!$toolbarRow.length) {
-                    var $filter = $('#reportesDtControls .dataTables_filter').detach();
-                    var iconosRow = '<div class="reportes-iconos-toolbar-row flex flex-wrap items-center gap-3">' + lengthSelect + '</div>';
-                    $('#reportesIconosControls').html(iconosRow);
-                    if ($filter.length) $('#reportesIconosControls .reportes-iconos-toolbar-row').append($filter);
-                    $('#reportesIconosControls .cards-length-select').on('change', function() {
-                        var val = parseInt($(this).val(), 10);
-                        if (tableReportes) tableReportes.page.len(val).draw(false);
-                    });
-                } else {
-                    var $sel = $toolbarRow.find('.cards-length-select');
-                    if ($sel.length) {
-                        $sel.find('option').remove().end().append(lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join(''));
-                    }
-                }
                 $('#cardsControlsTopReportes').empty();
                 $('#cardsPagination').html(buildPaginationIconos(info));
             } else {
@@ -1912,18 +1943,28 @@ if ($codigoUsuario) {
                     '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaReportes\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
                     '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaReportes\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
                     '</div>';
-                const controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + '<div class="flex items-center gap-3 flex-wrap">' + navInfo + navBtnsWithOnclick + '</div></div>';
+                const controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full"><div class="flex items-center gap-3 flex-wrap"><span class="reportes-nav-info text-sm text-gray-600">Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' + navBtnsWithOnclick + '</div></div>';
                 $('#cardsControlsTopReportes').html(controlsHtml);
                 $('#cardsPagination').html(controlsHtml);
-                $('#cardsControlsTopReportes .cards-length-select, #cardsPagination .cards-length-select').on('change', function() {
-                    const val = parseInt($(this).val(), 10);
-                    if (tableReportes) tableReportes.page.len(val).draw(false);
-                });
+            }
+        }
+
+        function limpiarControlesTablaReportes() {
+            $('#reportesDtControls').empty().removeData('reportesControlsBound').off('.reportes');
+            $('#reportesIconosControls').empty().removeData('reportesControlsBound').off('.reportes');
+            if (searchDebounceTimerReportes) {
+                clearTimeout(searchDebounceTimerReportes);
+                searchDebounceTimerReportes = null;
             }
         }
 
         function cargarTablaReportes() {
-            if (tableReportes) tableReportes.destroy();
+            if ($.fn.DataTable.isDataTable('#tablaReportes')) {
+                reportesPageLengthSeleccionado = normalizarPageLengthReportes($('#tablaReportes').DataTable().page.len());
+                $('#tablaReportes').DataTable().destroy();
+            }
+            tableReportes = null;
+            limpiarControlesTablaReportes();
 
             var periodoTipo = ($('#periodoTipo').val() || 'TODOS').trim();
             var fechaUnica = ($('#fechaUnica').val() || '').trim();
@@ -1942,20 +1983,18 @@ if ($codigoUsuario) {
                 scrollX: false,
                 autoWidth: false,
                 stripeClasses: [],
+                order: [[0, 'asc']],
+                orderClasses: false,
+                dom: 'rtip',
                 drawCallback: function () {
                     renderizarTarjetas();
                 },
                 initComplete: function () {
                     this.api().columns.adjust();
-                    var wrapper = $('#tablaReportes').closest('.dataTables_wrapper');
-                    var $controls = $('#reportesDtControls');
-                    var $length = wrapper.find('.dataTables_length').first();
-                    var $filter = wrapper.find('.dataTables_filter').first();
-                    if ($controls.length && $length.length && $filter.length) {
-                        $controls.append($length, $filter);
-                        var vista = $('#tablaReportesWrapper').attr('data-vista') || 'lista';
-                        $controls.toggle(vista === 'lista');
-                    }
+                    sincronizarControlesDtReportes();
+                    var vista = $('#tablaReportesWrapper').attr('data-vista') || 'lista';
+                    $('#reportesDtControls').toggle(vista === 'lista');
+                    $('#reportesIconosControls').toggle(vista === 'iconos');
                 },
                 ajax: {
                     url: '../seguimiento/listar_cab_filtros.php',
@@ -2060,7 +2099,7 @@ if ($codigoUsuario) {
                 ],
                 columnDefs: [{ orderable: false, targets: [0, 8, 9] }],
                 language: window.DATATABLES_LANG_ES || {},
-                pageLength: 20,
+                pageLength: normalizarPageLengthReportes(reportesPageLengthSeleccionado),
                 lengthMenu: [[20, 25, 50, 100], [20, 25, 50, 100]]
             });
         }

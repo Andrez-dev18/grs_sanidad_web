@@ -6,19 +6,21 @@ if (empty($_SESSION['active'])) {
     echo json_encode(['success' => false, 'message' => 'No autorizado']);
     exit;
 }
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
-if (!$conn) {
-    echo json_encode(['success' => false, 'message' => 'Error de conexión']);
-    exit;
-}
 
-$input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+try {
+    include_once __DIR__ . '/../../../../conexion_grs/conexion.php';
+    $conn = conectar_joya_mysqli();
+    if (!$conn) {
+        echo json_encode(['success' => false, 'message' => 'Error de conexión a la base de datos']);
+        exit;
+    }
+
+    $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
 $codPrograma = trim($input['codPrograma'] ?? '');
 $nomPrograma = trim($input['nomPrograma'] ?? '');
 $zona = trim($input['zona'] ?? '');
 $subzonaRaw = $input['subzona'] ?? '';
-$subzona = is_numeric($subzonaRaw) ? (int)$subzonaRaw : (int)(is_string($subzonaRaw) ? trim(explode(',', $subzonaRaw)[0]) : 0);
+$subzona = is_string($subzonaRaw) ? trim($subzonaRaw) : (is_numeric($subzonaRaw) ? (string)$subzonaRaw : '');
 
 if ($codPrograma === '') {
     echo json_encode(['success' => false, 'message' => 'Falta código de programa.']);
@@ -43,25 +45,12 @@ if ($tieneNumCronograma) {
     if ($resMax && $row = $resMax->fetch_assoc()) $numCronograma = (int)$row['nextNum'];
 }
 
-// Obtener primera edad del programa si se necesita (siempre registrar edad)
-$edadPrograma = null;
-if ($tieneEdad) {
-    $stEdad = $conn->prepare("SELECT edad FROM san_fact_programa_det WHERE codPrograma = ? AND edad IS NOT NULL AND edad > 0 ORDER BY edad ASC LIMIT 1");
-    if ($stEdad) {
-        $stEdad->bind_param("s", $codPrograma);
-        $stEdad->execute();
-        $rEdad = $stEdad->get_result();
-        if ($rEdad && $row = $rEdad->fetch_assoc()) $edadPrograma = (int)$row['edad'];
-        $stEdad->close();
-    }
-}
-
 // Modo 1: items[] = [{ granja, nomGranja, campania, galpon, edad?, fechas: [...] }] (Especifico)
 $items = $input['items'] ?? null;
 if (is_array($items) && !empty($items)) {
     $cols = "granja, campania, galpon, codPrograma, nomPrograma, fechaCarga, fechaEjecucion, usuarioRegistro, zona, subzona";
     $placeholders = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
-    $types = "sssssssssi";
+    $types = "ssssssssss";
     if ($tieneNumCronograma) {
         $cols .= ", numCronograma";
         $placeholders .= ", ?";
@@ -79,7 +68,8 @@ if (is_array($items) && !empty($items)) {
     }
     $stmt = $conn->prepare("INSERT INTO san_fact_cronograma ($cols) VALUES ($placeholders)");
     if (!$stmt) {
-        echo json_encode(['success' => false, 'message' => 'Error prepare: ' . $conn->error]);
+        $errMsg = (isset($conn) && $conn) ? (string)@$conn->error : 'Prepare falló';
+        echo json_encode(['success' => false, 'message' => 'Error prepare: ' . $errMsg]);
         exit;
     }
     $total = 0;
@@ -90,14 +80,13 @@ if (is_array($items) && !empty($items)) {
         $fechas = $it['fechas'] ?? [];
         if (!is_array($fechas)) $fechas = [];
         $zonaItem = trim((string)($it['zona'] ?? $zona));
-        $subzonaItem = $it['subzona'] ?? null;
-        $subzonaVal = (is_numeric($subzonaItem) || (is_string($subzonaItem) && preg_match('/^\d+$/', trim((string)$subzonaItem)))) ? (int)$subzonaItem : 0;
+        $subzonaItem = $it['subzona'] ?? $subzona;
+        $subzonaVal = is_string($subzonaItem) ? trim($subzonaItem) : (is_numeric($subzonaItem) ? (string)$subzonaItem : '');
         foreach ($fechas as $f) {
             // Campaña = últimos 3 dígitos (del par o del ítem; si viene tcencos largo, se toma solo los 3 últimos)
             $campaniaRaw = trim((string)($f['campania'] ?? $it['campania'] ?? ''));
             $campania = strlen($campaniaRaw) >= 3 ? substr($campaniaRaw, -3) : str_pad($campaniaRaw, 3, '0', STR_PAD_LEFT);
-            $edadVal = isset($f['edad']) ? (int)$f['edad'] : (isset($it['edad']) ? (int)$it['edad'] : (int)$edadPrograma);
-            if ($edadVal < 0) $edadVal = 0;
+            $edadVal = isset($f['edad']) ? (int)$f['edad'] : (isset($it['edad']) ? (int)$it['edad'] : 0);
             if ($edadVal > 999) $edadVal = 999;
             $fechaCarga = isset($f['fechaCarga']) ? (is_string($f['fechaCarga']) ? $f['fechaCarga'] : date('Y-m-d', strtotime($f['fechaCarga']))) : '';
             $fechaEjecucion = isset($f['fechaEjecucion']) ? (is_string($f['fechaEjecucion']) ? $f['fechaEjecucion'] : date('Y-m-d', strtotime($f['fechaEjecucion']))) : (is_string($f) ? $f : date('Y-m-d', strtotime($f)));
@@ -106,18 +95,68 @@ if (is_array($items) && !empty($items)) {
             if ($tieneNumCronograma) $bindVals[] = $numCronograma;
             if ($tieneNomGranja) $bindVals[] = $nomGranja;
             if ($tieneEdad) $bindVals[] = $edadVal;
-            $stmt->bind_param($types, ...$bindVals);
+           
+            $params = array_merge([$types], $bindVals);
+            $refs = [];
+            foreach ($params as $k => $v) {
+                $refs[$k] = &$params[$k];
+            }
+            call_user_func_array([$stmt, 'bind_param'], $refs);
             if (!$stmt->execute()) {
+                $errMsg = $stmt->error ?: (isset($conn) && $conn ? (string)@$conn->error : '');
                 $stmt->close();
                 $conn->close();
-                echo json_encode(['success' => false, 'message' => 'Error al guardar: ' . $conn->error]);
+                echo json_encode(['success' => false, 'message' => 'Error al guardar: ' . $errMsg]);
                 exit;
             }
             $total++;
         }
     }
     $stmt->close();
+    // Insertar en san_cronograma_despliegue (scope persistente)
+    // Usar combinaciones enviadas en payload.combinaciones si existen; si no, calcular desde items (granja/campaña/galpón seleccionados)
+    $chkDespliegue = @$conn->query("SHOW TABLES LIKE 'san_cronograma_despliegue'");
+    if ($chkDespliegue && $chkDespliegue->num_rows > 0 && $tieneNumCronograma) {
+        $despliegueUnicos = [];
+        $combinacionesPayload = $input['combinaciones'] ?? null;
+        if (is_array($combinacionesPayload) && !empty($combinacionesPayload)) {
+            foreach ($combinacionesPayload as $c) {
+                $granja = substr(trim((string)($c['granja'] ?? '')), 0, 3);
+                $galpon = trim((string)($c['galpon'] ?? ''));
+                $campaniaRaw = trim((string)($c['campania'] ?? ''));
+                $campania = strlen($campaniaRaw) >= 3 ? substr($campaniaRaw, -3) : str_pad($campaniaRaw, 3, '0', STR_PAD_LEFT);
+                if ($granja === '' || $galpon === '') continue;
+                $key = $granja . '|' . $campania . '|' . $galpon;
+                if (!isset($despliegueUnicos[$key])) {
+                    $despliegueUnicos[$key] = ['granja' => $granja, 'campania' => $campania, 'galpon' => $galpon];
+                }
+            }
+        } else {
+            foreach ($items as $it) {
+                $granja = substr(trim((string)($it['granja'] ?? '')), 0, 3);
+                $galpon = trim((string)($it['galpon'] ?? ''));
+                if ($granja === '' || $galpon === '') continue;
+                $campaniaRaw = trim((string)($it['campania'] ?? ''));
+                $campania = strlen($campaniaRaw) >= 3 ? substr($campaniaRaw, -3) : str_pad($campaniaRaw, 3, '0', STR_PAD_LEFT);
+                $key = $granja . '|' . $campania . '|' . $galpon;
+                if (!isset($despliegueUnicos[$key])) {
+                    $despliegueUnicos[$key] = ['granja' => $granja, 'campania' => $campania, 'galpon' => $galpon];
+                }
+            }
+        }
+        $stDesp = $conn->prepare("INSERT INTO san_cronograma_despliegue (numCronograma, granja, campania, galpon, usuarioRegistro, fechaHoraRegistro) VALUES (?, ?, ?, ?, ?, NOW())");
+        if ($stDesp) {
+            foreach ($despliegueUnicos as $d) {
+                $stDesp->bind_param("issss", $numCronograma, $d['granja'], $d['campania'], $d['galpon'], $usuario);
+                @$stDesp->execute();
+            }
+            $stDesp->close();
+        }
+    }
     $conn->close();
+    $estBackend = min(10000, 1000 + ($total * 150));
+    header('X-Estimated-Time-Backend: ' . (int)$estBackend);
+    header('X-Estimated-Time-Frontend: 1000');
     echo json_encode(['success' => true, 'message' => 'Asignación guardada correctamente.', 'total' => $total]);
     exit;
 }
@@ -143,7 +182,7 @@ if (!is_array($pares)) {
 
 $colsModo2 = "granja, campania, galpon, codPrograma, nomPrograma, fechaCarga, fechaEjecucion, usuarioRegistro, zona, subzona";
 $placeholdersModo2 = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
-$typesModo2 = "sssssssssi";
+$typesModo2 = "ssssssssss";
 if ($tieneNumCronograma) {
     $colsModo2 .= ", numCronograma";
     $placeholdersModo2 .= ", ?";
@@ -151,7 +190,8 @@ if ($tieneNumCronograma) {
 }
 $stmt = $conn->prepare("INSERT INTO san_fact_cronograma ($colsModo2) VALUES ($placeholdersModo2)");
 if (!$stmt) {
-    echo json_encode(['success' => false, 'message' => 'Error prepare: ' . $conn->error]);
+    $errMsg = (isset($conn) && $conn) ? (string)@$conn->error : 'Prepare falló';
+    echo json_encode(['success' => false, 'message' => 'Error prepare: ' . $errMsg]);
     exit;
 }
 
@@ -170,12 +210,54 @@ foreach ($pares as $f) {
         $stmt->bind_param($typesModo2, $granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zona, $subzona);
     }
     if (!$stmt->execute()) {
+        $errMsg = $stmt->error ?: (isset($conn) && $conn ? (string)@$conn->error : '');
         $stmt->close();
         $conn->close();
-        echo json_encode(['success' => false, 'message' => 'Error al guardar: ' . $conn->error]);
+        echo json_encode(['success' => false, 'message' => 'Error al guardar: ' . $errMsg]);
         exit;
     }
 }
-$stmt->close();
-$conn->close();
-echo json_encode(['success' => true, 'message' => 'Asignación guardada correctamente.']);
+    $stmt->close();
+    // Insertar en san_cronograma_despliegue (Modo 2: una combinación granja/campania/galpon)
+    $chkDespliegue = @$conn->query("SHOW TABLES LIKE 'san_cronograma_despliegue'");
+    if ($chkDespliegue && $chkDespliegue->num_rows > 0 && $granja !== '' && $campania !== '' && $galpon !== '' && $codPrograma !== '') {
+        $g = substr(trim($granja), 0, 3);
+        $c = strlen(trim($campania)) >= 3 ? substr(trim($campania), -3) : str_pad(trim($campania), 3, '0', STR_PAD_LEFT);
+        $chkCodProg = @$conn->query("SHOW COLUMNS FROM san_cronograma_despliegue LIKE 'codPrograma'");
+        if ($chkCodProg && $chkCodProg->num_rows > 0) {
+            $stChk = $conn->prepare("SELECT 1 FROM san_cronograma_despliegue WHERE codPrograma = ? AND granja = ? AND campania = ? AND galpon = ? LIMIT 1");
+            $existe = false;
+            if ($stChk) {
+                $stChk->bind_param("ssss", $codPrograma, $g, $c, $galpon);
+                $stChk->execute();
+                $existe = ($stChk->get_result()->num_rows > 0);
+                $stChk->close();
+            }
+            if (!$existe) {
+                $stDesp = $conn->prepare("INSERT INTO san_cronograma_despliegue (codPrograma, granja, campania, galpon, usuarioRegistro, fechaHoraRegistro) VALUES (?, ?, ?, ?, ?, NOW())");
+                if ($stDesp) {
+                    $stDesp->bind_param("sssss", $codPrograma, $g, $c, $galpon, $usuario);
+                    @$stDesp->execute();
+                    $stDesp->close();
+                }
+            }
+        } elseif ($tieneNumCronograma) {
+            $stDesp = $conn->prepare("INSERT INTO san_cronograma_despliegue (numCronograma, granja, campania, galpon, usuarioRegistro, fechaHoraRegistro) VALUES (?, ?, ?, ?, ?, NOW())");
+            if ($stDesp) {
+                $stDesp->bind_param("issss", $numCronograma, $g, $c, $galpon, $usuario);
+                @$stDesp->execute();
+                $stDesp->close();
+            }
+        }
+    }
+    $conn->close();
+    $numRegs = is_array($pares) ? count($pares) : 0;
+    $estBackend = min(10000, 1000 + ($numRegs * 150));
+    header('X-Estimated-Time-Backend: ' . (int)$estBackend);
+    header('X-Estimated-Time-Frontend: 1000');
+    echo json_encode(['success' => true, 'message' => 'Asignación guardada correctamente.']);
+} catch (Throwable $e) {
+    if (isset($conn) && $conn) @$conn->close();
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Error del servidor: ' . $e->getMessage(), 'file' => $e->getFile(), 'line' => $e->getLine()]);
+}

@@ -1,7 +1,7 @@
 <?php
-include_once '../../../conexion_grs_joya/conexion.php';
+include_once '../../../conexion_grs/conexion.php';
 require_once __DIR__ . '/../../includes/filtro_periodo_util.php';
-$conn = conectar_joya();
+$conn = conectar_joya_mysqli();
 
 $page  = max(1, intval($_GET["page"] ?? 1));
 $limit = (int)($_GET["limit"] ?? 10);

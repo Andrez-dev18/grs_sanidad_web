@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-include_once '../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if ($conn) {
     mysqli_set_charset($conn, 'utf8mb4');
 }

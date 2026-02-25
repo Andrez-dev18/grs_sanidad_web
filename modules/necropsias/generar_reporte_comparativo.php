@@ -8,9 +8,9 @@ $tzLima = new DateTimeZone('America/Lima');
 
 
 ob_start();
-include_once '../../../conexion_grs_joya/conexion.php';
+include_once '../../../conexion_grs/conexion.php';
 require_once __DIR__ . '/../../includes/filtro_periodo_util.php';
-$conn = conectar_joya();
+$conn = conectar_joya_mysqli();
 ob_end_clean();
 
 if (!$conn) {

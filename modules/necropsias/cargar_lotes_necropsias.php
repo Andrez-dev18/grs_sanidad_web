@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
-include_once '../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 
 $draw = intval($_REQUEST['draw'] ?? 1);
 $start = intval($_REQUEST['start'] ?? 0);

@@ -3,7 +3,7 @@
 // Crear conexión global
 function obtenerConexion()
 {
-    $conexion = conectar_joya();
+    $conexion = conectar_joya_mysqli();
     if (!$conexion) {
         die("Error de conexión auditoria: " . mysqli_connect_error());
     }

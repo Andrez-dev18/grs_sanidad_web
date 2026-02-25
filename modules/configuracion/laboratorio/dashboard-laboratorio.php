@@ -14,8 +14,8 @@ if (empty($_SESSION['active'])) {
 
 
 //ruta relativa a la conexion
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -390,7 +390,9 @@ if ($codigoUsuario) {
                 language: window.DATATABLES_LANG_ES || {},
                 pageLength: 20,
                 lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, "Todos"]],
+                ordering: false,
                 order: [[0, 'asc']],
+                orderClasses: false,
                 dom: '<"dt-top-row"<"flex items-center gap-6" l><"flex items-center gap-2" f>>rt<"dt-bottom-row"<"text-sm text-gray-600" i><"text-sm text-gray-600" p>>',
                 initComplete: function() {
                     var wrapper = $('#tabla').closest('.dataTables_wrapper');
@@ -398,7 +400,7 @@ if ($codigoUsuario) {
                     var $filter = wrapper.find('.dataTables_filter').first();
                     var $controls = $('#labDtControls');
                     if ($controls.length && $length.length && $filter.length) {
-                        $controls.append($length, $filter);
+                        $controls.empty().append($length, $filter);
                     }
                 },
                 drawCallback: function() { renderizarTarjetasLab(); }
@@ -413,15 +415,11 @@ if ($codigoUsuario) {
                 $('#btnViewTablaLab').toggleClass('active', esLista);
                 $('#btnViewIconosLab').toggleClass('active', !esLista);
                 if (esLista) {
-                    var filterEl = $('#labIconosControls .dataTables_filter').detach();
-                    if (filterEl.length) $('#labDtControls').append(filterEl);
                     $('#labIconosControls').hide();
                     $('#labDtControls').show();
                 } else {
-                    var filterEl = $('#labDtControls .dataTables_filter').detach();
-                    if (filterEl.length) $('#labIconosControls').append(filterEl);
-                    $('#labDtControls').hide();
-                    $('#labIconosControls').show();
+                    $('#labDtControls').show();
+                    $('#labIconosControls').hide();
                     if (typeof renderizarTarjetasLab === 'function') renderizarTarjetasLab();
                 }
             }

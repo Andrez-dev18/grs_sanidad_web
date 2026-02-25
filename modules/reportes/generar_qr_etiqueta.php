@@ -5,8 +5,8 @@ if (empty($_SESSION['active'])) {
     exit('No autorizado');
 }
 
-include_once '../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión.");
 }

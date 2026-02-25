@@ -7,8 +7,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-include_once '../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -1291,6 +1291,54 @@ if (!$conn) {
             icono.classList.toggle('rotate-180');
         }
 
+        async function recalcularEdadPorFechaYGalpon(mostrarAlerta = true) {
+            const granjaEl = document.getElementById('granja');
+            const galponEl = document.getElementById('galpon');
+            const edadEl = document.getElementById('edad');
+            if (!granjaEl || !galponEl || !edadEl) return;
+
+            const codigo = (granjaEl.value || '').trim();
+            const galpon = (galponEl.value || '').trim();
+            const fecha = getFechaSeleccionada();
+
+            if (!codigo || !galpon) {
+                edadEl.value = '';
+                return;
+            }
+
+            try {
+                const r = await fetch(
+                    `get_edad.php?codigo=${encodeURIComponent(codigo)}&galpon=${encodeURIComponent(galpon)}&fecha=${encodeURIComponent(fecha)}`,
+                    { cache: 'no-store' }
+                );
+                const data = await r.json();
+                const edadNum = (data && data.edad !== null && data.edad !== undefined) ? parseInt(data.edad, 10) : NaN;
+
+                if (isNaN(edadNum)) {
+                    edadEl.value = '';
+                    return;
+                }
+
+                if (edadNum <= 0) {
+                    edadEl.value = '';
+                    if (mostrarAlerta) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Fecha inválida',
+                            text: 'La edad calculada es negativa o cero para este galpón. Seleccione una fecha válida.',
+                            confirmButtonText: 'Aceptar'
+                        });
+                    }
+                    return;
+                }
+
+                edadEl.value = String(edadNum);
+            } catch (err) {
+                console.error('Error recalculando edad por galpón:', err);
+                edadEl.value = '';
+            }
+        }
+
         async function cargarGranjasConFecha({
             preserveSelection = false
         } = {}) {
@@ -1819,6 +1867,7 @@ if (!$conn) {
             await cargarGranjasConFecha({
                 preserveSelection: tieneSeleccion
             });
+            await recalcularEdadPorFechaYGalpon(false);
         });
 
         // Al cambiar granja
@@ -1834,28 +1883,6 @@ if (!$conn) {
             selectGalpon.disabled = true;
 
             if (!codigo) return;
-
-            // Rellenar edad
-            const edadStr = option.dataset.edad || '';
-            const edadNum = parseInt(edadStr, 10);
-            if (!isNaN(edadNum) && edadNum <= 0) {
-                
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Fecha inválida',
-                    text: 'La edad calculada es negativa. Seleccione una fecha válida para esta granja.',
-                    confirmButtonText: 'Aceptar'
-                });
-
-                // Resetear selección y dependencias
-                this.value = '';
-                document.getElementById('campania').value = '';
-                document.getElementById('edad').value = '';
-                selectGalpon.innerHTML = '<option value="">Seleccione granja primero</option>';
-                selectGalpon.disabled = true;
-                return;
-            }
-            document.getElementById('edad').value = edadStr;
 
             // Campaña: últimos 3 dígitos del código de granja (tgranja)
             document.getElementById('campania').value = codigo.slice(-3);
@@ -1889,6 +1916,7 @@ if (!$conn) {
                 }
 
                 selectGalpon.disabled = false;
+                await recalcularEdadPorFechaYGalpon(true);
 
             } catch (err) {
                 console.error('Error cargando galpones:', err);
@@ -1896,7 +1924,9 @@ if (!$conn) {
             }
         });
 
-        document.getElementById('galpon').addEventListener('change', function() {});
+        document.getElementById('galpon').addEventListener('change', async function() {
+            await recalcularEdadPorFechaYGalpon(false);
+        });
 
         // Objeto para guardar las imágenes por nivel (máx 3)
         const evidencias = {};

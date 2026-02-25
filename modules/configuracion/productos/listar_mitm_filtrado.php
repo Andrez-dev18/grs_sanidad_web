@@ -6,75 +6,96 @@ if (empty($_SESSION['active'])) {
     exit;
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once __DIR__ . '/../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
     exit;
 }
 
+// Misma lógica de filtros que get_productos_programa.php (modal programas): lin, alma; más tcodprove y descri para el dashboard
 $lin = trim((string)($_GET['lin'] ?? ''));
 $alma = trim((string)($_GET['alma'] ?? ''));
 $tcodprove = trim((string)($_GET['tcodprove'] ?? ''));
 $descri = trim((string)($_GET['descri'] ?? ''));
 
-$tieneLin = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'lin'");
-$tieneAlma = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'alma'");
-$tieneLin = $tieneLin && $tieneLin->fetch_assoc();
-$tieneAlma = $tieneAlma && $tieneAlma->fetch_assoc();
+// Comprobar columnas de mitm (en producción pueden no existir todas)
+$chkLin = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'lin'");
+$tieneLin = $chkLin && $chkLin->num_rows > 0;
+$chkAlma = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'alma'");
+$tieneAlma = $chkAlma && $chkAlma->num_rows > 0;
+$chkTcodprove = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'tcodprove'");
+$tieneTcodprove = $chkTcodprove && $chkTcodprove->num_rows > 0;
+$chkDosis = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'dosis'");
+$tieneDosis = $chkDosis && $chkDosis->num_rows > 0;
+$chkUnidad = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'unidad'");
+$tieneUnidad = $chkUnidad && $chkUnidad->num_rows > 0;
 
-$lista = [];
-$sql = "SELECT m.codigo, m.descri, m.tcodprove, m.dosis, c.nombre AS nombre_proveedor";
-$sqlFrom = " FROM mitm m LEFT JOIN ccte c ON c.codigo = m.tcodprove";
-$sqlWhere = " WHERE 1=1";
+// SELECT solo columnas que existan en mitm; ccte existe y se usa para nombre_proveedor si mitm tiene tcodprove
+$sql = "SELECT m.codigo, m.descri";
+if ($tieneTcodprove) $sql .= ", m.tcodprove";
+if ($tieneDosis) $sql .= ", m.dosis";
+if ($tieneUnidad) $sql .= ", m.unidad";
+if ($tieneLin) $sql .= ", m.lin";
+if ($tieneAlma) $sql .= ", m.alma";
+if ($tieneTcodprove) $sql .= ", c.nombre AS nombre_proveedor";
+$sql .= " FROM mitm m";
+if ($tieneTcodprove) $sql .= " LEFT JOIN ccte c ON c.codigo = m.tcodprove";
+$sql .= " WHERE 1=1";
+
 $params = [];
 $types = '';
 
 if ($tieneLin && $lin !== '') {
-    $sqlWhere .= " AND m.lin = ?";
+    $sql .= " AND m.lin = ?";
     $params[] = $lin;
     $types .= 's';
 }
 if ($tieneAlma && $alma !== '') {
-    $sqlWhere .= " AND m.alma = ?";
+    $sql .= " AND m.alma = ?";
     $params[] = $alma;
     $types .= 's';
 }
-if ($tcodprove !== '') {
-    $sqlWhere .= " AND m.tcodprove = ?";
+if ($tieneTcodprove && $tcodprove !== '') {
+    $sql .= " AND m.tcodprove = ?";
     $params[] = $tcodprove;
     $types .= 's';
 }
 if ($descri !== '') {
-    $sqlWhere .= " AND m.descri LIKE ?";
+    $sql .= " AND (m.descri LIKE ? OR m.codigo LIKE ?)";
     $params[] = '%' . $descri . '%';
-    $types .= 's';
+    $params[] = '%' . $descri . '%';
+    $types .= 'ss';
 }
 
-$chkUnidad = @$conn->query("SHOW COLUMNS FROM mitm LIKE 'unidad'");
-$tieneUnidad = $chkUnidad && $chkUnidad->fetch_assoc();
-if ($tieneUnidad) $sql .= ", m.unidad";
-if ($tieneLin) $sql .= ", m.lin";
-if ($tieneAlma) $sql .= ", m.alma";
-$sql .= $sqlFrom . $sqlWhere . " ORDER BY m.descri ASC";
+$sql .= " ORDER BY m.descri ASC";
 
+$lista = [];
 $stmt = $conn->prepare($sql);
 if ($stmt) {
-    if ($types !== '') $stmt->bind_param($types, ...$params);
+    if ($types !== '') {
+        $stmt->bind_param($types, ...$params);
+    }
     $stmt->execute();
     $res = $stmt->get_result();
-    while ($row = $res->fetch_assoc()) {
-        $item = [
-            'codigo' => (string)($row['codigo'] ?? ''),
-            'descri' => (string)($row['descri'] ?? ''),
-            'tcodprove' => (string)($row['tcodprove'] ?? ''),
-            'nombre_proveedor' => (string)($row['nombre_proveedor'] ?? ''),
-            'dosis' => (string)($row['dosis'] ?? '')
-        ];
-        if ($tieneUnidad) $item['unidad'] = (string)($row['unidad'] ?? '');
-        if ($tieneLin) $item['lin'] = (string)($row['lin'] ?? '');
-        if ($tieneAlma) $item['alma'] = (string)($row['alma'] ?? '');
-        $lista[] = $item;
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            $item = [
+                'codigo' => (string)($row['codigo'] ?? ''),
+                'descri' => (string)($row['descri'] ?? ''),
+                'tcodprove' => '',
+                'nombre_proveedor' => '',
+                'dosis' => '',
+                'unidad' => '',
+            ];
+            if ($tieneTcodprove) $item['tcodprove'] = ($row['tcodprove'] === null || $row['tcodprove'] === '') ? '' : trim((string)$row['tcodprove']);
+            if ($tieneTcodprove) $item['nombre_proveedor'] = trim((string)($row['nombre_proveedor'] ?? ''));
+            if ($tieneDosis) $item['dosis'] = trim((string)($row['dosis'] ?? ''));
+            if ($tieneUnidad) $item['unidad'] = trim((string)($row['unidad'] ?? ''));
+            if ($tieneLin) $item['lin'] = (string)($row['lin'] ?? '');
+            if ($tieneAlma) $item['alma'] = (string)($row['alma'] ?? '');
+            $lista[] = $item;
+        }
     }
     $stmt->close();
 }

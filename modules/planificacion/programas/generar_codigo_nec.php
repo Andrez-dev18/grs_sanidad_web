@@ -7,30 +7,34 @@ if (empty($_SESSION['active'])) {
     exit;
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
     exit;
 }
 
-$sigla = isset($_GET['sigla']) ? trim($_GET['sigla']) : (isset($_POST['sigla']) ? trim($_POST['sigla']) : '');
 $codTipo = isset($_GET['codTipo']) ? (int)$_GET['codTipo'] : (isset($_POST['codTipo']) ? (int)$_POST['codTipo'] : 0);
-
-if (empty($sigla) && $codTipo > 0) {
-    $st = $conn->prepare("SELECT sigla FROM san_dim_tipo_programa WHERE codigo = ?");
-    $st->bind_param("i", $codTipo);
-    $st->execute();
-    $res = $st->get_result();
-    if ($res && $row = $res->fetch_assoc() && !empty(trim($row['sigla'] ?? ''))) {
-        $sigla = trim($row['sigla']);
-    }
-    $st->close();
+if ($codTipo <= 0) {
+    echo json_encode(['success' => false, 'message' => 'Indique codTipo.']);
+    exit;
 }
 
-if (empty($sigla)) {
-    echo json_encode(['success' => false, 'message' => 'Indique sigla o codTipo.']);
+$sigla = '';
+$st = $conn->prepare("SELECT sigla FROM san_dim_tipo_programa WHERE codigo = ?");
+$st->bind_param("i", $codTipo);
+$st->execute();
+$res = $st->get_result();
+if ($res) {
+    $row = $res->fetch_assoc();
+    if ($row && !empty(trim($row['sigla'] ?? ''))) {
+        $sigla = trim($row['sigla']);
+    }
+}
+$st->close();
+if ($sigla === '') {
+    echo json_encode(['success' => false, 'message' => 'Tipo de programa sin sigla configurada.']);
     exit;
 }
 
@@ -39,10 +43,7 @@ if (strlen($sigla) > 10) {
     $sigla = substr($sigla, 0, 10);
 }
 
-/**
- * Genera el siguiente código para la sigla consultando san_fact_programa_cab.
- * Formato: SIGLA-0001, SIGLA-0002, ...
- */
+    
 function generarSiguienteCodigo($conn, $sigla) {
     $conn->query("LOCK TABLES san_fact_programa_cab WRITE");
     try {

@@ -1,13 +1,13 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
-include_once __DIR__ . '/../../../conexion_grs_joya/conexion.php';
+include_once __DIR__ . '/../../../conexion_grs/conexion.php';
 require_once __DIR__ . '/../../includes/filtro_periodo_util.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
-$conn = conectar_joya();
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     die('Error de conexión.');
 }

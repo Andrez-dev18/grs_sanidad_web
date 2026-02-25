@@ -1,4 +1,7 @@
 <?php
+@ini_set('max_execution_time', '0');
+@set_time_limit(0);
+@ini_set('memory_limit', '512M');
 session_start();
 if (empty($_SESSION['active'])) {
     echo '<script>
@@ -6,8 +9,9 @@ if (empty($_SESSION['active'])) {
     </script>';
     exit();
 }
-include_once __DIR__ . '/../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+@session_write_close();
+include_once __DIR__ . '/../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) die("Error de conexión: " . mysqli_connect_error());
 ?>
 <!DOCTYPE html>
@@ -28,7 +32,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         .cal-layout { display: grid; grid-template-columns: 240px 1fr; gap: 1rem; align-items: start; }
         @media (max-width: 900px) { .cal-layout { grid-template-columns: 1fr; } }
         .cal-main { background: #fff; border-radius: 1rem; padding: 1rem; border: 1px solid #e5e7eb; min-width: 0; }
-        .cal-sidebar { background: #fff; border-radius: 1rem; padding: 1rem; border: 1px solid #e5e7eb; position: sticky; top: 1rem; }
+        .cal-sidebar { background: #fff; border-radius: 1rem; padding: 1rem; border: 1px solid #e5e7eb; position: sticky; top: 1rem; min-height: calc(100dvh - 7rem); }
         .cal-mini { width: 100%; font-size: 0.75rem; }
         .cal-mini .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
         .cal-mini .cal-dia-header { padding: 0.25rem; text-align: center; font-weight: 600; color: #64748b; background: #f1f5f9; border-radius: 4px; }
@@ -57,7 +61,8 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         .leyenda-color { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
         .filter-section { margin-bottom: 1rem; }
         .filter-section h4 { font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem; }
-        .filter-section .checkboxes { max-height: 160px; overflow-y: auto; }
+        .filter-section .checkboxes { max-height: 220px; overflow-y: auto; }
+        #filtroCronogramasAnio.checkboxes { max-height: 380px; }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; }
         .modal-overlay.hidden { display: none; }
         .modal-box { background: white; border-radius: 1rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; }
@@ -90,9 +95,67 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         .cal-pdf-btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.25rem 0.5rem; border-radius: 0.375rem; color: #dc2626; border: 1px solid #fca5a5; font-size: 0.875rem; text-decoration: none; white-space: nowrap; }
         .cal-pdf-btn:hover { background: #fef2f2; color: #b91c1c; }
         .cal-pdf-btn i { margin-right: 0.25rem; }
+        .cal-wa-btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.25rem 0.5rem; border-radius: 0.375rem; color: #15803d; border: 1px solid #86efac; font-size: 0.875rem; text-decoration: none; white-space: nowrap; background: #f0fdf4; }
+        .cal-wa-btn:hover { background: #dcfce7; color: #166534; }
+        .cal-wa-btn i { margin-right: 0.25rem; }
+        .cal-dia-acciones { display: inline-flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; }
+        .cal-dia-acciones.cal-top-right { position: absolute; top: 0.4rem; right: 0.4rem; z-index: 2; }
+        .cal-card-con-acciones { position: relative; padding-top: 2rem; }
         .cal-pdf-celda { padding: 0.2rem 0.35rem; font-size: 0.75rem; margin-top: 0.25rem; }
         .cal-pdf-celda i { margin-right: 0; }
-        .cal-dia-celda { position: relative; }
+        .cal-wa-celda { padding: 0.2rem 0.35rem; font-size: 0.75rem; margin-top: 0.25rem; }
+        .cal-wa-celda i { margin-right: 0; }
+        .cal-dia-celda { position: relative; padding-top: 1.65rem; }
+        .cal-vista-anio-mes .cal-dia.selected { box-shadow: inset 0 0 0 2px #d97706; background: #fef3c7; }
+        @media (max-width: 900px) {
+            body.p-4 { padding: 0.75rem; }
+            .cal-layout {
+                display: flex;
+                flex-direction: column;
+            }
+            .cal-main { order: 1; }
+            .cal-sidebar { order: 2; }
+            .cal-toolbar { gap: 0.5rem; padding: 0.6rem; }
+            .cal-toolbar > * { width: 100%; }
+            .cal-toolbar > .flex.items-center.gap-2 {
+                justify-content: space-between;
+                width: 100%;
+            }
+            .cal-view-select { width: 100%; min-width: 0; }
+            .cal-nav-label { min-width: 0; font-size: 0.82rem; text-align: center; }
+            .cal-layout { gap: 0.75rem; }
+            .cal-sidebar {
+                position: static;
+                top: auto;
+                padding: 0.75rem;
+                min-height: 0;
+            }
+            .cal-main {
+                padding: 0.75rem;
+                border-radius: 0.8rem;
+            }
+            .cal-grid { font-size: 0.72rem; gap: 1px; }
+            .cal-dia { min-height: 56px; padding: 3px; }
+            .cal-dia-num { margin-bottom: 2px; }
+            .cal-evento { font-size: 0.64rem; padding: 2px 4px; }
+            .cal-vista-anio { grid-template-columns: 1fr; gap: 0.7rem; }
+            .modal-overlay { padding: 0.6rem; }
+            .modal-box {
+                width: 100%;
+                max-width: 100%;
+                max-height: calc(100dvh - 1.2rem);
+                border-radius: 0.8rem;
+            }
+            .modal-header { padding: 0.8rem 0.9rem; }
+            .modal-body { padding: 0.9rem; }
+            #modalWhatsAppDia .modal-body .grid {
+                grid-template-columns: 1fr;
+            }
+            #modalWhatsAppDia .modal-body .sm\:col-span-1,
+            #modalWhatsAppDia .modal-body .sm\:col-span-2 {
+                grid-column: auto;
+            }
+        }
     </style>
 </head>
 <body class="p-4">
@@ -217,7 +280,31 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             <div class="modal-body" id="modalEventosDiaBody"></div>
         </div>
     </div>
+    <div id="modalWhatsAppDia" class="modal-overlay hidden">
+        <div class="modal-box" style="max-width: 520px;">
+            <div class="modal-header">
+                <h3 class="text-lg font-semibold text-gray-800" id="modalWhatsAppDiaTitulo">Enviar eventos por WhatsApp</h3>
+                <button type="button" class="modal-cerrar text-gray-400 hover:text-gray-600 text-2xl leading-none" data-modal="modalWhatsAppDia">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="text-sm text-gray-600 mb-3">Seleccione un destinatario.</p>
+                <div class="mb-2">
+                    <select id="modalWhatsAppDiaDestino" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white">
+                        <option value="">Cargando destinatarios...</option>
+                    </select>
+                </div>
+                <p class="text-xs text-gray-500 mb-4" id="modalWhatsAppDiaResumen"></p>
+                <div class="flex justify-end gap-2">
+                    <button type="button" class="px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm hover:bg-gray-50" data-modal="modalWhatsAppDia">Cancelar</button>
+                    <button type="button" id="modalWhatsAppDiaEnviar" class="px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-green-700 text-sm hover:bg-green-100">
+                        <i class="fab fa-whatsapp mr-1"></i> Enviar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
 (function() {
     var calendarData = [];
@@ -229,6 +316,11 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
     var calCronogramasVisibles = null;
     var calGranjasVisibles = null;
     var calEventosGlobal = [];
+    var calWhatsAppFechaPendiente = '';
+    var calWhatsAppEventosPendientes = [];
+    var calWhatsAppDestinatarios = [];
+
+    var calForzarAutoScroll = true;
     var vistaActual = 'mes';
     var fechaNavegacion = (function() {
         var d = new Date();
@@ -303,8 +395,132 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
     function urlPdfCronogramaDia(fechaKey) {
         if (!fechaKey) return '#';
         var base = '../cronograma/generar_reporte_cronograma_filtrado_pdf.php';
-        var q = 'periodoTipo=ENTRE_FECHAS&fechaInicio=' + encodeURIComponent(fechaKey) + '&fechaFin=' + encodeURIComponent(fechaKey) + '&porFechaEjecucion=1';
+        var q = 'periodoTipo=ENTRE_FECHAS&fechaInicio=' + encodeURIComponent(fechaKey) + '&fechaFin=' + encodeURIComponent(fechaKey);
         return base + '?' + q;
+    }
+    function fechaActualYMD() {
+        var d = new Date();
+        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
+    function obtenerUrlBaseSanidad() {
+        return 'https://granjarinconadadelsur.com/sanidad';
+    }
+    function obtenerUrlPdfCronogramaDia(fechaKey) {
+        var key = (fechaKey || '').toString().trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) key = fechaActualYMD();
+        var q = 'periodoTipo=ENTRE_FECHAS&fechaInicio=' + encodeURIComponent(key) + '&fechaFin=' + encodeURIComponent(key);
+        return obtenerUrlBaseSanidad() + '/modules/planificacion/cronograma/generar_reporte_cronograma_filtrado_pdf.php?' + q;
+    }
+    function normalizarTelefono(raw) {
+        return (raw || '').toString().replace(/\D/g, '');
+    }
+    function obtenerUrlCalendarioFecha(fechaKey) {
+        return 'https://granjarinconadadelsur.com/sanidad/modules/planificacion/calendario/dashboard-calendario.php?fecha=' + encodeURIComponent(fechaKey || '');
+    }
+    function construirMensajeWhatsAppDia(fechaKey, eventos) {
+        var fechaTxt = fechaDDMMYYYY(fechaKey || '') || (fechaKey || '');
+        return 'Hola, GRS te recuerda los eventos del cronograma para el dia: ' + fechaTxt + '\n' + obtenerUrlPdfCronogramaDia(fechaKey);
+    }
+    function abrirModalWhatsAppDia(fechaKey, eventos) {
+        calWhatsAppFechaPendiente = fechaKey || '';
+        calWhatsAppEventosPendientes = Array.isArray(eventos) ? eventos.slice() : [];
+        var resumen = document.getElementById('modalWhatsAppDiaResumen');
+        if (resumen) resumen.textContent = 'Fecha: ' + (fechaDDMMYYYY(fechaKey || '') || fechaKey || '—') + ' | Eventos: ' + calWhatsAppEventosPendientes.length;
+        cargarDestinatariosWhatsAppDia(true);
+        document.getElementById('modalWhatsAppDia').classList.remove('hidden');
+    }
+    function renderDestinatariosWhatsAppDia() {
+        var sel = document.getElementById('modalWhatsAppDiaDestino');
+        if (!sel) return;
+        if (!Array.isArray(calWhatsAppDestinatarios) || calWhatsAppDestinatarios.length === 0) {
+            sel.innerHTML = '<option value="">No hay destinatarios autorizados</option>';
+            return;
+        }
+        var html = '<option value="">Seleccione destinatario...</option>';
+        calWhatsAppDestinatarios.forEach(function(u) {
+            var tel = normalizarTelefono(u.telefono || '');
+            if (!tel) return;
+            var nom = (u.nombre || '').toString().trim();
+            var cod = (u.codigo || '').toString().trim();
+            var etiqueta = (nom || cod || 'Usuario') + ' — ' + tel;
+            html += '<option value="' + esc(tel) + '">' + esc(etiqueta) + '</option>';
+        });
+        sel.innerHTML = html;
+        sel.selectedIndex = 0;
+        sel.focus();
+    }
+    function cargarDestinatariosWhatsAppDia(forceReload) {
+        if (!forceReload && Array.isArray(calWhatsAppDestinatarios) && calWhatsAppDestinatarios.length > 0) {
+            renderDestinatariosWhatsAppDia();
+            return Promise.resolve();
+        }
+        var sel = document.getElementById('modalWhatsAppDiaDestino');
+        if (sel) sel.innerHTML = '<option value="">Cargando destinatarios...</option>';
+        return fetch('get_destinatarios_whatsapp.php')
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                calWhatsAppDestinatarios = (res && res.success && Array.isArray(res.data)) ? res.data : [];
+                renderDestinatariosWhatsAppDia();
+            })
+            .catch(function() {
+                calWhatsAppDestinatarios = [];
+                renderDestinatariosWhatsAppDia();
+            });
+    }
+    function mostrarAlerta(titulo, texto, tipo) {
+        if (window.Swal && typeof window.Swal.fire === 'function') {
+            window.Swal.fire({
+                icon: tipo || 'info',
+                title: titulo || 'Mensaje',
+                text: texto || '',
+                confirmButtonText: 'Aceptar'
+            });
+        } else {
+            alert(texto || titulo || 'Mensaje');
+        }
+    }
+    function bindBotonesWhatsAppDia(eventosPorDia) {
+        document.querySelectorAll('[data-whatsapp-dia]').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                var key = this.getAttribute('data-whatsapp-dia');
+                if (!key) return;
+                abrirModalWhatsAppDia(key, (eventosPorDia && eventosPorDia[key]) ? eventosPorDia[key] : []);
+            });
+        });
+    }
+    function accionesDiaHtml(fechaKey, eventos, classExtra) {
+        if (!eventos || eventos.length === 0) return '';
+        var extra = (classExtra || '').toString().trim();
+        var wrapperClass = extra.indexOf('cal-top-right') !== -1 ? ' cal-top-right' : '';
+        var btnClass = extra.replace(/\bcal-top-right\b/g, '').trim();
+        var clase = btnClass ? (' ' + btnClass) : '';
+        var textPdf = classExtra ? '' : ' PDF';
+        var textWa = classExtra ? '' : ' WhatsApp';
+        return '<span class="cal-dia-acciones' + wrapperClass + '">'
+            + '<a href="' + esc(urlPdfCronogramaDia(fechaKey)) + '" class="cal-pdf-btn' + clase + '" target="_blank" rel="noopener" title="Reporte PDF cronogramas del día"><i class="fas fa-file-pdf"></i>' + textPdf + '</a>'
+            + '<a href="#" data-whatsapp-dia="' + esc(fechaKey) + '" class="cal-wa-btn' + clase.replace('cal-pdf-celda', 'cal-wa-celda') + '" title="Enviar eventos del día por WhatsApp" onclick="event.stopPropagation();"><i class="fab fa-whatsapp"></i>' + textWa + '</a>'
+            + '</span>';
+    }
+    function scrollADiaEnVista() {
+        // Solo auto-scroll en consulta de día específico.
+        // Para periodos (semana/mes/año) no se debe alterar el scroll.
+        if (vistaActual !== 'dia' && !calForzarAutoScroll) return;
+        var key = (calFechaElegida || fechaNavegacion || '').toString().trim();
+        if (!key) return;
+        var selector = '';
+        if (vistaActual === 'mes') selector = '#calGrid .cal-dia-celda[data-key="' + key + '"]';
+        else if (vistaActual === 'semana') selector = '#calGrid .cal-vista-semana-dia[data-key="' + key + '"]';
+        else if (vistaActual === 'anio') selector = '#calGrid .cal-vista-anio-mes .cal-dia[data-key="' + key + '"]';
+        else if (vistaActual === 'dia') selector = '#calGrid .cal-vista-dia-card';
+        if (!selector) return;
+        var el = document.querySelector(selector);
+        if (!el) return;
+        setTimeout(function() {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+            calForzarAutoScroll = false;
+        }, 30);
     }
 
     var calEventoActualCodPrograma = '';
@@ -352,7 +568,11 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             }
             var cab = res.cab || {};
             var detalles = res.detalles || [];
-            cabEl.innerHTML = '<div class="font-semibold text-gray-800 mb-1">' + esc(cab.codigo) + ' — ' + esc(cab.nombre) + '</div><dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600"><dt class="font-medium">Tipo</dt><dd>' + esc(cab.nomTipo || '') + '</dd>' + (cab.despliegue ? '<dt class="font-medium">Despliegue</dt><dd>' + esc(cab.despliegue) + '</dd>' : '') + (cab.descripcion ? '<dt class="font-medium col-span-2">Descripción</dt><dd class="col-span-2">' + esc(cab.descripcion) + '</dd>' : '') + '</dl>';
+            var fi = (cab.fechaInicio || '').toString().trim().substring(0, 10);
+            var ff = (cab.fechaFin || '').toString().trim().substring(0, 10);
+            var txtFechaInicio = fi ? (fechaDDMMYYYY(fi) || fi) : '—';
+            var txtFechaFin = ff ? (fechaDDMMYYYY(ff) || ff) : '<em>sin fecha de fin</em>';
+            cabEl.innerHTML = '<div class="font-semibold text-gray-800 mb-1">' + esc(cab.codigo) + ' — ' + esc(cab.nombre) + '</div><dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600"><dt class="font-medium">Tipo</dt><dd>' + esc(cab.nomTipo || '') + '</dd>' + (cab.despliegue ? '<dt class="font-medium">Despliegue</dt><dd>' + esc(cab.despliegue) + '</dd>' : '') + '<dt class="font-medium">Fecha inicio</dt><dd>' + (fi ? esc(txtFechaInicio) : txtFechaInicio) + '</dd><dt class="font-medium">Fecha fin</dt><dd>' + (ff ? esc(txtFechaFin) : txtFechaFin) + '</dd>' + (cab.descripcion ? '<dt class="font-medium col-span-2">Descripción</dt><dd class="col-span-2">' + esc(cab.descripcion) + '</dd>' : '') + '</dl>';
             var sigla = (res.sigla || 'PL').toUpperCase();
             if (sigla === 'NEC') sigla = 'NC';
             var cols = columnasPorSiglaCal[sigla] || columnasPorSiglaCal['PL'];
@@ -474,6 +694,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
                 if (!key) return;
                 calFechaElegida = key;
                 fechaNavegacion = key;
+                calForzarAutoScroll = true;
                 cargarDatosVista();
             });
         });
@@ -521,10 +742,11 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         var mesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
         var f = parseFecha(fechaNavegacion);
         var titulo = f.getDate() + ' ' + mesNombres[f.getMonth()] + ' ' + f.getFullYear();
-        var pdfLink = eventos.length > 0 ? '<a href="' + esc(urlPdfCronogramaDia(fechaNavegacion)) + '" class="cal-pdf-btn" target="_blank" rel="noopener" title="Reporte PDF cronogramas del día"><i class="fas fa-file-pdf"></i> PDF</a>' : '';
-        var html = '<div class="cal-vista-dia-card"><div class="flex items-center justify-between gap-2 mb-3 flex-wrap"><h3 class="text-lg font-semibold text-gray-800">' + esc(titulo) + '</h3>' + pdfLink + '</div><div id="calContEventosDia"></div></div>';
+        var acciones = accionesDiaHtml(fechaNavegacion, eventos, 'cal-pdf-celda cal-top-right');
+        var html = '<div class="cal-vista-dia-card cal-card-con-acciones"><h3 class="text-lg font-semibold text-gray-800 mb-3">' + esc(titulo) + '</h3>' + acciones + '<div id="calContEventosDia"></div></div>';
         document.getElementById('calGrid').innerHTML = html;
         pintarEventosEnContenedor(eventos, colorByNumCronograma, 'calContEventosDia');
+        bindBotonesWhatsAppDia(eventosPorDia);
     }
 
     function renderVistaSemana(eventosPorDia, colorByNumCronograma) {
@@ -537,8 +759,8 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             var eventos = eventosPorDia[key] || [];
             var d = parseFecha(key);
             var titulo = diasSem[i] + ' ' + d.getDate() + ' ' + mesNombres[d.getMonth()];
-            var pdfLink = eventos.length > 0 ? '<a href="' + esc(urlPdfCronogramaDia(key)) + '" class="cal-pdf-btn" target="_blank" rel="noopener" title="Reporte PDF cronogramas del día"><i class="fas fa-file-pdf"></i> PDF</a>' : '';
-            html += '<div class="cal-vista-semana-dia"><div class="flex items-center justify-between gap-2 mb-1"><h4>' + esc(titulo) + '</h4>' + pdfLink + '</div><div id="calContSemana' + i + '"></div></div>';
+            var acciones = accionesDiaHtml(key, eventos, 'cal-pdf-celda cal-top-right');
+            html += '<div class="cal-vista-semana-dia cal-card-con-acciones" data-key="' + esc(key) + '"><h4 class="mb-1">' + esc(titulo) + '</h4>' + acciones + '<div id="calContSemana' + i + '"></div></div>';
         }
         html += '</div>';
         document.getElementById('calGrid').innerHTML = html;
@@ -546,6 +768,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             var keyJ = addDays(lunes, j);
             pintarEventosEnContenedor(eventosPorDia[keyJ] || [], colorByNumCronograma, 'calContSemana' + j);
         }
+        bindBotonesWhatsAppDia(eventosPorDia);
     }
 
     function renderVistaMes(eventosPorDia, colorByNumCronograma, cronogramasLeyenda) {
@@ -589,8 +812,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
                 html += '<span class="cal-evento-texto"><span class="cal-evento-programa">' + esc(programa) + '</span><br><span class="cal-evento-granja">' + esc(granja) + '</span></span></div>';
             });
             if ((cel.eventos || []).length > 0) {
-                var urlPdf = urlPdfCronogramaDia(cel.key);
-                html += '<a href="' + esc(urlPdf) + '" class="cal-pdf-btn cal-pdf-celda" target="_blank" rel="noopener" title="Reporte PDF cronogramas del día" onclick="event.stopPropagation();"><i class="fas fa-file-pdf"></i></a>';
+                html += accionesDiaHtml(cel.key, cel.eventos, 'cal-pdf-celda cal-top-right');
             }
             html += '</div>';
         });
@@ -600,7 +822,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             el.addEventListener('click', function(ev) {
                 if (ev.target.closest('.cal-evento-click')) return;
                 var key = this.getAttribute('data-key');
-                if (key) { calFechaElegida = key; renderCalendario(); }
+                if (key) { calFechaElegida = key; fechaNavegacion = key; renderCalendario(); }
             });
         });
         document.querySelectorAll('#calGrid .cal-evento-click').forEach(function(el) {
@@ -622,6 +844,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
                 document.getElementById('modalDetalleEvento').classList.remove('hidden');
             });
         });
+        bindBotonesWhatsAppDia(eventosPorDia);
     }
 
     function renderVistaAnio(eventosPorDia, colorByNumCronograma) {
@@ -648,6 +871,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
                 var cls = 'cal-dia';
                 if (!esEsteMes) cls += ' otro-mes';
                 if (key === hoyStr) cls += ' hoy';
+                if (key === (calFechaElegida || fechaNavegacion)) cls += ' selected';
                 if (tieneEventos) cls += ' has-eventos';
                 html += '<div class="' + cls + '" data-key="' + esc(key) + '" role="button" tabindex="0">' + dia + '</div>';
                 fecha.setDate(fecha.getDate() + 1);
@@ -665,10 +889,11 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
                 var mesNombresLargo = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
                 document.getElementById('modalEventosDiaTitulo').textContent = 'Eventos del ' + f.getDate() + ' de ' + mesNombresLargo[f.getMonth()] + ' de ' + f.getFullYear();
                 var pdfWrap = document.getElementById('modalEventosDiaPdf');
-                if (pdfWrap) pdfWrap.innerHTML = eventos.length > 0 ? '<a href="' + urlPdfCronogramaDia(key) + '" class="cal-pdf-btn" target="_blank" rel="noopener" title="Reporte PDF cronogramas del día"><i class="fas fa-file-pdf"></i> PDF</a>' : '';
+                if (pdfWrap) pdfWrap.innerHTML = accionesDiaHtml(key, eventos, '');
                 var body = document.getElementById('modalEventosDiaBody');
                 body.innerHTML = '<div id="calModalEventosDiaLista"></div>';
                 pintarEventosEnContenedor(eventos, colorByNumCronograma, 'calModalEventosDiaLista');
+                bindBotonesWhatsAppDia(eventosPorDia);
                 document.getElementById('modalEventosDia').classList.remove('hidden');
             });
         });
@@ -692,12 +917,13 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         });
         document.getElementById('calAnioLeyenda').textContent = '(' + anioActualCal + ')';
 
-        if (vistaActual === 'dia') { renderVistaDia(eventosPorDia, colorByNumCronograma); renderMiniCalendario(); actualizarPanelCronogramasAnio(cronogramasLeyenda); return; }
-        if (vistaActual === 'semana') { renderVistaSemana(eventosPorDia, colorByNumCronograma); renderMiniCalendario(); actualizarPanelCronogramasAnio(cronogramasLeyenda); return; }
-        if (vistaActual === 'anio') { renderVistaAnio(eventosPorDia, colorByNumCronograma); renderMiniCalendario(); actualizarPanelCronogramasAnio(cronogramasLeyenda); return; }
+        if (vistaActual === 'dia') { renderVistaDia(eventosPorDia, colorByNumCronograma); renderMiniCalendario(); actualizarPanelCronogramasAnio(cronogramasLeyenda); scrollADiaEnVista(); return; }
+        if (vistaActual === 'semana') { renderVistaSemana(eventosPorDia, colorByNumCronograma); renderMiniCalendario(); actualizarPanelCronogramasAnio(cronogramasLeyenda); scrollADiaEnVista(); return; }
+        if (vistaActual === 'anio') { renderVistaAnio(eventosPorDia, colorByNumCronograma); renderMiniCalendario(); actualizarPanelCronogramasAnio(cronogramasLeyenda); scrollADiaEnVista(); return; }
         renderVistaMes(eventosPorDia, colorByNumCronograma, cronogramasLeyenda);
         renderMiniCalendario();
         actualizarPanelCronogramasAnio(cronogramasLeyenda);
+        scrollADiaEnVista();
     }
 
     function actualizarPanelCronogramasAnio(cronogramasLeyenda) {
@@ -709,7 +935,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         }
         var html = '';
         cronogramasLeyenda.forEach(function(c, i) {
-            var color = colorCronograma(c.numCronograma);
+            var color = coloresGranja[i % coloresGranja.length];
             var checked = !calCronogramasVisibles || calCronogramasVisibles.size === 0 || calCronogramasVisibles.has(c.numCronograma);
             html += '<label class="leyenda-item block mb-1"><input type="checkbox" class="chk-crono-anio" data-numcronograma="' + c.numCronograma + '" ' + (checked ? 'checked' : '') + '><span class="leyenda-color inline-block" style="background:' + color + '"></span><span class="text-sm">' + esc(c.etiqueta) + '</span></label>';
         });
@@ -755,8 +981,8 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         }
 
         if (v === 'dia') {
-            var urlDia = '../cronograma/listar_cronograma.php?periodoTipo=ENTRE_FECHAS&fechaInicio=' + encodeURIComponent(fechaNavegacion) + '&fechaFin=' + encodeURIComponent(fechaNavegacion) + '&porFechaEjecucion=1';
-            var urlAnio = '../cronograma/listar_cronograma.php?periodoTipo=ENTRE_FECHAS&fechaInicio=' + anio + '-01-01&fechaFin=' + anio + '-12-31' + '&porFechaEjecucion=1';
+            var urlDia = '../cronograma/listar_cronograma.php?periodoTipo=ENTRE_FECHAS&fechaInicio=' + encodeURIComponent(fechaNavegacion) + '&fechaFin=' + encodeURIComponent(fechaNavegacion);
+            var urlAnio = '../cronograma/listar_cronograma.php?periodoTipo=ENTRE_FECHAS&fechaInicio=' + anio + '-01-01&fechaFin=' + anio + '-12-31&modo=resumen_ligero';
             return fetch(urlDia).then(function(r) { return r.json(); }).then(function(res) {
                 calendarData = res.success && res.data ? res.data : [];
                 return fetch(urlAnio).then(function(r2) { return r2.json(); }).then(function(res2) {
@@ -777,8 +1003,8 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         if (v === 'semana') {
             var lunes = getLunesSemana(fechaNavegacion);
             var domingo = getDomingoSemana(fechaNavegacion);
-            var urlSemana = '../cronograma/listar_cronograma.php?periodoTipo=ENTRE_FECHAS&fechaInicio=' + encodeURIComponent(lunes) + '&fechaFin=' + encodeURIComponent(domingo) + '&porFechaEjecucion=1';
-            var urlAnioS = '../cronograma/listar_cronograma.php?periodoTipo=ENTRE_FECHAS&fechaInicio=' + anio + '-01-01&fechaFin=' + anio + '-12-31' + '&porFechaEjecucion=1';
+            var urlSemana = '../cronograma/listar_cronograma.php?periodoTipo=ENTRE_FECHAS&fechaInicio=' + encodeURIComponent(lunes) + '&fechaFin=' + encodeURIComponent(domingo);
+            var urlAnioS = '../cronograma/listar_cronograma.php?periodoTipo=ENTRE_FECHAS&fechaInicio=' + anio + '-01-01&fechaFin=' + anio + '-12-31&modo=resumen_ligero';
             return fetch(urlSemana).then(function(r) { return r.json(); }).then(function(res) {
                 calendarData = res.success && res.data ? res.data : [];
                 return fetch(urlAnioS).then(function(r2) { return r2.json(); }).then(function(res2) {
@@ -803,7 +1029,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             return fetch(url).then(function(r) { return r.json(); }).then(function(res) {
                 if (!res.success) { calendarData = []; window.calendarDataLeyendaAnio = []; finCarga(); return; }
                 calendarData = res.data || [];
-                var urlAnio = '../cronograma/listar_cronograma.php?periodoTipo=ENTRE_FECHAS&fechaInicio=' + anio + '-01-01&fechaFin=' + anio + '-12-31' + '&porFechaEjecucion=1';
+                var urlAnio = '../cronograma/listar_cronograma.php?periodoTipo=ENTRE_FECHAS&fechaInicio=' + anio + '-01-01&fechaFin=' + anio + '-12-31&modo=resumen_ligero';
                 return fetch(urlAnio).then(function(r2) { return r2.json(); }).then(function(res2) {
                     window.calendarDataLeyendaAnio = (res2.success && res2.data) ? res2.data : calendarData;
                     finCarga();
@@ -816,7 +1042,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             });
         }
         if (v === 'anio') {
-            var url = '../cronograma/listar_cronograma.php?periodoTipo=ENTRE_FECHAS&fechaInicio=' + anio + '-01-01&fechaFin=' + anio + '-12-31' + '&porFechaEjecucion=1';
+            var url = '../cronograma/listar_cronograma.php?periodoTipo=ENTRE_FECHAS&fechaInicio=' + anio + '-01-01&fechaFin=' + anio + '-12-31';
             return fetch(url).then(function(r) { return r.json(); }).then(function(res) {
                 calendarData = res.success && res.data ? res.data : [];
                 window.calendarDataLeyendaAnio = calendarData;
@@ -826,6 +1052,14 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
             });
         }
         finCarga();
+    }
+
+    function aplicarVistaInicialResponsive() {
+        var esPantallaPequena = window.matchMedia && window.matchMedia('(max-width: 900px)').matches;
+        if (!esPantallaPequena) return;
+        vistaActual = 'dia';
+        var sel = document.getElementById('calSelectVista');
+        if (sel) sel.value = 'dia';
     }
 
     function cargarTiposPrograma() {
@@ -876,6 +1110,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         var d = new Date();
         fechaNavegacion = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
         calFechaElegida = null;
+        calForzarAutoScroll = true;
         cargarDatosVista();
     });
 
@@ -909,12 +1144,45 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
     document.getElementById('modalEventosDia').addEventListener('click', function(e) {
         if (e.target === this) this.classList.add('hidden');
     });
+    document.getElementById('modalWhatsAppDia').addEventListener('click', function(e) {
+        if (e.target === this) this.classList.add('hidden');
+    });
+    document.getElementById('modalWhatsAppDiaEnviar').addEventListener('click', function() {
+        var btn = this;
+        var telefono = normalizarTelefono((document.getElementById('modalWhatsAppDiaDestino') || {}).value || '');
+        if (!/^\d{9,15}$/.test(telefono)) {
+            mostrarAlerta('Destinatario requerido', 'Seleccione un destinatario válido de la lista.', 'warning');
+            return;
+        }
+        var mensaje = construirMensajeWhatsAppDia(calWhatsAppFechaPendiente, calWhatsAppEventosPendientes);
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Enviando...';
+        fetch('enviar_eventos_dia_whatsapp.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                telefono: telefono,
+                mensaje: mensaje,
+                fecha: calWhatsAppFechaPendiente
+            })
+        }).then(function(r) { return r.json(); }).then(function(res) {
+            if (!res || !res.success) throw new Error((res && res.message) ? res.message : 'No se pudo enviar el mensaje');
+            document.getElementById('modalWhatsAppDia').classList.add('hidden');
+            mostrarAlerta('Enviado', 'Mensaje enviado correctamente por WhatsApp.', 'success');
+        }).catch(function(err) {
+            mostrarAlerta('Error', err && err.message ? err.message : 'Error al enviar el mensaje por WhatsApp.', 'error');
+        }).finally(function() {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fab fa-whatsapp mr-1"></i> Enviar';
+        });
+    });
 
     var d = new Date();
     anioActualCal = d.getFullYear();
     mesActualCal = d.getMonth();
     miniCalMes = d.getMonth();
     miniCalAnio = d.getFullYear();
+    aplicarVistaInicialResponsive();
     cargarTiposPrograma();
     cargarDatosVista();
 })();

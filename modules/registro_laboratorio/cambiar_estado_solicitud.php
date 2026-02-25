@@ -1,7 +1,7 @@
 <?php
-include_once '../../../conexion_grs_joya/conexion.php';
+include_once '../../../conexion_grs/conexion.php';
 include_once '../../includes/historial_resultados.php';
-$conn = conectar_joya();
+$conn = conectar_joya_mysqli();
 session_start();
 
 header('Content-Type: application/json');

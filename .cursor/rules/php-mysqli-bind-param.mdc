@@ -1,0 +1,38 @@
+---
+description: PHP mysqli bind_param - validar coincidencia tipos/variables
+globs: **/*.php
+alwaysApply: false
+---
+
+# mysqli bind_param
+
+Al usar `$stmt->bind_param()`, la cadena de tipos debe tener **exactamente** el mismo número de caracteres que variables pasadas.
+
+## Tipos
+
+- `i` = integer
+- `d` = double
+- `s` = string
+- `b` = blob
+
+## Ejemplo correcto
+
+```php
+// 5 placeholders (?) → 5 tipos + 5 variables
+$stmt = $conn->prepare("INSERT INTO tabla (a, b, c, d, e) VALUES (?, ?, ?, ?, ?)");
+$stmt->bind_param("issss", $num, $col1, $col2, $col3, $col4);  // ✅ 5 tipos, 5 vars
+```
+
+## Error común
+
+```php
+// ❌ BAD: 4 tipos pero 5 variables
+$stmt->bind_param("isss", $numCronograma, $granja, $campania, $galpon, $usuario);
+
+// ✅ GOOD: 5 tipos para 5 variables
+$stmt->bind_param("issss", $numCronograma, $granja, $campania, $galpon, $usuario);
+```
+
+## Verificación rápida
+
+Contar: `strlen($typeString) === count($variables)`.

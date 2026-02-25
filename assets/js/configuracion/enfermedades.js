@@ -7,18 +7,31 @@ function aplicarVisibilidadVistaEnfermedades() {
     var tarjetasWrap = wrapper.querySelector('.view-tarjetas-wrap');
     var btnLista = document.getElementById('btnViewTablaEnfermedades');
     var btnIconos = document.getElementById('btnViewIconosEnfermedades');
+    var dtControls = document.getElementById('enfermedadesDtControls');
+    var iconControls = document.getElementById('enfermedadesIconosControls');
     if (listaWrap) listaWrap.style.display = vista === 'tabla' ? 'block' : 'none';
     if (tarjetasWrap) tarjetasWrap.style.display = vista === 'iconos' ? 'block' : 'none';
     if (btnLista) btnLista.classList.toggle('active', vista === 'tabla');
     if (btnIconos) btnIconos.classList.toggle('active', vista === 'iconos');
+    if (dtControls) dtControls.style.display = vista === 'tabla' ? '' : 'none';
+    if (iconControls) iconControls.style.display = vista === 'iconos' ? '' : 'none';
 }
 
 function renderizarTarjetasEnfermedades() {
-    var tbody = document.getElementById('enfermedadesTableBody');
     var cont = document.getElementById('cardsContainerEnfermedades');
-    if (!tbody || !cont) return;
+    if (!cont) return;
     cont.innerHTML = '';
-    var rows = tbody.querySelectorAll('tr[data-codigo][data-nombre]');
+    var rows = [];
+    if (window.tableEnfermedadesDt && typeof window.tableEnfermedadesDt.rows === 'function') {
+        window.tableEnfermedadesDt.rows({ page: 'current' }).every(function() {
+            var node = this.node();
+            if (node) rows.push(node);
+        });
+    } else {
+        var tbody = document.getElementById('enfermedadesTableBody');
+        if (!tbody) return;
+        rows = Array.prototype.slice.call(tbody.querySelectorAll('tr[data-codigo][data-nombre]'));
+    }
     rows.forEach(function(tr, i) {
         var codigo = tr.getAttribute('data-codigo');
         var nombre = tr.getAttribute('data-nombre') || '';
@@ -36,6 +49,17 @@ function renderizarTarjetasEnfermedades() {
             '</div>';
         cont.appendChild(card);
     });
+    var pag = document.getElementById('cardsPaginationEnfermedades');
+    if (pag) {
+        if (window.tableEnfermedadesDt && typeof window.tableEnfermedadesDt.page === 'function') {
+            var info = window.tableEnfermedadesDt.page.info();
+            pag.innerHTML = (typeof buildPaginationIconos === 'function')
+                ? buildPaginationIconos(info)
+                : ('<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>');
+        } else {
+            pag.innerHTML = '';
+        }
+    }
 }
 
 function initVistaEnfermedades() {

@@ -8,8 +8,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -24,11 +24,11 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
     <title>Dashboard - Productos</title>
     <link rel="stylesheet" href="../../../css/output.css">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../../assets/js/sweetalert-helpers.js"></script>
     <style>
@@ -68,12 +68,12 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                             <span class="text-lg">🔎</span>
                             <h3 class="text-base font-semibold text-gray-800">Filtros de búsqueda</h3>
                         </div>
-                        <svg id="iconoFiltrosProductos" class="w-5 h-5 text-gray-600 transition-transform duration-300 rotate-180"
+                        <svg id="iconoFiltrosProductos" class="w-5 h-5 text-gray-600 transition-transform duration-300"
                             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
-                    <div id="contenidoFiltrosProductos" class="px-4 sm:px-6 pb-4 sm:pb-6 pt-4">
+                    <div id="contenidoFiltrosProductos" class="px-4 sm:px-6 pb-4 sm:pb-6 pt-4 hidden">
                         <div class="space-y-6">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
@@ -123,12 +123,12 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                             <button type="button" class="view-toggle-btn active text-sm sm:text-base px-3 sm:px-4 py-2 rounded-lg" id="btnViewTablaProductos" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
                             <button type="button" class="view-toggle-btn text-sm sm:text-base px-3 sm:px-4 py-2 rounded-lg" id="btnViewIconosProductos" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
                         </div>
-                        <div class="flex flex-wrap items-center gap-2 min-w-0 flex-1 sm:flex-initial justify-end">
-                            <input type="text" id="buscarEnTablaProductos" class="px-3 py-2 text-sm border border-gray-300 rounded-lg w-full sm:w-48 min-w-0" placeholder="Buscar en la tabla...">
-                        </div>
+                        <div id="productosDtControls" class="flex flex-wrap items-center gap-3"></div>
+                        <div id="productosIconosControls" class="flex flex-wrap items-center gap-3" style="display:none;"></div>
                     </div>
                     <div class="view-tarjetas-wrap px-4 sm:px-6 pb-4 overflow-x-hidden" id="viewTarjetasProductos" style="display: none;">
                         <div id="cardsContainerProductos" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
+                        <div id="cardsPaginationProductos" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3"></div>
                     </div>
                     <div class="view-lista-wrap table-container overflow-x-auto px-4 sm:px-6 pb-6 pt-4">
                         <div class="table-wrapper overflow-x-auto -webkit-overflow-scrolling-touch">
@@ -210,11 +210,31 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
     </div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script>window.DATATABLES_LANG_ES = <?php echo $datatablesLangEs; ?>;</script>
+    <script src="../../../assets/js/i18n/datatables-es.js"></script>
+    <script src="../../../assets/js/pagination-iconos.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
     (function() {
         var baseUrl = window.location.pathname.replace(/\/[^/]+\.php$/, '/');
+        var tableProductos = null;
+        var PRODUCTOS_LENGTH_OPTIONS = [20, 25, 50, 100];
+        var productosPageLengthSeleccionado = 20;
+
+        function normalizarPageLengthProductos(valor) {
+            var n = parseInt(valor, 10);
+            return PRODUCTOS_LENGTH_OPTIONS.indexOf(n) >= 0 ? n : 20;
+        }
+
+        function sincronizarControlesDtProductos() {
+            if (!tableProductos) return;
+            var $wrapper = jQuery('#tablaProductosMitm').closest('.dataTables_wrapper');
+            var $controls = jQuery('#productosDtControls');
+            var $length = $wrapper.find('.dataTables_length').first();
+            var $filter = $wrapper.find('.dataTables_filter').first();
+            if ($controls.length && $length.length && $filter.length) {
+                $controls.empty().append($length, $filter);
+            }
+        }
 
         function toggleFiltrosProductos() {
             var contenido = document.getElementById('contenidoFiltrosProductos');
@@ -311,14 +331,16 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             var url = baseUrl + 'listar_mitm_filtrado.php?lin=' + encodeURIComponent(lin) + '&alma=' + encodeURIComponent(alma) + '&tcodprove=' + encodeURIComponent(tcodprove) + '&descri=' + encodeURIComponent(descri);
             fetch(url).then(function(r) { return r.json(); }).then(function(res) {
                 if (msg) msg.textContent = '';
+                if (jQuery.fn.DataTable && jQuery.fn.DataTable.isDataTable && jQuery.fn.DataTable.isDataTable('#tablaProductosMitm')) {
+                    productosPageLengthSeleccionado = normalizarPageLengthProductos(jQuery('#tablaProductosMitm').DataTable().page.len());
+                    jQuery('#tablaProductosMitm').DataTable().destroy();
+                    jQuery('#tablaProductosMitm').find('tbody').empty();
+                }
+                tableProductos = null;
                 if (!res.success) { if (msg) msg.textContent = 'Error al cargar.'; return; }
                 var data = res.data || [];
                 if (data.length === 0) { if (msg) msg.textContent = 'Sin resultados para el filtro.'; return; }
                 if (msg) msg.textContent = data.length + ' producto(s).';
-                if (jQuery.fn.DataTable && jQuery.fn.DataTable.isDataTable && jQuery.fn.DataTable.isDataTable('#tablaProductosMitm')) {
-                    jQuery('#tablaProductosMitm').DataTable().destroy();
-                    jQuery('#tablaProductosMitm').find('tbody').empty();
-                }
                 data.forEach(function(p, i) {
                     var idx = i + 1;
                     var cod = (p.codigo || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
@@ -346,13 +368,26 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 });
                 renderizarTarjetasProductos();
                 aplicarVisibilidadVistaProductos();
-                jQuery('#tablaProductosMitm').DataTable({
-                    pageLength: 20,
+                normalizarFilasTablaProductos();
+                tableProductos = jQuery('#tablaProductosMitm').DataTable({
+                    pageLength: normalizarPageLengthProductos(productosPageLengthSeleccionado),
                     lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, 'Todos']],
                     language: window.DATATABLES_LANG_ES || {},
+                    ordering: false,
                     order: [[0, 'asc']],
-                    columnDefs: [{ orderable: false, targets: [8] }]
+                    orderClasses: false,
+                    columnDefs: [{ orderable: false, targets: [8] }],
+                    drawCallback: function () {
+                        renderizarTarjetasProductos();
+                        sincronizarControlesDtProductos();
+                    },
+                    initComplete: function () {
+                        sincronizarControlesDtProductos();
+                        $('#productosDtControls').show();
+                        $('#productosIconosControls').hide();
+                    }
                 });
+                sincronizarControlesDtProductos();
             }).catch(function() { if (msg) msg.textContent = 'Error de conexión.'; });
         }
 
@@ -440,11 +475,15 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             if (document.getElementById('filtroDescripcion')) document.getElementById('filtroDescripcion').value = '';
             if (jQuery('#filtroProveedor').data('select2')) jQuery('#filtroProveedor').val(null).trigger('change');
             if (jQuery.fn.DataTable && jQuery.fn.DataTable.isDataTable && jQuery.fn.DataTable.isDataTable('#tablaProductosMitm')) {
+                productosPageLengthSeleccionado = normalizarPageLengthProductos(jQuery('#tablaProductosMitm').DataTable().page.len());
                 jQuery('#tablaProductosMitm').DataTable().destroy();
             }
+            tableProductos = null;
             document.getElementById('productosMitmBody').innerHTML = '';
             var msg = document.getElementById('productosMitmMensaje');
             if (msg) msg.textContent = 'Seleccione filtros y pulse Buscar.';
+            $('#productosDtControls').empty();
+            $('#productosIconosControls').empty();
         }
 
         function exportarPdfProductos() {
@@ -461,22 +500,6 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             window.open(url, '_blank', 'noopener');
         }
 
-        function filtrarTablaPorBusqueda() {
-            var q = (document.getElementById('buscarEnTablaProductos') && document.getElementById('buscarEnTablaProductos').value) ? document.getElementById('buscarEnTablaProductos').value.trim() : '';
-            if (jQuery.fn.DataTable && jQuery.fn.DataTable.isDataTable && jQuery.fn.DataTable.isDataTable('#tablaProductosMitm')) {
-                jQuery('#tablaProductosMitm').DataTable().search(q).draw();
-                return;
-            }
-            var tbody = document.getElementById('productosMitmBody');
-            if (!tbody) return;
-            var rows = tbody.querySelectorAll('tr');
-            var qLower = q.toLowerCase();
-            rows.forEach(function(tr) {
-                var text = tr.textContent || '';
-                tr.style.display = (q === '' || text.toLowerCase().indexOf(qLower) !== -1) ? '' : 'none';
-            });
-        }
-
         function aplicarVisibilidadVistaProductos() {
             var wrapper = document.getElementById('tablaProductosWrapper');
             if (!wrapper) return;
@@ -489,6 +512,9 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             if (tarjetasWrap) tarjetasWrap.style.display = vista === 'iconos' ? 'block' : 'none';
             if (btnLista) btnLista.classList.toggle('active', vista === 'tabla');
             if (btnIconos) btnIconos.classList.toggle('active', vista === 'iconos');
+            $('#productosDtControls').show();
+            $('#productosIconosControls').hide();
+            sincronizarControlesDtProductos();
         }
 
         function renderizarTarjetasProductos() {
@@ -523,6 +549,32 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     '</div>';
                 cont.appendChild(card);
             });
+            var pag = document.getElementById('cardsPaginationProductos');
+            if (pag) {
+                if (tableProductos) {
+                    var info = tableProductos.page.info();
+                    pag.innerHTML = (typeof buildPaginationIconos === 'function')
+                        ? buildPaginationIconos(info)
+                        : ('<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>');
+                } else {
+                    var total = rows.length;
+                    pag.innerHTML = total > 0 ? ('<span>Mostrando 1 a ' + total + ' de ' + total + ' registros</span>') : '';
+                }
+            }
+        }
+
+        function normalizarFilasTablaProductos() {
+            var tabla = document.getElementById('tablaProductosMitm');
+            if (!tabla) return;
+            var columnas = tabla.querySelectorAll('thead th').length;
+            var filas = tabla.querySelectorAll('tbody tr');
+            filas.forEach(function(tr) {
+                var celdas = tr.querySelectorAll('td');
+                var tieneColspan = !!tr.querySelector('td[colspan]');
+                if (tieneColspan || celdas.length !== columnas) {
+                    tr.remove();
+                }
+            });
         }
 
         function initVistaProductos() {
@@ -542,10 +594,10 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         document.getElementById('btnBuscarProductos').addEventListener('click', cargarProductosFiltrados);
         document.getElementById('btnLimpiarFiltrosProductos').addEventListener('click', limpiarFiltros);
         document.getElementById('btnExportarPdfProductos').addEventListener('click', exportarPdfProductos);
-        document.getElementById('buscarEnTablaProductos').addEventListener('input', filtrarTablaPorBusqueda);
         var btnViewTablaProductos = document.getElementById('btnViewTablaProductos');
         var btnViewIconosProductos = document.getElementById('btnViewIconosProductos');
         var tablaProductosWrapper = document.getElementById('tablaProductosWrapper');
+        sincronizarControlesDtProductos();
         if (btnViewTablaProductos) btnViewTablaProductos.addEventListener('click', function() {
             if (tablaProductosWrapper) tablaProductosWrapper.setAttribute('data-vista', 'tabla');
             aplicarVisibilidadVistaProductos();

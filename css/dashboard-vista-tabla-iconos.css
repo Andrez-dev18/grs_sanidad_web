@@ -108,7 +108,16 @@
 .cards-grid.cards-grid-iconos .card-item .card-acciones button {
     flex-shrink: 0;
 }
-/* En pantallas pequeñas: una columna (una tarjeta por fila), menos espacio y padding */
+/* En pantallas pequeñas: una columna (una tarjeta por fila) */
+@media (max-width: 767px) {
+    .cards-grid.cards-grid-iconos,
+    .tabla-listado-wrapper .view-tarjetas-wrap .cards-grid.cards-grid-iconos,
+    [data-vista-tabla-iconos] .view-tarjetas-wrap .cards-grid.cards-grid-iconos {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* En pantallas muy pequeñas: menos espacio y padding */
 @media (max-width: 640px) {
     .cards-grid.cards-grid-iconos {
         grid-template-columns: 1fr;
@@ -166,6 +175,17 @@
         font-size: 0.85rem;
     }
 }
+
+/* Listados (Reportes, Programas, etc.): en desktop 2 columnas; en pantallas pequeñas 1 columna (ver media queries abajo) */
+@media (min-width: 768px) {
+    .tabla-listado-wrapper .view-tarjetas-wrap .cards-grid.cards-grid-iconos,
+    [data-vista-tabla-iconos] .view-tarjetas-wrap .cards-grid.cards-grid-iconos {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        padding: 0.5rem 0;
+    }
+}
+
 .card-item {
     background: white;
     border: 1px solid #e5e7eb;
@@ -240,12 +260,15 @@
     background: #f3f4f6;
 }
 
-/* Por defecto: en móvil Iconos, en desktop Lista (tabla). Solo dos vistas: lista e iconos */
+/* Por defecto: en móvil Iconos, en desktop Lista (tabla). Respetar data-vista en ambos tamaños. */
+/* En pantallas pequeñas: si vista es lista/tabla, mostrar tabla; si no, iconos. */
 @media (max-width: 767px) {
     [data-vista-tabla-iconos] .view-tarjetas-wrap { display: block; }
     [data-vista-tabla-iconos] .view-lista-wrap { display: none; }
     [data-vista-tabla-iconos][data-vista="tabla"] .view-tarjetas-wrap { display: none !important; }
     [data-vista-tabla-iconos][data-vista="tabla"] .view-lista-wrap { display: block !important; }
+    [data-vista-tabla-iconos][data-vista="lista"] .view-tarjetas-wrap { display: none !important; }
+    [data-vista-tabla-iconos][data-vista="lista"] .view-lista-wrap { display: block !important; }
 }
 @media (min-width: 768px) {
     [data-vista-tabla-iconos] .view-lista-wrap { display: block; }

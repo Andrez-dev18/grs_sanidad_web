@@ -14,8 +14,8 @@ if (empty($_SESSION['active'])) {
 
 //ruta relativa a la conexion
 
-include_once '../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -288,12 +288,12 @@ $result = $conexion->query($query);
                         <!-- Botón plegable -->
                         <button id="btnToggleFiltros"
                             class="text-gray-600 text-lg font-bold w-7 h-7 flex items-center justify-center rounded hover:bg-gray-200">
-                            ➖
+                            ➕
                         </button>
                     </div>
 
-                    <!-- CONTENIDO PLEGABLE (desplegado por defecto) -->
-                    <div id="filtrosContent" class="mt-4 transition-all duration-300 origin-top">
+                    <!-- CONTENIDO PLEGABLE (colapsado por defecto) -->
+                    <div id="filtrosContent" class="mt-4 transition-all duration-300 origin-top hidden">
                         <!-- Fila 1: Periodo -->
                         <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
                             <div class="flex-shrink-0" style="min-width: 200px;">
@@ -325,7 +325,7 @@ $result = $conexion->query($query);
                             </div>
                             <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[200px]">
                                 <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
-                                <input id="mesUnico" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                <input id="mesUnico" type="month" value="<?php echo date('Y-m'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                             </div>
                             <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
                                 <div class="min-w-[180px]">

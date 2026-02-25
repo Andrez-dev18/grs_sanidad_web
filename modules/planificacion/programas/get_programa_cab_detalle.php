@@ -7,8 +7,8 @@ if (empty($_SESSION['active'])) {
     exit;
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
@@ -24,9 +24,12 @@ if ($codigo === '') {
 
 $chkDespliegue = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'despliegue'");
 $tieneDespliegue = $chkDespliegue && $chkDespliegue->fetch_assoc();
+$chkFechaInicio = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'fechaInicio'");
+$tieneFechas = $chkFechaInicio && $chkFechaInicio->fetch_assoc();
 
-$sqlCab = "SELECT c.codigo, c.nombre, c.codTipo, c.nomTipo, c.zona, c.descripcion, c.fechaHoraRegistro";
+$sqlCab = "SELECT c.codigo, c.nombre, c.codTipo, c.nomTipo, c.descripcion, c.fechaHoraRegistro";
 if ($tieneDespliegue) $sqlCab .= ", c.despliegue";
+if ($tieneFechas) $sqlCab .= ", c.fechaInicio, c.fechaFin";
 $sqlCab .= " FROM san_fact_programa_cab c WHERE c.codigo = ? LIMIT 1";
 $stmtCab = $conn->prepare($sqlCab);
 if (!$stmtCab) {
@@ -47,6 +50,8 @@ if (!$cab) {
 }
 
 $cab['despliegue'] = $tieneDespliegue ? ($cab['despliegue'] ?? '') : '';
+$cab['fechaInicio'] = $tieneFechas ? ($cab['fechaInicio'] ?? '') : '';
+$cab['fechaFin'] = $tieneFechas ? ($cab['fechaFin'] ?? '') : '';
 
 $chkExtras = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'descripcionVacuna'");
 $tieneExtras = $chkExtras && $chkExtras->fetch_assoc();
@@ -77,9 +82,12 @@ if ($codTipo > 0) {
     $stSigla->bind_param("i", $codTipo);
     $stSigla->execute();
     $rSigla = $stSigla->get_result();
-    if ($rSigla && $row = $rSigla->fetch_assoc() && !empty(trim($row['sigla'] ?? ''))) {
-        $sigla = strtoupper(trim($row['sigla']));
-        if ($sigla === 'NEC') $sigla = 'NC';
+    if ($rSigla) {
+        $row = $rSigla->fetch_assoc();
+        if ($row && !empty(trim($row['sigla'] ?? ''))) {
+            $sigla = strtoupper(trim($row['sigla']));
+            if ($sigla === 'NEC') $sigla = 'NC';
+        }
     }
     $stSigla->close();
 }

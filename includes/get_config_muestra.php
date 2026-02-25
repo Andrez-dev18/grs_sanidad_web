@@ -6,7 +6,7 @@ while (ob_get_level())
 ob_start();
 header('Content-Type: application/json; charset=utf-8');
 
-include_once '../../conexion_grs_joya/conexion.php';
+include_once '../../conexion_grs/conexion.php';
 
 if (!function_exists('getallheaders')) {
     function getallheaders()
@@ -89,7 +89,7 @@ if (!$tipoMuestraId || !is_numeric($tipoMuestraId)) {
     }
 }
 
-$conexion = conectar_joya();
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     if ($isMobile) {
         sendJson(['success' => false, 'status' => 500, 'message' => 'Error de conexión', 'data' => null], 500);

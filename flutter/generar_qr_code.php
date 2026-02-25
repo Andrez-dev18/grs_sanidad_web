@@ -8,8 +8,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-include_once '../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     http_response_code(500);
     exit('{"error":"Error de conexión"}');

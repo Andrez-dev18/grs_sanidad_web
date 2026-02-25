@@ -172,7 +172,7 @@ function saveProveedor(event) {
 }
 
 function confirmDelete(codigo) {
-    var msg = '¿Está seguro de eliminar este proveedor? Dejará de mostrarse en la lista (proveedor_programa se pondrá en 0).';
+    var msg = '¿Está seguro de eliminar este proveedor? Dejará de mostrarse en la lista.';
     var doDelete = typeof SwalConfirm === 'function' ? SwalConfirm(msg, 'Confirmar eliminación') : Promise.resolve(confirm(msg));
     doDelete.then(function(confirmed) {
         if (!confirmed) return;

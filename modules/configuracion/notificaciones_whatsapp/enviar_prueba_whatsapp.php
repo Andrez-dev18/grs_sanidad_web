@@ -6,13 +6,13 @@ if (empty($_SESSION['active'])) {
     exit;
 }
 
-$conexionPath = __DIR__ . '/../../../../conexion_grs_joya/conexion.php';
+$conexionPath = __DIR__ . '/../../../../conexion_grs/conexion.php';
 if (!is_file($conexionPath)) {
     echo json_encode(['success' => false, 'message' => 'No se encuentra conexión: ' . $conexionPath]);
     exit;
 }
 include_once $conexionPath;
-$conn = conectar_joya();
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     $errMsg = 'Error de conexión a la base de datos.';
     if (function_exists('mysqli_connect_error')) {
@@ -23,22 +23,38 @@ if (!$conn) {
     exit;
 }
 
+// Número de WhatsApp: el que el usuario guarda/actualiza en la configuración (whatsapp_config.php → usuario.telefo o san_telefono_sanidad).
 $codigo = $_SESSION['usuario'];
-$stmt = mysqli_prepare($conn, "SELECT COALESCE(telefo, '') AS telefono FROM usuario WHERE codigo = ? LIMIT 1");
-if (!$stmt) {
-    echo json_encode(['success' => false, 'message' => 'Error al consultar teléfono del usuario.']);
-    exit;
+$telefono = '';
+$stmt = @mysqli_prepare($conn, "SELECT COALESCE(telefo, '') AS telefono FROM usuario WHERE codigo = ? LIMIT 1");
+if ($stmt) {
+    mysqli_stmt_bind_param($stmt, 's', $codigo);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    if ($res && $row = mysqli_fetch_assoc($res)) {
+        $telefono = trim($row['telefono'] ?? '');
+    }
+    mysqli_stmt_close($stmt);
 }
-mysqli_stmt_bind_param($stmt, 's', $codigo);
-mysqli_stmt_execute($stmt);
-$res = mysqli_stmt_get_result($stmt);
-$row = mysqli_fetch_assoc($res);
-mysqli_stmt_close($stmt);
-if (!$row || empty($row['telefono'])) {
+if ($telefono === '') {
+    $chk = @$conn->query("SHOW TABLES LIKE 'san_telefono_sanidad'");
+    if ($chk && $chk->num_rows > 0) {
+        $st2 = mysqli_prepare($conn, "SELECT COALESCE(telefono, '') AS telefono FROM san_telefono_sanidad WHERE codigo = ? LIMIT 1");
+        if ($st2) {
+            mysqli_stmt_bind_param($st2, 's', $codigo);
+            mysqli_stmt_execute($st2);
+            $res2 = mysqli_stmt_get_result($st2);
+            if ($res2 && $r2 = mysqli_fetch_assoc($res2)) {
+                $telefono = trim($r2['telefono'] ?? '');
+            }
+            mysqli_stmt_close($st2);
+        }
+    }
+}
+if ($telefono === '') {
     echo json_encode(['success' => false, 'message' => 'No tiene un número guardado. Guarde su teléfono primero.']);
     exit;
 }
-$telefono = trim($row['telefono']);
 
 // Obtener un registro de cronograma con tipo de programa (para armar el mensaje de prueba)
 $chkTable = @$conn->query("SHOW TABLES LIKE 'san_fact_cronograma'");

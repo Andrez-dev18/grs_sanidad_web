@@ -13,8 +13,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-include_once '../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -176,44 +176,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
 
         $sql = "
         SELECT 
-            id_analisis,
-            codigo_envio,
-            enfermedad,
-            codigo_enfermedad,
-            tipo_ave,
-            fecha_toma_muestra,
-            edad_aves,
-            planta_incubacion,
-            lote,
-            codigo_granja,
-            codigo_campana,
-            numero_galpon,
-            edad_reproductora,
-            condicion,
-            dato,
-            gmean,
-            desviacion_estandar,
-            cv,
-            count_muestras,
-            t01, t02, t03, t04, t05, t06, t07, t08, t09, t10,
-            t11, t12, t13, t14, t15, t16, t17, t18, t19, t20,
-            t21, t22, t23, t24, t25,
-            titulo_promedio,
-            lcs,
-            lcc,
-            lci,
-            coef_variacion,
-            std_1,
-            std_2,
-            s01, s02, s03, s04, s05, s06,
-            obs,
-            numero_informe,
-            fecha_informe,
-            estado,
-            usuario_registro,
-            fecha_solicitud
-            FROM san_analisis_pollo_bb_adulto
-            WHERE codigo_envio = ?
+            a.id_analisis,
+            a.codigo_envio,
+            d.nomMuestra,
+            a.enfermedad,
+            a.codigo_enfermedad,
+            a.tipo_ave,
+            a.fecha_toma_muestra,
+            a.edad_aves,
+            a.planta_incubacion,
+            a.lote,
+            a.codigo_granja,
+            a.codigo_campana,
+            a.numero_galpon,
+            a.edad_reproductora,
+            a.condicion,
+            a.dato,
+            a.gmean,
+            a.desviacion_estandar,
+            a.cv,
+            a.count_muestras,
+            a.t01, a.t02, a.t03, a.t04, a.t05, a.t06, a.t07, a.t08, a.t09, a.t10,
+            a.t11, a.t12, a.t13, a.t14, a.t15, a.t16, a.t17, a.t18, a.t19, a.t20,
+            a.t21, a.t22, a.t23, a.t24, a.t25,
+            a.titulo_promedio,
+            a.lcs,
+            a.lcc,
+            a.lci,
+            a.coef_variacion,
+            a.std_1,
+            a.std_2,
+            a.s01, a.s02, a.s03, a.s04, a.s05, a.s06,
+            a.obs,
+            a.numero_informe,
+            a.fecha_informe,
+            a.estado,
+            a.usuario_registro,
+            a.fecha_solicitud
+            FROM san_analisis_pollo_bb_adulto AS a
+            INNER JOIN san_fact_solicitud_det AS d ON a.codigo_envio = d.codEnvio
+            WHERE a.codigo_envio = ?
             ORDER BY id_analisis ASC
         ";
 
@@ -245,8 +247,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 echo "<tr class='hover:bg-gray-50'>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['id_analisis']) . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['codigo_envio']) . "</td>
+                <td class='px-4 py-2'>" . htmlspecialchars($row['nomMuestra']) . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['enfermedad'] ?? 'N/A') . "</td>
-                <td class='px-4 py-2'>" . htmlspecialchars($row['codigo_enfermedad'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2'><span class='inline-block px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700'>" . htmlspecialchars($row['tipo_ave'] ?? 'N/A') . "</span></td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['fecha_toma_muestra'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['edad_aves'] ?? 'N/A') . "</td>
@@ -257,6 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['numero_galpon'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['edad_reproductora'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['condicion'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center font-semibold'>" . htmlspecialchars($row['dato'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center font-semibold'>" . htmlspecialchars($row['gmean'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['desviacion_estandar'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['cv'] ?? 'N/A') . "</td>
@@ -299,6 +302,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['s04'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['s05'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['s06'] ?? 'N/A') . "</td>
+                <td class='px-4 py-2 text-center'>" . htmlspecialchars($row['obs'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['numero_informe'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2'>" . htmlspecialchars($row['fecha_informe'] ?? 'N/A') . "</td>
                 <td class='px-4 py-2 text-center'>
@@ -413,7 +417,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
     }
 }
 
-include_once __DIR__ . '/../../includes/datatables_lang_es.php';
 
 ?>
 
@@ -607,14 +610,14 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
                         </div>
 
                         <!-- ICONO -->
-                        <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300 rotate-180"
+                        <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
                             fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
 
-                    <!-- CONTENIDO PLEGABLE (desplegado por defecto) -->
-                    <div id="contenidoFiltros" class="px-6 pb-6 pt-4">
+                    <!-- CONTENIDO PLEGABLE (colapsado por defecto) -->
+                    <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
 
                         <!-- Fila 1: Periodo -->
                         <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
@@ -1035,9 +1038,9 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
                                             Código Envío</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
-                                            Enfermedad</th>
+                                            Muestra</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
-                                            Cód Enfermedad</th>
+                                            Enfermedad</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
                                             Tipo Ave</th>
                                         <th class="px-4 py-3 text-left font-semibold text-gray-700 whitespace-nowrap">
@@ -1542,7 +1545,6 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
     </div>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
-    <script>window.DATATABLES_LANG_ES = <?php echo $datatablesLangEs; ?>;</script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="../../assets/js/sweetalert-helpers.js"></script>
@@ -1597,7 +1599,8 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
                     var $controls = $('#segDtControls');
                     if ($controls.length && $length.length && $filter.length) {
                         $controls.append($length, $filter);
-                        $controls.show();
+                        var vista = $('#tablaSeguimientoWrapper').attr('data-vista') || 'lista';
+                        $controls.toggle(vista === 'lista');
                     }
                 },
                 dom: `
@@ -1771,11 +1774,11 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
                     className: 'text-center',
                     orderable: false,
                     render: function (data, type, row) {
-                        return `<button type="button"
-                            class="btn-detalles cursor-pointer text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-2 transition"
-                            title="Ver"
+                        return `<button 
+                            class="text-blue-600 hover:text-blue-800 transition"
+                            title="Ver detalle"
                             onclick="verDetalle('${row.codEnvio}')">
-                            <i class="fas fa-eye"></i> Ver
+                            <i class="fa-solid fa-eye text-lg"></i>
                         </button>`;
                     }
                 },
@@ -1814,11 +1817,13 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
                 rowCallback: function (row, data) {
                     $(row).addClass('hover:bg-gray-50 transition');
                 },
-                language: window.DATATABLES_LANG_ES || {},
-                pageLength: 20,
+                language: {
+                    url: '../../assets/i18n/es-ES.json'
+                },
+                pageLength: 5,
                 lengthMenu: [
-                    [10, 20, 25, 50, 100],
-                    [10, 20, 25, 50, 100]
+                    [5, 10, 15, 20, 25],
+                    [5, 10, 15, 20, 25]
                 ],
                 drawCallback: function () {
                     if (typeof renderizarTarjetasSeguimiento === 'function') renderizarTarjetasSeguimiento();
@@ -1835,15 +1840,12 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
                     $('#segIconosControls').hide();
                     $('#viewTarjetasSeg').addClass('hidden').css('display', 'none');
                     $('#tablaSeguimientoWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
-                    if (table) table.page.len(20).draw(false);
                 } else {
-                    // Mantener Mostrar + Buscar siempre visibles (mismo toolbar en ambas vistas)
-                    $('#segDtControls').show();
-                    $('#segIconosControls').hide();
+                    $('#segDtControls').hide();
+                    $('#segIconosControls').show();
                     $('#tablaSeguimientoWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
                     $('#viewTarjetasSeg').removeClass('hidden').css('display', 'block');
                     $('#cardsContainerSeg').attr('data-vista-cards', 'iconos');
-                    if (table) table.page.len(10).draw(false);
                     if (typeof renderizarTarjetasSeguimiento === 'function') renderizarTarjetasSeguimiento();
                 }
             }
@@ -1902,18 +1904,48 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
                         '<div class="card-row"><span class="label">Estado:</span> ' + escapeHtmlSeg(row.estado || '') + '</div>' +
                         '</div>' +
                         '<div class="card-acciones">' +
-                        '<button type="button" class="btn-detalles cursor-pointer text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-2 transition" title="Ver" onclick="verDetalle(\'' + codRaw + '\')"><i class="fas fa-eye"></i> Ver</button>' +
+                        '<button type="button" class="text-blue-600 hover:text-blue-800 transition" title="Detalle" onclick="verDetalle(\'' + codRaw + '\')"><i class="fas fa-eye"></i></button>' +
                         '<button type="button" class="text-amber-600 hover:text-amber-800 transition" title="Historial" onclick="verHistorial(\'' + codRaw + '\')"><i class="fa-solid fa-clock-rotate-left"></i></button>' +
                         '<button type="button" class="text-indigo-600 hover:text-indigo-800 transition" title="Editar" onclick="verificarYEditar(\'' + codRaw + '\')"><i class="fa-solid fa-edit"></i></button>' +
                         '<button type="button" class="text-red-600 hover:text-red-800 transition" title="PDF" onclick="generarReportePDF(\'' + codRaw + '\')"><i class="fa-solid fa-file-pdf"></i></button>' +
                         '</div></div></div>';
                     cont.append(card);
                 });
+                var len = api.page.len();
+                var lengthOptions = [5, 10, 15, 20, 25];
+                var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
+                    lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
+                    '</select><span>registros</span></label>';
                 var vista = $('#tablaSeguimientoWrapper').attr('data-vista') || '';
                 if (vista === 'iconos') {
-                    // Un solo toolbar (segDtControls) con Mostrar + Buscar visible en lista e iconos; solo actualizar paginación inferior
+                    var $toolbarRow = $('#segIconosControls .iconos-toolbar-row');
+                    if (!$toolbarRow.length) {
+                        var $filter = $('#segDtControls .dataTables_filter').detach();
+                        var iconosRow = '<div class="iconos-toolbar-row flex flex-wrap items-center gap-3">' + lengthSelect + '</div>';
+                        $('#segIconosControls').html(iconosRow);
+                        if ($filter.length) $('#segIconosControls .iconos-toolbar-row').append($filter);
+                        $('#segIconosControls .cards-length-select').on('change', function() {
+                            var val = parseInt($(this).val(), 10);
+                            if (table) table.page.len(val).draw(false);
+                        });
+                    } else {
+                        var $sel = $toolbarRow.find('.cards-length-select');
+                        if ($sel.length) $sel.find('option').remove().end().append(lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join(''));
+                    }
                     $('#cardsControlsTopSeg').empty();
                     $('#cardsPaginationSeg').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : '');
+                } else {
+                    var navBtns = '<div class="flex gap-2">' +
+                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaResultados\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
+                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaResultados\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
+                        '</div>';
+                    var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' + navBtns + '</div>';
+                    $('#cardsControlsTopSeg').html(controlsHtml);
+                    $('#cardsPaginationSeg').html(controlsHtml);
+                    $('#cardsControlsTopSeg .cards-length-select, #cardsPaginationSeg .cards-length-select').on('change', function() {
+                        var val = parseInt($(this).val(), 10);
+                        if (table) table.page.len(val).draw(false);
+                    });
                 }
             }
             actualizarVistaInicialSeg();

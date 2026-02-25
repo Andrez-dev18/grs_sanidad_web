@@ -91,6 +91,8 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .input-icon {
@@ -113,6 +115,9 @@ body {
 
 .form-group input {
   flex: 1;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 15px;
   border: 2px solid #e0e0e0;
   border-radius: 10px;
@@ -142,6 +147,90 @@ body {
 .btn-login:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* LOGIN RESPONSIVE */
+@media (max-width: 768px) {
+  .login-container {
+    min-height: 100dvh;
+    padding: 16px;
+    align-items: center;
+  }
+
+  .login-box {
+    max-width: 100%;
+    padding: 28px 20px;
+    border-radius: 16px;
+  }
+
+  .login-header {
+    margin-bottom: 24px;
+  }
+
+  .login-icon {
+    width: 86px;
+    height: 86px;
+    margin-bottom: 12px;
+  }
+
+  .login-header h1 {
+    font-size: 22px;
+    margin-bottom: 0;
+  }
+
+  .form-group {
+    margin-bottom: 18px;
+  }
+
+  .input-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  }
+
+  .input-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .form-group input {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .btn-login {
+    padding: 13px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 420px) {
+  .login-container {
+    padding: 12px;
+  }
+
+  .login-box {
+    padding: 22px 14px;
+    border-radius: 14px;
+  }
+
+  .input-wrapper {
+    gap: 8px;
+  }
+
+  .input-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .form-group input {
+    padding: 10px 11px;
+    font-size: 14px;
+  }
+
+  #alertContainer {
+    font-size: 13px !important;
+  }
 }
 
 /* DASHBOARD */

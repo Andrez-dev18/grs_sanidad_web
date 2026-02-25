@@ -26,7 +26,9 @@ if (empty($_SESSION['active'])) {
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../../css/dashboard-config.css">
 
     <style>
         body {
@@ -99,7 +101,7 @@ if (empty($_SESSION['active'])) {
 
                 <!-- Tabla de contactos -->
                 <div class="bg-white border border-gray-300 rounded-2xl overflow-x-auto shadow-sm">
-                    <table class="w-full">
+                    <table class="data-table w-full text-sm border-collapse config-table">
                         <thead class="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th class="px-6 py-4 text-left text-sm font-semibold text-gray-800">Nombre</th>

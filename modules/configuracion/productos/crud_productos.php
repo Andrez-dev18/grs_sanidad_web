@@ -5,8 +5,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión.']);
     exit();
@@ -47,14 +47,7 @@ if ($action === 'create' || $action === 'update') {
         }
     }
 
-    // Actualizar mitm: si existe columna producto_programa la ponemos a 1
-    $chk = $conexion->query("SHOW COLUMNS FROM mitm LIKE 'producto_programa'");
-    $tiene_producto_programa = $chk && $chk->fetch_assoc();
-    if ($tiene_producto_programa) {
-        $stmt = $conexion->prepare("UPDATE mitm SET tcodprove = ?, dosis = ?, producto_programa = 1 WHERE codigo = ?");
-    } else {
-        $stmt = $conexion->prepare("UPDATE mitm SET tcodprove = ?, dosis = ? WHERE codigo = ?");
-    }
+    $stmt = $conexion->prepare("UPDATE mitm SET tcodprove = ?, dosis = ? WHERE codigo = ?");
     if (!$stmt) {
         echo json_encode(['success' => false, 'message' => 'Error: ' . $conexion->error]);
         exit();
@@ -73,11 +66,7 @@ if ($action === 'create' || $action === 'update') {
         echo json_encode(['success' => false, 'message' => 'Código de producto no válido.']);
         exit();
     }
-    $chk = $conexion->query("SHOW COLUMNS FROM mitm LIKE 'producto_programa'");
-    $tiene_producto_programa = $chk && $chk->fetch_assoc();
-    $stmt = $conexion->prepare($tiene_producto_programa
-        ? "UPDATE mitm SET tcodprove = '', producto_programa = 0 WHERE codigo = ?"
-        : "UPDATE mitm SET tcodprove = '' WHERE codigo = ?");
+    $stmt = $conexion->prepare("UPDATE mitm SET tcodprove = '' WHERE codigo = ?");
     if (!$stmt) {
         echo json_encode(['success' => false, 'message' => 'Error: ' . $conexion->error]);
         exit();

@@ -14,10 +14,10 @@ error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
 // --- Conexión ---
-include_once '../../conexion_grs_joya/conexion.php';
+include_once '../../conexion_grs/conexion.php';
 date_default_timezone_set('America/Lima');
 
-$conexion = conectar_joya();
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     echo json_encode([
         'status' => 500,

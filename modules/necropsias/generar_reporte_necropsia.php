@@ -3,8 +3,8 @@ require_once  '../../vendor/autoload.php';
 date_default_timezone_set('America/Lima');
 use Mpdf\Mpdf;
 
-include_once '../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 
 if (!$conn) die('Error de conexión');
 

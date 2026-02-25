@@ -5,8 +5,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión.']);
     exit();

@@ -1,8 +1,8 @@
 <?php
 session_start();
 //ruta relativa a la conexion
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -46,7 +46,7 @@ if ($tieneLaboratorio) {
     exit;
 }
 
-// Si no tiene Laboratorio → permitir eliminar
+// Si no tiene Laboratorio  permitir eliminar
 $sqlDelete = "DELETE FROM san_dim_historial_resultados WHERE id = ?";
 $stmtDelete = $conn->prepare($sqlDelete);
 $stmtDelete->bind_param("i", $idRegistro);

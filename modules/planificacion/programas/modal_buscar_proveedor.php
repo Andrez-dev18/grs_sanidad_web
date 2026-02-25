@@ -39,6 +39,7 @@ $rowIndex = isset($_GET['rowIndex']) ? (int)$_GET['rowIndex'] : 0;
         </div>
         <div id="modalProveedorResultados" class="border border-gray-200 rounded text-sm"></div>
     </div>
+    <script src="../../../assets/js/fetch-auth-redirect.js"></script>
     <script>
         var rowIndex = <?php echo json_encode($rowIndex); ?>;
         var timer = null;

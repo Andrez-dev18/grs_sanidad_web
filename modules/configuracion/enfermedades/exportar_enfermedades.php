@@ -6,7 +6,7 @@ if (empty($_SESSION['active'])) {
 }
 
 require '../../../vendor/autoload.php';
-include_once '../../../../conexion_grs_joya/conexion.php';
+include_once '../../../../conexion_grs/conexion.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -14,7 +14,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 
-$conn = conectar_joya();
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     die("Error de conexión.");
 }

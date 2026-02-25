@@ -13,11 +13,14 @@ if (empty($_SESSION['active'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Programas - Registro</title>
+    <!-- Orden unificado con listado y cronograma: config al final para estilos base -->
     <link rel="stylesheet" href="../../../css/output.css">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
+    <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="../../../assets/js/fetch-auth-redirect.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { background: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
@@ -35,6 +38,15 @@ if (empty($_SESSION['active'])) {
         /* Opciones del dropdown Select2 más pequeñas y formato código - descri */
         .select2-container--default .select2-results__option { font-size: 0.75rem; padding: 4px 8px; }
         .select2-container--default .select2-selection--single .select2-selection__rendered { font-size: 0.8125rem; line-height: 28px; }
+        .fila-fechas-programa { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 0.75rem 1rem; }
+        .fila-fechas-programa .col-fecha { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+        .fila-fechas-programa .col-fecha .form-control { min-height: 32px; }
+        .fila-fechas-programa .col-fecha label { font-size: 0.75rem; font-weight: 500; color: #4b5563; }
+        .fila-fechas-programa .chk-fecha-fin-wrap { display: flex; align-items: center; gap: 0.5rem; padding-bottom: 2px; flex-shrink: 0; }
+        .fila-fechas-programa .chk-fecha-fin-wrap input[type="checkbox"] { width: 1rem; height: 1rem; margin: 0; flex-shrink: 0; cursor: pointer; }
+        .fila-fechas-programa .chk-fecha-fin-wrap span { font-size: 0.8125rem; color: #374151; cursor: pointer; white-space: nowrap; }
+        .fila-fechas-programa .form-control:disabled { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
+        @media (max-width: 640px) { .fila-fechas-programa { grid-template-columns: 1fr; } }
         /* Tabla detalle: scroll horizontal, sin ellipsis en cabecera */
         #solicitudesContainer { overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch; }
         .tabla-detalle-compact { font-size: 0.75rem; width: 100%; min-width: 100%; table-layout: auto; }
@@ -108,10 +120,19 @@ if (empty($_SESSION['active'])) {
         body.en-modal-editar #formProgramaContainer { padding: 0.75rem 1rem; max-width: none; }
         body.en-modal-editar #formProgramaContainer > div { border: none; border-radius: 0; box-shadow: none; margin-bottom: 0; overflow: visible; background: transparent; }
         body.en-modal-editar #formPrograma { padding: 0; }
+        /* Barra de carga modal recálculo (progreso real vía JS) */
+        .recalc-loading-bar-track { height: 6px; }
+        .recalc-loading-bar {
+            height: 6px;
+            min-height: 6px;
+            background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+            border-radius: 9999px;
+            transition: width 0.15s ease-out;
+        }
     </style>
 </head>
 <body class="bg-gray-50">
-    <div class="w-full max-w-full py-4 px-4 sm:px-6 lg:px-8 box-border" id="formProgramaContainer">
+    <div class="w-full max-w-full py-4 px-3 sm:px-4 lg:px-6 box-border" id="formProgramaContainer">
         <div class="mb-6 bg-white border rounded-lg shadow-sm overflow-hidden">
             <form id="formPrograma" class="p-4">
                 <div class="cabecera-compact space-y-3">
@@ -136,15 +157,32 @@ if (empty($_SESSION['active'])) {
                     <!-- Fila 2: Descripción y Despliegue (zona ya no se registra) -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-0.5">Descripción del programa</label>
-                            <input type="text" id="descripcion" name="descripcion" class="form-control" placeholder="Descripción" maxlength="500">
+                            <label class="block text-xs font-medium text-gray-600 mb-0.5">Descripción del programa *</label>
+                            <input type="text" id="descripcion" name="descripcion" class="form-control" placeholder="Descripción" maxlength="500" required>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-0.5">Despliegue del programa</label>
-                            <input type="text" id="despliegue" name="despliegue" class="form-control" placeholder="Despliegue" maxlength="200" list="desplieguesList" autocomplete="off">
+                            <label class="block text-xs font-medium text-gray-600 mb-0.5">Despliegue del programa *</label>
+                            <input type="text" id="despliegue" name="despliegue" class="form-control" placeholder="Despliegue" maxlength="200" list="desplieguesList" autocomplete="off" required>
                             <datalist id="desplieguesList"><option value="GRS"><option value="Piloto"></datalist>
                         </div>
                     </div>
+                    <div class="fila-fechas-programa mt-2">
+                        <div class="col-fecha">
+                            <label for="fechaInicio">Fecha inicio *</label>
+                            <input type="date" id="fechaInicio" name="fechaInicio" class="form-control" required>
+                        </div>
+                        <label class="chk-fecha-fin-wrap" for="chkIncluirFechaFin">
+                            <input type="checkbox" id="chkIncluirFechaFin" name="chkIncluirFechaFin">
+                            <span>Incluir fecha de fin</span>
+                        </label>
+                        <div class="col-fecha">
+                            <label for="fechaFin">Fecha fin</label>
+                            <input type="date" id="fechaFin" name="fechaFin" class="form-control" disabled>
+                        </div>
+                    </div>
+                    <p id="msgSoloFechaFin" class="hidden mt-2 text-amber-700 text-sm bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                        <i class="fas fa-info-circle mr-1"></i> Este programa solo tiene asignaciones pasadas. Solo puede modificar la fecha de fin.
+                    </p>
                 </div>
                     <div id="bloqueDetalle" class="bloque-detalle mt-4 pt-4 border-t border-gray-200">
                         <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
@@ -240,6 +278,19 @@ if (empty($_SESSION['active'])) {
             </div>
         </div>
     </div>
+    <!-- Modal carga durante recálculo de fechas -->
+    <div id="modalCargaRecalcular" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+        <div class="bg-sky-50 rounded-xl shadow-2xl p-8 text-center max-w-sm w-full">
+            <div class="flex flex-col items-center gap-3">
+                <img src="../../../assets/img/gallina.gif" alt="Cargando..." class="w-32 h-32" onerror="this.style.display='none'">
+                <div class="recalc-loading-bar-track w-full max-w-xs bg-gray-200 rounded-full overflow-hidden">
+                    <div id="recalcLoadingBar" class="recalc-loading-bar" style="width:0%"></div>
+                </div>
+            </div>
+            <p class="text-lg font-semibold text-gray-800 mt-4">Recalculando fechas...</p>
+            <p class="text-sm text-gray-600 mt-2">Por favor espere, estamos procesando las asignaciones</p>
+        </div>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         (function() {
@@ -252,6 +303,8 @@ if (empty($_SESSION['active'])) {
                 window._codigoEditar = '';
             }
         })();
+        window._contextZona = '';
+        window._contextSubzona = '';
         /** Agrupa detalles iguales salvo edad; devuelve filas con edad como "2,3,4" */
         function agruparDetallesPorEdad(detalles) {
             if (!detalles || detalles.length === 0) return [];
@@ -289,13 +342,42 @@ if (empty($_SESSION['active'])) {
                     var detalles = res.detalles || [];
                     var sigla = (res.sigla || 'PL').toUpperCase();
                     if (sigla === 'NEC') sigla = 'NC';
-                    document.getElementById('tipo').value = String(cab.codTipo || '');
                     var tipoEl = document.getElementById('tipo');
+                    tipoEl.value = String(cab.codTipo || '');
+                    tipoEl.disabled = true;
                     if (tipoEl.value) {
                         document.getElementById('codigo').value = (cab.codigo || '').trim();
                         document.getElementById('nombre').value = (cab.nombre || '').trim();
                         document.getElementById('descripcion').value = (cab.descripcion || '').trim();
                         document.getElementById('despliegue').value = (cab.despliegue || '').trim();
+                        // Cargar fecha inicio y fecha fin si existen en la cabecera (al editar)
+                        var elFechaInicio = document.getElementById('fechaInicio');
+                        var elFechaFin = document.getElementById('fechaFin');
+                        var chkFechaFin = document.getElementById('chkIncluirFechaFin');
+                        if (elFechaInicio) {
+                            var vInicio = (cab.fechaInicio != null && cab.fechaInicio !== '') ? String(cab.fechaInicio).trim().substring(0, 10) : '';
+                            elFechaInicio.value = vInicio;
+                            window._originalFechaInicio = vInicio;
+                            var hoy = new Date();
+                            hoy.setHours(0, 0, 0, 0);
+                            var fIni = vInicio ? new Date(vInicio) : null;
+                            if (fIni && fIni < hoy) elFechaInicio.readOnly = true;
+                        }
+                        if (chkFechaFin && elFechaFin) {
+                            var vFin = (cab.fechaFin != null && cab.fechaFin !== '') ? String(cab.fechaFin).trim().substring(0, 10) : '';
+                            window._originalFechaFin = vFin || '';
+                            if (vFin) {
+                                chkFechaFin.checked = true;
+                                elFechaFin.disabled = false;
+                                elFechaFin.value = vFin;
+                            } else {
+                                chkFechaFin.checked = false;
+                                elFechaFin.disabled = true;
+                                elFechaFin.value = '';
+                            }
+                        }
+                        if (!window._contextZona) window._contextZona = (cab.zona || '').trim();
+                        if (!window._contextSubzona) window._contextSubzona = (cab.subzona || '').trim();
                         document.getElementById('btnAgregarFila').classList.remove('hidden');
                         document.getElementById('solicitudesContainer').classList.remove('hidden');
                         currentCampos = getCamposActual();
@@ -334,9 +416,34 @@ if (empty($_SESSION['active'])) {
                             var cg = document.getElementById('cantidad_por_galpon_' + i);
                             if (cg && d.cantidadPorGalpon !== null && d.cantidadPorGalpon !== undefined) cg.value = d.cantidadPorGalpon;
                         });
+                        setTimeout(function() {
+                            try { window._originalDetalles = JSON.stringify(getDetallesFromForm()); } catch (err) {}
+                        }, 0);
                     }
                 })
                 .catch(function() {});
+        }
+        function aplicarRestriccionSoloFechaFin() {
+            if (!window._modoEditar || !window._soloAsignacionesPasadas) return;
+            var elNombre = document.getElementById('nombre');
+            var elDesc = document.getElementById('descripcion');
+            var elDespl = document.getElementById('despliegue');
+            var elFechaInicio = document.getElementById('fechaInicio');
+            var btnAgregar = document.getElementById('btnAgregarFila');
+            var bloqueDet = document.getElementById('bloqueDetalle');
+            var msgSolo = document.getElementById('msgSoloFechaFin');
+            if (elNombre) { elNombre.disabled = true; elNombre.classList.add('bg-gray-100'); }
+            if (elDesc) { elDesc.disabled = true; elDesc.classList.add('bg-gray-100'); }
+            if (elDespl) { elDespl.disabled = true; elDespl.classList.add('bg-gray-100'); }
+            if (elFechaInicio) { elFechaInicio.disabled = true; elFechaInicio.readOnly = true; elFechaInicio.classList.add('bg-gray-100'); }
+            if (btnAgregar) btnAgregar.classList.add('hidden');
+            if (bloqueDet) {
+                bloqueDet.style.pointerEvents = 'none';
+                bloqueDet.style.opacity = '0.7';
+                var inputs = bloqueDet.querySelectorAll('input, textarea, select, button');
+                inputs.forEach(function(inp) { inp.disabled = true; inp.readOnly = true; });
+            }
+            if (msgSolo) msgSolo.classList.remove('hidden');
         }
         function cargarTipos() {
             return fetch('get_tipos_programa.php').then(r => r.json()).then(res => {
@@ -354,9 +461,9 @@ if (empty($_SESSION['active'])) {
                 });
             }).catch(() => {});
         }
-        function generarCodigoPorSigla(sigla) {
-            if (!sigla) { document.getElementById('codigo').value = ''; return; }
-            fetch('generar_codigo_nec.php?sigla=' + encodeURIComponent(sigla))
+        function generarCodigoPorTipo(codTipo) {
+            if (!codTipo) { document.getElementById('codigo').value = ''; return; }
+            fetch('generar_codigo_nec.php?codTipo=' + encodeURIComponent(codTipo))
                 .then(r => r.json())
                 .then(res => { document.getElementById('codigo').value = (res.success && res.codigo) ? res.codigo : ''; })
                 .catch(() => { document.getElementById('codigo').value = ''; });
@@ -433,9 +540,7 @@ if (empty($_SESSION['active'])) {
             html += '<th class="col-quitar px-1.5 py-1 text-center border-b border-gray-200 font-semibold text-gray-600 text-xs">Quitar</th></tr>';
             thead.innerHTML = html;
         }
-        function updateVisibilidadColumnaDescripcion() {
-            // La columna Descripción se muestra según campoDescripcion del tipo (th/td ya visibles cuando está en la tabla).
-        }
+    
         function buildRowHtml(campos, i) {
             var cols = getColumnasFromCampos(campos);
             var parts = [];
@@ -459,10 +564,9 @@ if (empty($_SESSION['active'])) {
             return parts.join('');
         }
         document.getElementById('tipo').addEventListener('change', function() {
-            var opt = this.options[this.selectedIndex];
-            if (this.value) {
-                var sigla = (opt && opt.dataset.sigla) ? opt.dataset.sigla : '';
-                generarCodigoPorSigla(sigla);
+            var codTipo = (this.value || '').toString().trim();
+            if (codTipo) {
+                generarCodigoPorTipo(codTipo);
                 document.getElementById('btnAgregarFila').classList.remove('hidden');
                 document.getElementById('solicitudesContainer').classList.remove('hidden');
                 currentCampos = getCamposActual();
@@ -481,6 +585,20 @@ if (empty($_SESSION['active'])) {
                 solicitudesData = {};
             }
         });
+        (function() {
+            var chk = document.getElementById('chkIncluirFechaFin');
+            var inp = document.getElementById('fechaFin');
+            if (chk && inp) {
+                chk.addEventListener('change', function() {
+                    if (this.checked) {
+                        inp.disabled = false;
+                    } else {
+                        inp.disabled = true;
+                        inp.value = '';
+                    }
+                });
+            }
+        })();
         var currentCampos = null;
         var modalProductoRowIndex = -1;
         var modalProveedorRowIndex = -1;
@@ -621,7 +739,7 @@ if (empty($_SESSION['active'])) {
                 if (!pop) {
                     pop = document.createElement('div');
                     pop.id = 'popoverInfoEdadFlotante';
-                    pop.textContent = 'Puede colocar una edad (ej: 2) o varias edades separadas por comas (ej: 2, 4, 6).';
+                    pop.innerHTML = 'Use una edad (ej: 1, 2) o varias separadas por comas (ej: 2, 4, 6).<br><br><strong>No se permite 0.</strong> Para el d\u00eda anterior a la edad 1 ingrese <strong>-1</strong>; para dos d\u00edas antes, <strong>-2</strong>, y as\u00ed sucesivamente.';
                     document.body.appendChild(pop);
                 }
                 var isVisible = pop.classList.contains('visible');
@@ -647,12 +765,15 @@ if (empty($_SESSION['active'])) {
                 var row = parseInt(btnProd.getAttribute('data-row'), 10);
                 if (isNaN(row)) return;
                 modalProductoRowIndex = row;
-                if (window.self !== window.top) {
+                var parentTieneOverlay = false;
+                try {
+                    if (window.parent !== window.self) { parentTieneOverlay = !!window.parent.document.getElementById('overlayProductoProveedor'); }
+                } catch (err) {}
+                if (parentTieneOverlay) {
                     try { window.parent.postMessage({ tipo: 'abrirModalProducto', rowIndex: row }, '*'); } catch (err) {}
                     return;
                 }
-                document.getElementById('modalProductoBuscar').value = '';
-                document.getElementById('modalProductoResultados').innerHTML = '<p class="text-gray-500 text-sm p-2">Escriba para buscar producto.</p>';
+                limpiarModalProducto();
                 cargarLineasAlmacenesModalProducto();
                 document.getElementById('modalBuscarProducto').classList.remove('hidden');
                 setTimeout(function() { document.getElementById('modalProductoBuscar').focus(); }, 100);
@@ -663,7 +784,11 @@ if (empty($_SESSION['active'])) {
                 var row = parseInt(btnProv.getAttribute('data-row'), 10);
                 if (isNaN(row)) return;
                 modalProveedorRowIndex = row;
-                if (window.self !== window.top) {
+                var parentTieneOverlay = false;
+                try {
+                    if (window.parent !== window.self) { parentTieneOverlay = !!window.parent.document.getElementById('overlayProductoProveedor'); }
+                } catch (err) {}
+                if (parentTieneOverlay) {
                     try { window.parent.postMessage({ tipo: 'abrirModalProveedor', rowIndex: row }, '*'); } catch (err) {}
                     return;
                 }
@@ -687,6 +812,18 @@ if (empty($_SESSION['active'])) {
         document.getElementById('modalBuscarProducto').addEventListener('click', function(e) {
             if (e.target.id === 'modalBuscarProducto') { document.getElementById('modalBuscarProducto').classList.add('hidden'); modalProductoRowIndex = -1; }
         });
+        function limpiarModalProducto() {
+            if (document.getElementById('modalProductoBuscar')) document.getElementById('modalProductoBuscar').value = '';
+            if (document.getElementById('modalProductoLinea')) document.getElementById('modalProductoLinea').value = '';
+            if (document.getElementById('modalProductoAlmacen')) document.getElementById('modalProductoAlmacen').value = '';
+            var c = document.getElementById('modalProductoResultados');
+            if (c) c.innerHTML = '<p class="text-gray-500 text-sm p-2">Seleccione línea y/o almacén o escriba para buscar producto.</p>';
+        }
+        function limpiarModalProveedor() {
+            if (document.getElementById('modalProveedorBuscar')) document.getElementById('modalProveedorBuscar').value = '';
+            var c = document.getElementById('modalProveedorResultados');
+            if (c) c.innerHTML = '<p class="text-gray-500 text-sm p-2">Escriba para buscar proveedor.</p>';
+        }
         function ejecutarBusquedaModalProducto() {
             var q = (document.getElementById('modalProductoBuscar') && document.getElementById('modalProductoBuscar').value) ? document.getElementById('modalProductoBuscar').value.trim() : '';
             var lin = (document.getElementById('modalProductoLinea') && document.getElementById('modalProductoLinea').value) ? document.getElementById('modalProductoLinea').value.trim() : '';
@@ -696,7 +833,8 @@ if (empty($_SESSION['active'])) {
                 cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Seleccione línea y/o almacén o escriba para buscar producto.</p>';
                 return;
             }
-            cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Buscando...</p>';
+            var esc = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+            cont.innerHTML = q ? '<p class="text-gray-500 text-sm p-2">Buscando <strong>"' + esc(q) + '"</strong>...</p>' : '<p class="text-gray-500 text-sm p-2">Buscando...</p>';
             var url = 'get_productos_programa.php?q=' + encodeURIComponent(q) + (lin ? '&lin=' + encodeURIComponent(lin) : '') + (alma ? '&alma=' + encodeURIComponent(alma) : '');
             fetch(url).then(function(r) { return r.json(); }).then(function(data) {
                 if (!data.success || !data.results || !data.results.length) {
@@ -725,6 +863,7 @@ if (empty($_SESSION['active'])) {
                         if (inpText) { inpText.value = text; autoResizeTextarea(inpText); }
                         document.getElementById('modalBuscarProducto').classList.add('hidden');
                         modalProductoRowIndex = -1;
+                        limpiarModalProducto();
                         if (id) onProductoChange(row);
                     };
                 });
@@ -748,7 +887,8 @@ if (empty($_SESSION['active'])) {
             var cont = document.getElementById('modalProductoResultados');
             if (modalProductoSearchTimer) clearTimeout(modalProductoSearchTimer);
             if (!q) { cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Escriba para buscar producto.</p>'; return; }
-            cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Buscando...</p>';
+            var esc = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+            cont.innerHTML = '<p class="text-gray-500 text-sm p-2">Buscando <strong>"' + esc(q) + '"</strong>...</p>';
             modalProductoSearchTimer = setTimeout(ejecutarBusquedaModalProducto, 250);
         });
         document.getElementById('btnCerrarModalProveedor').addEventListener('click', function() {
@@ -793,6 +933,7 @@ if (empty($_SESSION['active'])) {
                             }
                             document.getElementById('modalBuscarProveedor').classList.add('hidden');
                             modalProveedorRowIndex = -1;
+                            limpiarModalProveedor();
                         };
                     });
                 }).catch(function() { cont.innerHTML = '<p class="text-red-500 text-sm p-2">Error al buscar.</p>'; });
@@ -803,7 +944,7 @@ if (empty($_SESSION['active'])) {
             if (!inp || !inp.value) return;
             if (!solicitudesData[rowIndex]) solicitudesData[rowIndex] = {};
             fetch('get_datos_producto_programa.php?codigo=' + encodeURIComponent(inp.value)).then(function(r) { return r.json(); }).then(function(data) {
-                if (!data.success) return;
+                if (!data || data.success === false) return;
                 solicitudesData[rowIndex].codProveedor = data.codProveedor || '';
                 solicitudesData[rowIndex].nomProducto = data.nomProducto || '';
                 solicitudesData[rowIndex].dosis = data.dosis || '';
@@ -930,13 +1071,12 @@ if (empty($_SESSION['active'])) {
                     btn.onclick = function() { quitarFila(rowIdx); };
                 });
             }
-            updateVisibilidadColumnaDescripcion();
         }
-        /** Parsea campo edad: "2", "2,4", "2, 4" -> array de números [2] o [2,4]. Cada edad genera un detalle; posDetalle es el número de detalle global (1, 2, 3, 4...). */
+        /** Parsea campo edad: "2", "2,4", "-1" -> array de números. No se permite 0; -1 = día anterior a edad 1, -2 = dos días antes, etc. Sin rango fijo. */
         function parseEdades(edadStr) {
             if (typeof edadStr !== 'string') edadStr = '';
-            var parts = edadStr.split(',').map(function(s) { return parseInt(s.trim(), 10); }).filter(function(n) { return !isNaN(n) && n >= 0 && n <= 45; });
-            return parts.length ? parts : [0];
+            var parts = edadStr.split(',').map(function(s) { return parseInt(s.trim(), 10); }).filter(function(n) { return !isNaN(n) && n !== 0; });
+            return parts;
         }
         /** Lee el valor de un campo del detalle para la fila s según la columna mostrada (id del input). Solo se usan columnas que están en cols (campos con valor 1). */
         function leerValorDetalle(colKey, s) {
@@ -1046,6 +1186,9 @@ if (empty($_SESSION['active'])) {
         document.getElementById('btnLimpiarForm').addEventListener('click', function() {
             document.getElementById('formPrograma').reset();
             document.getElementById('codigo').value = '';
+            var fi = document.getElementById('fechaInicio'); if (fi) fi.value = '';
+            var chkFf = document.getElementById('chkIncluirFechaFin'); if (chkFf) chkFf.checked = false;
+            var ff = document.getElementById('fechaFin'); if (ff) { ff.value = ''; ff.disabled = true; }
             document.getElementById('solicitudesBody').innerHTML = '';
             document.getElementById('solicitudesThead').innerHTML = '';
             document.getElementById('btnAgregarFila').classList.add('hidden');
@@ -1064,46 +1207,284 @@ if (empty($_SESSION['active'])) {
             var nombre = document.getElementById('nombre').value.trim();
             var despliegue = document.getElementById('despliegue') ? document.getElementById('despliegue').value.trim() : '';
             var descripcion = document.getElementById('descripcion') ? document.getElementById('descripcion').value.trim() : '';
+            var fechaInicio = (document.getElementById('fechaInicio') && document.getElementById('fechaInicio').value) ? document.getElementById('fechaInicio').value.trim() : '';
+            var chkIncluirFin = document.getElementById('chkIncluirFechaFin');
+            var fechaFin = (chkIncluirFin && chkIncluirFin.checked && document.getElementById('fechaFin') && document.getElementById('fechaFin').value) ? document.getElementById('fechaFin').value.trim() : '';
             if (!codTipo || !codigo || !nombre) {
                 if (window._swalEnParent) window._swalEnParent('warning', 'Datos incompletos', 'Complete tipo, código y nombre.');
                 else Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Complete tipo, código y nombre.' });
                 return;
             }
+            if (!fechaInicio) {
+                if (window._swalEnParent) window._swalEnParent('warning', 'Datos incompletos', 'La fecha de inicio es obligatoria.');
+                else Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'La fecha de inicio es obligatoria.' });
+                return;
+            }
+            var hoyStr = new Date().toISOString().slice(0, 10);
+            if (window._originalFechaInicio !== undefined && fechaInicio !== (window._originalFechaInicio || '') && fechaInicio < hoyStr) {
+                if (window._swalEnParent) window._swalEnParent('warning', 'Fecha inválida', 'La fecha de inicio debe ser mayor o igual a hoy.');
+                else Swal.fire({ icon: 'warning', title: 'Fecha inválida', text: 'La fecha de inicio debe ser mayor o igual a hoy.' });
+                return;
+            }
+            var origFin = (window._originalFechaFin !== undefined) ? (window._originalFechaFin || '') : null;
+            if (origFin !== null && fechaFin && origFin && fechaFin < origFin && fechaFin < hoyStr) {
+                if (window._swalEnParent) window._swalEnParent('warning', 'Ajuste la fecha fin', 'Está moviendo la fecha fin a un día ya pasado. Elija hoy o un día futuro.');
+                else Swal.fire({ icon: 'warning', title: 'Ajuste la fecha fin', text: 'Está moviendo la fecha fin a un día ya pasado. Elija hoy o un día futuro.' });
+                return;
+            }
+            var campos = getCamposActual();
+            var cols = getColumnasFromCampos(campos || {});
+            if (cols.indexOf('edad') !== -1) {
+                var tbody = document.getElementById('solicitudesBody');
+                var rows = tbody ? tbody.querySelectorAll('tr') : [];
+                for (var i = 0; i < rows.length; i++) {
+                    var edadStr = leerValorDetalle('edad', i);
+                    if (edadStr === '') continue;
+                    if (/\-\s+\d/.test(edadStr)) {
+                        if (window._swalEnParent) window._swalEnParent('warning', 'Formato de edad incorrecto', 'El signo menos debe estar junto al número. Correcto: -2, -1. Incorrecto: -  4 (hay espacio entre el menos y el número).');
+                        else Swal.fire({ icon: 'warning', title: 'Formato de edad incorrecto', text: 'El signo menos debe estar junto al número. Correcto: -2, -1. Incorrecto: -  4 (hay espacio entre el menos y el número).' });
+                        return;
+                    }
+                    var partes = edadStr.split(',').map(function(s) { return parseInt(String(s).trim(), 10); });
+                    var tieneCero = partes.some(function(n) { return n === 0; });
+                    if (tieneCero) {
+                        if (window._swalEnParent) window._swalEnParent('warning', 'Edad no permitida', 'No se permite la edad 0. Corrija las edades en el detalle (por ejemplo use 1, 2, -1, etc.).');
+                        else Swal.fire({ icon: 'warning', title: 'Edad no permitida', text: 'No se permite la edad 0. Corrija las edades en el detalle (por ejemplo use 1, 2, -1, etc.).' });
+                        return;
+                    }
+                }
+            }
             var detalles = getDetallesFromForm();
             if (detalles.length < 1) {
-                if (window._swalEnParent) window._swalEnParent('warning', 'Datos incompletos', 'Debe haber al menos un detalle. Agregue una fila y complete edad (ej: 2 o 2,4).');
-                else Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Debe haber al menos un detalle. Agregue una fila y complete edad (ej: 2 o 2,4).' });
+                if (window._swalEnParent) window._swalEnParent('warning', 'Datos incompletos', 'Debe haber al menos un detalle. Agregue por lo menos una fila con al menos una edad válida (no se permite 0).');
+                else Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'Debe haber al menos un detalle. Agregue por lo menos una fila con al menos una edad válida (no se permite 0).' });
                 return;
             }
             var sigla = getSiglaActual();
-            var payload = { codigo: codigo, nombre: nombre, codTipo: parseInt(codTipo, 10), nomTipo: nomTipo, sigla: sigla, despliegue: despliegue, descripcion: descripcion, detalles: detalles };
-            var url = (window._modoEditar) ? 'actualizar_programa.php' : 'guardar_programa.php';
-            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-                .then(function(r) { return r.json(); })
-                .then(function(res) {
-                    if (res.success) {
-                        if (window._swalEnParent) {
-                            window._swalEnParent('success', window._modoEditar ? 'Actualizado' : 'Guardado', res.message, true);
-                        } else {
-                            Swal.fire({ icon: 'success', title: window._modoEditar ? 'Actualizado' : 'Guardado', text: res.message }).then(function() {
-                                document.getElementById('formPrograma').reset();
-                                document.getElementById('codigo').value = '';
-                                document.getElementById('solicitudesBody').innerHTML = '';
-                                document.getElementById('solicitudesThead').innerHTML = '';
-                                document.getElementById('btnAgregarFila').classList.add('hidden');
-                                document.getElementById('solicitudesContainer').classList.add('hidden');
-                                solicitudesData = {};
-                            });
+            var cambioFechas = (window._originalFechaInicio !== undefined) && (fechaInicio !== (window._originalFechaInicio || '') || (fechaFin || '') !== (window._originalFechaFin || ''));
+            var cambioDetalles = (window._originalDetalles !== undefined) && (JSON.stringify(detalles) !== window._originalDetalles);
+            var tieneAsignacionesPasadas = window._tieneAsignacionesPasadas === true;
+            var tieneAsignacionesFuturas = window._tieneAsignacionesFuturas === true;
+            var crearNuevo = cambioDetalles && tieneAsignacionesPasadas && tieneAsignacionesFuturas;
+            function hacerRecalcular(codPrograma, msgExtra, cerrar, codProgramaOrigen, fechaInicio, fechaFin, conDebug, fechaFinAnterior, fechaInicioAnterior, soloCambioFechas) {
+                var body = { codPrograma: codPrograma };
+                if (codProgramaOrigen && codProgramaOrigen !== codPrograma) body.codProgramaOrigen = codProgramaOrigen;
+                if (fechaInicio && typeof fechaInicio === 'string' && fechaInicio.trim()) body.fechaInicio = fechaInicio.trim();
+                if (fechaFin !== undefined && fechaFin !== null && fechaFin !== '') body.fechaFin = typeof fechaFin === 'string' ? fechaFin.trim() : fechaFin;
+                if (fechaFinAnterior !== undefined && fechaFinAnterior !== null && typeof fechaFinAnterior === 'string' && fechaFinAnterior.trim()) body.fechaFinAnterior = fechaFinAnterior.trim();
+                if (fechaInicioAnterior !== undefined && fechaInicioAnterior !== null && typeof fechaInicioAnterior === 'string' && fechaInicioAnterior.trim()) body.fechaInicioAnterior = fechaInicioAnterior.trim();
+                if (soloCambioFechas === true) body.soloCambioFechaFin = true;
+                if (conDebug) body.debug = true;
+                var modalCarga = document.getElementById('modalCargaRecalcular');
+                var bar = modalCarga ? modalCarga.querySelector('#recalcLoadingBar') : null;
+                var progInterval = null;
+                var enIframe = (window.self !== window.top);
+                function setProgreso(pct) {
+                    var val = Math.min(100, Math.max(0, pct));
+                    if (bar) bar.style.width = val + '%';
+                    if (enIframe) { try { window.parent.postMessage({ tipo: 'recalcProgreso', pct: val }, '*'); } catch (err) {} }
+                }
+                function iniciarProgreso() {
+                    setProgreso(0);
+                    var inicio = Date.now();
+                    var duracionEstimada = 8000;
+                    progInterval = setInterval(function() {
+                        var elapsed = Date.now() - inicio;
+                        var pct = Math.min(90, (elapsed / duracionEstimada) * 90);
+                        setProgreso(pct);
+                        if (pct >= 90) clearInterval(progInterval);
+                    }, 150);
+                }
+                function completarProgreso() {
+                    if (progInterval) { clearInterval(progInterval); progInterval = null; }
+                    setProgreso(100);
+                }
+                if (enIframe) {
+                    try { window.parent.postMessage({ tipo: 'mostrarModalCargaRecalcular' }, '*'); } catch (err) {}
+                    iniciarProgreso();
+                    /* No mostrar modal local: el overlay del padre cubre toda la pantalla */
+                } else if (modalCarga) {
+                    iniciarProgreso();
+                    modalCarga.classList.remove('hidden');
+                }
+                var urlRecalc = (!codProgramaOrigen || codProgramaOrigen === codPrograma) ? '../cronograma/recalcular_fechas_programa_editado.php' : '../cronograma/recalcular_cronograma_programa.php';
+                return fetch(urlRecalc, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+                    .then(function(r) { return r.json(); })
+                    .then(function(rec) {
+                        completarProgreso();
+                        if (enIframe) { try { window.parent.postMessage({ tipo: 'ocultarModalCargaRecalcular' }, '*'); } catch (err) {} }
+                        else { setTimeout(function() { if (modalCarga) modalCarga.classList.add('hidden'); }, 300); }
+                        if (rec.debug && typeof console !== 'undefined' && console.log) console.log('Recalcular debug:', rec.debug);
+                        var texto = (rec.success && rec.total !== undefined && rec.total > 0) ? (msgExtra + ' Se realizó el recálculo de asignaciones (' + rec.total + ' registro(s)).') : (rec.success ? msgExtra : (msgExtra + (rec.message ? ' ' + rec.message : '')));
+                        if (window._swalEnParent) window._swalEnParent('success', 'Listo', texto, false);
+                        else Swal.fire({ icon: 'success', title: 'Listo', text: texto }).then(function() { if (cerrar && document.getElementById('btnLimpiarForm')) document.getElementById('btnLimpiarForm').click(); });
+                        if (window.self !== window.top) {
+                            try { window.parent.postMessage({ tipo: 'programaGuardado', success: true, nuevoCodigo: crearNuevo ? codPrograma : null }, '*'); } catch (err) {}
                         }
-                    } else {
-                        if (window._swalEnParent) window._swalEnParent('error', 'Error', res.message || 'No se pudo guardar.');
-                        else Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudo guardar.' });
+                    })
+                    .catch(function() {
+                        completarProgreso();
+                        if (enIframe) { try { window.parent.postMessage({ tipo: 'ocultarModalCargaRecalcular' }, '*'); } catch (err) {} }
+                        setTimeout(function() { if (modalCarga) modalCarga.classList.add('hidden'); }, 300);
+                        var texto = msgExtra + ' No se pudo recalcular el cronograma.';
+                        if (window._swalEnParent) window._swalEnParent('warning', 'Aviso', texto, false);
+                        else Swal.fire({ icon: 'warning', title: 'Aviso', text: texto });
+                        if (window.self !== window.top) {
+                            try { window.parent.postMessage({ tipo: 'programaGuardado', success: true, nuevoCodigo: crearNuevo ? codPrograma : null }, '*'); } catch (err) {}
+                        }
+                    });
+            }
+            function enviarActualizar(payloadData, codigoRecalcular, msgOk, cerrar, codigoOrigen) {
+                var url = (window._modoEditar) ? 'actualizar_programa.php' : 'guardar_programa.php';
+                fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadData) })
+                    .then(function(r) { return r.json(); })
+                    .then(function(res) {
+                        if (res.success) {
+                            document.getElementById('modalBuscarProducto').classList.add('hidden');
+                            document.getElementById('modalBuscarProveedor').classList.add('hidden');
+                            modalProductoRowIndex = -1;
+                            modalProveedorRowIndex = -1;
+                            limpiarModalProducto();
+                            limpiarModalProveedor();
+                            if (!window._modoEditar) {
+                                if (window._swalEnParent) window._swalEnParent('success', 'Guardado', res.message, true);
+                                else Swal.fire({ icon: 'success', title: 'Guardado', text: res.message }).then(function() {
+                                    document.getElementById('formPrograma').reset();
+                                    document.getElementById('codigo').value = '';
+                                    document.getElementById('solicitudesBody').innerHTML = '';
+                                    document.getElementById('solicitudesThead').innerHTML = '';
+                                    document.getElementById('btnAgregarFila').classList.add('hidden');
+                                    document.getElementById('solicitudesContainer').classList.add('hidden');
+                                    solicitudesData = {};
+                                });
+                                return;
+                            }
+                            var recCod = (res.recalcularCodigo != null && res.recalcularCodigo !== '') ? res.recalcularCodigo : codigoRecalcular;
+                            if (recCod && (cambioFechas || cambioDetalles)) {
+                                var fechaFinAnt = (cambioFechas && window._originalFechaFin !== undefined) ? (window._originalFechaFin || '') : undefined;
+                                var fechaInicioAnt = (cambioFechas && window._originalFechaInicio !== undefined) ? (window._originalFechaInicio || '') : undefined;
+                                var soloCambioFechas = cambioFechas && !cambioDetalles;
+                                hacerRecalcular(recCod, msgOk, true, codigoOrigen, payloadData.fechaInicio, payloadData.fechaFin, true, fechaFinAnt, fechaInicioAnt, soloCambioFechas);
+                            } else {
+                                if (window._swalEnParent) window._swalEnParent('success', 'Actualizado', msgOk, false);
+                                else Swal.fire({ icon: 'success', title: 'Actualizado', text: msgOk });
+                                if (window.self !== window.top) {
+                                    try { window.parent.postMessage({ tipo: 'programaGuardado', success: true, nuevoCodigo: null }, '*'); } catch (err) {}
+                                }
+                            }
+                        } else {
+                            if (window._swalEnParent) window._swalEnParent('error', 'Error', res.message || 'No se pudo guardar.');
+                            else Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudo guardar.' });
+                        }
+                    })
+                    .catch(function() {
+                        if (window._swalEnParent) window._swalEnParent('error', 'Error', 'Error de conexión.');
+                        else Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión.' });
+                    });
+            }
+            if (crearNuevo) {
+                var msgHtml = 'Este programa tiene <strong>asignaciones pasadas</strong>.<br><br>' +
+                    'Al guardar, se creará un <strong>nuevo programa</strong>. Las asignaciones pasadas permanecerán en el programa actual y se recalcularán las asignaciones para el nuevo programa.<br><br>¿Confirmar guardado?';
+                var opts = {
+                    title: 'Aviso al guardar',
+                    html: msgHtml,
+                    icon: 'warning',
+                    iconColor: '#d97706',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, guardar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#6b7280'
+                };
+                var hacerCrearNuevo = function() {
+                    fetch('generar_codigo_nec.php?codTipo=' + encodeURIComponent(codTipo))
+                        .then(function(r) { return r.json(); })
+                        .then(function(resCod) {
+                            if (!resCod.success || !resCod.codigo) {
+                                if (window._swalEnParent) window._swalEnParent('error', 'Error', resCod.message || 'No se pudo generar el nuevo código.');
+                                else Swal.fire({ icon: 'error', title: 'Error', text: resCod.message || 'No se pudo generar el nuevo código.' });
+                                return;
+                            }
+                            var nuevoCodigo = String(resCod.codigo).trim();
+                            var payload = { crearNuevoPrograma: true, nuevoCodigo: nuevoCodigo, codigo: nuevoCodigo, codigoProgramaViejo: codigo, nombre: nombre, codTipo: parseInt(codTipo, 10), nomTipo: nomTipo, sigla: sigla, despliegue: despliegue, descripcion: descripcion, fechaInicio: hoyStr, fechaFin: fechaFin || null, detalles: detalles };
+                            enviarActualizar(payload, nuevoCodigo, 'Se creó un nuevo programa (' + nuevoCodigo + '). Las asignaciones pasadas permanecen en el programa anterior.', true, codigo);
+                        })
+                        .catch(function() {
+                            if (window._swalEnParent) window._swalEnParent('error', 'Error', 'Error al obtener el nuevo código.');
+                            else Swal.fire({ icon: 'error', title: 'Error', text: 'Error al obtener el nuevo código.' });
+                        });
+                };
+                if (window.self !== window.top) {
+                    try {
+                        window.parent.postMessage({ tipo: 'mostrarSwalConfirmar', title: opts.title, html: msgHtml, icon: opts.icon, iconColor: opts.iconColor, confirmButtonText: opts.confirmButtonText, cancelButtonText: opts.cancelButtonText, confirmButtonColor: opts.confirmButtonColor, cancelButtonColor: opts.cancelButtonColor }, '*');
+                        var handlerCrear = function(ev) {
+                            if (ev.data && ev.data.tipo === 'swalConfirmResult') {
+                                window.removeEventListener('message', handlerCrear);
+                                if (ev.data.isConfirmed) hacerCrearNuevo();
+                            }
+                        };
+                        window.addEventListener('message', handlerCrear);
+                    } catch (err) {
+                        if (typeof Swal !== 'undefined') Swal.fire(opts).then(function(result) { if (result.isConfirmed) hacerCrearNuevo(); });
+                        else if (confirm('Este programa tiene asignaciones pasadas. Al guardar se creará un nuevo programa. ¿Confirmar?')) hacerCrearNuevo();
                     }
-                })
-                .catch(function() {
-                    if (window._swalEnParent) window._swalEnParent('error', 'Error', 'Error de conexión.');
-                    else Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión.' });
-                });
+                } else if (typeof Swal !== 'undefined') {
+                    Swal.fire(opts).then(function(result) {
+                        if (result.isConfirmed) hacerCrearNuevo();
+                    });
+                } else {
+                    if (confirm('Este programa tiene asignaciones pasadas. Al guardar se creará un nuevo programa. ¿Confirmar?')) hacerCrearNuevo();
+                }
+                return;
+            }
+            if (cambioFechas && window._modoEditar) {
+                var cambioInicio = fechaInicio !== (window._originalFechaInicio || '');
+                var cambioFin = (fechaFin || '') !== (window._originalFechaFin || '');
+                var queModifico = '';
+                if (cambioInicio && cambioFin) queModifico = 'la <strong>fecha de inicio</strong> y la <strong>fecha de fin</strong>';
+                else if (cambioInicio) queModifico = 'la <strong>fecha de inicio</strong>';
+                else queModifico = 'la <strong>fecha de fin</strong>';
+                var msgHtmlRecalc = 'Ha modificado ' + queModifico + ' del programa.<br><br>Se recalcularán las fechas de las asignaciones relacionadas con este programa.<br><br>¿Confirmar guardado?';
+                var optsRecalc = {
+                    title: 'Aviso al guardar',
+                    html: msgHtmlRecalc,
+                    icon: 'warning',
+                    iconColor: '#d97706',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, guardar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#6b7280'
+                };
+                var hacerEnviar = function() {
+                    var payload = { codigo: codigo, nombre: nombre, codTipo: parseInt(codTipo, 10), nomTipo: nomTipo, sigla: sigla, despliegue: despliegue, descripcion: descripcion, fechaInicio: fechaInicio, fechaFin: fechaFin || null, detalles: detalles };
+                    enviarActualizar(payload, codigo, 'Programa actualizado correctamente.', true);
+                };
+                if (window.self !== window.top) {
+                    try {
+                        window.parent.postMessage({ tipo: 'mostrarSwalConfirmar', title: optsRecalc.title, html: msgHtmlRecalc, icon: optsRecalc.icon, iconColor: optsRecalc.iconColor, confirmButtonText: optsRecalc.confirmButtonText, cancelButtonText: optsRecalc.cancelButtonText, confirmButtonColor: optsRecalc.confirmButtonColor, cancelButtonColor: optsRecalc.cancelButtonColor }, '*');
+                        var handlerRecalc = function(ev) {
+                            if (ev.data && ev.data.tipo === 'swalConfirmResult') {
+                                window.removeEventListener('message', handlerRecalc);
+                                if (ev.data.isConfirmed) hacerEnviar();
+                            }
+                        };
+                        window.addEventListener('message', handlerRecalc);
+                    } catch (err) {
+                        if (typeof Swal !== 'undefined') Swal.fire(optsRecalc).then(function(result) { if (result.isConfirmed) hacerEnviar(); });
+                        else if (confirm('Se recalcularán las fechas de las asignaciones relacionadas con este programa. ¿Confirmar guardado?')) hacerEnviar();
+                    }
+                } else if (typeof Swal !== 'undefined') {
+                    Swal.fire(optsRecalc).then(function(result) {
+                        if (result.isConfirmed) hacerEnviar();
+                    });
+                } else {
+                    if (confirm('Se recalcularán las fechas de las asignaciones relacionadas con este programa. ¿Confirmar guardado?')) hacerEnviar();
+                }
+                return;
+            }
+            var payload = { codigo: codigo, nombre: nombre, codTipo: parseInt(codTipo, 10), nomTipo: nomTipo, sigla: sigla, despliegue: despliegue, descripcion: descripcion, fechaInicio: fechaInicio, fechaFin: fechaFin || null, detalles: detalles };
+            enviarActualizar(payload, codigo, 'Programa actualizado correctamente.', true);
         });
 
         cargarTipos().then(function() {
@@ -1152,6 +1533,18 @@ if (empty($_SESSION['active'])) {
                     if (inpNom) {
                         inpNom.value = codigo + (nombre ? '\n' + nombre : '');
                         if (typeof autoResizeTextarea === 'function') autoResizeTextarea(inpNom);
+                    }
+                }
+                if (e.data && e.data.tipo === 'contextoZonaSubzonaPrograma') {
+                    window._contextZona = (e.data.zona || '').toString().trim();
+                    window._contextSubzona = (e.data.subzona || '').toString().trim();
+                }
+                if (e.data && e.data.tipo === 'tieneAsignacionesPasadas') {
+                    window._tieneAsignacionesPasadas = !!e.data.tieneAsignacionesPasadas;
+                    window._tieneAsignacionesFuturas = !!e.data.tieneAsignacionesFuturas;
+                    window._soloAsignacionesPasadas = window._tieneAsignacionesPasadas && !window._tieneAsignacionesFuturas;
+                    if (window._soloAsignacionesPasadas && typeof aplicarRestriccionSoloFechaFin === 'function') {
+                        aplicarRestriccionSoloFechaFin();
                     }
                 }
             });

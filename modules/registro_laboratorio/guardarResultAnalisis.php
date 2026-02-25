@@ -1,10 +1,10 @@
 <?php
-include_once '../../../conexion_grs_joya/conexion.php';
+include_once '../../../conexion_grs/conexion.php';
 include_once '../../includes/historial_resultados.php';
 session_start();
 date_default_timezone_set('America/Lima');  // Zona horaria de Perú
 
-$conn = conectar_joya();
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     die("Error de conexión: " . mysqli_connect_error());
 }

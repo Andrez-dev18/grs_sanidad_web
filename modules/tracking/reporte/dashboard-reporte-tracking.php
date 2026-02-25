@@ -14,8 +14,8 @@ if (empty($_SESSION['active'])) {
 $usuario = $_SESSION['usuario'] ?? 'usuario';
 
 //ruta relativa a la conexion
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -49,6 +49,8 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 
     <!-- Tailwind CSS -->
     <link href="../../../css/output.css" rel="stylesheet">
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
     <!-- DataTables -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="../../../css/dashboard-vista-tabla-iconos.css">
@@ -222,14 +224,14 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 </div>
 
                 <!-- ICONO -->
-                <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300 rotate-180"
+                <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
 
             <!-- CONTENIDO PLEGABLE (desplegado por defecto) -->
-            <div id="contenidoFiltros" class="px-6 pb-6 pt-4">
+            <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
 
                 <!-- Fila 1: Periodo -->
                 <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
@@ -254,7 +256,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     </div>
                     <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[200px]">
                         <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
-                        <input id="mesUnico" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        <input id="mesUnico" type="month" value="<?php echo date('Y-m'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     </div>
                     <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
                         <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label><input id="mesInicio" type="month" value="<?php echo date('Y') . '-01'; ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
@@ -599,9 +601,8 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 language: window.DATATABLES_LANG_ES || {},
                 pageLength: 20,
                 lengthMenu: [20, 25, 50, 100],
-                order: [
-                    [7, 'desc']
-                ], // ordenar por fecha registro descendente (columna 7 = fechaHoraRegistro)
+                order: [[0, 'asc']],
+                orderClasses: false,
                 columns: [{
                         data: null,
                         orderable: false,
@@ -687,9 +688,8 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     var $filter = wrapper.find('.dataTables_filter').first();
                     var $controls = $('#trackDtControls');
                     if ($controls.length && $length.length && $filter.length) {
-                        $controls.append($length, $filter);
-                        var vista = $('#tablaTrackingWrapper').attr('data-vista') || 'tabla';
-                        $controls.toggle(vista === 'tabla');
+                        $controls.empty().append($length, $filter);
+                        $controls.show();
                     }
                 }
             });
@@ -698,15 +698,13 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 var esTabla = (vista === 'tabla');
                 $('#tablaTrackingWrapper').attr('data-vista', vista);
                 if (esTabla) {
-                    var $filter = $('#trackIconosControls .dataTables_filter').detach();
-                    if ($filter.length) $('#trackDtControls').append($filter);
                     $('#trackDtControls').show();
                     $('#trackIconosControls').hide();
                     $('#viewTarjetasTrack').addClass('hidden').css('display', 'none');
                     $('#tablaTrackingWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
                 } else {
-                    $('#trackDtControls').hide();
-                    $('#trackIconosControls').show();
+                    $('#trackDtControls').show();
+                    $('#trackIconosControls').hide();
                     $('#tablaTrackingWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
                     $('#viewTarjetasTrack').removeClass('hidden').css('display', 'block');
                     $('#cardsContainerTrack').attr('data-vista-cards', 'iconos');
@@ -760,41 +758,10 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                         '</div></div></div>';
                     cont.append(card);
                 });
-                var len = api.page.len();
-                var lengthOptions = [10, 25, 50, 100];
-                var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
-                    lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
-                    '</select><span>registros</span></label>';
                 var vista = $('#tablaTrackingWrapper').attr('data-vista') || '';
                 if (vista === 'iconos') {
-                    var $toolbarRow = $('#trackIconosControls .iconos-toolbar-row');
-                    if (!$toolbarRow.length) {
-                        var $filter = $('#trackDtControls .dataTables_filter').detach();
-                        var iconosRow = '<div class="iconos-toolbar-row flex flex-wrap items-center gap-3">' + lengthSelect + '</div>';
-                        $('#trackIconosControls').html(iconosRow);
-                        if ($filter.length) $('#trackIconosControls .iconos-toolbar-row').append($filter);
-                        $('#trackIconosControls .cards-length-select').on('change', function() {
-                            var val = parseInt($(this).val(), 10);
-                            if (tabla) tabla.page.len(val).draw(false);
-                        });
-                    } else {
-                        var $sel = $toolbarRow.find('.cards-length-select');
-                        if ($sel.length) $sel.find('option').remove().end().append(lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join(''));
-                    }
                     $('#cardsControlsTopTrack').empty();
                     $('#cardsPaginationTrack').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : '');
-                } else {
-                    var navBtns = '<div class="flex gap-2">' +
-                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
-                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
-                        '</div>';
-                    var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' + navBtns + '</div>';
-                    $('#cardsControlsTopTrack').html(controlsHtml);
-                    $('#cardsPaginationTrack').html(controlsHtml);
-                    $('#cardsControlsTopTrack .cards-length-select, #cardsPaginationTrack .cards-length-select').on('change', function() {
-                        var val = parseInt($(this).val(), 10);
-                        if (tabla) tabla.page.len(val).draw(false);
-                    });
                 }
             }
             actualizarVistaInicialTrack();
@@ -885,6 +852,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 pageLength: 20,
                 lengthMenu: [[20, 25, 50, 100], [20, 25, 50, 100]],
                 order: [[0, 'asc']],
+                orderClasses: false,
                 columnDefs: [{ orderable: false, targets: [3] }],
                 drawCallback: function() {
                     if (typeof renderizarTarjetasPendientes === 'function') renderizarTarjetasPendientes();
@@ -896,9 +864,8 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     var $length = wrapper.find('.dataTables_length').first();
                     var $filter = wrapper.find('.dataTables_filter').first();
                     if ($controls.length && $length.length && $filter.length) {
-                        $controls.append($length, $filter);
-                        var vista = $('#pendientesWrapper').attr('data-vista') || '';
-                        $controls.toggle(vista !== 'iconos');
+                        $controls.empty().append($length, $filter);
+                        $controls.show();
                     }
                 }
             });
@@ -936,55 +903,23 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     '</div></div></div>';
                 cont.append(card);
             });
-            var len = api.page.len();
-            var lengthOptions = [10, 25, 50, 100];
-            var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
-                lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
-                '</select><span>registros</span></label>';
             var vista = $('#pendientesWrapper').attr('data-vista') || '';
             if (vista === 'iconos') {
-                var $toolbarRow = $('#pendIconosControls .reportes-iconos-toolbar-row');
-                if (!$toolbarRow.length) {
-                    var $filter = $('#pendDtControls .dataTables_filter').detach();
-                    var iconosRow = '<div class="reportes-iconos-toolbar-row flex flex-wrap items-center gap-3">' + lengthSelect + '</div>';
-                    $('#pendIconosControls').html(iconosRow);
-                    if ($filter.length) $('#pendIconosControls .reportes-iconos-toolbar-row').append($filter);
-                    $('#pendIconosControls .cards-length-select').on('change', function() {
-                        var val = parseInt($(this).val(), 10);
-                        if (tablePendientes) tablePendientes.page.len(val).draw(false);
-                    });
-                } else {
-                    var $sel = $toolbarRow.find('.cards-length-select');
-                    if ($sel.length) $sel.find('option').remove().end().append(lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join(''));
-                }
                 $('#cardsControlsTopPend').empty();
                 $('#cardsPaginationPend').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : '');
-            } else {
-                var navBtns = '<div class="flex gap-2 flex-shrink-0">' +
-                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaPendientes\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
-                    '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tablaPendientes\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button></div>';
-                var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + '<span class="text-sm text-gray-600">Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' + navBtns + '</div>';
-                $('#cardsControlsTopPend').html(controlsHtml);
-                $('#cardsPaginationPend').html(controlsHtml);
-                $('#cardsControlsTopPend .cards-length-select, #cardsPaginationPend .cards-length-select').on('change', function() {
-                    var val = parseInt($(this).val(), 10);
-                    if (tablePendientes) tablePendientes.page.len(val).draw(false);
-                });
             }
         }
         function aplicarVisibilidadPendientes(vista) {
             var esLista = (vista === 'tabla' || vista === 'lista');
             $('#pendientesWrapper').attr('data-vista', vista);
             if (esLista) {
-                var $filter = $('#pendIconosControls .dataTables_filter').detach();
-                if ($filter.length) $('#pendDtControls').append($filter);
                 $('#pendDtControls').show();
                 $('#pendIconosControls').hide();
                 $('#viewTarjetasPend').addClass('hidden').css('display', 'none');
                 $('#pendientesWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
             } else {
-                $('#pendDtControls').hide();
-                $('#pendIconosControls').show();
+                $('#pendDtControls').show();
+                $('#pendIconosControls').hide();
                 $('#pendientesWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
                 $('#viewTarjetasPend').removeClass('hidden').css('display', 'block');
                 $('#cardsContainerPend').attr('data-vista-cards', 'iconos');
@@ -1027,7 +962,6 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             var ok = await SwalConfirm('¿Estás seguro de que deseas eliminar este registro?\nEsta acción no se puede deshacer.', 'Confirmar eliminación');
             if (!ok) return;
 
-            // Mostrar loading en el botón (opcional, pero recomendado)
             const boton = event.target.closest('button');
             const iconoOriginal = boton.innerHTML;
             boton.disabled = true;

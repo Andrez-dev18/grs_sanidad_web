@@ -1,4 +1,7 @@
 /vendor/
 
+# claves / configuración local (no subir con valores reales)
+/config/groq.php
+
 # ruta de documentos
 /uploads/resultados

@@ -6,9 +6,9 @@ session_start();
 header('Content-Type: application/json; charset=UTF-8');
 ob_start();
 
-include_once '../../../conexion_grs_joya/conexion.php';
+include_once '../../../conexion_grs/conexion.php';
 include_once '../../includes/historial_resultados.php';
-$conexion = conectar_joya();
+$conexion = conectar_joya_mysqli();
 
 if (!$conexion) {
     ob_end_clean();

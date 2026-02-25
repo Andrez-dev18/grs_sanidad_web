@@ -39,7 +39,7 @@ register_shutdown_function(function() {
 ob_clean();
 
 try {
-    include_once '../../conexion_grs_joya/conexion.php';
+    include_once '../../conexion_grs/conexion.php';
 } catch (Exception $e) {
     enviarError('Error al incluir conexion.php: ' . $e->getMessage());
 }
@@ -59,7 +59,7 @@ try {
 ob_clean();
 
 try {
-    $conexion = conectar_joya();
+    $conexion = conectar_joya_mysqli();
     if (!$conexion) {
         enviarError('Error de conexión a la base de datos');
     }

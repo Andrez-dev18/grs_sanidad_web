@@ -4,10 +4,10 @@ if (empty($_SESSION['active'])) {
     echo '<script>var u="../../login.php";if(window.top!==window.self){window.top.location.href=u;}else{window.location.href=u;}</script>';
     exit();
 }
-include_once '../../../conexion_grs_joya/conexion.php';
+include_once '../../../conexion_grs/conexion.php';
 include_once '../../includes/funciones.php';
 
-$conexion = conectar_joya();
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión.");
 }

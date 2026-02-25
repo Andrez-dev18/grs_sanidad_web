@@ -1,13 +1,13 @@
 <?php
 require_once __DIR__ . '/../../vendor/autoload.php';
-include_once __DIR__ . '/../../../conexion_grs_joya/conexion.php';
+include_once __DIR__ . '/../../../conexion_grs/conexion.php';
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 
-$conn = conectar_joya();
+$conn = conectar_joya_mysqli();
 
 $query = "
 SELECT 

@@ -1,9 +1,9 @@
 <?php
 session_start();
-include_once '../../../conexion_grs_joya/conexion.php';
+include_once '../../../conexion_grs/conexion.php';
 include_once '../../includes/historial_acciones.php'; // Tu archivo con las funciones
 
-$conn = conectar_joya();
+$conn = conectar_joya_mysqli();
 
 header('Content-Type: application/json');
 

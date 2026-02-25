@@ -6,8 +6,8 @@ if (empty($_SESSION['active'])) {
     </script>';
     exit();
 }
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) die("Error de conexión: " . mysqli_connect_error());
 include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
 ?>
@@ -18,6 +18,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cronograma - Listado</title>
+    <!-- Mismo orden que reportes: general → DataTables → dashboard-* (tabla toma CSS de dashboard-config) -->
     <link rel="stylesheet" href="../../../css/output.css">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
@@ -25,6 +26,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="../../../assets/js/fetch-auth-redirect.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script>
         window.DATATABLES_LANG_ES = <?php echo $datatablesLangEs; ?>;
@@ -276,14 +278,14 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         }
 
         /* Toolbar y paginación tabla detalles (igual que cronograma-registro) */
-        #tabPanelGranjas .tabla-crono-wrapper {
+        #tabPanelFechas .tabla-crono-wrapper {
             background: #fff;
             border-radius: 0.75rem;
             padding: 1rem;
             margin-bottom: 0.5rem;
         }
 
-        #tabPanelGranjas .tabla-crono-toolbar-top {
+        #tabPanelFechas .tabla-crono-toolbar-top {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
@@ -291,14 +293,14 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         }
 
         @media (min-width: 768px) {
-            #tabPanelGranjas .tabla-crono-toolbar-top {
+            #tabPanelFechas .tabla-crono-toolbar-top {
                 flex-direction: row;
                 align-items: center;
                 justify-content: space-between;
             }
         }
 
-        #tabPanelGranjas .tabla-crono-toolbar-top .toolbar-length {
+        #tabPanelFechas .tabla-crono-toolbar-top .toolbar-length {
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -306,22 +308,15 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             color: #374151;
         }
 
-        #tabPanelGranjas .tabla-crono-toolbar-top .toolbar-length select {
-            padding: 0.4rem 0.5rem;
+        #tabPanelFechas .tabla-crono-toolbar-top .toolbar-filter input {
+            padding: 0.5rem 1rem;
             border: 1px solid #d1d5db;
             border-radius: 0.5rem;
             font-size: 0.875rem;
+            min-width: 180px;
         }
 
-        #tabPanelGranjas .tabla-crono-toolbar-top .toolbar-filter input {
-            padding: 0.4rem 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            min-width: 160px;
-        }
-
-        #tabPanelGranjas .tabla-crono-toolbar-bottom {
+        #tabPanelFechas .tabla-crono-toolbar-bottom {
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
@@ -333,19 +328,33 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         }
 
         @media (min-width: 768px) {
-            #tabPanelGranjas .tabla-crono-toolbar-bottom {
+            #tabPanelFechas .tabla-crono-toolbar-bottom {
                 flex-direction: row;
                 align-items: center;
                 justify-content: space-between;
             }
         }
 
+        #tabPanelFechas .tabla-crono-toolbar-bottom,
+        #tabPanelGranjas .tabla-crono-toolbar-bottom {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        #tabPanelFechas .tabla-crono-toolbar-bottom .paginacion-controles,
         #tabPanelGranjas .tabla-crono-toolbar-bottom .paginacion-controles {
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
+        #tabPanelFechas .tabla-crono-toolbar-bottom .paginacion-controles button,
         #tabPanelGranjas .tabla-crono-toolbar-bottom .paginacion-controles button {
             padding: 0.4rem 0.75rem;
             border-radius: 0.5rem;
@@ -355,16 +364,19 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             cursor: pointer;
         }
 
+        #tabPanelFechas .tabla-crono-toolbar-bottom .paginacion-controles button:hover:not(:disabled),
         #tabPanelGranjas .tabla-crono-toolbar-bottom .paginacion-controles button:hover:not(:disabled) {
             background: #eff6ff;
             color: #1d4ed8;
         }
 
+        #tabPanelFechas .tabla-crono-toolbar-bottom .paginacion-controles button:disabled,
         #tabPanelGranjas .tabla-crono-toolbar-bottom .paginacion-controles button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
 
+        #tabPanelFechas .table-wrapper,
         #tabPanelGranjas .table-wrapper {
             overflow-x: auto;
         }
@@ -701,7 +713,100 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         }
 
         .tab-panel.active {
-            display: block;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        /* Modal Detalles: tamaño fijo al cambiar de tab */
+        #modalDetalles .modal-detalles-asignacion {
+            flex-shrink: 0;
+        }
+        #modalDetalles .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+        }
+        #modalDetalles .tab-panel.active {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+        }
+
+        /* Modal Detalles: tabs Fechas y Granjas - mismo estilo (lista/iconos, Mostrar, Buscar, paginación) */
+        .crono-granjas-wrapper[data-vista="iconos"] .view-lista-wrap-crono { display: none !important; }
+        .crono-granjas-wrapper[data-vista="iconos"] .view-tarjetas-wrap-crono { display: block !important; }
+        .crono-granjas-wrapper[data-vista="lista"] .view-tarjetas-wrap-crono { display: none !important; }
+        .crono-granjas-wrapper .view-tarjetas-wrap-crono { display: none; }
+        .crono-granjas-toolbar-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; }
+        .crono-dt-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1rem; }
+        .crono-dt-controls .buscar-granjas {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            color: #374151;
+            min-height: 2.25rem;
+            min-width: 180px;
+            box-sizing: border-box;
+        }
+        .crono-dt-controls .buscar-granjas:hover { border-color: #9ca3af; }
+        .crono-dt-controls .buscar-granjas:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
+        .view-toggle-btn { padding: 0.375rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; background: #fff; color: #374151; font-size: 0.875rem; cursor: pointer; }
+        .view-toggle-btn:hover { background: #f9fafb; border-color: #9ca3af; }
+        .view-toggle-btn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+        .crono-cards-pagination.dt-bottom-row { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
+        .view-tarjetas-wrap-crono { max-width: 100%; min-width: 0; box-sizing: border-box; }
+        .crono-card-item { background: #fff; border: 1px solid #e5e7eb; border-radius: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .crono-card-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .crono-card-item .card-codigo { font-weight: 700; font-size: 1rem; color: #1e40af; margin-bottom: 0.5rem; }
+        .crono-card-item .card-row { font-size: 0.8rem; color: #4b5563; margin-bottom: 0.25rem; }
+        .crono-card-item .card-row .label { color: #6b7280; }
+        .paginate_button { padding: 0.25rem 0.5rem; margin: 0 0.125rem; cursor: pointer; border-radius: 0.25rem; }
+        .paginate_button.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+        /* Barrita de carga (gallina + bar) en modal editar */
+        @keyframes crono-loading-bar {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+        .crono-loading-bar-track { height: 6px; }
+        .crono-loading-bar {
+            width: 0%;
+            height: 6px;
+            min-height: 6px;
+            background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+            animation: crono-loading-bar 2s ease-out forwards;
+        }
+        #cronoEditarCargaOverlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(248, 250, 252, 0.98);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+        #cronoEditarCargaOverlay.hidden {
+            display: none !important;
+        }
+        /* Overlay fullscreen para modal gallina al guardar (cubre toda la pantalla) */
+        #cronoEditarCargaOverlayFullscreen {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        #cronoEditarCargaOverlayFullscreen.hidden {
+            display: none !important;
         }
     </style>
 </head>
@@ -710,23 +815,23 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
     <div class="w-full max-w-full py-4 px-4 sm:px-6 lg:px-8 box-border">
         <!-- Filtros (estilo reportes) -->
         <div class="card-filtros-compacta mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
-            <button type="button" id="btnToggleFiltrosCronograma" class="w-full px-6 py-4 flex items-center justify-between text-left font-medium text-gray-800 hover:bg-gray-50 transition">
-                <span><i class="fas fa-filter mr-2 text-blue-600"></i> Filtros</span>
-                <svg id="iconoFiltrosCronograma" class="w-5 h-5 text-gray-600 transition-transform duration-300 rotate-180" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <button type="button" id="btnToggleFiltrosCronograma" class="w-full px-6 py-4 bg-gray-50 hover:bg-gray-100 flex items-center justify-between transition">
+                <span class="flex items-center gap-2"><span class="text-lg">🔎</span><span class="text-base font-semibold text-gray-800">Filtros de búsqueda</span></span>
+                <svg id="iconoFiltrosCronograma" class="w-5 h-5 text-gray-600 transition-transform duration-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
                 </button>
-            <div id="contenidoFiltrosCronograma" class="px-6 pb-6 pt-4">
+            <div id="contenidoFiltrosCronograma" class="px-6 pb-6 pt-4 hidden">
                 <div class="border-t border-gray-100 pt-4 mx-4">
                     <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
                         <div class="flex-shrink-0" style="min-width: 200px;">
                             <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-alt mr-1 text-blue-600"></i> Periodo</label>
                             <select id="periodoTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
-                                <option value="TODOS" selected>Todos</option>
+                                <option value="TODOS">Todos</option>
                                 <option value="POR_FECHA">Por fecha</option>
                                 <option value="ENTRE_FECHAS">Entre fechas</option>
                                 <option value="POR_MES">Por mes</option>
-                                <option value="ENTRE_MESES">Entre meses</option>
+                                <option value="ENTRE_MESES" selected>Entre meses</option>
                                 <option value="ULTIMA_SEMANA">Última Semana</option>
                             </select>
             </div>
@@ -765,10 +870,10 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                             </select>
                         </div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-3">
-                        <button type="button" id="btnFiltrarCronograma" class="px-5 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm font-medium">Filtrar</button>
-                        <button type="button" id="btnLimpiarFiltrosCronograma" class="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200 text-sm">Limpiar</button>
-                        <button type="button" id="btnReportePdfFiltrado" class="px-5 py-2 rounded-lg text-white text-sm font-medium inline-flex items-center gap-2" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
+                    <div class="dashboard-actions mt-6 flex flex-wrap justify-end gap-4">
+                        <button type="button" id="btnFiltrarCronograma" class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Filtrar</button>
+                        <button type="button" id="btnLimpiarFiltrosCronograma" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200">Limpiar</button>
+                        <button type="button" id="btnReportePdfFiltrado" class="px-5 py-2.5 rounded-lg text-white text-sm font-medium inline-flex items-center gap-2" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);">
                             <i class="fas fa-file-pdf"></i> Reporte PDF
                         </button>
                     </div>
@@ -776,7 +881,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             </div>
         </div>
        
-        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden" id="tablaCronogramaWrapper" data-vista-tabla-iconos data-vista="lista">
+        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden" id="tablaCronogramaWrapper" data-vista-tabla-iconos data-vista="">
             <div class="p-4">
                 <!-- Toolbar: Lista/Iconos y controles de tabla en la misma fila (como reportes) -->
                 <div class="toolbar-vista-row flex flex-wrap items-center justify-between gap-3 mb-3" id="cronogramaToolbarRow">
@@ -788,8 +893,8 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     <div id="cronoIconosControls" class="flex flex-wrap items-center gap-3" style="display: none;"></div>
                 </div>
                 <div class="view-lista-wrap" id="viewListaCrono">
-                    <div class="table-wrapper table-wrapper-borde">
-                        <table id="tablaCronograma" class="data-table w-full text-sm config-table tabla-fixed-6col">
+                    <div class="table-wrapper table-wrapper-borde overflow-x-auto">
+                        <table id="tablaCronograma" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
                     <thead>
                         <tr>
                             <th class="px-4 py-3 text-left">N°</th>
@@ -833,9 +938,9 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         </div>
     </div>
 
-    <!-- Modal Detalles: dos tabs (Granjas / Programa) -->
+    <!-- Modal Detalles: tres tabs (Fechas / Granjas / Programa) -->
     <div id="modalDetalles" class="modal-overlay hidden">
-        <div class="modal-box rounded-2xl overflow-hidden" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="modal-box modal-detalles-asignacion rounded-2xl overflow-hidden" style="max-width: 900px; width: 100%; height: 75vh; min-height: 500px; max-height: 90vh; display: flex; flex-direction: column;">
             <div class="modal-header flex-shrink-0">
                 <h3 class="text-lg font-semibold text-gray-800">Detalles de la asignación</h3>
                 <button type="button" class="modal-cerrar text-gray-400 hover:text-gray-600 text-2xl leading-none" data-modal="modalDetalles">&times;</button>
@@ -843,38 +948,86 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             <div class="modal-body overflow-hidden flex-1 flex flex-col min-h-0 p-4">
                 <p class="text-xs font-medium text-gray-500 mb-2">Programa: <strong id="detallesCodPrograma"></strong> — <span id="detallesTotal">0</span> registro(s)</p>
                 <div class="tabs-detalle">
-                    <button type="button" class="tab-btn active" data-tab="granjas">Granjas</button>
+                    <button type="button" class="tab-btn active" data-tab="fechas">Fechas</button>
+                    <button type="button" class="tab-btn" data-tab="granjas">Granjas</button>
                     <button type="button" class="tab-btn" data-tab="programa">Programa</button>
                 </div>
-                <div id="tabPanelGranjas" class="tab-panel active overflow-x-auto overflow-y-auto flex-1">
-                    <div class="tabla-crono-wrapper">
-                        <div id="detallesToolbarTop" class="tabla-crono-toolbar-top">
-                            <div class="toolbar-length"><span>Mostrar</span><select id="detallesPageSize">
-                                    <option value="20">20</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                </select><span>registros</span></div>
-                            <div class="toolbar-filter"><label class="inline-flex items-center gap-1"><span>Buscar:</span><input type="text" id="detallesSearch" placeholder="Buscar..." autocomplete="off"></label></div>
+                <div id="tabPanelFechas" class="tab-panel active overflow-x-auto overflow-y-auto flex-1">
+                    <div class="tabla-crono-wrapper crono-granjas-wrapper dataTables_wrapper" id="detallesFechasWrapper" data-vista="lista">
+                        <div class="crono-granjas-toolbar-row">
+                            <div class="view-toggle-group flex items-center gap-2">
+                                <button type="button" class="view-toggle-btn active" data-detalles-view="lista" data-tab-detalles="fechas" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                                <button type="button" class="view-toggle-btn" data-detalles-view="iconos" data-tab-detalles="fechas" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                            </div>
+                            <div class="crono-dt-controls">
+                                <label class="inline-flex items-center gap-2" style="margin:0;"><span>Mostrar</span><select id="detallesPageSize" class="dt-toolbar-length-select cards-length-select"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>registros</span></label>
+                                <label class="inline-flex items-center gap-2" style="margin:0;"><span>Buscar:</span><input type="text" id="detallesSearch" class="buscar-granjas" placeholder="Buscar..." autocomplete="off"></label>
+                            </div>
                         </div>
-                        <div class="table-wrapper">
-                            <table class="data-table w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
-                                <thead>
-                                    <tr>
-                                        <th class="px-3 py-2 text-left bg-blue-600 text-white">N°</th>
-                                        <th class="px-3 py-2 text-left bg-blue-600 text-white">Cód. Programa</th>
-                                        <th class="px-3 py-2 text-left bg-blue-600 text-white">Granja</th>
-                                        <th class="px-3 py-2 text-left bg-blue-600 text-white">Nom. Granja</th>
-                                        <th class="px-3 py-2 text-left bg-blue-600 text-white">Campaña</th>
-                                        <th class="px-3 py-2 text-left bg-blue-600 text-white">Galpón</th>
-                                        <th class="px-3 py-2 text-left bg-blue-600 text-white">Edad</th>
-                                        <th class="px-3 py-2 text-left bg-blue-600 text-white">Fec. Carga</th>
-                                        <th class="px-3 py-2 text-left bg-blue-600 text-white">Fec. Ejecución</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="detallesLista"></tbody>
-                            </table>
+                        <div class="view-tarjetas-wrap-crono view-tarjetas-wrap" style="display:none;">
+                            <div id="detallesCardsControlsTop" class="crono-cards-controls-top"></div>
+                            <div id="detallesCardsContainer" class="cards-grid cards-grid-iconos"></div>
+                            <div id="detallesCardsPagination" class="crono-cards-pagination dt-bottom-row"></div>
                         </div>
-                        <div id="detallesToolbarBottom" class="tabla-crono-toolbar-bottom"></div>
+                        <div class="view-lista-wrap-crono">
+                            <div class="table-wrapper overflow-x-auto">
+                                <table class="data-table w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">N°</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Cód. Programa</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Zona</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Subzona</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Granja</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Nom. Granja</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Campaña</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Galpón</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Edad</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Fec. Carga</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Fec. Ejecución</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="detallesLista"></tbody>
+                                </table>
+                            </div>
+                            <div id="detallesToolbarBottom" class="tabla-crono-toolbar-bottom dt-bottom-row"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="tabPanelGranjas" class="tab-panel overflow-x-auto overflow-y-auto flex-1">
+                    <div class="tabla-crono-wrapper crono-granjas-wrapper dataTables_wrapper" id="detallesGranjasWrapper" data-vista="lista">
+                          <div class="crono-granjas-toolbar-row">
+                            <div class="view-toggle-group flex items-center gap-2">
+                                <button type="button" class="view-toggle-btn active" data-detalles-view="lista" data-tab-detalles="granjas" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
+                                <button type="button" class="view-toggle-btn" data-detalles-view="iconos" data-tab-detalles="granjas" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
+                            </div>
+                            <div class="crono-dt-controls">
+                                <label class="inline-flex items-center gap-2" style="margin:0;"><span>Mostrar</span><select id="detallesGranjasPageSize" class="dt-toolbar-length-select cards-length-select"><option value="20">20</option><option value="50">50</option><option value="100">100</option></select><span>registros</span></label>
+                                <label class="inline-flex items-center gap-2" style="margin:0;"><span>Buscar:</span><input type="text" id="detallesGranjasSearch" class="buscar-granjas" placeholder="Buscar..." autocomplete="off"></label>
+                            </div>
+                        </div>
+                        <div class="view-tarjetas-wrap-crono view-tarjetas-wrap" style="display:none;">
+                            <div id="detallesGranjasCardsControlsTop" class="crono-cards-controls-top"></div>
+                            <div id="detallesGranjasCardsContainer" class="cards-grid cards-grid-iconos"></div>
+                            <div id="detallesGranjasCardsPagination" class="crono-cards-pagination dt-bottom-row"></div>
+                        </div>
+                        <div class="view-lista-wrap-crono">
+                            <div class="table-wrapper overflow-x-auto">
+                                <table class="data-table w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">N°</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Granja</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Nom. Granja</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Galpón</th>
+                                            <th class="px-3 py-2 text-left bg-blue-600 text-white">Campaña</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="detallesListaGranjas"></tbody>
+                                </table>
+                            </div>
+                            <div id="detallesGranjasToolbarBottom" class="tabla-crono-toolbar-bottom dt-bottom-row"></div>
+                        </div>
                     </div>
                 </div>
                 <div id="tabPanelPrograma" class="tab-panel overflow-x-auto overflow-y-auto flex-1">
@@ -891,14 +1044,41 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         </div>
     </div>
 
+    <!-- Overlay fullscreen para modal gallina al guardar (cubre toda la pantalla) -->
+    <div id="cronoEditarCargaOverlayFullscreen" class="hidden" aria-hidden="true">
+        <div class="bg-sky-50 rounded-xl shadow-2xl p-8 text-center max-w-sm w-full mx-4">
+            <div class="flex flex-col items-center gap-3">
+                <img src="../../../assets/img/gallina.gif" alt="Cargando..." class="w-32 h-32" onerror="this.style.display='none'">
+                <div class="crono-loading-bar-track w-full max-w-xs h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div class="crono-loading-bar rounded-full"></div>
+                </div>
+
+            </div>
+            <p id="cronoEditarCargaOverlayFullscreenTitulo" class="text-lg font-semibold text-gray-800 mt-4">Actualizando asignación</p>
+            <p id="cronoEditarCargaOverlayFullscreenTexto" class="text-sm text-gray-600 mt-2">Se está actualizando la asignación en el calendario.</p>
+        </div>
+    </div>
+
     <!-- Modal Editar cronograma: iframe a dashboard-cronograma-registro.php -->
     <div id="modalEditarCronograma" class="modal-overlay hidden" aria-hidden="true">
         <div id="modalEditarCronogramaBox" class="modal-box rounded-2xl modal-editar-crono-box" role="dialog" aria-modal="true">
             <div class="modal-header flex-shrink-0">
-                <h3 class="text-lg font-semibold text-gray-800">Editar cronograma</h3>
+                <h3 class="text-lg font-semibold text-gray-800">Editar asignación</h3>
                 <button type="button" id="modalEditarCronogramaCerrar" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
-            <div class="modal-body modal-editar-crono-body flex-1 p-0 overflow-hidden flex flex-col">
+            <div class="modal-body modal-editar-crono-body flex-1 p-0 overflow-hidden flex flex-col relative">
+                <div id="cronoEditarCargaOverlay" class="hidden">
+                    <div class="bg-sky-50 rounded-xl shadow-xl p-8 text-center max-w-sm w-full mx-4">
+                        <div class="flex flex-col items-center gap-3">
+                            <img src="../../../assets/img/gallina.gif" alt="Cargando..." class="w-32 h-32" onerror="this.style.display='none'">
+                            <div class="crono-loading-bar-track w-full max-w-xs h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                <div class="crono-loading-bar rounded-full"></div>
+                            </div>                           
+                        </div>
+                        <p id="cronoEditarCargaOverlayTitulo" class="text-lg font-semibold text-gray-800 mt-4">Cargando formulario...</p>
+                        <p id="cronoEditarCargaOverlayTexto" class="text-sm text-gray-600 mt-2">Por favor espere</p>
+                    </div>
+                </div>
                 <iframe id="iframeEditarCronograma" src="about:blank" class="modal-editar-crono-iframe" title="Formulario editar cronograma"></iframe>
             </div>
             <div class="modal-footer modal-editar-crono-footer flex-shrink-0 flex items-center justify-end gap-2 px-4 py-3">
@@ -1069,6 +1249,29 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             return '';
         }
 
+        /** Ordena filas de la tab Granjas (Programa, Zona, Subzona, Granja, Nom. Granja, Campaña, Galpón, Edad ascendente). */
+        function ordenarDetallesGranjas(detalles) {
+            if (!detalles || detalles.length === 0) return [];
+            return detalles.slice().sort(function(a, b) {
+                var cmp = (a.codPrograma || '').localeCompare(b.codPrograma || '');
+                if (cmp !== 0) return cmp;
+                cmp = (a.zona || '').localeCompare(b.zona || '');
+                if (cmp !== 0) return cmp;
+                cmp = (a.subzona || '').localeCompare(b.subzona || '');
+                if (cmp !== 0) return cmp;
+                cmp = (a.granja || '').localeCompare(b.granja || '');
+                if (cmp !== 0) return cmp;
+                cmp = (a.nomGranja || '').localeCompare(b.nomGranja || '');
+                if (cmp !== 0) return cmp;
+                cmp = (a.campania || '').localeCompare(b.campania || '');
+                if (cmp !== 0) return cmp;
+                cmp = (a.galpon || '').localeCompare(b.galpon || '');
+                if (cmp !== 0) return cmp;
+                var na = typeof a.edad === 'number' ? a.edad : (parseFloat(a.edad, 10) || 0);
+                var nb = typeof b.edad === 'number' ? b.edad : (parseFloat(b.edad, 10) || 0);
+                return na - nb;
+            });
+        }
         function agruparDetallesPorEdad(detalles, colsSinNum) {
             if (!detalles || detalles.length === 0) return [];
             var colsSinEdad = colsSinNum.filter(function(k) {
@@ -1090,10 +1293,17 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     var e = d.edad;
                     return (e !== null && e !== undefined && e !== '' ? String(e).trim() : null);
                 }).filter(Boolean);
+                ages.sort(function(a, b) {
+                    var na = parseFloat(a, 10);
+                    var nb = parseFloat(b, 10);
+                    if (isNaN(na)) na = 0;
+                    if (isNaN(nb)) nb = 0;
+                    return na - nb;
+                });
                 var merged = {};
                 for (var p in first)
                     if (first.hasOwnProperty(p)) merged[p] = first[p];
-                merged.edad = ages.length > 0 ? ages.join(' - ') : (first.edad !== null && first.edad !== undefined ? String(first.edad) : '');
+                merged.edad = ages.length > 0 ? ages.join(', ') : (first.edad !== null && first.edad !== undefined ? String(first.edad) : '');
                 out.push(merged);
             });
             return out;
@@ -1133,6 +1343,8 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 if (cab.descripcion) {
                     cabHtml += '<dt class="font-medium col-span-2">Descripción</dt><dd class="col-span-2">' + esc(cab.descripcion) + '</dd>';
                 }
+                if (cab.fechaInicio) { cabHtml += '<dt class="font-medium">Fecha inicio</dt><dd>' + esc(fechaDDMMYYYY((cab.fechaInicio || '').toString().substring(0, 10))) + '</dd>'; }
+                if (cab.fechaFin) { cabHtml += '<dt class="font-medium">Fecha fin</dt><dd>' + esc(fechaDDMMYYYY((cab.fechaFin || '').toString().substring(0, 10))) + '</dd>'; }
                 cabHtml += '</dl>';
                 cabEl.innerHTML = cabHtml;
                 // Columnas dinámicas por sigla (igual que en programas listado); Edad siempre al final
@@ -1183,14 +1395,15 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     p.classList.remove('active');
                 });
                 tabBtn.classList.add('active');
-                if (tab === 'granjas') document.getElementById('tabPanelGranjas').classList.add('active');
+                if (tab === 'fechas') document.getElementById('tabPanelFechas').classList.add('active');
+                else if (tab === 'granjas') document.getElementById('tabPanelGranjas').classList.add('active');
                 else if (tab === 'programa') document.getElementById('tabPanelPrograma').classList.add('active');
             }
         });
 
         function paramsFiltro() {
             var p = [];
-            var t = document.getElementById('periodoTipo').value || 'TODOS';
+            var t = document.getElementById('periodoTipo').value || 'ENTRE_MESES';
             p.push('periodoTipo=' + encodeURIComponent(t));
             if (t === 'POR_FECHA') p.push('fechaUnica=' + encodeURIComponent((document.getElementById('fechaUnica').value || '')));
             if (t === 'ENTRE_FECHAS') {
@@ -1207,6 +1420,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             return p.join('&');
         }
 
+        window._cronoDtPageLen = window._cronoDtPageLen || 20;
         function cargarListado() {
             var qs = paramsFiltro();
             var url = 'listar_cronograma.php' + (qs ? '?' + qs : '');
@@ -1233,9 +1447,19 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 var grupos = Object.keys(map).map(function(k) {
                     return map[k];
                 }).sort(function(a, b) {
+                    var fa = (a.fechaProg || '').toString().trim();
+                    var fb = (b.fechaProg || '').toString().trim();
+                    if (fa && fb) return fb.localeCompare(fa);
+                    if (fa) return -1;
+                    if (fb) return 1;
                     return (b.numCronograma || 0) - (a.numCronograma || 0);
                 });
-                if ($.fn.DataTable.isDataTable('#tablaCronograma')) $('#tablaCronograma').DataTable().destroy();
+                if ($.fn.DataTable.isDataTable('#tablaCronograma')) {
+                    window._cronoDtPageLen = $('#tablaCronograma').DataTable().page.len() || window._cronoDtPageLen;
+                    $('#cronoDtControls').empty();
+                    $('#cronoIconosControls').empty();
+                    $('#tablaCronograma').DataTable().destroy();
+                }
                 var tbody = document.querySelector('#tablaCronograma tbody');
                 tbody.innerHTML = '';
                 grupos.forEach(function(g, idx) {
@@ -1251,27 +1475,45 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                         '<td class="px-4 py-3"><button type="button" class="btn-detalles cursor-pointer text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-2 transition border-0 bg-transparent p-0" ' + dataKey + ' title="Ver"><i class="fas fa-eye"></i> Ver</button></td>' +
                         '<td class="px-4 py-3 text-center"><div class="flex items-center justify-center gap-3">' +
                         '<a class="text-red-600 hover:text-red-800" title="Ver reporte PDF" href="' + urlPdf + '" target="_blank" rel="noopener"><i class="fa-solid fa-file-pdf"></i></a>' +
-                        '<button type="button" class="btn-editar-cronograma hidden text-indigo-600 hover:text-indigo-800" title="Editar" data-numcronograma="' + numEsc + '"><i class="fa-solid fa-edit"></i></button>' +
-                        '<button type="button" class="btn-eliminar-cronograma hidden text-rose-600 hover:text-rose-800" title="Eliminar" data-numcronograma="' + numEsc + '"><i class="fa-solid fa-trash"></i></button>' +
+                        '<button type="button" class="btn-editar-cronograma text-indigo-600 hover:text-indigo-800" title="Editar" data-numcronograma="' + numEsc + '"><i class="fa-solid fa-edit"></i></button>' +
+                        '<button type="button" class="btn-eliminar-cronograma text-rose-600 hover:text-rose-800" title="Eliminar" data-numcronograma="' + numEsc + '"><i class="fa-solid fa-trash"></i></button>' +
                         '</div></td>';
                     tbody.appendChild(tr);
                 });
                 window.gruposCronograma = grupos;
                 $('#tablaCronograma').DataTable({
                     language: window.DATATABLES_LANG_ES || {},
-                    pageLength: 20,
+                    pageLength: window._cronoDtPageLen,
                     lengthMenu: [[20, 25, 50, 100], [20, 25, 50, 100]],
-                    order: [
-                        [1, 'asc']
-                    ],
+                    order: [[0, 'asc']],
+                    orderClasses: false,
+                    scrollX: false,
+                    autoWidth: false,
+                    stripeClasses: [],
                     dom: '<"dt-top-row"<"flex items-center gap-6" l><"flex items-center gap-2" f>>rt<"dt-bottom-row"<"text-sm text-gray-600" i><"text-sm text-gray-600" p>>',
-                    initComplete: function() {
+                    drawCallback: function() {
+                        try {
+                            var api = $('#tablaCronograma').DataTable();
+                            if (api && api.columns && api.columns.adjust) api.columns.adjust();
+                        } catch (e) {}
+                    },
+                    initComplete: function(settings) {
+                        setTimeout(function() {
+                            try {
+                                var api = (typeof $.fn.dataTable !== 'undefined' && settings) ? new $.fn.dataTable.Api(settings) : $('#tablaCronograma').DataTable();
+                                if (api && api.columns && api.columns.adjust) api.columns.adjust();
+                            } catch (e) {}
+                        }, 150);
                         var wrapper = $('#tablaCronograma').closest('.dataTables_wrapper');
                         var $length = wrapper.find('.dataTables_length').first();
                         var $filter = wrapper.find('.dataTables_filter').first();
                         var $controls = $('#cronoDtControls');
                         if ($controls.length && $length.length && $filter.length) {
-                            $controls.append($length, $filter);
+                            $controls.empty().append($length, $filter);
+                        }
+                        var w = document.getElementById('tablaCronogramaWrapper');
+                        if (w && w.getAttribute('data-vista') === 'iconos' && typeof renderizarTarjetasCronograma === 'function') {
+                            renderizarTarjetasCronograma();
                         }
                     }
                 });
@@ -1307,8 +1549,36 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             }
         });
         window.addEventListener('message', function(e) {
-            if (e.data && e.data.tipo === 'cronogramaActualizado') {
-                cerrarModalEditarCronograma();
+            if (e.data && e.data.tipo === 'mostrarCargaCrono') {
+                var modal = document.getElementById('modalEditarCronograma');
+                var ovInModal = document.getElementById('cronoEditarCargaOverlay');
+                var ovFull = document.getElementById('cronoEditarCargaOverlayFullscreen');
+                var ttlFull = document.getElementById('cronoEditarCargaOverlayFullscreenTitulo');
+                var txtFull = document.getElementById('cronoEditarCargaOverlayFullscreenTexto');
+                var tiempoFull = document.getElementById('cronoEditarCargaOverlayFullscreenTiempo');
+                var ttlInModal = document.getElementById('cronoEditarCargaOverlayTitulo');
+                var txtInModal = document.getElementById('cronoEditarCargaOverlayTexto');
+                var tiempoInModal = document.getElementById('cronoEditarCargaOverlayTiempo');
+                var titulo = e.data.titulo || 'Calculando fechas...';
+                var texto = e.data.texto || 'Por favor espere, estamos procesando la asignación';
+                
+                if (modal && !modal.classList.contains('hidden')) {
+                    if (ttlInModal) ttlInModal.textContent = titulo;
+                    if (txtInModal) txtInModal.textContent = texto;
+                  
+                    if (ovInModal) ovInModal.classList.remove('hidden');
+                } else {
+                    if (ttlFull) ttlFull.textContent = titulo;
+                    if (txtFull) txtFull.textContent = texto;
+                   
+                    if (ovFull) ovFull.classList.remove('hidden');
+                }
+            }
+            if (e.data && e.data.tipo === 'ocultarCargaCrono') {
+                var ovInModal = document.getElementById('cronoEditarCargaOverlay');
+                var ovFull = document.getElementById('cronoEditarCargaOverlayFullscreen');
+                if (ovInModal) ovInModal.classList.add('hidden');
+                if (ovFull) ovFull.classList.add('hidden');
             }
             if (e.data && e.data.tipo === 'mostrarSwal') {
                 var d = e.data;
@@ -1323,31 +1593,56 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             }
         });
 
-        function editarCronograma(numCronograma) {
+        function abrirModalEditarCronograma(numCronograma) {
             if (!numCronograma) return;
             var modal = document.getElementById('modalEditarCronograma');
             var iframe = document.getElementById('iframeEditarCronograma');
+            var overlay = document.getElementById('cronoEditarCargaOverlay');
+            if (overlay) {
+                var ttl = document.getElementById('cronoEditarCargaOverlayTitulo');
+                var txt = document.getElementById('cronoEditarCargaOverlayTexto');
+                if (ttl) ttl.textContent = 'Cargando formulario...';
+                if (txt) txt.textContent = 'Por favor espere';
+                overlay.classList.remove('hidden');
+            }
             if (iframe) iframe.src = 'dashboard-cronograma-registro.php?numCronograma=' + encodeURIComponent(numCronograma) + '&editar=1';
             if (modal) modal.classList.remove('hidden');
+        }
+
+        function editarCronograma(numCronograma) {
+            abrirModalEditarCronograma(numCronograma);
         }
         function cerrarModalEditarCronograma() {
             var iframe = document.getElementById('iframeEditarCronograma');
             if (iframe) iframe.src = 'about:blank';
             var modal = document.getElementById('modalEditarCronograma');
             if (modal) modal.classList.add('hidden');
+            var overlay = document.getElementById('cronoEditarCargaOverlay');
+            if (overlay) overlay.classList.add('hidden');
+            var overlayFull = document.getElementById('cronoEditarCargaOverlayFullscreen');
+            if (overlayFull) overlayFull.classList.add('hidden');
             cargarListado();
         }
+        (function() {
+            var iframe = document.getElementById('iframeEditarCronograma');
+            var overlay = document.getElementById('cronoEditarCargaOverlay');
+            if (iframe && overlay) iframe.addEventListener('load', function() { overlay.classList.add('hidden'); });
+        })();
         function eliminarCronograma(numCronograma) {
             if (!numCronograma) return;
-            var msg = '¿Está seguro de eliminar este cronograma (N° ' + String(numCronograma).replace(/'/g, "\\'") + ')?';
+            var msgHtml = 'Se eliminará <strong>toda la asignación</strong>.<br><br>Esta es una acción que <strong>no se puede revertir</strong>.<br><br>¿Confirmar eliminación?';
+            var msgPlain = 'Se eliminará toda la asignación. Esta es una acción que no se puede revertir. ¿Confirmar eliminación?';
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Confirmar eliminación',
-                    text: msg,
-                    icon: 'question',
+                    html: msgHtml,
+                    icon: 'warning',
+                    iconColor: '#d97706',
                     showCancelButton: true,
                     confirmButtonText: 'Sí, eliminar',
-                    cancelButtonText: 'Cancelar'
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#6b7280'
                 }).then(function(result) {
                     if (result.isConfirmed) {
                         var form = new FormData();
@@ -1356,7 +1651,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                             .then(function(r) { return r.json(); })
                             .then(function(res) {
                                 if (res.success) {
-                                    Swal.fire({ icon: 'success', title: 'Eliminado', text: res.message || 'Cronograma eliminado.' });
+                                    Swal.fire({ icon: 'success', title: 'Eliminado', text: res.message || 'Asignación eliminada.' });
                                     cargarListado();
                                 } else {
                                     Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudo eliminar.' });
@@ -1366,7 +1661,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     }
                 });
             } else {
-                if (confirm(msg)) {
+                if (confirm(msgPlain)) { 
                     var form = new FormData();
                     form.append('numCronograma', numCronograma);
                     fetch('eliminar_cronograma.php', { method: 'POST', body: form })
@@ -1437,22 +1732,36 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             var detalles = g.detalles || [];
             document.getElementById('detallesCodPrograma').textContent = (g.codPrograma || '') + ' — ' + (g.nomPrograma || '');
             document.getElementById('detallesTotal').textContent = detalles.length;
-            window._detallesListadoFilas = detalles;
+            window._detallesListadoFilas = ordenarDetallesGranjas(detalles);
             window._detallesListadoSearch = '';
             window._detallesListadoPageSize = 20;
+            window._detallesGranjasUnicos = granjasUnicosDesdeDetalles(detalles);
+            window._detallesGranjasSearch = '';
+            window._detallesGranjasPageSize = 20;
             var selSize = document.getElementById('detallesPageSize');
             if (selSize) selSize.value = '20';
             var inpSearch = document.getElementById('detallesSearch');
             if (inpSearch) inpSearch.value = '';
+            var selSizeG = document.getElementById('detallesGranjasPageSize');
+            if (selSizeG) selSizeG.value = '20';
+            var inpSearchG = document.getElementById('detallesGranjasSearch');
+            if (inpSearchG) inpSearchG.value = '';
+            var wFechas = document.getElementById('detallesFechasWrapper');
+            var wGranjas = document.getElementById('detallesGranjasWrapper');
+            if (wFechas) { wFechas.setAttribute('data-vista', 'lista'); document.querySelectorAll('#detallesFechasWrapper .view-toggle-btn').forEach(function(b) { b.classList.remove('active'); }); var btnLista = document.querySelector('#detallesFechasWrapper [data-detalles-view="lista"]'); if (btnLista) btnLista.classList.add('active'); }
+            if (wGranjas) { wGranjas.setAttribute('data-vista', 'lista'); document.querySelectorAll('#detallesGranjasWrapper .view-toggle-btn').forEach(function(b) { b.classList.remove('active'); }); var btnListaG = document.querySelector('#detallesGranjasWrapper [data-detalles-view="lista"]'); if (btnListaG) btnListaG.classList.add('active'); }
             document.querySelectorAll('#modalDetalles .tab-btn').forEach(function(b) {
                 b.classList.remove('active');
             });
-            document.getElementById('tabPanelGranjas').classList.add('active');
-            document.getElementById('tabPanelPrograma').classList.remove('active');
-            var firstTab = document.querySelector('#modalDetalles .tab-btn[data-tab="granjas"]');
+            document.querySelectorAll('#modalDetalles .tab-panel').forEach(function(p) {
+                p.classList.remove('active');
+            });
+            document.getElementById('tabPanelFechas').classList.add('active');
+            var firstTab = document.querySelector('#modalDetalles .tab-btn[data-tab="fechas"]');
             if (firstTab) firstTab.classList.add('active');
             cargarTabProgramaEnDetalles(g.codPrograma);
             renderDetallesListadoPage(1);
+            renderDetallesGranjasPage(1);
             document.getElementById('modalDetalles').classList.remove('hidden');
         });
 
@@ -1465,6 +1774,38 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         if (detallesSearchEl) detallesSearchEl.addEventListener('input', function() {
             window._detallesListadoSearch = this.value;
             renderDetallesListadoPage(1);
+        });
+        document.querySelectorAll('[data-detalles-view][data-tab-detalles="fechas"]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var w = document.getElementById('detallesFechasWrapper');
+                if (!w) return;
+                var v = this.getAttribute('data-detalles-view');
+                w.setAttribute('data-vista', v);
+                document.querySelectorAll('#detallesFechasWrapper .view-toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                renderDetallesListadoPage(window._detallesListadoPage || 1);
+            });
+        });
+        document.querySelectorAll('[data-detalles-view][data-tab-detalles="granjas"]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var w = document.getElementById('detallesGranjasWrapper');
+                if (!w) return;
+                var v = this.getAttribute('data-detalles-view');
+                w.setAttribute('data-vista', v);
+                document.querySelectorAll('#detallesGranjasWrapper .view-toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+                this.classList.add('active');
+                renderDetallesGranjasPage(window._detallesGranjasPage || 1);
+            });
+        });
+        var detallesGranjasPageSizeEl = document.getElementById('detallesGranjasPageSize');
+        if (detallesGranjasPageSizeEl) detallesGranjasPageSizeEl.addEventListener('change', function() {
+            window._detallesGranjasPageSize = parseInt(this.value, 10) || 20;
+            renderDetallesGranjasPage(1);
+        });
+        var detallesGranjasSearchEl = document.getElementById('detallesGranjasSearch');
+        if (detallesGranjasSearchEl) detallesGranjasSearchEl.addEventListener('input', function() {
+            window._detallesGranjasSearch = this.value;
+            renderDetallesGranjasPage(1);
         });
 
         function eventosPorDiaDesdeListado() {
@@ -1561,9 +1902,125 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             var term = (q || '').toString().trim().toLowerCase();
             if (term === '') return filas;
             return filas.filter(function(r) {
-                var txt = [r.codPrograma, r.granja, r.nomGranja, r.campania, r.galpon, r.edad, fechaDDMMYYYY(r.fechaCarga), fechaDDMMYYYY(r.fechaEjecucion)].join(' ').toLowerCase();
+                var txt = [r.codPrograma, r.zona, r.subzona, r.granja, r.nomGranja, r.campania, r.galpon, r.edad, fechaDDMMYYYY(r.fechaCarga), fechaDDMMYYYY(r.fechaEjecucion)].join(' ').toLowerCase();
                 return txt.indexOf(term) !== -1;
             });
+        }
+
+        function granjasUnicosDesdeDetalles(detalles) {
+            var seen = {};
+            var out = [];
+            (detalles || []).forEach(function(r) {
+                var g = (r.granja || '').toString().trim();
+                var gp = (r.galpon || '').toString().trim();
+                var c = (r.campania || '').toString().trim();
+                var key = g + '|' + gp + '|' + c;
+                if (key !== '||' && !seen[key]) {
+                    seen[key] = true;
+                    out.push({ granja: g, nomGranja: (r.nomGranja || g).toString().trim(), galpon: gp, campania: c });
+                }
+            });
+            out.sort(function(a, b) {
+                var cmp = (a.granja || '').localeCompare(b.granja || '');
+                if (cmp !== 0) return cmp;
+                cmp = (a.galpon || '').localeCompare(b.galpon || '');
+                if (cmp !== 0) return cmp;
+                return (a.campania || '').localeCompare(b.campania || '');
+            });
+            return out;
+        }
+
+        function filterGranjasUnicosPorBusqueda(unicos, q) {
+            if (!unicos || !unicos.length) return [];
+            var term = (q || '').toString().trim().toLowerCase();
+            if (term === '') return unicos;
+            return unicos.filter(function(r) {
+                var txt = [r.granja, r.nomGranja, r.galpon, r.campania].join(' ').toLowerCase();
+                return txt.indexOf(term) !== -1;
+            });
+        }
+
+        function renderDetallesGranjasPage(page) {
+            var unicosCompletos = window._detallesGranjasUnicos || granjasUnicosDesdeDetalles(window._detallesListadoFilas || []);
+            var searchQ = (window._detallesGranjasSearch || '').toString().trim();
+            var unicos = filterGranjasUnicosPorBusqueda(unicosCompletos, searchQ);
+            var pageSize = Math.max(1, parseInt(window._detallesGranjasPageSize, 10) || 20);
+            var total = unicos.length;
+            var totalPag = Math.max(1, Math.ceil(total / pageSize));
+            page = Math.max(1, Math.min(page, totalPag));
+            window._detallesGranjasPage = page;
+            var start = (page - 1) * pageSize;
+            var end = Math.min(start + pageSize, total);
+            var pageUnicos = unicos.slice(start, end);
+            var tbody = document.getElementById('detallesListaGranjas');
+            if (tbody) {
+                tbody.innerHTML = '';
+                pageUnicos.forEach(function(x, i) {
+                    var num = start + i + 1;
+                    var tr = document.createElement('tr');
+                    tr.className = 'border-b border-gray-200';
+                    tr.innerHTML = '<td class="px-3 py-2">' + num + '</td>' +
+                        '<td class="px-3 py-2">' + esc(x.granja || '—') + '</td>' +
+                        '<td class="px-3 py-2">' + esc(x.nomGranja || x.granja || '—') + '</td>' +
+                        '<td class="px-3 py-2">' + esc(x.galpon || '—') + '</td>' +
+                        '<td class="px-3 py-2">' + esc(x.campania || '—') + '</td>';
+                    tbody.appendChild(tr);
+                });
+            }
+            var pagEl = document.getElementById('detallesGranjasToolbarBottom');
+            if (pagEl) {
+                var desde = total === 0 ? 0 : start + 1;
+                var infoText = 'Mostrando ' + desde + ' a ' + end + ' de ' + total + ' registros';
+                var prevDisabled = page <= 1 ? ' disabled' : '';
+                var nextDisabled = page >= totalPag ? ' disabled' : '';
+                var prevClass = page <= 1 ? ' opacity-50 cursor-not-allowed' : ' hover:bg-gray-100';
+                var nextClass = page >= totalPag ? ' opacity-50 cursor-not-allowed' : ' hover:bg-gray-100';
+                pagEl.innerHTML = '<span class="text-sm text-gray-600">' + infoText + '</span><div class="paginacion-controles flex items-center gap-2"><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm detalles-granjas-prev' + prevClass + '"' + prevDisabled + '>Anterior</button><span class="px-2 text-sm text-gray-600">Pág. ' + page + ' de ' + totalPag + '</span><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm detalles-granjas-next' + nextClass + '"' + nextDisabled + '>Siguiente</button></div>';
+                pagEl.querySelector('.detalles-granjas-prev').addEventListener('click', function() {
+                    if (page > 1) renderDetallesGranjasPage(page - 1);
+                });
+                pagEl.querySelector('.detalles-granjas-next').addEventListener('click', function() {
+                    if (page < totalPag) renderDetallesGranjasPage(page + 1);
+                });
+            }
+            var wrapper = document.getElementById('detallesGranjasWrapper');
+            if (wrapper && wrapper.getAttribute('data-vista') === 'iconos') {
+                renderDetallesGranjasCards(pageUnicos, total, totalPag, page, start);
+            }
+        }
+
+        function renderDetallesGranjasCards(pageUnicos, total, totalPag, page, start) {
+            var container = document.getElementById('detallesGranjasCardsContainer');
+            var pagEl = document.getElementById('detallesGranjasCardsPagination');
+            var topEl = document.getElementById('detallesGranjasCardsControlsTop');
+            if (!container) return;
+            var cardsHtml = '';
+            pageUnicos.forEach(function(x, i) {
+                var num = start + i + 1;
+                cardsHtml += '<div class="crono-card-item card-item">';
+                cardsHtml += '<div class="card-numero-row">#' + num + '</div>';
+                cardsHtml += '<div class="card-codigo">' + esc(x.granja || '—') + '</div>';
+                cardsHtml += '<div class="card-contenido"><div class="card-campos">';
+                cardsHtml += '<div class="card-row"><span class="label">Nom. Granja:</span> ' + esc(x.nomGranja || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Galpón:</span> ' + esc(x.galpon || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Campaña:</span> ' + esc(x.campania || '—') + '</div>';
+                cardsHtml += '</div></div></div>';
+            });
+            container.innerHTML = cardsHtml;
+            var end = Math.min(start + (window._detallesGranjasPageSize || 20), total);
+            var desde = total === 0 ? 0 : start + 1;
+            if (topEl) topEl.innerHTML = '<span class="text-sm text-gray-600">Mostrando ' + desde + ' a ' + end + ' de ' + total + ' registros</span>';
+            if (pagEl) {
+                var prevDisabled = page <= 1 ? ' disabled' : '';
+                var nextDisabled = page >= totalPag ? ' disabled' : '';
+                var prevClass = page <= 1 ? ' opacity-50 cursor-not-allowed' : '';
+                var nextClass = page >= totalPag ? ' opacity-50 cursor-not-allowed' : '';
+                pagEl.innerHTML = '<span class="text-sm text-gray-600">Pág. ' + page + ' de ' + totalPag + '</span><div class="flex items-center gap-2"><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm detalles-granjas-cards-prev' + prevClass + '"' + prevDisabled + '>Anterior</button><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm detalles-granjas-cards-next' + nextClass + '"' + nextDisabled + '>Siguiente</button></div>';
+                var prevBtn = pagEl.querySelector('.detalles-granjas-cards-prev');
+                var nextBtn = pagEl.querySelector('.detalles-granjas-cards-next');
+                if (prevBtn && page > 1) prevBtn.addEventListener('click', function() { renderDetallesGranjasPage(page - 1); });
+                if (nextBtn && page < totalPag) nextBtn.addEventListener('click', function() { renderDetallesGranjasPage(page + 1); });
+            }
         }
 
         function renderDetallesListadoPage(page) {
@@ -1579,23 +2036,26 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             var end = Math.min(start + pageSize, total);
             var pageFilas = filas.slice(start, end);
             var tbody = document.getElementById('detallesLista');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-            pageFilas.forEach(function(x, i) {
-                var num = i + 1;
-                var tr = document.createElement('tr');
-                tr.className = 'border-b border-gray-200';
-                tr.innerHTML = '<td class="px-3 py-2">' + num + '</td>' +
-                    '<td class="px-3 py-2">' + esc(x.codPrograma) + '</td>' +
-                    '<td class="px-3 py-2">' + esc(x.granja) + '</td>' +
-                    '<td class="px-3 py-2">' + esc(x.nomGranja || x.granja) + '</td>' +
-                    '<td class="px-3 py-2">' + esc(x.campania) + '</td>' +
-                    '<td class="px-3 py-2">' + esc(x.galpon) + '</td>' +
-                    '<td class="px-3 py-2">' + (x.edad !== undefined && x.edad !== null && x.edad !== '' ? esc(x.edad) : '—') + '</td>' +
-                    '<td class="px-3 py-2">' + esc(fechaDDMMYYYY(x.fechaCarga)) + '</td>' +
-                    '<td class="px-3 py-2">' + esc(fechaDDMMYYYY(x.fechaEjecucion)) + '</td>';
-                tbody.appendChild(tr);
-            });
+            if (tbody) {
+                tbody.innerHTML = '';
+                pageFilas.forEach(function(x, i) {
+                    var num = start + i + 1;
+                    var tr = document.createElement('tr');
+                    tr.className = 'border-b border-gray-200';
+                    tr.innerHTML = '<td class="px-3 py-2">' + num + '</td>' +
+                        '<td class="px-3 py-2">' + esc(x.codPrograma) + '</td>' +
+                        '<td class="px-3 py-2">' + esc(x.zona || '—') + '</td>' +
+                        '<td class="px-3 py-2">' + esc(x.subzona || '—') + '</td>' +
+                        '<td class="px-3 py-2">' + esc(x.granja) + '</td>' +
+                        '<td class="px-3 py-2">' + esc(x.nomGranja || x.granja) + '</td>' +
+                        '<td class="px-3 py-2">' + esc(x.campania) + '</td>' +
+                        '<td class="px-3 py-2">' + esc(x.galpon) + '</td>' +
+                        '<td class="px-3 py-2">' + (x.edad !== undefined && x.edad !== null && x.edad !== '' ? esc(x.edad) : '—') + '</td>' +
+                        '<td class="px-3 py-2">' + esc(fechaDDMMYYYY(x.fechaCarga)) + '</td>' +
+                        '<td class="px-3 py-2">' + esc(fechaDDMMYYYY(x.fechaEjecucion)) + '</td>';
+                    tbody.appendChild(tr);
+                });
+            }
             var pagEl = document.getElementById('detallesToolbarBottom');
             if (pagEl) {
                 var desde = total === 0 ? 0 : start + 1;
@@ -1604,13 +2064,58 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 var nextDisabled = page >= totalPag ? ' disabled' : '';
                 var prevClass = page <= 1 ? ' opacity-50 cursor-not-allowed' : ' hover:bg-gray-100';
                 var nextClass = page >= totalPag ? ' opacity-50 cursor-not-allowed' : ' hover:bg-gray-100';
-                pagEl.innerHTML = '<span class="text-sm text-gray-600">' + infoText + '</span><div class="paginacion-controles"><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm detalles-prev' + prevClass + '"' + prevDisabled + '>Anterior</button><span class="px-2 text-sm text-gray-600">Pág. ' + page + ' de ' + totalPag + '</span><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm detalles-next' + nextClass + '"' + nextDisabled + '>Siguiente</button></div>';
+                pagEl.innerHTML = '<span class="text-sm text-gray-600">' + infoText + '</span><div class="paginacion-controles flex items-center gap-2"><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm detalles-prev' + prevClass + '"' + prevDisabled + '>Anterior</button><span class="px-2 text-sm text-gray-600">Pág. ' + page + ' de ' + totalPag + '</span><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm detalles-next' + nextClass + '"' + nextDisabled + '>Siguiente</button></div>';
                 pagEl.querySelector('.detalles-prev').addEventListener('click', function() {
                     if (page > 1) renderDetallesListadoPage(page - 1);
                 });
                 pagEl.querySelector('.detalles-next').addEventListener('click', function() {
                     if (page < totalPag) renderDetallesListadoPage(page + 1);
                 });
+            }
+            var wrapper = document.getElementById('detallesFechasWrapper');
+            if (wrapper && wrapper.getAttribute('data-vista') === 'iconos') {
+                renderDetallesFechasCards(pageFilas, total, totalPag, page, start);
+            }
+        }
+
+        function renderDetallesFechasCards(pageFilas, total, totalPag, page, start) {
+            var container = document.getElementById('detallesCardsContainer');
+            var pagEl = document.getElementById('detallesCardsPagination');
+            var topEl = document.getElementById('detallesCardsControlsTop');
+            if (!container) return;
+            var pageSize = Math.max(1, parseInt(window._detallesListadoPageSize, 10) || 20);
+            var end = Math.min(start + pageSize, total);
+            var cardsHtml = '';
+            pageFilas.forEach(function(x, i) {
+                var num = start + i + 1;
+                cardsHtml += '<div class="crono-card-item card-item">';
+                cardsHtml += '<div class="card-numero-row">#' + num + '</div>';
+                cardsHtml += '<div class="card-codigo">' + esc(x.codPrograma || '—') + '</div>';
+                cardsHtml += '<div class="card-contenido"><div class="card-campos">';
+                cardsHtml += '<div class="card-row"><span class="label">Granja:</span> ' + esc(x.granja || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Nom. Granja:</span> ' + esc(x.nomGranja || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Campaña:</span> ' + esc(x.campania || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Galpón:</span> ' + esc(x.galpon || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Zona:</span> ' + esc(x.zona || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Subzona:</span> ' + esc(x.subzona || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Edad:</span> ' + esc(x.edad !== undefined && x.edad !== null && x.edad !== '' ? x.edad : '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Fec. Carga:</span> ' + esc(fechaDDMMYYYY(x.fechaCarga) || '—') + '</div>';
+                cardsHtml += '<div class="card-row"><span class="label">Fec. Ejecución:</span> ' + esc(fechaDDMMYYYY(x.fechaEjecucion) || '—') + '</div>';
+                cardsHtml += '</div></div></div>';
+            });
+            container.innerHTML = cardsHtml;
+            var desde = total === 0 ? 0 : start + 1;
+            if (topEl) topEl.innerHTML = '<span class="text-sm text-gray-600">Mostrando ' + desde + ' a ' + end + ' de ' + total + ' registros</span>';
+            if (pagEl) {
+                var prevDisabled = page <= 1 ? ' disabled' : '';
+                var nextDisabled = page >= totalPag ? ' disabled' : '';
+                var prevClass = page <= 1 ? ' opacity-50 cursor-not-allowed' : '';
+                var nextClass = page >= totalPag ? ' opacity-50 cursor-not-allowed' : '';
+                pagEl.innerHTML = '<span class="text-sm text-gray-600">Pág. ' + page + ' de ' + totalPag + '</span><div class="flex items-center gap-2"><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm detalles-fechas-cards-prev' + prevClass + '"' + prevDisabled + '>Anterior</button><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm detalles-fechas-cards-next' + nextClass + '"' + nextDisabled + '>Siguiente</button></div>';
+                var prevBtn = pagEl.querySelector('.detalles-fechas-cards-prev');
+                var nextBtn = pagEl.querySelector('.detalles-fechas-cards-next');
+                if (prevBtn && page > 1) prevBtn.addEventListener('click', function() { renderDetallesListadoPage(page - 1); });
+                if (nextBtn && page < totalPag) nextBtn.addEventListener('click', function() { renderDetallesListadoPage(page + 1); });
             }
         }
 
@@ -1969,7 +2474,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         cargarListado();
         });
         document.getElementById('btnLimpiarFiltrosCronograma').addEventListener('click', function() {
-            document.getElementById('periodoTipo').value = 'TODOS';
+            document.getElementById('periodoTipo').value = 'ENTRE_MESES';
             var d = new Date();
             document.getElementById('fechaUnica').value = d.toISOString().slice(0, 10);
             document.getElementById('fechaInicio').value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
@@ -1988,11 +2493,15 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         });
 
         window._cronoIconosPage = 0;
-        window._cronoIconosPageSize = 10;
+        window._cronoIconosPageSize = 20;
         window._cronoIconosSearch = '';
 
         function renderizarTarjetasCronograma() {
             var grupos = window.gruposCronograma || [];
+            var lenDt = parseInt((document.querySelector('#cronoDtControls .dataTables_length select') || {}).value, 10);
+            if (!isNaN(lenDt) && lenDt > 0) window._cronoIconosPageSize = lenDt;
+            var inpDt = document.querySelector('#cronoDtControls .dataTables_filter input');
+            if (inpDt) window._cronoIconosSearch = inpDt.value || '';
             var q = (window._cronoIconosSearch || '').toString().trim().toLowerCase();
             var filtrado = q ? grupos.filter(function(g) {
                 return (g.codPrograma || '').toLowerCase().indexOf(q) >= 0 ||
@@ -2027,10 +2536,9 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     '</div>' +
                     '<div class="card-acciones">' +
                     '<button type="button" class="btn-detalles cursor-pointer text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-2 transition border-0 bg-transparent p-0" ' + dataKey + ' title="Ver"><i class="fas fa-eye"></i> Ver</button>' +
-                    '<button type="button" class="btn-cal btn-cal-fila px-2 py-1 text-green-600 hover:bg-green-50 rounded text-sm" ' + dataKey + ' title="Calendario"><i class="fas fa-calendar-alt"></i></button>' +
                     '<a href="' + urlPdf + '" target="_blank" rel="noopener" class="inline-flex items-center px-2 py-1 text-red-600 hover:bg-red-50 rounded text-sm" title="Ver reporte PDF"><i class="fas fa-file-pdf"></i></a>' +
-                    '<button type="button" class="btn-editar-cronograma hidden inline-flex items-center px-2 py-1 text-indigo-600 hover:bg-indigo-50 rounded text-sm" data-numcronograma="' + esc(String(g.numCronograma)) + '" title="Editar"><i class="fa-solid fa-edit"></i></button>' +
-                    '<button type="button" class="btn-eliminar-cronograma hidden inline-flex items-center px-2 py-1 text-rose-600 hover:bg-rose-50 rounded text-sm" data-numcronograma="' + esc(String(g.numCronograma)) + '" title="Eliminar"><i class="fa-solid fa-trash"></i></button>' +
+                    '<button type="button" class="btn-editar-cronograma inline-flex items-center px-2 py-1 text-indigo-600 hover:bg-indigo-50 rounded text-sm" data-numcronograma="' + esc(String(g.numCronograma)) + '" title="Editar"><i class="fa-solid fa-edit"></i></button>' +
+                    '<button type="button" class="btn-eliminar-cronograma inline-flex items-center px-2 py-1 text-rose-600 hover:bg-rose-50 rounded text-sm" data-numcronograma="' + esc(String(g.numCronograma)) + '" title="Eliminar"><i class="fa-solid fa-trash"></i></button>' +
                     '</div></div>';
                 cont.appendChild(card);
             });
@@ -2050,22 +2558,36 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     var detalles = g.detalles || [];
                     document.getElementById('detallesCodPrograma').textContent = (g.codPrograma || '') + ' — ' + (g.nomPrograma || '');
                     document.getElementById('detallesTotal').textContent = detalles.length;
-                    window._detallesListadoFilas = detalles;
+                    window._detallesListadoFilas = ordenarDetallesGranjas(detalles);
                     window._detallesListadoSearch = '';
                     window._detallesListadoPageSize = 20;
+                    window._detallesGranjasUnicos = granjasUnicosDesdeDetalles(detalles);
+                    window._detallesGranjasSearch = '';
+                    window._detallesGranjasPageSize = 20;
                     var selSize = document.getElementById('detallesPageSize');
                     if (selSize) selSize.value = '20';
                     var inpSearch = document.getElementById('detallesSearch');
                     if (inpSearch) inpSearch.value = '';
+                    var selSizeG = document.getElementById('detallesGranjasPageSize');
+                    if (selSizeG) selSizeG.value = '20';
+                    var inpSearchG = document.getElementById('detallesGranjasSearch');
+                    if (inpSearchG) inpSearchG.value = '';
+                    var wF = document.getElementById('detallesFechasWrapper');
+                    var wG = document.getElementById('detallesGranjasWrapper');
+                    if (wF) { wF.setAttribute('data-vista', 'lista'); document.querySelectorAll('#detallesFechasWrapper .view-toggle-btn').forEach(function(b) { b.classList.remove('active'); }); var bl = document.querySelector('#detallesFechasWrapper [data-detalles-view="lista"]'); if (bl) bl.classList.add('active'); }
+                    if (wG) { wG.setAttribute('data-vista', 'lista'); document.querySelectorAll('#detallesGranjasWrapper .view-toggle-btn').forEach(function(b) { b.classList.remove('active'); }); var blg = document.querySelector('#detallesGranjasWrapper [data-detalles-view="lista"]'); if (blg) blg.classList.add('active'); }
                     document.querySelectorAll('#modalDetalles .tab-btn').forEach(function(b) {
                         b.classList.remove('active');
                     });
-                    document.getElementById('tabPanelGranjas').classList.add('active');
-                    document.getElementById('tabPanelPrograma').classList.remove('active');
-                    var firstTab = document.querySelector('#modalDetalles .tab-btn[data-tab="granjas"]');
+                    document.querySelectorAll('#modalDetalles .tab-panel').forEach(function(p) {
+                        p.classList.remove('active');
+                    });
+                    document.getElementById('tabPanelFechas').classList.add('active');
+                    var firstTab = document.querySelector('#modalDetalles .tab-btn[data-tab="fechas"]');
                     if (firstTab) firstTab.classList.add('active');
                     cargarTabProgramaEnDetalles(g.codPrograma);
                     renderDetallesListadoPage(1);
+                    renderDetallesGranjasPage(1);
                     document.getElementById('modalDetalles').classList.remove('hidden');
                 });
             });
@@ -2143,45 +2665,12 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             if (btnLista) btnLista.classList.toggle('active', esLista);
             if (btnIconos) btnIconos.classList.toggle('active', !esLista);
             if (esLista) {
-                if (cronoIconos && cronoDt) {
-                    var filterEl = cronoIconos.querySelector('.dataTables_filter');
-                    if (filterEl) {
-                        cronoIconos.removeChild(filterEl);
-                        cronoDt.appendChild(filterEl);
-                    }
-                }
                 if (cronoIconos) cronoIconos.style.display = 'none';
                 if (cronoDt) cronoDt.style.display = '';
             } else {
-                if (cronoDt && cronoIconos) {
-                    var filterEl = cronoDt.querySelector('.dataTables_filter');
-                    if (filterEl) {
-                        cronoDt.removeChild(filterEl);
-                        cronoIconos.appendChild(filterEl);
-                    }
-                }
-                if (cronoDt) cronoDt.style.display = 'none';
-                if (cronoIconos) cronoIconos.style.display = '';
-                var toolbarRow = cronoIconos.querySelector('.iconos-toolbar-row');
-                if (!toolbarRow) {
-                    var lengthOptions = [5, 10, 25, 50];
-                    var len = window._cronoIconosPageSize;
-                    var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
-                        lengthOptions.map(function(n) {
-                            return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>';
-                        }).join('') + '</select><span>registros</span></label>';
-                    toolbarRow = document.createElement('div');
-                    toolbarRow.className = 'iconos-toolbar-row flex flex-wrap items-center gap-3';
-                    toolbarRow.innerHTML = lengthSelect;
-                    cronoIconos.insertBefore(toolbarRow, cronoIconos.firstChild);
-                    if (cronoIconos.querySelector('.dataTables_filter')) toolbarRow.appendChild(cronoIconos.querySelector('.dataTables_filter'));
-                    toolbarRow.querySelector('.cards-length-select').addEventListener('change', function() {
-                        window._cronoIconosPageSize = parseInt(this.value, 10) || 10;
-                        window._cronoIconosPage = 0;
-                        renderizarTarjetasCronograma();
-                    });
-                }
-                var searchInput = document.querySelector('#cronoIconosControls .dataTables_filter input');
+                if (cronoDt) cronoDt.style.display = '';
+                if (cronoIconos) cronoIconos.style.display = 'none';
+                var searchInput = document.querySelector('#cronoDtControls .dataTables_filter input');
                 if (searchInput) {
                     window._cronoIconosSearch = searchInput.value || '';
                     searchInput.removeEventListener('input', window._cronoSearchHandler);
@@ -2203,6 +2692,12 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         document.getElementById('btnViewIconosCrono').addEventListener('click', function() {
             aplicarVistaCronograma('iconos');
         });
+
+        (function vistaInicialCronograma() {
+            var w = window.innerWidth;
+            var vistaInicial = w < 768 ? 'iconos' : 'lista';
+            aplicarVistaCronograma(vistaInicial);
+        })();
 
         fetch('../programas/get_tipos_programa.php').then(function(r) {
             return r.json();

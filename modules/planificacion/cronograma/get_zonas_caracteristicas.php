@@ -3,11 +3,11 @@ header('Content-Type: application/json');
 session_start();
 if (empty($_SESSION['active'])) {
     http_response_code(401);
-    echo json_encode(['success' => false, 'zonas' => [], 'subzonas' => []]);
+    echo json_encode(['success' => false, 'data' => []]);
     exit;
 }
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 $zonas = [];
 if ($conn) {
     $chk = @$conn->query("SHOW TABLES LIKE 'pi_dim_caracteristicas'");
@@ -27,4 +27,4 @@ if ($conn) {
     }
     $conn->close();
 }
-echo json_encode(['success' => true, 'zonas' => $zonas]);
+echo json_encode(['success' => true, 'data' => $zonas]);

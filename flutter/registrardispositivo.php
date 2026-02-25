@@ -54,7 +54,7 @@ header('Content-Type: application/json; charset=utf-8');
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 
-include_once '../../conexion_grs_joya/conexion.php';
+include_once '../../conexion_grs/conexion.php';
 
 date_default_timezone_set('America/Lima');
 
@@ -110,7 +110,7 @@ if ($authHeader !== "Bearer " . API_TOKEN) {
 }
 
 // --- Conexión ---
-$conexion = conectar_joya();
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     sendResponse(500, false, 'Error de conexión a la base de datos', 'DB_CONNECTION_ERROR');
 }

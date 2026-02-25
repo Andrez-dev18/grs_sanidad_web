@@ -2,8 +2,8 @@
 session_start();
 if (empty($_SESSION['active'])) exit(json_encode(['success' => false, 'message' => 'No autorizado']));
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $_GET['action'] === 'get') {
     $codigo = $_SESSION['usuario'];

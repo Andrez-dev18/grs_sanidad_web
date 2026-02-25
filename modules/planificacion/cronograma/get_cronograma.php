@@ -12,8 +12,8 @@ if ($numCronograma <= 0) {
     exit;
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     echo json_encode(['success' => false, 'data' => null]);
     exit;
@@ -21,12 +21,18 @@ if (!$conn) {
 
 $chkNom = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'nomGranja'");
 $chkEdad = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'edad'");
+$chkZona = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'zona'");
+$chkSubzona = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'subzona'");
 $tieneNomGranja = $chkNom && $chkNom->num_rows > 0;
 $tieneEdad = $chkEdad && $chkEdad->num_rows > 0;
+$tieneZona = $chkZona && $chkZona->num_rows > 0;
+$tieneSubzona = $chkSubzona && $chkSubzona->num_rows > 0;
 
 $sql = "SELECT id, codPrograma, nomPrograma, granja, campania, galpon, fechaCarga, fechaEjecucion";
 if ($tieneNomGranja) $sql .= ", nomGranja";
 if ($tieneEdad) $sql .= ", edad";
+if ($tieneZona) $sql .= ", zona";
+if ($tieneSubzona) $sql .= ", subzona";
 $sql .= " FROM san_fact_cronograma WHERE numCronograma = ? ORDER BY granja, campania, galpon, fechaEjecucion ASC";
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
@@ -41,9 +47,17 @@ $rows = [];
 $codPrograma = '';
 $nomPrograma = '';
 $codTipo = '';
+$zonaCronograma = '';
+$subzonaCronograma = '';
 while ($row = $res->fetch_assoc()) {
     $codPrograma = $row['codPrograma'] ?? '';
     $nomPrograma = $row['nomPrograma'] ?? '';
+    if ($tieneZona && $zonaCronograma === '' && isset($row['zona']) && trim((string)$row['zona']) !== '') {
+        $zonaCronograma = trim((string)$row['zona']);
+    }
+    if ($tieneSubzona && $subzonaCronograma === '' && isset($row['subzona']) && trim((string)$row['subzona']) !== '') {
+        $subzonaCronograma = trim((string)$row['subzona']);
+    }
     $rows[] = [
         'granja' => $row['granja'] ?? '',
         'nomGranja' => $tieneNomGranja ? ($row['nomGranja'] ?? '') : '',
@@ -51,10 +65,16 @@ while ($row = $res->fetch_assoc()) {
         'galpon' => $row['galpon'] ?? '',
         'fechaCarga' => $row['fechaCarga'] ?? '',
         'fechaEjecucion' => $row['fechaEjecucion'] ?? '',
-        'edad' => $tieneEdad ? ($row['edad'] ?? null) : null
+        'edad' => $tieneEdad ? ($row['edad'] ?? null) : null,
+        'zona' => $tieneZona ? ($row['zona'] ?? '') : '',
+        'subzona' => $tieneSubzona ? ($row['subzona'] ?? '') : ''
     ];
 }
 $stmt->close();
+
+$tieneFechasAnterioresHoy = false;
+$hoy = date('Y-m-d');
+
 if ($codPrograma !== '') {
     $stCab = $conn->prepare("SELECT codTipo FROM san_fact_programa_cab WHERE codigo = ? LIMIT 1");
     if ($stCab) {
@@ -65,9 +85,17 @@ if ($codPrograma !== '') {
         $stCab->close();
     }
 }
+
+foreach ($rows as $r) {
+    $fec = $r['fechaEjecucion'] ?? $r['fechaCarga'] ?? '';
+    if ($fec && substr($fec, 0, 10) < $hoy) {
+        $tieneFechasAnterioresHoy = true;
+        break;
+    }
+}
+
 $conn->close();
 
-// Agrupar por granja|campania|galpon en items con fechas[]
 $map = [];
 foreach ($rows as $r) {
     $key = ($r['granja'] ?? '') . '|' . ($r['campania'] ?? '') . '|' . ($r['galpon'] ?? '');
@@ -78,6 +106,8 @@ foreach ($rows as $r) {
             'campania' => $r['campania'],
             'galpon' => $r['galpon'],
             'edad' => $r['edad'],
+            'zona' => $r['zona'] ?? '',
+            'subzona' => $r['subzona'] ?? '',
             'fechas' => []
         ];
     }
@@ -90,13 +120,18 @@ foreach ($rows as $r) {
 }
 $items = array_values($map);
 
-echo json_encode([
-    'success' => true,
-    'data' => [
-        'numCronograma' => $numCronograma,
-        'codPrograma' => $codPrograma,
-        'nomPrograma' => $nomPrograma,
-        'codTipo' => $codTipo,
-        'items' => $items
-    ]
-]);
+$dataOut = [
+    'numCronograma' => $numCronograma,
+    'codPrograma' => $codPrograma,
+    'nomPrograma' => $nomPrograma,
+    'codTipo' => $codTipo,
+    'items' => $items,
+    'tieneFechasAnterioresHoy' => $tieneFechasAnterioresHoy
+];
+if ($tieneZona && $zonaCronograma !== '') {
+    $dataOut['zona'] = $zonaCronograma;
+}
+if ($tieneSubzona && $subzonaCronograma !== '') {
+    $dataOut['subzona'] = $subzonaCronograma;
+}
+echo json_encode(['success' => true, 'data' => $dataOut]);

@@ -1,8 +1,8 @@
 <?php
 header('Content-Type: application/json');
-include '../../../../conexion_grs_joya/conexion.php';
+include '../../../../conexion_grs/conexion.php';
 
-$conn = conectar_joya();
+$conn = conectar_joya_mysqli();
 
 $data = json_decode(file_get_contents("php://input"), true);
 $codigo = $data['codigo'] ?? '';

@@ -1098,7 +1098,7 @@ function desactivarResultadosCuali() {
 
     const bloque = document.getElementById("bloqueCuali");
 
-    // 🔒 efecto visual
+
     bloque.classList.add(
         "opacity-50",
         "pointer-events-none",
@@ -1107,7 +1107,7 @@ function desactivarResultadosCuali() {
         "p-4"
     );
 
-    // 🚫 deshabilitar inputs reales
+
     bloque.querySelectorAll("input, select, textarea, button").forEach(el => {
         el.disabled = true;
     });
@@ -1235,11 +1235,11 @@ function crearBloqueAnalisis(
         "w-full px-2 py-2 border border-gray-300 text-sm rounded-md bg-white focus:ring-2 focus:ring-blue-300 focus:outline-none";
     select.name = "resultado_" + codigo;
 
-    // 🔥 CLAVE: datos que el backend necesita
+
     select.dataset.codigo = codigo;
     select.dataset.nombre = nombre;
 
-    // 👉 SIN RESULTADOS
+
     if (!resultados || resultados.length === 0) {
 
         let opt = document.createElement("option");

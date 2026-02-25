@@ -5,8 +5,8 @@ if (empty($_SESSION['active'])) {
     exit;
 }
 
-include_once '../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 
 $usuario = $_SESSION['usuario'];
 $stmt = mysqli_prepare($conexion, "SELECT contacto, correo FROM san_contacto_sanidad WHERE codigo = ?");

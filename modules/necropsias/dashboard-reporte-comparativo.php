@@ -6,8 +6,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-include_once '../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -149,8 +149,8 @@ if (!$conexion) {
                 <div class="flex-shrink-0" style="min-width: 200px;">
                     <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar-alt mr-1 text-blue-600"></i>Periodo</label>
                     <select id="periodoTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
-                        <option value="TODOS">Todos</option>
-                        <option value="POR_FECHA" selected>Por fecha</option>
+                        <option value="TODOS" selected>Todos</option>
+                        <option value="POR_FECHA">Por fecha</option>
                         <option value="ENTRE_FECHAS">Entre fechas</option>
                         <option value="POR_MES">Por mes</option>
                         <option value="ENTRE_MESES">Entre meses</option>
@@ -798,7 +798,7 @@ if (!$conexion) {
 
         // Limpiar filtros
         function limpiarFiltros() {
-            document.getElementById('periodoTipo').value = 'POR_FECHA';
+            document.getElementById('periodoTipo').value = 'TODOS';
             document.getElementById('fechaUnica').value = new Date().toISOString().slice(0, 10);
             document.getElementById('fechaInicio').value = '';
             document.getElementById('fechaFin').value = '';

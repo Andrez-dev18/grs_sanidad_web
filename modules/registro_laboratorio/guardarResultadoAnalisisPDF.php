@@ -1,9 +1,9 @@
 <?php
-include_once '../../../conexion_grs_joya/conexion.php';
+include_once '../../../conexion_grs/conexion.php';
 session_start();
 date_default_timezone_set('America/Lima');  // Zona horaria de Perú
 
-$conn = conectar_joya();
+$conn = conectar_joya_mysqli();
 
 if (!$conn) {
     echo json_encode(["error" => "DB error"]);

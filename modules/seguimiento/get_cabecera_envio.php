@@ -5,8 +5,8 @@ if (empty($_SESSION['active'])) {
     echo json_encode(['error' => 'No autorizado']);
     exit();
 }
-include_once '../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 
 $codEnvio = $_GET['codEnvio'] ?? '';
 if (!$codEnvio) {

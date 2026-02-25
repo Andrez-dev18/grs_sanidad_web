@@ -6,8 +6,8 @@ if (empty($_SESSION['active'])) {
     exit;
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
     exit;
@@ -15,14 +15,14 @@ if (!$conn) {
 
 $q = trim((string)($_GET['q'] ?? ''));
 $results = [];
-// Sin término no devolvemos opciones (son demasiadas)
+
 if ($q === '') {
     echo json_encode(['success' => true, 'results' => []]);
     $conn->close();
     exit;
 }
 
-// Buscar por codigo, nombre, sigla (codigo_proveedor) o descri (si existe la columna). Mostrar "codigo - descri"
+
 $chkDescri = @$conn->query("SHOW COLUMNS FROM ccte LIKE 'descri'");
 $tieneDescri = $chkDescri && $chkDescri->num_rows > 0;
 $condiciones = "(nombre LIKE ? OR codigo LIKE ? OR COALESCE(codigo_proveedor,'') LIKE ?";

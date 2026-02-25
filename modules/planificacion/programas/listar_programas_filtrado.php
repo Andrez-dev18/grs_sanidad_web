@@ -7,8 +7,8 @@ if (empty($_SESSION['active'])) {
     exit;
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
@@ -24,7 +24,6 @@ $fechaFin = trim((string)($_GET['fechaFin'] ?? ''));
 $mesUnico = trim((string)($_GET['mesUnico'] ?? ''));
 $mesInicio = trim((string)($_GET['mesInicio'] ?? ''));
 $mesFin = trim((string)($_GET['mesFin'] ?? ''));
-$zona = trim((string)($_GET['zona'] ?? ''));
 $despliegue = trim((string)($_GET['despliegue'] ?? ''));
 
 // Compatibilidad: si envían fechaDesde/fechaHasta por GET se usan cuando no hay periodo
@@ -44,9 +43,12 @@ if ($rangoPeriodo) {
 
 $chkDespliegue = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'despliegue'");
 $tieneDespliegue = $chkDespliegue && $chkDespliegue->fetch_assoc();
+$chkFechas = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'fechaInicio'");
+$tieneFechasCab = $chkFechas && $chkFechas->num_rows > 0;
 
-$sqlCab = "SELECT c.codigo, c.nombre, c.codTipo, c.nomTipo, c.zona, c.descripcion, c.fechaHoraRegistro";
+$sqlCab = "SELECT c.codigo, c.nombre, c.codTipo, c.nomTipo, c.descripcion, c.fechaHoraRegistro";
 if ($tieneDespliegue) $sqlCab .= ", c.despliegue";
+if ($tieneFechasCab) $sqlCab .= ", c.fechaInicio, c.fechaFin";
 $sqlCab .= " FROM san_fact_programa_cab c WHERE 1=1";
 $params = [];
 $types = '';
@@ -66,12 +68,6 @@ if ($fechaDesde !== '') {
 if ($fechaHasta !== '') {
     $sqlCab .= " AND DATE(c.fechaHoraRegistro) <= ?";
     $params[] = $fechaHasta;
-    $types .= 's';
-}
-// Zona y despliegue: LIKE para coincidencia parcial (espacios/case)
-if ($zona !== '') {
-    $sqlCab .= " AND (c.zona IS NOT NULL AND c.zona LIKE ?)";
-    $params[] = '%' . $zona . '%';
     $types .= 's';
 }
 if ($despliegue !== '') {
@@ -100,10 +96,11 @@ while ($row = $resCab->fetch_assoc()) {
         'nombre' => $row['nombre'],
         'codTipo' => (int)($row['codTipo'] ?? 0),
         'nomTipo' => $row['nomTipo'] ?? '',
-        'zona' => $row['zona'] ?? '',
         'despliegue' => $tieneDespliegue ? ($row['despliegue'] ?? '') : '',
         'descripcion' => $row['descripcion'] ?? '',
-        'fechaHoraRegistro' => $row['fechaHoraRegistro'] ?? ''
+        'fechaHoraRegistro' => $row['fechaHoraRegistro'] ?? '',
+        'fechaInicio' => $tieneFechasCab ? ($row['fechaInicio'] ?? '') : '',
+        'fechaFin' => $tieneFechasCab ? ($row['fechaFin'] ?? '') : ''
     ];
 }
 $stmtCab->close();

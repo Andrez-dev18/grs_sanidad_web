@@ -13,8 +13,8 @@ if ($codigo === '') {
     exit;
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     echo json_encode(['success' => false, 'enUso' => false, 'message' => 'Error de conexión']);
     exit;

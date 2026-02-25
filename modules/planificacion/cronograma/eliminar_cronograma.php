@@ -13,8 +13,8 @@ if ($numCronograma <= 0) {
     exit;
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
     exit;
@@ -29,5 +29,15 @@ if (!$stmt) {
 $stmt->bind_param("i", $numCronograma);
 $ok = $stmt->execute();
 $stmt->close();
+// Eliminar también el despliegue asociado
+$chkDespliegue = @$conn->query("SHOW TABLES LIKE 'san_cronograma_despliegue'");
+if ($chkDespliegue && $chkDespliegue->num_rows > 0) {
+    $stmtDesp = $conn->prepare("DELETE FROM san_cronograma_despliegue WHERE numCronograma = ?");
+    if ($stmtDesp) {
+        $stmtDesp->bind_param("i", $numCronograma);
+        @$stmtDesp->execute();
+        $stmtDesp->close();
+    }
+}
 $conn->close();
-echo json_encode($ok ? ['success' => true, 'message' => 'Cronograma eliminado.'] : ['success' => false, 'message' => 'Error al eliminar.']);
+echo json_encode($ok ? ['success' => true, 'message' => 'Asignación eliminada.'] : ['success' => false, 'message' => 'Error al eliminar.']);

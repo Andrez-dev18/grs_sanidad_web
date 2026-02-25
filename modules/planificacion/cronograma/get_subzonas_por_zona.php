@@ -6,8 +6,8 @@ if (empty($_SESSION['active'])) {
     echo json_encode(['success' => false, 'data' => []]);
     exit;
 }
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     echo json_encode(['success' => false, 'data' => []]);
     exit;
@@ -38,9 +38,10 @@ $stmt = $conn->prepare("
         SELECT id_granja, id_galpon
         FROM pi_dim_detalles AS a
         INNER JOIN pi_dim_caracteristicas AS b ON a.id_caracteristica = b.id
-        WHERE id_caracteristica = ? AND dato = ?
+        WHERE id_caracteristica = ? AND dato = ? AND a.id_granja LIKE '6%'
     ) AS z ON a.id_granja = z.id_granja AND a.id_galpon = z.id_galpon
     AND a.id_caracteristica = ?
+    WHERE a.id_granja LIKE '6%'
     GROUP BY a.id_granja, a.id_galpon, a.dato
 ");
 if (!$stmt) {

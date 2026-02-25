@@ -6,10 +6,10 @@ if (empty($_SESSION['active'])) {
         else { window.location.href = "../../../login.php"; }
     </script>';
     exit();
-}
+}                                                                                                                                                                                                                                   
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -129,8 +129,6 @@ $result_proveedores = mysqli_query($conexion, $query);
                                         echo '<button type="button" class="btn-icon p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-lg transition btn-eliminar-proveedor" title="Eliminar" data-codigo="' . $codAttr . '"><i class="fa-solid fa-trash"></i></button>';
                                         echo '</td></tr>';
                                     }
-                                } else {
-                                    echo '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">No hay proveedores registrados. Use "Nuevo Proveedor" y seleccione un registro de la lista.</td></tr>';
                                 }
                                 ?>
                             </tbody>
@@ -195,7 +193,9 @@ $result_proveedores = mysqli_query($conexion, $query);
                 pageLength: 20,
                 lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, 'Todos']],
                 language: window.DATATABLES_LANG_ES || {},
-                order: [[1, 'asc']],
+                ordering: false,
+                order: [[0, 'asc']],
+                orderClasses: false,
                 columnDefs: [{ orderable: false, targets: [0, 4] }],
                 dom: '<"dt-top-row"<"flex items-center gap-6" l><"flex items-center gap-2" f>>rt<"dt-bottom-row"<"text-sm text-gray-600" i><"text-sm text-gray-600" p>>',
                 initComplete: function() {
@@ -204,7 +204,7 @@ $result_proveedores = mysqli_query($conexion, $query);
                     var $filter = wrapper.find('.dataTables_filter').first();
                     var $controls = jQuery('#proveedorDtControls');
                     if ($controls.length && $length.length && $filter.length) {
-                        $controls.append($length, $filter);
+                        $controls.empty().append($length, $filter);
                     }
                 }
             });
@@ -225,19 +225,11 @@ $result_proveedores = mysqli_query($conexion, $query);
             if (btnLista) btnLista.classList.toggle('active', esLista);
             if (btnIconos) btnIconos.classList.toggle('active', !esLista);
             if (esLista) {
-                if (provIconos && provDt) {
-                    var filterEl = provIconos.querySelector('.dataTables_filter');
-                    if (filterEl) { provIconos.removeChild(filterEl); provDt.appendChild(filterEl); }
-                }
                 if (provIconos) provIconos.style.display = 'none';
                 if (provDt) provDt.style.display = '';
             } else {
-                if (provDt && provIconos) {
-                    var filterEl = provDt.querySelector('.dataTables_filter');
-                    if (filterEl) { provDt.removeChild(filterEl); provIconos.appendChild(filterEl); }
-                }
-                if (provDt) provDt.style.display = 'none';
-                if (provIconos) provIconos.style.display = '';
+                if (provDt) provDt.style.display = '';
+                if (provIconos) provIconos.style.display = 'none';
                 var cont = document.getElementById('cardsContainerProveedor');
                 if (cont) cont.innerHTML = '<p class="text-sm text-gray-500 py-4">Vista en iconos disponible próximamente.</p>';
             }

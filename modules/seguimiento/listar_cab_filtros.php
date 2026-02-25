@@ -1,6 +1,6 @@
 <?php
-include_once '../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 
 // Parámetros DataTables
 $draw = intval($_POST['draw'] ?? 1);

@@ -18,6 +18,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Programas - Listado</title>
+    <!-- Orden estricto como reportes -->
     <link rel="stylesheet" href="../../../css/output.css">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
@@ -26,6 +27,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
     <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
     <link rel="stylesheet" href="../../../css/dashboard-config.css">
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="../../../assets/js/fetch-auth-redirect.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script>window.DATATABLES_LANG_ES = <?php echo $datatablesLangEs; ?>;</script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -72,29 +74,6 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             border: 1px solid #e5e7eb;
             overflow: hidden;
-        }
-        .dataTables_wrapper .dataTables_length select {
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            margin: 0 0.5rem;
-        }
-        .dataTables_wrapper .dataTables_filter input {
-            padding: 0.5rem 1rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            margin-left: 0.5rem;
-        }
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            padding: 0.5rem 1rem !important;
-            margin: 0 0.25rem;
-            border-radius: 0.5rem;
-            border: 1px solid #d1d5db !important;
-        }
-        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-            background: #1e40af !important;
-            color: white !important;
-            border: 1px solid #1e40af !important;
-            font-weight: normal !important;
         }
         .bloque-detalle { display: block; }
         .select2-container .select2-selection--single { height: 38px; border-radius: 0.5rem; border: 1px solid #d1d5db; padding: 4px 10px; }
@@ -148,6 +127,32 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             box-sizing: border-box;
         }
         #overlayProductoProveedor.hidden { display: none; }
+        /* Overlay carga recálculo: misma estructura que overlayProductoProveedor, pantalla completa */
+        #overlayCargaRecalcular {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            min-width: 100vw;
+            min-height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+        #overlayCargaRecalcular.hidden { display: none !important; }
+        #overlayCargaRecalcular .overlay-carga-inner {
+            background: #f0f9ff;
+            border-radius: 0.75rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 2rem;
+            text-align: center;
+            max-width: 24rem;
+        }
         #overlayProductoProveedor .overlay-inner {
             background: #fff;
             border-radius: 0.75rem;
@@ -264,14 +269,14 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         <!-- Card Filtros (estilo reportes) -->
         <div class="card-filtros-compacta mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden">
             <button type="button" id="btnToggleFiltrosProgramas"
-                class="w-full flex items-center justify-between px-6 py-4 text-left font-medium text-gray-800 hover:bg-gray-50 transition">
-                <span><i class="fas fa-filter mr-2 text-blue-600"></i> Filtros</span>
-                <svg id="iconoFiltrosProgramas" class="w-5 h-5 text-gray-600 transition-transform duration-300 rotate-180"
+                class="w-full flex items-center justify-between px-6 py-4 bg-gray-50 hover:bg-gray-100 transition">
+                <span class="flex items-center gap-2"><span class="text-lg">🔎</span><span class="text-base font-semibold text-gray-800">Filtros de búsqueda</span></span>
+                <svg id="iconoFiltrosProgramas" class="w-5 h-5 text-gray-600 transition-transform duration-300"
                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
-            <div id="contenidoFiltrosProgramas" class="px-6 pb-6 pt-4">
+            <div id="contenidoFiltrosProgramas" class="px-6 pb-6 pt-4 hidden">
                 <div class="border-t border-gray-100 pt-4 mx-4">
                     <!-- Fila 1: Periodo -->
                     <div class="filter-row-periodo flex flex-wrap items-end gap-4 mb-6">
@@ -291,49 +296,41 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                             <input id="fechaUnica" type="date" value="<?php echo date('Y-m-d'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                         </div>
                         <div id="periodoEntreFechas" class="hidden flex-shrink-0 flex items-end gap-2">
-                            <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Desde</label><input id="fechaInicio" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
-                            <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label><input id="fechaFin" type="date" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                            <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Desde</label><input id="fechaInicio" type="date" value="<?php echo date('Y-m-01'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                            <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Hasta</label><input id="fechaFin" type="date" value="<?php echo date('Y-m-t'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
                         </div>
                         <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[200px]">
                             <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
                             <input id="mesUnico" type="month" value="<?php echo date('Y-m'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                         </div>
                         <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
-                            <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label><input id="mesInicio" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
-                            <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label><input id="mesFin" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                            <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label><input id="mesInicio" type="month" value="<?php echo date('Y') . '-01'; ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
+                            <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-end mr-1 text-blue-600"></i>Mes Fin</label><input id="mesFin" type="month" value="<?php echo date('Y') . '-12'; ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
                         </div>
                     </div>
-                    <!-- Fila 2: Tipo, Zona, Despliegue --> 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <!-- Fila 2: Tipo, Despliegue -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-layer-group mr-1 text-blue-600"></i>Tipo de programa</label>
-                            <select id="filtroTipo" class="form-control w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <select id="filtroTipo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
                                 <option value="">Todos</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-map-marker-alt mr-1 text-blue-600"></i>Zona</label>
-                            <input type="text" id="filtroZona" class="form-control w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" list="filtroZonasList" placeholder="Ej: La Joya">
-                            <datalist id="filtroZonasList">
-                                <option value="Mollendo">
-                                <option value="La Joya">
-                            </datalist>
-                        </div>
-                        <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-sitemap mr-1 text-blue-600"></i>Despliegue</label>
-                            <input type="text" id="filtroDespliegue" class="form-control w-full px-3 py-2 text-sm rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" list="filtroDesplieguesList" placeholder="Ej: GRS">
+                            <input type="text" id="filtroDespliegue" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm" list="filtroDesplieguesList" placeholder="Ej: GRS">
                             <datalist id="filtroDesplieguesList">
                                 <option value="GRS">
                                 <option value="Piloto">
                             </datalist>
                         </div>
                     </div>
-                    <!-- Fila 2: botones -->
-                    <div class="flex flex-wrap items-center gap-3">
-                        <button type="button" id="btnBuscarProgramas" class="btn-primary px-4 py-2">
-                            <i class="fas fa-search"></i> Filtrar
+                    <!-- Botones Filtrar / Limpiar / Reporte PDF a la derecha -->
+                    <div class="flex flex-wrap items-center justify-end gap-3">
+                        <button type="button" id="btnBuscarProgramas" class="px-6 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                            Filtrar
                         </button>
-                        <button type="button" id="btnLimpiarFiltrosProgramas" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200 text-sm font-medium inline-flex items-center gap-2">
+                        <button type="button" id="btnLimpiarFiltrosProgramas" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200">
                             Limpiar
                         </button>
                         <button type="button" id="btnExportarPdf" class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 text-sm font-medium inline-flex items-center gap-2" title="Exportar a PDF lo filtrado">
@@ -344,11 +341,10 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 </div>
         </div>
 
-        <!-- Card Tabla (mismo estilo lista/iconos que reportes) -->
-        <div class="mb-6 bg-white border rounded-2xl shadow-sm overflow-hidden" id="tablaProgramasWrapper" data-vista-tabla-iconos data-vista="lista">
-            <div class="p-4">
-                <!-- Toolbar: Lista/Iconos y controles de tabla en la misma fila (como reportes) -->
-                <div class="toolbar-vista-row flex flex-wrap items-center justify-between gap-3 mb-3" id="programasToolbarRow">
+        <!-- Tabla: clase global tabla-listado-wrapper = mismo aspecto que Reportes (CSS global) -->
+        <div class="tabla-listado-wrapper bg-white rounded-xl shadow-md p-5" id="tablaProgramasWrapper" data-vista="">
+            <div class="card-body p-0 mt-5">
+                <div class="reportes-toolbar-row flex flex-wrap items-center justify-between gap-3 mb-3" id="programasToolbarRow">
                     <div class="view-toggle-group flex items-center gap-2" id="viewToggleGroupProg">
                         <button type="button" class="view-toggle-btn active" id="btnViewListaProg" title="Lista"><i class="fas fa-list mr-1"></i> Lista</button>
                         <button type="button" class="view-toggle-btn" id="btnViewIconosProg" title="Iconos"><i class="fas fa-th mr-1"></i> Iconos</button>
@@ -356,29 +352,31 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     <div id="progDtControls" class="flex flex-wrap items-center gap-3"></div>
                     <div id="progIconosControls" class="flex flex-wrap items-center gap-3" style="display: none;"></div>
                 </div>
-                <div class="view-lista-wrap" id="viewListaProg">
-            <div class="table-wrapper table-wrapper-borde">
-                <table id="tablaProgramas" class="data-table w-full text-sm config-table tabla-fixed-8col">
-                    <thead>
-                        <tr>
-                            <th class="px-4 py-3 text-left">N°</th>
-                            <th class="px-4 py-3 text-left">Código</th>
-                            <th class="px-4 py-3 text-left">Nombre</th>
-                            <th class="px-4 py-3 text-left">Tipo</th>
-                            <th class="px-4 py-3 text-left">Despliegue</th>
-                            <th class="px-4 py-3 text-left">Fecha registro</th>
-                            <th class="px-4 py-3 text-center">Detalles</th>
-                            <th class="px-4 py-3 text-center">Opciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaProgramasBody"></tbody>
-                </table>
-            </div>
-                </div>
-                <div class="view-tarjetas-wrap hidden px-4 pb-4 overflow-x-hidden" id="viewTarjetasProg" style="display: none;">
-                    <div id="cardsControlsTopProg" class="flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
+                <div class="view-tarjetas-wrap px-4 pb-4 overflow-x-hidden" id="viewTarjetasProg">
+                    <div id="cardsControlsTopProg" class="cards-controls-top flex flex-wrap items-center justify-between gap-3 mb-4 text-sm text-gray-600 border-b border-gray-200 pb-3"></div>
                     <div id="cardsContainerProg" class="cards-grid cards-grid-iconos" data-vista-cards="iconos"></div>
                     <div id="cardsPaginationProg" class="flex flex-wrap items-center justify-between gap-3 mt-4 text-sm text-gray-600 border-t border-gray-200 pt-3" data-page-handler="progIconosPageGo"></div>
+                </div>
+                <div class="view-lista-wrap" id="viewListaProg">
+                    <div class="table-wrapper overflow-x-auto">
+                        <table id="tablaProgramas" class="data-table display w-full text-sm border-collapse config-table" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">N°</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Código</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Nombre</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Tipo</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Despliegue</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Fecha inicio</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Fecha fin</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Fecha registro</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Detalles</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Opciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaProgramasBody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -421,6 +419,20 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         </div>
     </div>
 
+    <!-- Overlay carga recálculo: pantalla completa, oscurece todo (incl. modal editar) -->
+    <div id="overlayCargaRecalcular" class="hidden" aria-hidden="true">
+        <div class="overlay-carga-inner" onclick="event.stopPropagation()">
+            <div class="flex flex-col items-center gap-3">
+                <img src="../../../assets/img/gallina.gif" alt="Cargando..." style="width:128px;height:128px" onerror="this.style.display='none'">
+                <div style="width:100%;max-width:16rem;height:6px;background:#e5e7eb;border-radius:9999px;overflow:hidden">
+                    <div id="overlayRecalcLoadingBar" style="height:100%;width:0%;background:linear-gradient(90deg,#0ea5e9,#38bdf8);border-radius:9999px;transition:width 0.15s"></div>
+                </div>
+            </div>
+            <p style="font-size:1.125rem;font-weight:600;color:#1f2937;margin-top:1rem">Recalculando fechas...</p>
+            <p style="font-size:0.875rem;color:#4b5563;margin-top:0.5rem">Por favor espere, estamos procesando las asignaciones</p>
+        </div>
+    </div>
+
     <!-- Overlay producto/proveedor: fuera del modal, oscurece toda la pantalla -->
     <div id="overlayProductoProveedor" class="hidden" aria-hidden="true">
         <div class="overlay-inner" onclick="event.stopPropagation()">
@@ -458,13 +470,33 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 mesUnico: (document.getElementById('mesUnico') && document.getElementById('mesUnico').value) || '',
                 mesInicio: (document.getElementById('mesInicio') && document.getElementById('mesInicio').value) || '',
                 mesFin: (document.getElementById('mesFin') && document.getElementById('mesFin').value) || '',
-                zona: (document.getElementById('filtroZona') && document.getElementById('filtroZona').value.trim()) || '',
                 despliegue: (document.getElementById('filtroDespliegue') && document.getElementById('filtroDespliegue').value.trim()) || ''
             };
         }
 
+        function getContextoZonaSubzona() {
+            var zona = '';
+            var subzona = '';
+            var elSubzona = document.getElementById('filtroSubzona');
+            if (elSubzona && elSubzona.value !== undefined && elSubzona.value !== null) {
+                subzona = String(elSubzona.value).trim();
+            }
+            if (String(zona).toLowerCase() === 'especifico') zona = '';
+            if (String(subzona).toLowerCase() === 'especifico') subzona = '';
+            return { zona: zona, subzona: subzona };
+        }
+
         function formatearFecha(f) {
             if (!f) return '';
+            var s = String(f).trim();
+            // Fecha solo (YYYY-MM-DD): formatear sin timezone para evitar un día menos en zonas UTC-
+            var soloFecha = s.substring(0, 10);
+            if (/^\d{4}-\d{2}-\d{2}$/.test(soloFecha)) {
+                var dia = soloFecha.substring(8, 10);
+                var mes = soloFecha.substring(5, 7);
+                var anio = soloFecha.substring(0, 4);
+                return dia + '/' + mes + '/' + anio;
+            }
             var d = new Date(f);
             if (isNaN(d.getTime())) return f;
             return d.getDate().toString().padStart(2, '0') + '/' + (d.getMonth() + 1).toString().padStart(2, '0') + '/' + d.getFullYear();
@@ -473,6 +505,17 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         function esc(s) {
             if (s === null || s === undefined) return '';
             return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+        }
+        function openPdfConAuth(url) {
+            fetch(url, { credentials: 'same-origin' }).then(function(r) {
+                if (r.status === 401) { window.location.href = '../../../login.php'; return null; }
+                return r.blob();
+            }).then(function(blob) {
+                if (!blob) return;
+                var u = URL.createObjectURL(blob);
+                var w = window.open(u, '_blank');
+                if (w) setTimeout(function() { URL.revokeObjectURL(u); }, 60000);
+            }).catch(function() {});
         }
         function formatearDescripcionVacuna(s) {
             if (s === null || s === undefined) s = '';
@@ -484,77 +527,151 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             return 'Contra\n' + partes.map(function(p) { return '- ' + p; }).join('\n');
         }
 
-        function cargarListado() {
-            var params = getParametrosFiltro();
-            var url = 'listar_programas_filtrado.php?codTipo=' + encodeURIComponent(params.codTipo) + '&periodoTipo=' + encodeURIComponent(params.periodoTipo) + '&fechaUnica=' + encodeURIComponent(params.fechaUnica) + '&fechaInicio=' + encodeURIComponent(params.fechaInicio) + '&fechaFin=' + encodeURIComponent(params.fechaFin) + '&mesUnico=' + encodeURIComponent(params.mesUnico) + '&mesInicio=' + encodeURIComponent(params.mesInicio) + '&mesFin=' + encodeURIComponent(params.mesFin) + '&zona=' + encodeURIComponent(params.zona) + '&despliegue=' + encodeURIComponent(params.despliegue) + '&_=' + Date.now();
+        window._progDtPageLen = window._progDtPageLen || 20;
+        window._codigoProgramaEditando = null;
+
+        function buildTrPrograma(item, idx) {
+            var cab = item.cab || {};
+            var codigo = cab.codigo || '';
+            window._detallesPorPrograma[codigo] = item.detalles || [];
+            window._cabPorPrograma[codigo] = cab;
+            window._siglaPorPrograma[codigo] = (item.sigla || 'PL').toUpperCase();
+            var tr = document.createElement('tr');
+            tr.className = 'border-b border-gray-200';
+            var reporteUrl = 'generar_reporte_programa.php?codigo=' + encodeURIComponent(codigo);
+            tr.innerHTML = '<td class="px-4 py-3">' + (idx + 1) + '</td>' +
+                '<td class="px-4 py-3">' + esc(codigo) + '</td>' +
+                '<td class="px-4 py-3">' + esc(cab.nombre) + '</td>' +
+                '<td class="px-4 py-3">' + esc(cab.nomTipo) + '</td>' +
+                '<td class="px-4 py-3">' + esc(cab.despliegue) + '</td>' +
+                '<td class="px-4 py-3">' + formatearFecha(cab.fechaInicio) + '</td>' +
+                '<td class="px-4 py-3">' + formatearFecha(cab.fechaFin) + '</td>' +
+                '<td class="px-4 py-3">' + formatearFecha(cab.fechaHoraRegistro) + '</td>' +
+                '<td class="px-4 py-3 text-center"><button type="button" class="btn-detalles-programa px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium inline-flex items-center gap-2" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '" title="Ver"><i class="fas fa-eye"></i> Ver</button></td>' +
+                '<td class="px-4 py-3 text-center"><div class="flex items-center justify-center gap-3">' +
+                '<button type="button" class="btn-pdf-programa text-red-600 hover:text-red-800 bg-transparent border-0 p-0 cursor-pointer" title="Ver reporte PDF" data-pdf-url="' + (reporteUrl || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '"><i class="fa-solid fa-file-pdf"></i></button>' +
+                '<button type="button" class="btn-copiar-programa text-emerald-600 hover:text-emerald-800" title="Copiar" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"><i class="fa-solid fa-copy"></i></button>' +
+                '<button type="button" class="btn-editar-programa text-indigo-600 hover:text-indigo-800" title="Editar" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"><i class="fa-solid fa-edit"></i></button>' +
+                '<button type="button" class="btn-eliminar-programa text-rose-600 hover:text-rose-800" title="Eliminar" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"><i class="fa-solid fa-trash"></i></button>' +
+                '</div></td>';
+            return tr;
+        }
+
+        function bindBotonesTablaProgramas() {
             var tbody = document.getElementById('tablaProgramasBody');
             if (!tbody) return;
-            tbody.innerHTML = '';
+            tbody.querySelectorAll('.btn-detalles-programa').forEach(function(btn) {
+                btn.addEventListener('click', function() { abrirModalDetalles(this.getAttribute('data-codigo')); });
+            });
+            tbody.querySelectorAll('.btn-pdf-programa').forEach(function(btn) {
+                btn.addEventListener('click', function() { openPdfConAuth(this.getAttribute('data-pdf-url')); });
+            });
+            tbody.querySelectorAll('.btn-editar-programa').forEach(function(btn) {
+                btn.addEventListener('click', function() { editarPrograma(this.getAttribute('data-codigo')); });
+            });
+            tbody.querySelectorAll('.btn-copiar-programa').forEach(function(btn) {
+                btn.addEventListener('click', function() { copiarPrograma(this.getAttribute('data-codigo')); });
+            });
+            tbody.querySelectorAll('.btn-eliminar-programa').forEach(function(btn) {
+                btn.addEventListener('click', function() { eliminarPrograma(this.getAttribute('data-codigo')); });
+            });
+        }
+
+        function renderTablaProgramas(data) {
+            var tbody = document.getElementById('tablaProgramasBody');
+            if (!tbody) return;
+            data = data || [];
+            window._listadoProgramas = data;
             window._detallesPorPrograma = {};
             window._cabPorPrograma = {};
             window._siglaPorPrograma = {};
+            if ($.fn.DataTable.isDataTable('#tablaProgramas')) {
+                window._progDtPageLen = $('#tablaProgramas').DataTable().page.len() || window._progDtPageLen;
+                $('#progDtControls').empty();
+                $('#progIconosControls').empty();
+                $('#tablaProgramas').DataTable().destroy();
+            }
+            tbody.innerHTML = '';
+            data.forEach(function(item, idx) { tbody.appendChild(buildTrPrograma(item, idx)); });
+            bindBotonesTablaProgramas();
+            $('#tablaProgramas').DataTable({
+                language: window.DATATABLES_LANG_ES || {},
+                pageLength: window._progDtPageLen,
+                lengthMenu: [[20, 25, 50, 100], [20, 25, 50, 100]],
+                order: [[0, 'asc']],
+                orderClasses: false,
+                scrollX: false,
+                autoWidth: false,
+                stripeClasses: [],
+                dom: '<"dt-top-row"<"flex items-center gap-6" l><"flex items-center gap-2" f>>rt<"dt-bottom-row"<"text-sm text-gray-600" i><"text-sm text-gray-600" p>>',
+                drawCallback: function () {
+                    if (typeof renderizarTarjetasProgramas === 'function') renderizarTarjetasProgramas();
+                },
+                initComplete: function () {
+                    this.api().columns.adjust();
+                    var wrapper = $('#tablaProgramas').closest('.dataTables_wrapper');
+                    var $length = wrapper.find('.dataTables_length').first();
+                    var $filter = wrapper.find('.dataTables_filter').first();
+                    var $controls = $('#progDtControls');
+                    if ($controls.length && $length.length && $filter.length) {
+                        $controls.empty().append($length, $filter);
+                    }
+                    var vista = $('#tablaProgramasWrapper').attr('data-vista') || 'lista';
+                    $('#progDtControls').toggle(vista === 'lista');
+                    $('#progIconosControls').toggle(vista === 'iconos');
+                }
+            });
+        }
+
+        function eliminarFilaPrograma(codigo) {
+            var list = window._listadoProgramas || [];
+            window._listadoProgramas = list.filter(function(item) { return (item.cab || {}).codigo !== codigo; });
+            delete window._detallesPorPrograma[codigo];
+            delete window._cabPorPrograma[codigo];
+            delete window._siglaPorPrograma[codigo];
+            renderTablaProgramas(window._listadoProgramas);
+            if (typeof renderizarTarjetasProgramas === 'function') renderizarTarjetasProgramas();
+        }
+
+        function actualizarFilaPrograma(codigo) {
+            return fetch('get_programa_cab_detalle.php?codigo=' + encodeURIComponent(codigo), { cache: 'no-store' })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (!res.success || !res.cab) return;
+                    var cab = res.cab;
+                    var detalles = res.detalles || [];
+                    var list = window._listadoProgramas || [];
+                    for (var i = 0; i < list.length; i++) {
+                        if ((list[i].cab || {}).codigo === codigo) {
+                            list[i].cab = cab;
+                            list[i].detalles = detalles;
+                            break;
+                        }
+                    }
+                    window._cabPorPrograma[codigo] = cab;
+                    window._detallesPorPrograma[codigo] = detalles;
+                    renderTablaProgramas(window._listadoProgramas);
+                    if (typeof renderizarTarjetasProgramas === 'function') renderizarTarjetasProgramas();
+                });
+        }
+
+        function agregarFilaPrograma(item) {
+            if (!item || !item.cab) return;
+            window._listadoProgramas = window._listadoProgramas || [];
+            window._listadoProgramas.unshift(item);
+            renderTablaProgramas(window._listadoProgramas);
+        }
+
+        function cargarListado() {
+            var params = getParametrosFiltro();
+            var url = 'listar_programas_filtrado.php?codTipo=' + encodeURIComponent(params.codTipo) + '&periodoTipo=' + encodeURIComponent(params.periodoTipo) + '&fechaUnica=' + encodeURIComponent(params.fechaUnica) + '&fechaInicio=' + encodeURIComponent(params.fechaInicio) + '&fechaFin=' + encodeURIComponent(params.fechaFin) + '&mesUnico=' + encodeURIComponent(params.mesUnico) + '&mesInicio=' + encodeURIComponent(params.mesInicio) + '&mesFin=' + encodeURIComponent(params.mesFin) + '&despliegue=' + encodeURIComponent(params.despliegue) + '&_=' + Date.now();
+            var tbody = document.getElementById('tablaProgramasBody');
+            if (!tbody) return;
             fetch(url, { cache: 'no-store' })
                 .then(r => r.json())
-                .then(res => {
+                .then(function(res) {
                     if (!res.success) return;
-                    var data = res.data || [];
-                    window._listadoProgramas = data;
-                    if ($.fn.DataTable.isDataTable('#tablaProgramas')) {
-                        $('#tablaProgramas').DataTable().destroy();
-                    }
-                    tbody.innerHTML = '';
-                    data.forEach(function(item, idx) {
-                        var cab = item.cab || {};
-                        var codigo = cab.codigo || '';
-                        window._detallesPorPrograma[codigo] = item.detalles || [];
-                        window._cabPorPrograma[codigo] = cab;
-                        window._siglaPorPrograma[codigo] = (item.sigla || 'PL').toUpperCase();
-                        var tr = document.createElement('tr');
-                        tr.className = 'border-b border-gray-200 hover:bg-gray-50';
-                        var reporteUrl = 'generar_reporte_programa.php?codigo=' + encodeURIComponent(codigo);
-                        tr.innerHTML = '<td class="px-4 py-3">' + (idx + 1) + '</td>' +
-                            '<td class="px-4 py-3">' + esc(codigo) + '</td>' +
-                            '<td class="px-4 py-3">' + esc(cab.nombre) + '</td>' +
-                            '<td class="px-4 py-3">' + esc(cab.nomTipo) + '</td>' +
-                            '<td class="px-4 py-3">' + esc(cab.despliegue) + '</td>' +
-                            '<td class="px-4 py-3">' + formatearFecha(cab.fechaHoraRegistro) + '</td>' +
-                            '<td class="px-4 py-3 text-center"><button type="button" class="btn-detalles-programa px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-medium inline-flex items-center gap-2" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '" title="Ver"><i class="fas fa-eye"></i> Ver</button></td>' +
-                            '<td class="px-4 py-3 text-center"><div class="flex items-center justify-center gap-3">' +
-                            '<a class="text-red-600 hover:text-red-800" title="Ver reporte PDF" href="' + reporteUrl + '" target="_blank" rel="noopener"><i class="fa-solid fa-file-pdf"></i></a>' +
-                            '<button type="button" class="btn-copiar-programa text-emerald-600 hover:text-emerald-800" title="Copiar" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"><i class="fa-solid fa-copy"></i></button>' +
-                            '<button type="button" class="btn-editar-programa text-indigo-600 hover:text-indigo-800" title="Editar" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"><i class="fa-solid fa-edit"></i></button>' +
-                            '<button type="button" class="btn-eliminar-programa text-rose-600 hover:text-rose-800" title="Eliminar" data-codigo="' + (codigo || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"><i class="fa-solid fa-trash"></i></button>' +
-                            '</div></td>';
-                        tbody.appendChild(tr);
-                    });
-                    tbody.querySelectorAll('.btn-detalles-programa').forEach(function(btn) {
-                        btn.addEventListener('click', function() { abrirModalDetalles(this.getAttribute('data-codigo')); });
-                    });
-                    tbody.querySelectorAll('.btn-editar-programa').forEach(function(btn) {
-                        btn.addEventListener('click', function() { editarPrograma(this.getAttribute('data-codigo')); });
-                    });
-                    tbody.querySelectorAll('.btn-copiar-programa').forEach(function(btn) {
-                        btn.addEventListener('click', function() { copiarPrograma(this.getAttribute('data-codigo')); });
-                    });
-                    tbody.querySelectorAll('.btn-eliminar-programa').forEach(function(btn) {
-                        btn.addEventListener('click', function() { eliminarPrograma(this.getAttribute('data-codigo')); });
-                    });
-                    $('#tablaProgramas').DataTable({
-                        language: window.DATATABLES_LANG_ES || {},
-                        pageLength: 20,
-                        lengthMenu: [[20, 25, 50, 100], [20, 25, 50, 100]],
-                        order: [[5, 'desc']],
-                        dom: '<"dt-top-row"<"flex items-center gap-6" l><"flex items-center gap-2" f>>rt<"dt-bottom-row"<"text-sm text-gray-600" i><"text-sm text-gray-600" p>>',
-                        initComplete: function() {
-                            var wrapper = $('#tablaProgramas').closest('.dataTables_wrapper');
-                            var $length = wrapper.find('.dataTables_length').first();
-                            var $filter = wrapper.find('.dataTables_filter').first();
-                            var $controls = $('#progDtControls');
-                            if ($controls.length && $length.length && $filter.length) {
-                                $controls.append($length, $filter);
-                            }
-                        }
-                    });
+                    renderTablaProgramas(res.data || []);
                 })
                 .catch(function() {});
         }
@@ -617,7 +734,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 var ages = group.map(function(d) { var e = d.edad; return (e !== null && e !== undefined && e !== '' ? String(e).trim() : null); }).filter(Boolean);
                 var merged = {};
                 for (var p in first) if (first.hasOwnProperty(p)) merged[p] = first[p];
-                merged.edad = ages.length > 0 ? ages.join(' - ') : (first.edad !== null && first.edad !== undefined ? String(first.edad) : '');
+                merged.edad = ages.length > 0 ? ages.join(', ') : (first.edad !== null && first.edad !== undefined ? String(first.edad) : '');
                 out.push(merged);
             });
             return out;
@@ -675,26 +792,51 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 .catch(function() { return false; });
         }
 
-        function editarPrograma(codigo) {
+        function abrirModalEditarPrograma(codigo) {
             if (!codigo) return;
-            checkProgramaEnUso(codigo).then(function(enUso) {
-                if (enUso) {
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({ icon: 'warning', title: 'No se puede editar', text: 'Este programa no puede ser editado porque ya ha sido asignado en un cronograma.' });
-                    } else {
-                        alert('Este programa no puede ser editado porque ya ha sido asignado en un cronograma.');
-                    }
-                    return;
-                }
-                var modal = document.getElementById('modalEditarPrograma');
-                var iframe = document.getElementById('iframeEditarPrograma');
-                if (iframe) iframe.src = 'dashboard-programas-registro.php?codigo=' + encodeURIComponent(codigo) + '&editar=1';
-                if (modal) modal.classList.remove('hidden');
-            });
+            window._codigoProgramaEditando = codigo;
+            var modal = document.getElementById('modalEditarPrograma');
+            var iframe = document.getElementById('iframeEditarPrograma');
+            if (iframe) {
+                iframe.src = 'dashboard-programas-registro.php?codigo=' + encodeURIComponent(codigo) + '&editar=1';
+                iframe.onload = function() {
+                    try {
+                        var ctx = getContextoZonaSubzona();
+                        iframe.contentWindow.postMessage({
+                            tipo: 'contextoZonaSubzonaPrograma',
+                            zona: ctx.zona || '',
+                            subzona: ctx.subzona || ''
+                        }, '*');
+                        fetch('check_asignaciones_pasadas.php?codigo=' + encodeURIComponent(codigo), { cache: 'no-store' })
+                            .then(function(r) { return r.json(); })
+                            .then(function(res) {
+                                if (iframe.contentWindow && res && typeof res.tieneAsignacionesPasadas === 'boolean') {
+                                    iframe.contentWindow.postMessage({
+                                        tipo: 'tieneAsignacionesPasadas',
+                                        tieneAsignacionesPasadas: res.tieneAsignacionesPasadas,
+                                        tieneAsignacionesFuturas: typeof res.tieneAsignacionesFuturas === 'boolean' ? res.tieneAsignacionesFuturas : false
+                                    }, '*');
+                                }
+                            })
+                            .catch(function() {});
+                    } catch (err) {}
+                };
+            }
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function editarPrograma(codigo) {
+            abrirModalEditarPrograma(codigo);
         }
 
         function copiarPrograma(codigo) {
             if (!codigo) return;
+            function obtenerSiglaDesdeCodigo(cod) {
+                var raw = (cod || '').toString().trim().toUpperCase();
+                if (!raw) return '';
+                var m = raw.match(/^([A-Z0-9]+)-\d+$/);
+                return m ? m[1] : '';
+            }
             var confirmar = function() {
                 return fetch('get_programa_cab_detalle.php?codigo=' + encodeURIComponent(codigo), { cache: 'no-store' })
                     .then(function(r) { return r.json(); })
@@ -702,11 +844,11 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                         if (!res.success || !res.cab) throw new Error(res.message || 'No se pudo obtener el programa.');
                         var cab = res.cab || {};
                         var detalles = Array.isArray(res.detalles) ? res.detalles : [];
-                        var codTipo = parseInt(cab.codTipo, 10) || 0;
-                        var sigla = (res.sigla || '').toString().trim();
-                        var urlCodigo = codTipo > 0
-                            ? ('generar_codigo_nec.php?codTipo=' + encodeURIComponent(codTipo))
-                            : ('generar_codigo_nec.php?sigla=' + encodeURIComponent(sigla));
+                        var codTipo = parseInt(cab.codTipo || cab.cod_tipo || cab.codigoTipo || cab.tipoCodigo || 0, 10) || 0;
+                        if (codTipo <= 0) {
+                            throw new Error('No se pudo identificar el tipo del programa a copiar.');
+                        }
+                        var urlCodigo = 'generar_codigo_nec.php?codTipo=' + encodeURIComponent(codTipo);
                         return fetch(urlCodigo, { cache: 'no-store' })
                             .then(function(r2) { return r2.json(); })
                             .then(function(resCod) {
@@ -714,10 +856,12 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                                 var payload = {
                                     codigo: resCod.codigo,
                                     nombre: cab.nombre || '',
-                                    codTipo: parseInt(cab.codTipo, 10) || 0,
+                                    codTipo: codTipo,
                                     nomTipo: cab.nomTipo || '',
                                     despliegue: cab.despliegue || '',
                                     descripcion: cab.descripcion || '',
+                                    fechaInicio: (cab.fechaInicio || '').toString().substring(0, 10) || null,
+                                    fechaFin: (cab.fechaFin || '').toString().substring(0, 10) || null,
                                     detalles: detalles
                                 };
                                 return fetch('guardar_programa.php', {
@@ -737,7 +881,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 Swal.fire({
                     icon: 'question',
                     title: 'Copiar programa',
-                    text: 'Se creará una copia del programa con un nuevo código. ¿Continuar?',
+                    text: 'Se creará una copia del programa seleccionado. ¿Continuar?',
                     showCancelButton: true,
                     confirmButtonText: 'Sí, copiar',
                     cancelButtonText: 'Cancelar'
@@ -746,16 +890,34 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     confirmar()
                         .then(function(nuevoCodigo) {
                             Swal.fire({ icon: 'success', title: 'Copiado', text: 'Programa copiado como ' + nuevoCodigo + '.' });
-                            cargarListado();
+                            return fetch('get_programa_cab_detalle.php?codigo=' + encodeURIComponent(nuevoCodigo), { cache: 'no-store' })
+                                .then(function(r) { return r.json(); })
+                                .then(function(res) {
+                                    if (res.success && res.cab) {
+                                        var sigla = (res.cab.sigla || (nuevoCodigo.match(/^([A-Z0-9]+)-\d+$/) || [])[1] || 'PL').toString().trim().toUpperCase();
+                                        if (sigla === 'NEC') sigla = 'NC';
+                                        agregarFilaPrograma({ cab: res.cab, detalles: res.detalles || [], sigla: sigla });
+                                    } else { cargarListado(); }
+                                });
                         })
                         .catch(function(err) {
                             Swal.fire({ icon: 'error', title: 'Error', text: (err && err.message) ? err.message : 'No se pudo copiar el programa.' });
                         });
                 });
             } else {
-                if (!confirm('Se creará una copia del programa con un nuevo código. ¿Continuar?')) return;
+                if (!confirm('Se creará una copia con un nuevo código (mismo prefijo, siguiente número). ¿Continuar?')) return;
                 confirmar()
-                    .then(function() { cargarListado(); })
+                    .then(function(nuevoCodigo) {
+                        return fetch('get_programa_cab_detalle.php?codigo=' + encodeURIComponent(nuevoCodigo), { cache: 'no-store' })
+                            .then(function(r) { return r.json(); })
+                            .then(function(res) {
+                                if (res.success && res.cab) {
+                                    var sigla = (res.cab.sigla || (nuevoCodigo.match(/^([A-Z0-9]+)-\d+$/) || [])[1] || 'PL').toString().trim().toUpperCase();
+                                    if (sigla === 'NEC') sigla = 'NC';
+                                    agregarFilaPrograma({ cab: res.cab, detalles: res.detalles || [], sigla: sigla });
+                                } else { cargarListado(); }
+                            });
+                    })
                     .catch(function(err) { alert((err && err.message) ? err.message : 'No se pudo copiar el programa.'); });
             }
         }
@@ -765,59 +927,69 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             var iframe = document.getElementById('iframeEditarPrograma');
             if (iframe) iframe.src = 'about:blank';
             if (modal) { modal.classList.add('hidden'); modal.classList.remove('modal-editar-expandido'); }
-            cargarListado();
+            var codigo = window._codigoProgramaEditando;
+            window._codigoProgramaEditando = null;
+            if (window._programaGuardadoNuevoCodigo) {
+                cargarListado();
+                window._programaGuardadoNuevoCodigo = null;
+            } else if (codigo) {
+                actualizarFilaPrograma(codigo).catch(function() { cargarListado(); });
+            } else {
+                cargarListado();
+            }
         }
 
         function eliminarPrograma(codigo) {
             if (!codigo) return;
             checkProgramaEnUso(codigo).then(function(enUso) {
-                if (enUso) {
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({ icon: 'warning', title: 'No se puede eliminar', text: 'Este programa no puede ser eliminado porque ya ha sido asignado en un cronograma.' });
-                    } else {
-                        alert('Este programa no puede ser eliminado porque ya ha sido asignado en un cronograma.');
-                    }
-                    return;
-                }
-                var msg = '¿Está seguro de eliminar el programa \'' + (codigo || '').replace(/'/g, "\\'") + '\'?';
+                var codEsc = (codigo || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+                var msgHtml = enUso
+                    ? 'Se eliminará el programa <strong>' + codEsc + '</strong> y <strong>todas las asignaciones relacionadas</strong> en el cronograma.<br><br>Esta es una acción que <strong>no se puede revertir</strong>.<br><br>¿Confirmar eliminación?'
+                    : 'Se eliminará el programa <strong>' + codEsc + '</strong>.<br><br>Esta es una acción que <strong>no se puede revertir</strong>.<br><br>¿Confirmar eliminación?';
+                var msgPlain = enUso
+                    ? 'Se eliminará el programa "' + codigo + '" y todas las asignaciones relacionadas en el cronograma. Esta es una acción que no se puede revertir. ¿Confirmar eliminación?'
+                    : 'Se eliminará el programa "' + codigo + '". Esta es una acción que no se puede revertir. ¿Confirmar eliminación?';
                 if (typeof Swal !== 'undefined') {
                     Swal.fire({
                         title: 'Confirmar eliminación',
-                        text: msg,
-                        icon: 'question',
+                        html: msgHtml,
+                        icon: 'warning',
+                        iconColor: '#d97706',
                         showCancelButton: true,
                         confirmButtonText: 'Sí, eliminar',
-                        cancelButtonText: 'Cancelar'
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#dc2626',
+                        cancelButtonColor: '#6b7280'
                     }).then(function(result) {
-                        if (result.isConfirmed) {
+                            if (result.isConfirmed) {
+                                var form = new FormData();
+                                form.append('codigo', codigo);
+                                fetch('eliminar_programa.php', { method: 'POST', body: form })
+                                    .then(function(r) { return r.json(); })
+                                    .then(function(res) {
+                                        if (res.success) {
+                                            Swal.fire({ icon: 'success', title: 'Eliminado', text: res.message || 'Programa eliminado.' });
+                                            eliminarFilaPrograma(codigo);
+                                        } else {
+                                            Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudo eliminar.' });
+                                        }
+                                    })
+                                    .catch(function() { Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión.' }); });
+                            }
+                        });
+                    } else {
+                        if (confirm(msgPlain)) {
                             var form = new FormData();
-                            form.append('codigo', codigo);
-                            fetch('eliminar_programa.php', { method: 'POST', body: form })
-                                .then(function(r) { return r.json(); })
-                                .then(function(res) {
-                                    if (res.success) {
-                                        Swal.fire({ icon: 'success', title: 'Eliminado', text: res.message || 'Programa eliminado.' });
-                                        cargarListado();
-                                    } else {
-                                        Swal.fire({ icon: 'error', title: 'Error', text: res.message || 'No se pudo eliminar.' });
-                                    }
-                                })
-                                .catch(function() { Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión.' }); });
+                                form.append('codigo', codigo);
+                                fetch('eliminar_programa.php', { method: 'POST', body: form })
+                                    .then(function(r) { return r.json(); })
+                                    .then(function(res) {
+                                        if (res.success) { eliminarFilaPrograma(codigo); }
+                                        else { alert(res.message || 'No se pudo eliminar.'); }
+                                    })
+                                .catch(function() { alert('Error de conexión.'); });
                         }
-                    });
-                } else {
-                    if (confirm(msg)) {
-                        var form = new FormData();
-                        form.append('codigo', codigo);
-                        fetch('eliminar_programa.php', { method: 'POST', body: form })
-                            .then(function(r) { return r.json(); })
-                            .then(function(res) {
-                                if (res.success) { cargarListado(); }
-                                else { alert(res.message || 'No se pudo eliminar.'); }
-                            })
-                            .catch(function() { alert('Error de conexión.'); });
                     }
-                }
             });
         }
 
@@ -856,8 +1028,6 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             if (mf) mf.value = d.getFullYear() + '-12';
             var ft = document.getElementById('filtroTipo');
             if (ft) ft.value = '';
-            var fz = document.getElementById('filtroZona');
-            if (fz) fz.value = '';
             var fdp = document.getElementById('filtroDespliegue');
             if (fdp) fdp.value = '';
             aplicarVisibilidadPeriodoProgramas();
@@ -879,8 +1049,8 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         aplicarVisibilidadPeriodoProgramas();
         document.getElementById('btnExportarPdf').addEventListener('click', function() {
             var p = getParametrosFiltro();
-            var url = 'generar_reporte_programas_filtrado.php?codTipo=' + encodeURIComponent(p.codTipo) + '&periodoTipo=' + encodeURIComponent(p.periodoTipo) + '&fechaUnica=' + encodeURIComponent(p.fechaUnica) + '&fechaInicio=' + encodeURIComponent(p.fechaInicio) + '&fechaFin=' + encodeURIComponent(p.fechaFin) + '&mesUnico=' + encodeURIComponent(p.mesUnico) + '&mesInicio=' + encodeURIComponent(p.mesInicio) + '&mesFin=' + encodeURIComponent(p.mesFin) + '&zona=' + encodeURIComponent(p.zona) + '&despliegue=' + encodeURIComponent(p.despliegue);
-            window.open(url, '_blank', 'noopener');
+            var url = 'generar_reporte_programas_filtrado.php?codTipo=' + encodeURIComponent(p.codTipo) + '&periodoTipo=' + encodeURIComponent(p.periodoTipo) + '&fechaUnica=' + encodeURIComponent(p.fechaUnica) + '&fechaInicio=' + encodeURIComponent(p.fechaInicio) + '&fechaFin=' + encodeURIComponent(p.fechaFin) + '&mesUnico=' + encodeURIComponent(p.mesUnico) + '&mesInicio=' + encodeURIComponent(p.mesInicio) + '&mesFin=' + encodeURIComponent(p.mesFin) + '&despliegue=' + encodeURIComponent(p.despliegue);
+            openPdfConAuth(url);
         });
         document.getElementById('modalDetallesCerrar').addEventListener('click', cerrarModalDetalles);
         document.getElementById('modalDetallesPrograma').addEventListener('click', function(e) { if (e.target === this) cerrarModalDetalles(); });
@@ -891,6 +1061,12 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         document.getElementById('modalEditarBtnCancelar').addEventListener('click', cerrarModalEditarPrograma);
         document.getElementById('modalEditarBtnGuardar').addEventListener('click', function() {
             var iframe = document.getElementById('iframeEditarPrograma');
+            if (iframe && iframe.contentWindow) {
+                try {
+                    var ctx = getContextoZonaSubzona();
+                    iframe.contentWindow.postMessage({ tipo: 'contextoZonaSubzonaPrograma', zona: ctx.zona, subzona: ctx.subzona }, '*');
+                } catch (err) {}
+            }
             if (iframe && iframe.contentWindow && typeof iframe.contentWindow.submitFormPrograma === 'function') {
                 iframe.contentWindow.submitFormPrograma();
             }
@@ -901,12 +1077,43 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             if (ov) ov.classList.add('hidden');
             if (ifr) ifr.src = 'about:blank';
         }
+
+        function mostrarOverlayCargaRecalcular() {
+            var ov = document.getElementById('overlayCargaRecalcular');
+            var bar = document.getElementById('overlayRecalcLoadingBar');
+            if (ov) {
+                if (ov.parentNode !== document.body) document.body.appendChild(ov);
+                ov.classList.remove('hidden');
+            }
+            if (bar) bar.style.width = '0%';
+        }
+        function ocultarOverlayCargaRecalcular() {
+            var ov = document.getElementById('overlayCargaRecalcular');
+            var bar = document.getElementById('overlayRecalcLoadingBar');
+            if (bar) bar.style.width = '100%';
+            setTimeout(function() {
+                if (ov) ov.classList.add('hidden');
+                if (bar) bar.style.width = '0%';
+            }, 300);
+        }
+        function actualizarOverlayRecalcProgreso(pct) {
+            var bar = document.getElementById('overlayRecalcLoadingBar');
+            if (bar) bar.style.width = Math.min(100, Math.max(0, pct)) + '%';
+        }
         document.getElementById('overlayProductoProveedorCerrar').addEventListener('click', cerrarOverlayProductoProveedor);
         document.getElementById('overlayProductoProveedor').addEventListener('click', function(e) {
             if (e.target.id === 'overlayProductoProveedor') cerrarOverlayProductoProveedor();
         });
         window.addEventListener('message', function(e) {
+            /* Reenviar al top (index) para que el overlay cubra toda la app; no mostrar overlay local */
+            if (e.data && (e.data.tipo === 'mostrarModalCargaRecalcular' || e.data.tipo === 'ocultarModalCargaRecalcular' || e.data.tipo === 'recalcProgreso')) {
+                try { window.top.postMessage(e.data, '*'); } catch (err) {}
+            }
             if (e.data && e.data.tipo === 'programaActualizado') { cerrarModalEditarPrograma(); }
+            if (e.data && e.data.tipo === 'programaGuardado' && e.data.success) {
+                window._programaGuardadoNuevoCodigo = e.data.nuevoCodigo || null;
+                cerrarModalEditarPrograma();
+            }
             if (e.data && e.data.tipo === 'abrirModalProducto') {
                 var rowIndex = e.data.rowIndex != null ? e.data.rowIndex : 0;
                 var ov = document.getElementById('overlayProductoProveedor');
@@ -952,14 +1159,41 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     if (d.cerrarAlConfirmar) cerrarModalEditarPrograma();
                 }
             }
+            if (e.data && e.data.tipo === 'mostrarSwalConfirmar') {
+                var d = e.data;
+                var target = e.source;
+                var opts = {
+                    title: d.title || 'Confirmar',
+                    html: d.html || d.text || '',
+                    icon: d.icon || 'warning',
+                    iconColor: d.iconColor || '#d97706',
+                    showCancelButton: true,
+                    confirmButtonText: d.confirmButtonText || 'Sí',
+                    cancelButtonText: d.cancelButtonText || 'Cancelar',
+                    confirmButtonColor: d.confirmButtonColor || '#2563eb',
+                    cancelButtonColor: d.cancelButtonColor || '#6b7280'
+                };
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire(opts).then(function(result) {
+                        try { target.postMessage({ tipo: 'swalConfirmResult', isConfirmed: !!result.isConfirmed }, '*'); } catch (err) {}
+                    });
+                } else {
+                    var ok = confirm((d.title || '') + (d.html || d.text ? '\n' + (d.html || d.text).replace(/<[^>]*>/g, '') : ''));
+                    try { target.postMessage({ tipo: 'swalConfirmResult', isConfirmed: ok }, '*'); } catch (err) {}
+                }
+            }
         });
 
         window._progIconosPage = 0;
-        window._progIconosPageSize = 10;
+        window._progIconosPageSize = 20;
         window._progIconosSearch = '';
 
         function renderizarTarjetasProgramas() {
             var data = window._listadoProgramas || [];
+            var lenDt = parseInt((document.querySelector('#progDtControls .dataTables_length select') || {}).value, 10);
+            if (!isNaN(lenDt) && lenDt > 0) window._progIconosPageSize = lenDt;
+            var inpDt = document.querySelector('#progDtControls .dataTables_filter input');
+            if (inpDt) window._progIconosSearch = inpDt.value || '';
             var q = (window._progIconosSearch || '').toString().trim().toLowerCase();
             var filtrado = q ? data.filter(function(item) {
                 var cab = item.cab || {};
@@ -967,6 +1201,8 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     (cab.nombre || '').toLowerCase().indexOf(q) >= 0 ||
                     (cab.nomTipo || '').toLowerCase().indexOf(q) >= 0 ||
                     (cab.despliegue || '').toLowerCase().indexOf(q) >= 0 ||
+                    (formatearFecha(cab.fechaInicio) || '').toLowerCase().indexOf(q) >= 0 ||
+                    (formatearFecha(cab.fechaFin) || '').toLowerCase().indexOf(q) >= 0 ||
                     (formatearFecha(cab.fechaHoraRegistro) || '').toLowerCase().indexOf(q) >= 0;
             }) : data.slice(0);
             var pageSize = Math.max(1, parseInt(window._progIconosPageSize, 10) || 10);
@@ -996,19 +1232,24 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     '<div class="card-row"><span class="label">Nombre:</span> ' + esc(cab.nombre || '') + '</div>' +
                     '<div class="card-row"><span class="label">Tipo:</span> ' + esc(cab.nomTipo || '') + '</div>' +
                     '<div class="card-row"><span class="label">Despliegue:</span> ' + esc(cab.despliegue || '') + '</div>' +
-                    '<div class="card-row"><span class="label">Fecha:</span> ' + formatearFecha(cab.fechaHoraRegistro) + '</div>' +
+                    '<div class="card-row"><span class="label">Fecha inicio:</span> ' + formatearFecha(cab.fechaInicio) + '</div>' +
+                    '<div class="card-row"><span class="label">Fecha fin:</span> ' + formatearFecha(cab.fechaFin) + '</div>' +
+                    '<div class="card-row"><span class="label">Fecha registro:</span> ' + formatearFecha(cab.fechaHoraRegistro) + '</div>' +
                     '</div>' +
                     '<div class="card-acciones">' +
                     '<button type="button" class="btn-detalles-programa cursor-pointer text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-2 transition" data-codigo="' + codEsc + '" title="Ver"><i class="fas fa-eye"></i> Ver</button>' +
-                    '<a class="text-red-600 hover:text-red-800" title="PDF" target="_blank" rel="noopener" href="' + reporteUrl + '"><i class="fa-solid fa-file-pdf"></i></a>' +
+                    '<button type="button" class="btn-pdf-programa text-red-600 hover:text-red-800 bg-transparent border-0 p-0 cursor-pointer" title="PDF" data-pdf-url="' + (reporteUrl || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;') + '"><i class="fa-solid fa-file-pdf"></i></button>' +
                     '<button type="button" class="btn-copiar-programa text-emerald-600 hover:text-emerald-800" title="Copiar" data-codigo="' + codEsc + '"><i class="fa-solid fa-copy"></i></button>' +
-                    '<button type="button" class="btn-editar-programa text-indigo-600 hover:text-indigo-800" title="Editar" data-codigo="' + codEsc + '"><i class="fa-solid fa-edit"></i></button>' +
-                    '<button type="button" class="btn-eliminar-programa text-rose-600 hover:text-rose-800" title="Eliminar" data-codigo="' + codEsc + '"><i class="fa-solid fa-trash"></i></button>' +
+                    '<button type="button" class="btn-editar-programa inline-flex items-center px-2 py-1 text-indigo-600 hover:bg-indigo-50 rounded text-sm" title="Editar" data-codigo="' + codEsc + '"><i class="fa-solid fa-edit"></i></button>' +
+                    '<button type="button" class="btn-eliminar-programa inline-flex items-center px-2 py-1 text-rose-600 hover:bg-rose-50 rounded text-sm" title="Eliminar" data-codigo="' + codEsc + '"><i class="fa-solid fa-trash"></i></button>' +
                     '</div></div>';
                 cont.appendChild(card);
             });
             cont.querySelectorAll('.btn-detalles-programa').forEach(function(btn) {
                 btn.addEventListener('click', function() { abrirModalDetalles(this.getAttribute('data-codigo')); });
+            });
+            cont.querySelectorAll('.btn-pdf-programa').forEach(function(btn) {
+                btn.addEventListener('click', function() { openPdfConAuth(this.getAttribute('data-pdf-url')); });
             });
             cont.querySelectorAll('.btn-editar-programa').forEach(function(btn) {
                 btn.addEventListener('click', function() { editarPrograma(this.getAttribute('data-codigo')); });
@@ -1052,37 +1293,12 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             if (btnLista) btnLista.classList.toggle('active', esLista);
             if (btnIconos) btnIconos.classList.toggle('active', !esLista);
             if (esLista) {
-                if (progIconos && progDt) {
-                    var filterEl = progIconos.querySelector('.dataTables_filter');
-                    if (filterEl) { progIconos.removeChild(filterEl); progDt.appendChild(filterEl); }
-                }
                 if (progIconos) progIconos.style.display = 'none';
                 if (progDt) progDt.style.display = '';
             } else {
-                if (progDt && progIconos) {
-                    var filterEl = progDt.querySelector('.dataTables_filter');
-                    if (filterEl) { progDt.removeChild(filterEl); progIconos.appendChild(filterEl); }
-                }
-                if (progDt) progDt.style.display = 'none';
-                if (progIconos) progIconos.style.display = '';
-                var toolbarRow = progIconos.querySelector('.iconos-toolbar-row');
-                if (!toolbarRow) {
-                    var lengthOptions = [5, 10, 25, 50];
-                    var len = window._progIconosPageSize;
-                    var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
-                        lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select><span>registros</span></label>';
-                    toolbarRow = document.createElement('div');
-                    toolbarRow.className = 'iconos-toolbar-row flex flex-wrap items-center gap-3';
-                    toolbarRow.innerHTML = lengthSelect;
-                    progIconos.insertBefore(toolbarRow, progIconos.firstChild);
-                    if (progIconos.querySelector('.dataTables_filter')) toolbarRow.appendChild(progIconos.querySelector('.dataTables_filter'));
-                    toolbarRow.querySelector('.cards-length-select').addEventListener('change', function() {
-                        window._progIconosPageSize = parseInt(this.value, 10) || 10;
-                        window._progIconosPage = 0;
-                        renderizarTarjetasProgramas();
-                    });
-                }
-                var searchInput = document.querySelector('#progIconosControls .dataTables_filter input');
+                if (progDt) progDt.style.display = '';
+                if (progIconos) progIconos.style.display = 'none';
+                var searchInput = document.querySelector('#progDtControls .dataTables_filter input');
                 if (searchInput) {
                     window._progIconosSearch = searchInput.value || '';
                     searchInput.removeEventListener('input', window._progSearchHandler);
@@ -1097,8 +1313,15 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         document.getElementById('btnViewListaProg').addEventListener('click', function() { aplicarVistaProgramas('lista'); });
         document.getElementById('btnViewIconosProg').addEventListener('click', function() { aplicarVistaProgramas('iconos'); });
 
+        (function vistaInicialProgramas() {
+            var w = window.innerWidth;
+            var vistaInicial = w < 768 ? 'iconos' : 'lista';
+            aplicarVistaProgramas(vistaInicial);
+        })();
+
         cargarTiposParaFiltro();
         cargarListado();
     </script>
+     <link rel="stylesheet" href="../../css/dashboard-config.css">
 </body>
 </html>

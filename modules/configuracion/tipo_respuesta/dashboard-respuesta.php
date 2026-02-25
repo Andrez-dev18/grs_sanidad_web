@@ -12,8 +12,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión.");
 }
@@ -444,6 +444,58 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             }
 
           var tableRespuesta;
+          var searchDebounceResp = null;
+          var RESP_LENGTH_OPTIONS = [20, 25, 50, 100];
+          var respPageLengthSel = 20;
+
+          function normalizarPageLengthResp(v) {
+              var n = parseInt(v, 10);
+              return RESP_LENGTH_OPTIONS.indexOf(n) >= 0 ? n : 20;
+          }
+
+          function renderizarControlesDtResp($container, rowClass) {
+              if (!$container || !$container.length || !tableRespuesta) return;
+              var rowSelector = '.' + rowClass;
+              if (!$container.find(rowSelector).length) {
+                  var html = '<div class="' + rowClass + ' flex flex-wrap items-center gap-3">' +
+                      '<div class="dataTables_length"><label>Mostrar ' +
+                      '<select class="js-resp-len dt-toolbar-length-select cards-length-select">' +
+                      '<option value="20">20</option><option value="25">25</option><option value="50">50</option><option value="100">100</option>' +
+                      '</select> registros</label></div>' +
+                      '<div class="dataTables_filter"><label>Buscar <input type="search" class="js-resp-search" placeholder=""></label></div>' +
+                      '</div>';
+                  $container.html(html);
+              }
+              if (!$container.data('respControlsBound')) {
+                  $container.on('change.resp', '.js-resp-len', function () {
+                      var val = parseInt($(this).val(), 10);
+                      if (tableRespuesta && !isNaN(val)) {
+                          respPageLengthSel = normalizarPageLengthResp(val);
+                          tableRespuesta.page.len(respPageLengthSel).draw(false);
+                      }
+                  });
+                  $container.on('input.resp', '.js-resp-search', function () {
+                      var val = ($(this).val() || '').toString();
+                      if (searchDebounceResp) clearTimeout(searchDebounceResp);
+                      searchDebounceResp = setTimeout(function () {
+                          if (tableRespuesta && tableRespuesta.search() !== val) tableRespuesta.search(val).draw();
+                      }, 220);
+                  });
+                  $container.data('respControlsBound', true);
+              }
+              var len = String(tableRespuesta.page.len());
+              var search = tableRespuesta.search() || '';
+              var $len = $container.find('.js-resp-len');
+              var $search = $container.find('.js-resp-search');
+              if ($len.val() !== len) $len.val(len);
+              if (!$search.is(':focus') && $search.val() !== search) $search.val(search);
+          }
+
+          function sincronizarControlesResp() {
+              if (!tableRespuesta) return;
+              renderizarControlesDtResp($('#respuestaDtControls'), 'respuesta-dt-toolbar-row');
+              renderizarControlesDtResp($('#respuestaIconosControls'), 'respuesta-iconos-toolbar-row');
+          }
           function actualizarVistaInicialResp() {
               var w = $(window).width();
               var w$ = $('#tablaRespuestaWrapper');
@@ -452,6 +504,10 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                   $('#btnViewIconosResp').toggleClass('active', w$.attr('data-vista') === 'iconos');
                   $('#btnViewTablaResp').toggleClass('active', w$.attr('data-vista') === 'tabla');
               }
+              var vista = w$.attr('data-vista') || 'tabla';
+              $('#respuestaDtControls').toggle(vista === 'tabla');
+              $('#respuestaIconosControls').toggle(vista === 'iconos');
+              sincronizarControlesResp();
           }
           function renderizarTarjetasResp() {
               if (!tableRespuesta) return;
@@ -482,24 +538,35 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                   '<div class="flex gap-2"><button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="tableRespuesta && tableRespuesta.page(\'previous\').draw(false); renderizarTarjetasResp();">Anterior</button>' +
                   '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="tableRespuesta && tableRespuesta.page(\'next\').draw(false); renderizarTarjetasResp();">Siguiente</button></div>';
               $('#cardsPaginationResp').html(pagHtml);
+              sincronizarControlesResp();
           }
           tableRespuesta = $('#tablaRespuesta').DataTable({
+              dom: 'rtip',
               language: window.DATATABLES_LANG_ES || {},
-              pageLength: 20,
-              lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, "Todos"]],
+              pageLength: normalizarPageLengthResp(respPageLengthSel),
+              lengthMenu: [[20, 25, 50, 100], [20, 25, 50, 100]],
+              ordering: false,
               order: [[0, 'asc']],
-              drawCallback: function() { renderizarTarjetasResp(); }
+              orderClasses: false,
+              drawCallback: function() { renderizarTarjetasResp(); },
+              initComplete: function() { sincronizarControlesResp(); }
           });
           actualizarVistaInicialResp();
           $('#btnViewIconosResp').on('click', function() {
               $('#tablaRespuestaWrapper').attr('data-vista', 'iconos');
               $('#btnViewIconosResp').addClass('active');
               $('#btnViewTablaResp').removeClass('active');
+              $('#respuestaDtControls').hide();
+              $('#respuestaIconosControls').show();
+              sincronizarControlesResp();
           });
           $('#btnViewTablaResp').on('click', function() {
               $('#tablaRespuestaWrapper').attr('data-vista', 'tabla');
               $('#btnViewTablaResp').addClass('active');
               $('#btnViewIconosResp').removeClass('active');
+              $('#respuestaDtControls').show();
+              $('#respuestaIconosControls').hide();
+              sincronizarControlesResp();
           });
           $(window).on('resize', function() {
               if (!$('#tablaRespuestaWrapper').attr('data-vista')) return;

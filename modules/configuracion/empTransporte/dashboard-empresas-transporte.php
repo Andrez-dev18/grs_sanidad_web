@@ -14,8 +14,8 @@ if (empty($_SESSION['active'])) {
 
 
 //ruta relativa a la conexion
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -238,7 +238,9 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 pageLength: 20,
                 lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, 'Todos']],
                 language: window.DATATABLES_LANG_ES || {},
-                order: [[1, 'asc']],
+                ordering: false,
+                order: [[0, 'asc']],
+                orderClasses: false,
                 columnDefs: [{ orderable: false, targets: [0, 2] }],
                 initComplete: function() {
                     var wrapper = $t.closest('.dataTables_wrapper');
@@ -246,7 +248,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     var $length = wrapper.find('.dataTables_length').first();
                     var $filter = wrapper.find('.dataTables_filter').first();
                     if ($controls.length && $length.length && $filter.length) {
-                        $controls.append($length, $filter);
+                        $controls.empty().append($length, $filter);
                     }
                 }
             });

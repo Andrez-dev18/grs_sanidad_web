@@ -12,8 +12,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión.");
 }
@@ -359,7 +359,9 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     language: window.DATATABLES_LANG_ES || {},
                     pageLength: 20,
                     lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, "Todos"]],
+                    ordering: false,
                     order: [[0, 'asc']],
+                    orderClasses: false,
                     columnDefs: [{ orderable: false, targets: [3] }],
                     dom: '<"dt-top-row"<"flex items-center gap-6" l><"flex items-center gap-2" f>>rt<"dt-bottom-row"<"text-sm text-gray-600" i><"text-sm text-gray-600" p>>',
                     initComplete: function() {
@@ -368,7 +370,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                         var $filter = wrapper.find('.dataTables_filter').first();
                         var $controls = $('#analisisDtControls');
                         if ($controls.length && $length.length && $filter.length) {
-                            $controls.append($length, $filter);
+                            $controls.empty().append($length, $filter);
                         }
                     },
                     drawCallback: function() { renderizarTarjetasAna(); }
@@ -383,15 +385,11 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     $('#btnViewTablaAna').toggleClass('active', esLista);
                     $('#btnViewIconosAna').toggleClass('active', !esLista);
                     if (esLista) {
-                        var filterEl = $('#analisisIconosControls .dataTables_filter').detach();
-                        if (filterEl.length) $('#analisisDtControls').append(filterEl);
                         $('#analisisIconosControls').hide();
                         $('#analisisDtControls').show();
                     } else {
-                        var filterEl = $('#analisisDtControls .dataTables_filter').detach();
-                        if (filterEl.length) $('#analisisIconosControls').append(filterEl);
-                        $('#analisisDtControls').hide();
-                        $('#analisisIconosControls').show();
+                        $('#analisisDtControls').show();
+                        $('#analisisIconosControls').hide();
                         if (typeof renderizarTarjetasAna === 'function') renderizarTarjetasAna();
                     }
                 }

@@ -1,6 +1,6 @@
 <?php
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 $analisis = $_POST['analisis'] ?? null;
 if (!$analisis) exit('[]');
 $stmt = $conexion->prepare("SELECT codigo, tipo FROM san_dim_tiporesultado WHERE analisis = ?");

@@ -1,13 +1,16 @@
 <?php
 header('Content-Type: application/json');
+@ini_set('max_execution_time', '0');
+@set_time_limit(0);
+@ini_set('memory_limit', '512M');
 session_start();
 if (empty($_SESSION['active'])) {
     http_response_code(401);
     echo json_encode(['success' => false, 'data' => []]);
     exit;
 }
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     echo json_encode(['success' => false, 'data' => []]);
     exit;
@@ -22,7 +25,9 @@ $mesInicio = trim((string)($_GET['mesInicio'] ?? ''));
 $mesFin = trim((string)($_GET['mesFin'] ?? ''));
 $codTipo = trim((string)($_GET['codTipo'] ?? ''));
 $mesEjecucion = trim((string)($_GET['mesEjecucion'] ?? ''));
-$porFechaEjecucion = !empty($_GET['porFechaEjecucion']);
+$modo = trim((string)($_GET['modo'] ?? ''));
+// Por defecto filtrar por fecha de ejecución (calendario siempre usa este criterio)
+$porFechaEjecucion = !isset($_GET['porFechaEjecucion']) ? true : !empty($_GET['porFechaEjecucion']);
 
 // Filtro por mes de ejecución (para calendario): prioridad sobre periodo de registro
 $rangoEjecucion = null;
@@ -85,18 +90,30 @@ if ($codTipo !== '') {
 } else {
     $joinTipo = " LEFT JOIN san_fact_programa_cab cab ON cab.codigo = c.codPrograma ";
 }
-$sql = "SELECT c.id, c.codPrograma, c.nomPrograma, c.granja, c.campania, c.galpon, c.fechaCarga, c.fechaEjecucion";
-if ($joinTipo !== '') $sql .= ", cab.codTipo AS codTipo";
-if ($tieneFechaHora) $sql .= ", c.fechaHoraRegistro";
-if ($tieneNomGranja) $sql .= ", c.nomGranja";
-if ($tieneEdad) $sql .= ", c.edad";
-if ($tienePosDetalle) $sql .= ", c.posDetalle";
-if ($tieneNumCronograma) $sql .= ", c.numCronograma";
-if ($tieneZona) $sql .= ", c.zona";
-if ($tieneSubzona) $sql .= ", c.subzona";
-$sql .= " FROM san_fact_cronograma c";
-$sql .= $joinTipo;
-$sql .= " WHERE " . ($whereTipo ?: " 1=1 ");
+$esResumenLigero = ($modo === 'resumen_ligero');
+if ($esResumenLigero) {
+    $groupField = $tieneNumCronograma ? 'c.numCronograma' : 'c.codPrograma';
+    $sql = "SELECT " . ($tieneNumCronograma ? "c.numCronograma AS numCronograma" : "0 AS numCronograma")
+        . ", MIN(c.codPrograma) AS codPrograma"
+        . ", MIN(c.nomPrograma) AS nomPrograma";
+    if ($joinTipo !== '') $sql .= ", MIN(cab.codTipo) AS codTipo";
+    $sql .= " FROM san_fact_cronograma c";
+    $sql .= $joinTipo;
+    $sql .= " WHERE " . ($whereTipo ?: " 1=1 ");
+} else {
+    $sql = "SELECT c.id, c.codPrograma, c.nomPrograma, c.granja, c.campania, c.galpon, c.fechaCarga, c.fechaEjecucion";
+    if ($joinTipo !== '') $sql .= ", cab.codTipo AS codTipo";
+    if ($tieneFechaHora) $sql .= ", c.fechaHoraRegistro";
+    if ($tieneNomGranja) $sql .= ", c.nomGranja";
+    if ($tieneEdad) $sql .= ", c.edad";
+    if ($tienePosDetalle) $sql .= ", c.posDetalle";
+    if ($tieneNumCronograma) $sql .= ", c.numCronograma";
+    if ($tieneZona) $sql .= ", c.zona";
+    if ($tieneSubzona) $sql .= ", c.subzona";
+    $sql .= " FROM san_fact_cronograma c";
+    $sql .= $joinTipo;
+    $sql .= " WHERE " . ($whereTipo ?: " 1=1 ");
+}
 
 if ($rangoEjecucion !== null && isset($rangoEjecucion['desde'], $rangoEjecucion['hasta'])) {
     $sql .= " AND DATE(c.fechaEjecucion) >= ? AND DATE(c.fechaEjecucion) <= ? ";
@@ -111,7 +128,12 @@ if ($rangoEjecucion !== null && isset($rangoEjecucion['desde'], $rangoEjecucion[
     $types .= 'ss';
 }
 
-$sql .= " ORDER BY " . ($tieneNumCronograma ? "c.numCronograma DESC, " : "") . "c.codPrograma, c.granja, c.campania, c.galpon, c.fechaEjecucion ASC";
+if ($esResumenLigero) {
+    $sql .= " GROUP BY " . $groupField;
+    $sql .= " ORDER BY " . ($tieneNumCronograma ? "numCronograma DESC, " : "") . "codPrograma ASC";
+} else {
+    $sql .= " ORDER BY " . ($tieneNumCronograma ? "c.numCronograma DESC, " : "") . "c.codPrograma, c.granja, c.campania, c.galpon, c.fechaEjecucion ASC";
+}
 
 if (count($params) > 0) {
     $stmt = $conn->prepare($sql);
@@ -135,25 +157,35 @@ $lista = [];
 $num = 0;
 while ($row = $res->fetch_assoc()) {
     $num++;
-    $lista[] = [
-        'num' => $num,
-        'id' => (int)($row['id'] ?? 0),
-        'codPrograma' => $row['codPrograma'] ?? '',
-        'nomPrograma' => $row['nomPrograma'] ?? '',
-        'fechaHoraRegistro' => $tieneFechaHora ? ($row['fechaHoraRegistro'] ?? '') : ($row['fechaCarga'] ?? ''),
-        'granja' => $row['granja'] ?? '',
-        'nomGranja' => $tieneNomGranja ? ($row['nomGranja'] ?? '') : '',
-        'campania' => $row['campania'] ?? '',
-        'galpon' => $row['galpon'] ?? '',
-        'fechaCarga' => $row['fechaCarga'] ?? '',
-        'fechaEjecucion' => $row['fechaEjecucion'] ?? '',
-        'edad' => $tieneEdad ? ($row['edad'] ?? '') : '',
-        'posDetalle' => $tienePosDetalle ? ($row['posDetalle'] ?? '') : '',
-        'numCronograma' => $tieneNumCronograma ? (int)($row['numCronograma'] ?? 0) : 0,
-        'codTipo' => isset($row['codTipo']) ? (string)$row['codTipo'] : null,
-        'zona' => $tieneZona ? ($row['zona'] ?? '') : '',
-        'subzona' => $tieneSubzona ? ($row['subzona'] ?? '') : ''
-    ];
+    if ($esResumenLigero) {
+        $numCrono = $tieneNumCronograma ? (int)($row['numCronograma'] ?? 0) : $num;
+        $lista[] = [
+            'numCronograma' => $numCrono,
+            'codPrograma' => $row['codPrograma'] ?? '',
+            'nomPrograma' => $row['nomPrograma'] ?? '',
+            'codTipo' => isset($row['codTipo']) ? (string)$row['codTipo'] : null
+        ];
+    } else {
+        $lista[] = [
+            'num' => $num,
+            'id' => (int)($row['id'] ?? 0),
+            'codPrograma' => $row['codPrograma'] ?? '',
+            'nomPrograma' => $row['nomPrograma'] ?? '',
+            'fechaHoraRegistro' => $tieneFechaHora ? ($row['fechaHoraRegistro'] ?? '') : ($row['fechaCarga'] ?? ''),
+            'granja' => $row['granja'] ?? '',
+            'nomGranja' => $tieneNomGranja ? ($row['nomGranja'] ?? '') : '',
+            'campania' => $row['campania'] ?? '',
+            'galpon' => $row['galpon'] ?? '',
+            'fechaCarga' => $row['fechaCarga'] ?? '',
+            'fechaEjecucion' => $row['fechaEjecucion'] ?? '',
+            'edad' => $tieneEdad ? ($row['edad'] ?? '') : '',
+            'posDetalle' => $tienePosDetalle ? ($row['posDetalle'] ?? '') : '',
+            'numCronograma' => $tieneNumCronograma ? (int)($row['numCronograma'] ?? 0) : 0,
+            'codTipo' => isset($row['codTipo']) ? (string)$row['codTipo'] : null,
+            'zona' => $tieneZona ? ($row['zona'] ?? '') : '',
+            'subzona' => $tieneSubzona ? ($row['subzona'] ?? '') : ''
+        ];
+    }
 }
 if (isset($stmt)) $stmt->close();
 echo json_encode(['success' => true, 'data' => $lista]);

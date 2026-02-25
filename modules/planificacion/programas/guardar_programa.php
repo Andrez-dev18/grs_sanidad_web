@@ -7,8 +7,8 @@ if (empty($_SESSION['active'])) {
     exit;
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     http_response_code(500);
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
@@ -20,10 +20,14 @@ $codigo = trim($input['codigo'] ?? '');
 $nombre = trim($input['nombre'] ?? '');
 $codTipo = (int)($input['codTipo'] ?? 0);
 $nomTipo = trim($input['nomTipo'] ?? '');
-$zona = ''; // Ya no se registra zona
+$zona = '';
+$subzona = '';
 $despliegue = trim($input['despliegue'] ?? '');
 $descripcion = trim($input['descripcion'] ?? '');
+$fechaInicio = trim($input['fechaInicio'] ?? '');
+$fechaFin = isset($input['fechaFin']) && $input['fechaFin'] !== '' && $input['fechaFin'] !== null ? trim($input['fechaFin']) : null;
 $detalles = isset($input['detalles']) && is_array($input['detalles']) ? $input['detalles'] : [];
+
 
 if (empty($codigo) || empty($nombre) || $codTipo <= 0) {
     $conn->close();
@@ -54,24 +58,55 @@ $chkEdadCab = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'edad'
 $tieneEdadCab = $chkEdadCab && $chkEdadCab->fetch_assoc();
 $chkDespliegueCab = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'despliegue'");
 $tieneDespliegueCab = $chkDespliegueCab && $chkDespliegueCab->fetch_assoc();
+$chkFechaInicioCab = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'fechaInicio'");
+$tieneFechasCab = $chkFechaInicioCab && $chkFechaInicioCab->fetch_assoc();
+if ($tieneFechasCab && $fechaInicio === '') {
+    $conn->close();
+    echo json_encode(['success' => false, 'message' => 'La fecha de inicio es obligatoria.']);
+    exit;
+}
 if ($tieneEdadCab && $tieneDespliegueCab) {
     $edadCab = (count($detalles) > 0 && isset($detalles[0]['edad'])) ? (int)$detalles[0]['edad'] : 0;
-    $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, edad, zona, despliegue, descripcion, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
-    if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
-    $stmtCab->bind_param("ssisissss", $codigo, $nombre, $codTipo, $nomTipo, $edadCab, $zona, $despliegue, $descripcion, $usuarioRegistro);
+    if ($tieneFechasCab) {
+        $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, edad, zona, despliegue, descripcion, fechaInicio, fechaFin, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+        if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
+        $stmtCab->bind_param("ssisissssss", $codigo, $nombre, $codTipo, $nomTipo, $edadCab, $zona, $despliegue, $descripcion, $fechaInicio, $fechaFin, $usuarioRegistro);
+    } else {
+        $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, edad, zona, despliegue, descripcion, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+        if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
+        $stmtCab->bind_param("ssisissss", $codigo, $nombre, $codTipo, $nomTipo, $edadCab, $zona, $despliegue, $descripcion, $usuarioRegistro);
+    }
 } elseif ($tieneDespliegueCab) {
-    $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, zona, despliegue, descripcion, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
-    if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
-    $stmtCab->bind_param("ssisssss", $codigo, $nombre, $codTipo, $nomTipo, $zona, $despliegue, $descripcion, $usuarioRegistro);
+    if ($tieneFechasCab) {
+        $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, zona, despliegue, descripcion, fechaInicio, fechaFin, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+        if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
+        $stmtCab->bind_param("ssisssssss", $codigo, $nombre, $codTipo, $nomTipo, $zona, $despliegue, $descripcion, $fechaInicio, $fechaFin, $usuarioRegistro);
+    } else {
+        $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, zona, despliegue, descripcion, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+        if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
+        $stmtCab->bind_param("ssisssss", $codigo, $nombre, $codTipo, $nomTipo, $zona, $despliegue, $descripcion, $usuarioRegistro);
+    }
 } elseif ($tieneEdadCab) {
     $edadCab = (count($detalles) > 0 && isset($detalles[0]['edad'])) ? (int)$detalles[0]['edad'] : 0;
-    $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, edad, zona, descripcion, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
-    if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
-    $stmtCab->bind_param("ssisisss", $codigo, $nombre, $codTipo, $nomTipo, $edadCab, $zona, $descripcion, $usuarioRegistro);
+    if ($tieneFechasCab) {
+        $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, edad, zona, descripcion, fechaInicio, fechaFin, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+        if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
+        $stmtCab->bind_param("ssisisssss", $codigo, $nombre, $codTipo, $nomTipo, $edadCab, $zona, $descripcion, $fechaInicio, $fechaFin, $usuarioRegistro);
+    } else {
+        $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, edad, zona, descripcion, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+        if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
+        $stmtCab->bind_param("ssisisss", $codigo, $nombre, $codTipo, $nomTipo, $edadCab, $zona, $descripcion, $usuarioRegistro);
+    }
 } else {
-    $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, zona, descripcion, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)");
-    if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
-    $stmtCab->bind_param("ssissss", $codigo, $nombre, $codTipo, $nomTipo, $zona, $descripcion, $usuarioRegistro);
+    if ($tieneFechasCab) {
+        $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, zona, descripcion, fechaInicio, fechaFin, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)");
+        if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
+        $stmtCab->bind_param("ssissssss", $codigo, $nombre, $codTipo, $nomTipo, $zona, $descripcion, $fechaInicio, $fechaFin, $usuarioRegistro);
+    } else {
+        $stmtCab = $conn->prepare("INSERT INTO san_fact_programa_cab (codigo, nombre, codTipo, nomTipo, zona, descripcion, fechaHoraRegistro, usuarioRegistro) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)");
+        if (!$stmtCab) { $conn->close(); echo json_encode(['success' => false, 'message' => 'Error: ' . $conn->error]); exit; }
+        $stmtCab->bind_param("ssissss", $codigo, $nombre, $codTipo, $nomTipo, $zona, $descripcion, $usuarioRegistro);
+    }
 }
 if (!$stmtCab->execute()) {
     $stmtCab->close();
@@ -112,8 +147,6 @@ foreach ($detalles as $d) {
     $unidadDosis = trim($d['unidadDosis'] ?? '');
     $numeroFrascos = trim($d['numeroFrascos'] ?? '');
     $edad = isset($d['edad']) ? (int)$d['edad'] : 0;
-    if ($edad < 0) $edad = 0;
-    if ($edad > 45) $edad = 45;
     $descripcionVacuna = trim($d['descripcionVacuna'] ?? '');
     // descripcionVacuna solo si el producto es vacuna (san_rel_vacuna_enfermedad: codVacuna = mitm.codigo o codProducto)
     if ($descripcionVacuna !== '' && $codProducto !== '') {

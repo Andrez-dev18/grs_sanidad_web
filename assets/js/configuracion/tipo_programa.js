@@ -10,14 +10,24 @@ function aplicarVisibilidadVistaTipoProg() {
     if (tarjetasWrap) tarjetasWrap.style.display = vista === 'iconos' ? 'block' : 'none';
     if (btnLista) btnLista.classList.toggle('active', vista === 'tabla');
     if (btnIconos) btnIconos.classList.toggle('active', vista === 'iconos');
+    if (typeof window.syncControlesTipoPrograma === 'function') window.syncControlesTipoPrograma();
 }
 
 function renderizarTarjetasTipoProg() {
-    var tbody = document.getElementById('tipoProgramaTableBody');
     var cont = document.getElementById('cardsContainerTipoProg');
-    if (!tbody || !cont) return;
+    if (!cont) return;
     cont.innerHTML = '';
-    var rows = tbody.querySelectorAll('tr[data-codigo][data-nombre]');
+    var rows = [];
+    if (window.tableTipoProgramaDt && typeof window.tableTipoProgramaDt.rows === 'function') {
+        window.tableTipoProgramaDt.rows({ page: 'current' }).every(function() {
+            var node = this.node();
+            if (node) rows.push(node);
+        });
+    } else {
+        var tbody = document.getElementById('tipoProgramaTableBody');
+        if (!tbody) return;
+        rows = Array.prototype.slice.call(tbody.querySelectorAll('tr[data-codigo][data-nombre]'));
+    }
     rows.forEach(function(tr, i) {
         var codigo = tr.getAttribute('data-codigo');
         var nombre = tr.getAttribute('data-nombre') || '';
@@ -39,6 +49,17 @@ function renderizarTarjetasTipoProg() {
             '</div>';
         cont.appendChild(card);
     });
+    var pag = document.getElementById('cardsPaginationTipoProg');
+    if (pag) {
+        if (window.tableTipoProgramaDt && typeof window.tableTipoProgramaDt.page === 'function') {
+            var info = window.tableTipoProgramaDt.page.info();
+            pag.innerHTML = (typeof buildPaginationIconos === 'function')
+                ? buildPaginationIconos(info)
+                : ('<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>');
+        } else {
+            pag.innerHTML = '';
+        }
+    }
 }
 
 function initVistaTipoProg() {
@@ -48,6 +69,7 @@ function initVistaTipoProg() {
     wrapper.setAttribute('data-vista', vistaInicial);
     renderizarTarjetasTipoProg();
     aplicarVisibilidadVistaTipoProg();
+    if (typeof window.syncControlesTipoPrograma === 'function') window.syncControlesTipoPrograma();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -58,6 +80,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnLista.addEventListener('click', function() {
             if (wrapper) wrapper.setAttribute('data-vista', 'tabla');
             aplicarVisibilidadVistaTipoProg();
+            if (typeof window.syncControlesTipoPrograma === 'function') window.syncControlesTipoPrograma();
         });
     }
     if (btnIconos) {
@@ -65,6 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (wrapper) wrapper.setAttribute('data-vista', 'iconos');
             renderizarTarjetasTipoProg();
             aplicarVisibilidadVistaTipoProg();
+            if (typeof window.syncControlesTipoPrograma === 'function') window.syncControlesTipoPrograma();
         });
     }
     initVistaTipoProg();

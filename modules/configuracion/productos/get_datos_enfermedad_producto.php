@@ -6,8 +6,8 @@ if (empty($_SESSION['active'])) {
     exit;
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
     exit;
@@ -22,7 +22,7 @@ if ($codigo === '') {
 $codEnfermedades = [];
 $descripcion = '';
 
-// Enfermedades desde san_rel_vacuna_enfermedad: codVacuna = código mitm, o codProducto si migrado
+
 $chkVac = @$conn->query("SHOW COLUMNS FROM san_rel_vacuna_enfermedad LIKE 'codVacuna'");
 $colVacuna = ($chkVac && $chkVac->fetch_assoc()) ? 'codVacuna' : 'codProducto';
 $st = $conn->prepare("SELECT e.cod_enf, e.nom_enf FROM san_rel_vacuna_enfermedad r INNER JOIN tenfermedades e ON e.cod_enf = r.codEnfermedad WHERE r." . $colVacuna . " = ? ORDER BY e.nom_enf");

@@ -1,10 +1,10 @@
 <?php
 session_start();
 
-include '../../../../conexion_grs_joya/conexion.php';
+include '../../../../conexion_grs/conexion.php';
 include '../../../includes/historial_resultados.php';
 
-$conn = conectar_joya();
+$conn = conectar_joya_mysqli();
 
 // === RUTAS CORRECTAS DENTRO DEL PROYECTO ===
 $basePath = __DIR__ . '/';                          // Carpeta donde está este archivo PHP

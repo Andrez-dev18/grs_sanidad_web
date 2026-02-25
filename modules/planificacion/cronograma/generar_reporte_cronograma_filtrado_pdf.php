@@ -1,9 +1,31 @@
 <?php
 session_start();
-if (empty($_SESSION['active'])) {
-    header('HTTP/1.1 401 Unauthorized');
-    exit('No autorizado');
+
+function fecha_ymd_valida($s) {
+    if (!is_string($s) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $s)) return false;
+    $d = DateTime::createFromFormat('Y-m-d', $s);
+    return $d && $d->format('Y-m-d') === $s;
 }
+
+// Sin token: habilitar acceso público solo para PDF de un día específico
+// (periodo ENTRE_FECHAS con fechaInicio == fechaFin).
+$accesoPublicoDia = false;
+if (empty($_SESSION['active'])) {
+    $pt = trim((string)($_GET['periodoTipo'] ?? ''));
+    $fi = trim((string)($_GET['fechaInicio'] ?? ''));
+    $ff = trim((string)($_GET['fechaFin'] ?? ''));
+    if ($pt === 'ENTRE_FECHAS' && fecha_ymd_valida($fi) && $fi === $ff && fecha_ymd_valida($ff)) {
+        $accesoPublicoDia = true;
+    }
+    if (!$accesoPublicoDia) {
+        header('HTTP/1.1 401 Unauthorized');
+        exit('No autorizado');
+    }
+}
+
+// Reportes grandes pueden tardar más de 30s al renderizar mPDF.
+@ini_set('max_execution_time', '0');
+@set_time_limit(0);
 
 $periodoTipo = trim((string)($_GET['periodoTipo'] ?? ''));
 $fechaUnica = trim((string)($_GET['fechaUnica'] ?? ''));
@@ -13,7 +35,8 @@ $mesUnico = trim((string)($_GET['mesUnico'] ?? ''));
 $mesInicio = trim((string)($_GET['mesInicio'] ?? ''));
 $mesFin = trim((string)($_GET['mesFin'] ?? ''));
 $codTipo = trim((string)($_GET['codTipo'] ?? ''));
-$porFechaEjecucion = !empty($_GET['porFechaEjecucion']);
+// Por defecto filtrar por fecha de ejecución (calendario siempre usa este criterio)
+$porFechaEjecucion = !isset($_GET['porFechaEjecucion']) ? true : !empty($_GET['porFechaEjecucion']);
 
 $rango = null;
 if ($periodoTipo !== '' && $periodoTipo !== 'TODOS') {
@@ -35,8 +58,8 @@ if ($periodoTipo !== '' && $periodoTipo !== 'TODOS') {
     }
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) exit('Error de conexión');
 
 $chk = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'nomGranja'");
@@ -162,7 +185,7 @@ if (empty($logo) && file_exists(__DIR__ . '/../../logo.png')) {
     $logo = '<img src="' . htmlspecialchars($logoBase64) . '" style="height: 20px; vertical-align: top;">';
 }
 
-$html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+$cssPdf = '
     body{font-family:"Segoe UI",Arial,sans-serif;font-size:9pt;color:#1e293b;margin:0;padding:12px 14px;}
     .fecha-hora-arriba{position:absolute;top:12px;right:14px;font-size:9pt;color:#475569;z-index:10;}
     .data-table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed;border:2px solid #cbd5e1;}
@@ -170,22 +193,25 @@ $html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     .data-table thead th{background-color:#2563eb !important;color:#fff !important;font-weight:bold;}
     .data-table tbody tr.borde-grueso-codprograma{border-bottom:2px solid #cbd5e1;}
     .data-table tbody tr.borde-grueso-codprograma td{border-bottom:2px solid #cbd5e1;}
-</style></head><body style="position:relative;">';
+    .crono-titulo-seccion{display:block;margin-top:16px;margin-bottom:8px;padding:0;font-weight:bold;font-size:11pt;color:#1e293b;}
+    .crono-titulo-seccion:first-of-type{margin-top:0;}
+';
+$bloquesHtml = [];
 
 $tituloReporte = 'REPORTE ASIGNACIÓN DE PROGRAMAS';
 if ($rango !== null && isset($rango['desde'], $rango['hasta']) && $rango['desde'] === $rango['hasta']) {
     $tituloReporte = 'REPORTE CRONOGRAMAS DEL ' . fechaDDMMYYYY($rango['desde']);
 }
-$html .= '<div class="fecha-hora-arriba">' . htmlspecialchars($fechaReporte) . '</div>';
-$html .= '<table width="100%" style="border-collapse: collapse; border: 1px solid #cbd5e1; margin-bottom: 10px; margin-top: 28px;">';
-$html .= '<tr>';
+$htmlCabecera = '<table width="100%" style="border-collapse: collapse; border: 1px solid #cbd5e1; margin-bottom: 10px; margin-top: 8px;">';
+$htmlCabecera .= '<tr>';
 if (!empty($logo)) {
-    $html .= '<td style="width: 20%; text-align: left; padding: 8px 10px; background-color: #fff; font-size: 8pt; white-space: nowrap; border: 1px solid #cbd5e1;">' . $logo . ' GRANJA RINCONADA DEL SUR S.A.</td>';
+    $htmlCabecera .= '<td style="width: 20%; text-align: left; padding: 8px 10px; background-color: #fff; font-size: 8pt; white-space: nowrap; border: 1px solid #cbd5e1;">' . $logo . ' GRANJA RINCONADA DEL SUR S.A.</td>';
 } else {
-    $html .= '<td style="width: 20%; text-align: left; padding: 8px 10px; background-color: #fff; font-size: 8pt; white-space: nowrap; border: 1px solid #cbd5e1;">GRANJA RINCONADA DEL SUR S.A.</td>';
+    $htmlCabecera .= '<td style="width: 20%; text-align: left; padding: 8px 10px; background-color: #fff; font-size: 8pt; white-space: nowrap; border: 1px solid #cbd5e1;">GRANJA RINCONADA DEL SUR S.A.</td>';
 }
-$html .= '<td style="width: 60%; text-align: center; padding: 8px 10px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px; border: 1px solid #cbd5e1;">' . htmlspecialchars($tituloReporte) . '</td>';
-$html .= '<td style="width: 20%; background-color: #fff; border: 1px solid #cbd5e1;"></td></tr></table>';
+$htmlCabecera .= '<td style="width: 60%; text-align: center; padding: 8px 10px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px; border: 1px solid #cbd5e1;">' . htmlspecialchars($tituloReporte) . '</td>';
+$htmlCabecera .= '<td style="width: 20%; text-align: right; padding: 8px 10px; background-color: #fff; font-size: 9pt; color: #475569; border: 1px solid #cbd5e1;">' . htmlspecialchars($fechaReporte) . '</td></tr></table>';
+$bloquesHtml[] = $htmlCabecera;
 
 // Agrupar por numCronograma para títulos (si existe la columna)
 $grupos = [];
@@ -209,55 +235,65 @@ $numCols = count($colWidthsOrdered);
 $anchoUniformePct = $numCols > 0 ? round(100 / $numCols, 4) : 0;
 $cellWidthStyle = 'width:' . $anchoUniformePct . '%;min-width:' . $anchoUniformePct . '%;max-width:' . $anchoUniformePct . '%;';
 
-$html .= '<style>.crono-titulo-seccion{display:block;margin-top:16px;margin-bottom:8px;padding:0;font-weight:bold;font-size:11pt;color:#1e293b;}.crono-titulo-seccion:first-of-type{margin-top:0;}</style>';
-
 if (empty($filas)) {
-    $html .= '<table class="data-table"><tbody><tr><td colspan="' . $numCols . '" style="text-align:center;color:#64748b;">Sin registros con los filtros aplicados.</td></tr></tbody></table>';
+    $bloquesHtml[] = '<table class="data-table"><tbody><tr><td colspan="' . $numCols . '" style="text-align:center;color:#64748b;">Sin registros con los filtros aplicados.</td></tr></tbody></table>';
 } else {
     $numCronogramaCorrelativo = 0;
     foreach ($grupos as $numCronograma => $filasGrupo) {
         $numCronogramaCorrelativo++;
-        $nPorTabla = 0;
         $primera = $filasGrupo[0] ?? null;
         $programaTexto = trim(($primera['codPrograma'] ?? '') . ' ' . ($primera['nomPrograma'] ?? ''));
         $tituloCrono = 'Cronograma ' . $numCronogramaCorrelativo . ' — Programa: ' . htmlspecialchars($programaTexto ?: '—');
-        $html .= '<div class="crono-titulo-seccion">' . $tituloCrono . '</div>';
-        $html .= '<table class="data-table" style="width:100%;table-layout:fixed;"><thead><tr>';
-        $html .= '<th style="' . $cellWidthStyle . '">N°</th>';
-        $html .= '<th style="' . $cellWidthStyle . '">Cód. Programa</th>';
-        $html .= '<th style="' . $cellWidthStyle . '">Nombre Programa</th>';
-        if ($tieneZona) $html .= '<th style="' . $cellWidthStyle . '">Zona</th>';
-        if ($tieneSubzona) $html .= '<th style="' . $cellWidthStyle . '">Subzona</th>';
-        $html .= '<th style="' . $cellWidthStyle . '">Granja</th>';
-        $html .= '<th style="' . $cellWidthStyle . '">Nom. Granja</th>';
-        $html .= '<th style="' . $cellWidthStyle . '">Campaña</th>';
-        $html .= '<th style="' . $cellWidthStyle . '">Galpón</th>';
-        $html .= '<th style="' . $cellWidthStyle . '">Fec. Carga</th>';
-        $html .= '<th style="' . $cellWidthStyle . '">Fec. Ejecución</th>';
-        $html .= '<th style="' . $cellWidthStyle . '">Edad</th>';
-        $html .= '</tr></thead><tbody>';
-        foreach ($filasGrupo as $i => $f) {
-            $nPorTabla++;
-            $edad = ($f['edad'] !== '' && $f['edad'] !== null) ? $f['edad'] : '—';
-            $html .= '<tr>';
-            $html .= '<td style="' . $cellWidthStyle . '">' . $nPorTabla . '</td>';
-            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['codPrograma']) . '</td>';
-            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['nomPrograma']) . '</td>';
-            if ($tieneZona) $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['zona'] ?? '') . '</td>';
-            if ($tieneSubzona) $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['subzona'] ?? '') . '</td>';
-            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['granja']) . '</td>';
-            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['nomGranja']) . '</td>';
-            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['campania']) . '</td>';
-            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['galpon']) . '</td>';
-            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars(fechaDDMMYYYY($f['fechaCarga'])) . '</td>';
-            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars(fechaDDMMYYYY($f['fechaEjecucion'])) . '</td>';
-            $html .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($edad) . '</td>';
-            $html .= '</tr>';
+        $bloquesHtml[] = '<div class="crono-titulo-seccion">' . $tituloCrono . '</div>';
+
+        $tamLoteFilas = 220;
+        $offsetFila = 0;
+        $totalFilasGrupo = count($filasGrupo);
+        while ($offsetFila < $totalFilasGrupo) {
+            $lote = array_slice($filasGrupo, $offsetFila, $tamLoteFilas);
+            $esPrimerLote = ($offsetFila === 0);
+            $htmlTabla = '<table class="data-table" style="width:100%;table-layout:fixed;">';
+            if ($esPrimerLote) {
+                $htmlTabla .= '<thead><tr>';
+                $htmlTabla .= '<th style="' . $cellWidthStyle . '">N°</th>';
+                $htmlTabla .= '<th style="' . $cellWidthStyle . '">Cód. Programa</th>';
+                $htmlTabla .= '<th style="' . $cellWidthStyle . '">Nombre Programa</th>';
+                if ($tieneZona) $htmlTabla .= '<th style="' . $cellWidthStyle . '">Zona</th>';
+                if ($tieneSubzona) $htmlTabla .= '<th style="' . $cellWidthStyle . '">Subzona</th>';
+                $htmlTabla .= '<th style="' . $cellWidthStyle . '">Granja</th>';
+                $htmlTabla .= '<th style="' . $cellWidthStyle . '">Nom. Granja</th>';
+                $htmlTabla .= '<th style="' . $cellWidthStyle . '">Campaña</th>';
+                $htmlTabla .= '<th style="' . $cellWidthStyle . '">Galpón</th>';
+                $htmlTabla .= '<th style="' . $cellWidthStyle . '">Fec. Carga</th>';
+                $htmlTabla .= '<th style="' . $cellWidthStyle . '">Fec. Ejecución</th>';
+                $htmlTabla .= '<th style="' . $cellWidthStyle . '">Edad</th>';
+                $htmlTabla .= '</tr></thead>';
+            }
+            $htmlTabla .= '<tbody>';
+            foreach ($lote as $idxLote => $f) {
+                $nPorTabla = $offsetFila + $idxLote + 1;
+                $edad = ($f['edad'] !== '' && $f['edad'] !== null) ? $f['edad'] : '—';
+                $htmlTabla .= '<tr>';
+                $htmlTabla .= '<td style="' . $cellWidthStyle . '">' . $nPorTabla . '</td>';
+                $htmlTabla .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['codPrograma']) . '</td>';
+                $htmlTabla .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['nomPrograma']) . '</td>';
+                if ($tieneZona) $htmlTabla .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['zona'] ?? '') . '</td>';
+                if ($tieneSubzona) $htmlTabla .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['subzona'] ?? '') . '</td>';
+                $htmlTabla .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['granja']) . '</td>';
+                $htmlTabla .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['nomGranja']) . '</td>';
+                $htmlTabla .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['campania']) . '</td>';
+                $htmlTabla .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($f['galpon']) . '</td>';
+                $htmlTabla .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars(fechaDDMMYYYY($f['fechaCarga'])) . '</td>';
+                $htmlTabla .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars(fechaDDMMYYYY($f['fechaEjecucion'])) . '</td>';
+                $htmlTabla .= '<td style="' . $cellWidthStyle . '">' . htmlspecialchars($edad) . '</td>';
+                $htmlTabla .= '</tr>';
+            }
+            $htmlTabla .= '</tbody></table>';
+            $bloquesHtml[] = $htmlTabla;
+            $offsetFila += $tamLoteFilas;
         }
-        $html .= '</tbody></table>';
     }
 }
-$html .= '</body></html>';
 
 $tempDir = __DIR__ . '/../../../pdf_tmp';
 if (!is_dir($tempDir)) @mkdir($tempDir, 0775, true);
@@ -265,6 +301,8 @@ if (!is_dir($tempDir) || !is_writable($tempDir)) $tempDir = sys_get_temp_dir();
 
 try {
     if (ob_get_level()) ob_clean();
+    @ini_set('max_execution_time', '0');
+    @set_time_limit(0);
     require_once __DIR__ . '/../../../vendor/autoload.php';
     $mpdf = new \Mpdf\Mpdf([
         'mode' => 'utf-8',
@@ -279,7 +317,10 @@ try {
     // Evita que mPDF reduzca cada tabla de forma distinta según contenido.
     $mpdf->shrink_tables_to_fit = 0;
     $mpdf->SetFooter('<div style="text-align:center;font-size:9pt;font-weight:normal;">{PAGENO} de {nbpg}</div>');
-    $mpdf->WriteHTML($html);
+    $mpdf->WriteHTML($cssPdf, \Mpdf\HTMLParserMode::HEADER_CSS);
+    foreach ($bloquesHtml as $bloqueHtml) {
+        $mpdf->WriteHTML($bloqueHtml, \Mpdf\HTMLParserMode::HTML_BODY);
+    }
     $nombreArchivo = 'cronograma_filtrado_' . date('Ymd_His') . '.pdf';
     $mpdf->Output($nombreArchivo, 'I');
     exit;

@@ -12,8 +12,8 @@ if (empty($_SESSION['active'])) {
     exit();
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     die("Error de conexión.");
 }
@@ -416,6 +416,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     pageLength: 20,
                     lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, "Todos"]],
                     order: [[0, 'asc']],
+                    orderClasses: false,
                     processing: true,
                     deferRender: true,
                     scrollY: 400,
@@ -427,6 +428,58 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 });
             });*/
             var tablePaquetes;
+            var searchDebouncePaq = null;
+            var PAQ_LENGTH_OPTIONS = [20, 25, 50, 100];
+            var paqPageLengthSel = 20;
+
+            function normalizarPageLengthPaq(v) {
+                var n = parseInt(v, 10);
+                return PAQ_LENGTH_OPTIONS.indexOf(n) >= 0 ? n : 20;
+            }
+
+            function renderizarControlesDtPaq($container, rowClass) {
+                if (!$container || !$container.length || !tablePaquetes) return;
+                var rowSelector = '.' + rowClass;
+                if (!$container.find(rowSelector).length) {
+                    var html = '<div class="' + rowClass + ' flex flex-wrap items-center gap-3">' +
+                        '<div class="dataTables_length"><label>Mostrar ' +
+                        '<select class="js-paq-len dt-toolbar-length-select cards-length-select">' +
+                        '<option value="20">20</option><option value="25">25</option><option value="50">50</option><option value="100">100</option>' +
+                        '</select> registros</label></div>' +
+                        '<div class="dataTables_filter"><label>Buscar <input type="search" class="js-paq-search" placeholder=""></label></div>' +
+                        '</div>';
+                    $container.html(html);
+                }
+                if (!$container.data('paqControlsBound')) {
+                    $container.on('change.paq', '.js-paq-len', function () {
+                        var val = parseInt($(this).val(), 10);
+                        if (tablePaquetes && !isNaN(val)) {
+                            paqPageLengthSel = normalizarPageLengthPaq(val);
+                            tablePaquetes.page.len(paqPageLengthSel).draw(false);
+                        }
+                    });
+                    $container.on('input.paq', '.js-paq-search', function () {
+                        var val = ($(this).val() || '').toString();
+                        if (searchDebouncePaq) clearTimeout(searchDebouncePaq);
+                        searchDebouncePaq = setTimeout(function () {
+                            if (tablePaquetes && tablePaquetes.search() !== val) tablePaquetes.search(val).draw();
+                        }, 220);
+                    });
+                    $container.data('paqControlsBound', true);
+                }
+                var len = String(tablePaquetes.page.len());
+                var search = tablePaquetes.search() || '';
+                var $len = $container.find('.js-paq-len');
+                var $search = $container.find('.js-paq-search');
+                if ($len.val() !== len) $len.val(len);
+                if (!$search.is(':focus') && $search.val() !== search) $search.val(search);
+            }
+
+            function sincronizarControlesPaq() {
+                if (!tablePaquetes) return;
+                renderizarControlesDtPaq($('#paquetesDtControls'), 'paquetes-dt-toolbar-row');
+                renderizarControlesDtPaq($('#paquetesIconosControls'), 'paquetes-iconos-toolbar-row');
+            }
             function actualizarVistaInicialPaq() {
                 var w = $(window).width();
                 var w$ = $('#tablaPaquetesWrapper');
@@ -435,6 +488,10 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     $('#btnViewIconosPaq').toggleClass('active', w$.attr('data-vista') === 'iconos');
                     $('#btnViewTablaPaq').toggleClass('active', w$.attr('data-vista') === 'tabla');
                 }
+                var vista = w$.attr('data-vista') || 'tabla';
+                $('#paquetesDtControls').toggle(vista === 'tabla');
+                $('#paquetesIconosControls').toggle(vista === 'iconos');
+                sincronizarControlesPaq();
             }
             function renderizarTarjetasPaq() {
                 if (!tablePaquetes) return;
@@ -466,25 +523,36 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 });
                 var info = api.page.info();
                 $('#cardsPaginationPaq').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : ('<span class="dataTables_info">Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>'));
+                sincronizarControlesPaq();
             }
             tablePaquetes = $('#tablaPaquetes').DataTable({
+                dom: 'rtip',
                 language: window.DATATABLES_LANG_ES || {},
-                pageLength: 20,
-                lengthMenu: [[20, 25, 50, 100, -1], [20, 25, 50, 100, "Todos"]],
+                pageLength: normalizarPageLengthPaq(paqPageLengthSel),
+                lengthMenu: [[20, 25, 50, 100], [20, 25, 50, 100]],
+                ordering: false,
                 order: [[0, 'asc']],
+                orderClasses: false,
                 columnDefs: [{ orderable: false, targets: [3] }],
-                drawCallback: function() { renderizarTarjetasPaq(); }
+                drawCallback: function() { renderizarTarjetasPaq(); },
+                initComplete: function() { sincronizarControlesPaq(); }
             });
             actualizarVistaInicialPaq();
             $('#btnViewIconosPaq').on('click', function() {
                 $('#tablaPaquetesWrapper').attr('data-vista', 'iconos');
                 $('#btnViewIconosPaq').addClass('active');
                 $('#btnViewTablaPaq').removeClass('active');
+                $('#paquetesDtControls').hide();
+                $('#paquetesIconosControls').show();
+                sincronizarControlesPaq();
             });
             $('#btnViewTablaPaq').on('click', function() {
                 $('#tablaPaquetesWrapper').attr('data-vista', 'tabla');
                 $('#btnViewTablaPaq').addClass('active');
                 $('#btnViewIconosPaq').removeClass('active');
+                $('#paquetesDtControls').show();
+                $('#paquetesIconosControls').hide();
+                sincronizarControlesPaq();
             });
             $(window).on('resize', function() {
                 if (!$('#tablaPaquetesWrapper').attr('data-vista')) return;

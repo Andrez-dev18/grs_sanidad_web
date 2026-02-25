@@ -4,22 +4,26 @@ if (empty($_SESSION['active'])) {
     header('HTTP/1.1 401 Unauthorized');
     exit('No autorizado');
 }
+@ini_set('max_execution_time', '0');
+@set_time_limit(0);
+@ini_set('memory_limit', '512M');
 
 $codigo = trim((string)($_GET['codigo'] ?? ''));
 if ($codigo === '') {
     exit('Falta código de programa');
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     exit('Error de conexión');
 }
 
-// Cabecera del programa (incl. despliegue si existe)
 $chkDespliegue = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'despliegue'");
 $tieneDespliegue = $chkDespliegue && $chkDespliegue->fetch_assoc();
-$sqlCab = "SELECT codigo, nombre, codTipo, nomTipo, zona, descripcion" . ($tieneDespliegue ? ", despliegue" : "") . " FROM san_fact_programa_cab WHERE codigo = ? LIMIT 1";
+$chkFechasCab = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'fechaInicio'");
+$tieneFechasCab = $chkFechasCab && $chkFechasCab->num_rows > 0;
+$sqlCab = "SELECT codigo, nombre, codTipo, nomTipo, descripcion" . ($tieneDespliegue ? ", despliegue" : "") . ($tieneFechasCab ? ", fechaInicio, fechaFin" : "") . " FROM san_fact_programa_cab WHERE codigo = ? LIMIT 1";
 $stmtCab = $conn->prepare($sqlCab);
 $stmtCab->bind_param("s", $codigo);
 $stmtCab->execute();
@@ -105,7 +109,7 @@ function agruparDetallesPorEdadReporte($detalles, $colsSinNum) {
             if ($e !== null && $e !== '') $ages[] = trim((string)$e);
         }
         $merged = $first;
-        $merged['edad'] = count($ages) > 0 ? implode(' - ', $ages) : (isset($first['edad']) ? (string)$first['edad'] : '');
+        $merged['edad'] = count($ages) > 0 ? implode(', ', $ages) : (isset($first['edad']) ? (string)$first['edad'] : '');
         $out[] = $merged;
     }
     return $out;
@@ -115,6 +119,9 @@ $detalles = agruparDetallesPorEdadReporte($detalles, $colsSinNum);
 
 $cabDespliegue = $tieneDespliegue ? ($cab['despliegue'] ?? '') : '';
 $cabDesc = $cab['descripcion'] ?? '';
+$cabFechaInicio = $tieneFechasCab && !empty(trim((string)($cab['fechaInicio'] ?? ''))) ? trim((string)$cab['fechaInicio']) : '';
+$cabFechaFin = $tieneFechasCab && !empty(trim((string)($cab['fechaFin'] ?? ''))) ? trim((string)$cab['fechaFin']) : '';
+$cabNomTipo = trim((string)($cab['nomTipo'] ?? ''));
 
 $logoPath = __DIR__ . '/../../../logo.png';
 $logo = '';
@@ -133,82 +140,43 @@ if (empty($logo) && file_exists(__DIR__ . '/../../logo.png')) {
 $numCols = 4 + count($colsSinNum); // cab + detalle
 $pctCol = round(100 / $numCols, 2);
 
-$html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+$cssPdf = '
     body{font-family:"Segoe UI",Arial,sans-serif;font-size:9pt;color:#1e293b;margin:0;padding:10px;}
-    .fecha-hora-arriba{position:absolute;top:8px;right:0;font-size:9pt;color:#475569;z-index:10;}
     .data-table{width:100%;border-collapse:collapse;font-size:8pt;table-layout:fixed;border:1px solid #cbd5e1;}
     .data-table th,.data-table td{padding:4px 6px;border:1px solid #cbd5e1;vertical-align:top;text-align:left;background:#fff;overflow:hidden;}
     .data-table thead th{background-color:#2563eb !important;color:#fff !important;font-weight:bold;}
-</style></head><body style="position:relative;">';
+';
 
-$html .= '<div class="fecha-hora-arriba">' . htmlspecialchars($fechaReporte) . '</div>';
 $bordeTitulo = 'border: 1px solid #64748b;';
-$html .= '<table width="100%" style="border-collapse: collapse; margin-bottom: 10px; margin-top: 24px; ' . $bordeTitulo . '">';
-$html .= '<tr>';
+$htmlCabecera = '<table width="100%" style="border-collapse: collapse; margin-bottom: 10px; margin-top: 8px; ' . $bordeTitulo . '">';
+$htmlCabecera .= '<tr>';
 if (!empty($logo)) {
-    $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap; ' . $bordeTitulo . '">' . $logo . ' GRANJA RINCONADA DEL SUR S.A.</td>';
+    $htmlCabecera .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap; ' . $bordeTitulo . '">' . $logo . ' GRANJA RINCONADA DEL SUR S.A.</td>';
 } else {
-    $html .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap; ' . $bordeTitulo . '">GRANJA RINCONADA DEL SUR S.A.</td>';
+    $htmlCabecera .= '<td style="width: 20%; text-align: left; padding: 5px; background-color: #fff; font-size: 8pt; white-space: nowrap; ' . $bordeTitulo . '">GRANJA RINCONADA DEL SUR S.A.</td>';
 }
-$html .= '<td style="width: 60%; text-align: center; padding: 5px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px; ' . $bordeTitulo . '">REPORTE ' . htmlspecialchars(strtoupper($nombrePrograma)) . '</td>';
-$html .= '<td style="width: 20%; background-color: #fff; ' . $bordeTitulo . '"></td></tr></table>';
-$html .= '<table class="data-table"><colgroup>';
-for ($i = 0; $i < $numCols; $i++) $html .= '<col style="width:' . $pctCol . '%"/>';
-$html .= '</colgroup><thead><tr>';
-$html .= '<th>Código</th><th>Nombre programa</th><th>Despliegue</th><th>Descripción</th>';
+$htmlCabecera .= '<td style="width: 60%; text-align: center; padding: 5px; background-color: #2563eb; color: #fff; font-weight: bold; font-size: 14px; ' . $bordeTitulo . '">REPORTE ' . htmlspecialchars(strtoupper($nombrePrograma)) . '</td>';
+$htmlCabecera .= '<td style="width: 20%; text-align: right; padding: 5px; background-color: #fff; font-size: 9pt; color: #475569; ' . $bordeTitulo . '">' . htmlspecialchars($fechaReporte) . '</td></tr></table>';
+
+$estiloCabeceraLabel = 'padding: 4px 8px; width: 22%; background-color: #2563eb; color: #fff; font-weight: bold; border: 1px solid #cbd5e1;';
+$htmlCabecera .= '<table width="100%" style="border-collapse: collapse; margin-bottom: 12px; font-size: 9pt; border: 1px solid #cbd5e1;">';
+$htmlCabecera .= '<tr><td style="' . $estiloCabeceraLabel . '">Código</td><td style="padding: 4px 8px; border: 1px solid #cbd5e1;">' . htmlspecialchars($codigo) . '</td></tr>';
+$htmlCabecera .= '<tr><td style="' . $estiloCabeceraLabel . '">Nombre</td><td style="padding: 4px 8px; border: 1px solid #cbd5e1;">' . htmlspecialchars($nombrePrograma) . '</td></tr>';
+$htmlCabecera .= '<tr><td style="' . $estiloCabeceraLabel . '">Tipo</td><td style="padding: 4px 8px; border: 1px solid #cbd5e1;">' . htmlspecialchars($cabNomTipo) . '</td></tr>';
+$htmlCabecera .= '<tr><td style="' . $estiloCabeceraLabel . '">Fecha inicio</td><td style="padding: 4px 8px; border: 1px solid #cbd5e1;">' . htmlspecialchars($cabFechaInicio !== '' ? date('d/m/Y', strtotime($cabFechaInicio)) : '—') . '</td></tr>';
+$htmlCabecera .= '<tr><td style="' . $estiloCabeceraLabel . '">Fecha fin</td><td style="padding: 4px 8px; border: 1px solid #cbd5e1;">' . htmlspecialchars($cabFechaFin !== '' ? date('d/m/Y', strtotime($cabFechaFin)) : '—') . '</td></tr>';
+$htmlCabecera .= '<tr><td style="' . $estiloCabeceraLabel . '">Despliegue</td><td style="padding: 4px 8px; border: 1px solid #cbd5e1;">' . htmlspecialchars($cabDespliegue) . '</td></tr>';
+$htmlCabecera .= '<tr><td style="' . $estiloCabeceraLabel . '">Descripción</td><td style="padding: 4px 8px; border: 1px solid #cbd5e1;">' . htmlspecialchars($cabDesc) . '</td></tr>';
+$htmlCabecera .= '</table>';
+
+$htmlTablaInicio = '<table class="data-table"><colgroup>';
+for ($i = 0; $i < $numCols; $i++) $htmlTablaInicio .= '<col style="width:' . $pctCol . '%"/>';
+$htmlTablaInicio .= '</colgroup><thead><tr>';
+$htmlTablaInicio .= '<th>Código</th><th>Nombre programa</th><th>Despliegue</th><th>Descripción</th>';
 foreach ($colsSinNum as $k) {
-    $html .= '<th>' . htmlspecialchars($labelsReporte[$k] ?? $k) . '</th>';
+    $htmlTablaInicio .= '<th>' . htmlspecialchars($labelsReporte[$k] ?? $k) . '</th>';
 }
-$html .= '</tr></thead><tbody>';
-
-if (empty($detalles)) {
-    $html .= '<tr>';
-    $html .= '<td>' . htmlspecialchars($codigo) . '</td>';
-    $html .= '<td>' . htmlspecialchars($nombrePrograma) . '</td>';
-    $html .= '<td>' . htmlspecialchars($cabDespliegue) . '</td>';
-    $html .= '<td>' . htmlspecialchars($cabDesc) . '</td>';
-    $html .= '<td colspan="' . count($colsSinNum) . '" style="text-align:center;color:#64748b;">Sin registros en el detalle.</td></tr>';
-} else {
-    foreach ($detalles as $i => $d) {
-        $html .= '<tr>';
-        $html .= '<td>' . htmlspecialchars($codigo) . '</td>';
-        $html .= '<td>' . htmlspecialchars($nombrePrograma) . '</td>';
-        $html .= '<td>' . htmlspecialchars($cabDespliegue) . '</td>';
-        $html .= '<td>' . htmlspecialchars($cabDesc) . '</td>';
-        foreach ($colsSinNum as $k) {
-            if ($k === 'ubicacion') {
-                $html .= '<td>' . htmlspecialchars($d['ubicacion'] ?? '') . '</td>';
-            } elseif ($k === 'producto') {
-                $html .= '<td>' . htmlspecialchars($d['nomProducto'] ?? ($d['codProducto'] ?? '')) . '</td>';
-            } elseif ($k === 'proveedor') {
-                $codProv = trim((string)($d['codProveedor'] ?? ''));
-                $nomProv = trim((string)($d['nomProveedor'] ?? ''));
-                $proveedorVal = $codProv !== '' ? ($nomProv !== '' ? $nomProv : $codProv) : ($d['nomProveedor'] ?? '');
-                $html .= '<td>' . htmlspecialchars($proveedorVal) . '</td>';
-            } elseif ($k === 'unidad') {
-                $html .= '<td>' . htmlspecialchars($d['unidades'] ?? '') . '</td>';
-            } elseif ($k === 'dosis') {
-                $html .= '<td>' . htmlspecialchars($d['dosis'] ?? '') . '</td>';
-            } elseif ($k === 'descripcion_vacuna') {
-                $html .= '<td style="white-space:pre-wrap;">' . htmlspecialchars(formatearDescripcionVacuna($d['descripcionVacuna'] ?? '')) . '</td>';
-            } elseif ($k === 'numeroFrascos') {
-                $html .= '<td>' . htmlspecialchars($d['numeroFrascos'] ?? '') . '</td>';
-            } elseif ($k === 'edad') {
-                $edadVal = $d['edad'] ?? '';
-                $html .= '<td>' . htmlspecialchars($edadVal !== '' && $edadVal !== null ? $edadVal : '') . '</td>';
-            } elseif ($k === 'unidadDosis') {
-                $html .= '<td>' . htmlspecialchars($d['unidadDosis'] ?? '') . '</td>';
-            } elseif ($k === 'area_galpon') {
-                $html .= '<td>' . (isset($d['areaGalpon']) && $d['areaGalpon'] !== null ? (int)$d['areaGalpon'] : '') . '</td>';
-            } elseif ($k === 'cantidad_por_galpon') {
-                $html .= '<td>' . (isset($d['cantidadPorGalpon']) && $d['cantidadPorGalpon'] !== null ? (int)$d['cantidadPorGalpon'] : '') . '</td>';
-            }
-        }
-        $html .= '</tr>';
-    }
-}
-
-$html .= '</tbody></table></body></html>';
+$htmlTablaInicio .= '</tr></thead><tbody>';
 
 $tempDir = __DIR__ . '/../../../pdf_tmp';
 if (!is_dir($tempDir)) {
@@ -220,6 +188,9 @@ if (!is_dir($tempDir) || !is_writable($tempDir)) {
 
 try {
     if (ob_get_level()) ob_clean();
+    @ini_set('max_execution_time', '0');
+    @set_time_limit(0);
+    @ini_set('memory_limit', '512M');
     require_once __DIR__ . '/../../../vendor/autoload.php';
 
     $mpdf = new \Mpdf\Mpdf([
@@ -231,10 +202,70 @@ try {
         'margin_bottom' => 18,
         'tempDir' => $tempDir,
         'defaultfooterline' => 0,
+        'simpleTables' => true,
+        'packTableData' => true,
     ]);
+    $mpdf->shrink_tables_to_fit = 0;
     $mpdf->SetFooter('<div style="text-align:center;font-size:9pt;font-weight:normal;">{PAGENO} de {nbpg}</div>');
 
-    $mpdf->WriteHTML($html);
+    $mpdf->WriteHTML($cssPdf, \Mpdf\HTMLParserMode::HEADER_CSS);
+    $mpdf->WriteHTML($htmlCabecera, \Mpdf\HTMLParserMode::HTML_BODY);
+    $mpdf->WriteHTML($htmlTablaInicio, \Mpdf\HTMLParserMode::HTML_BODY);
+    if (empty($detalles)) {
+        $mpdf->WriteHTML(
+            '<tr><td>' . htmlspecialchars($codigo) . '</td><td>' . htmlspecialchars($nombrePrograma) . '</td><td>' . htmlspecialchars($cabDespliegue) . '</td><td>' . htmlspecialchars($cabDesc) . '</td><td colspan="' . count($colsSinNum) . '" style="text-align:center;color:#64748b;">Sin registros en el detalle.</td></tr>',
+            \Mpdf\HTMLParserMode::HTML_BODY
+        );
+    } else {
+        $buf = '';
+        $n = 0;
+        foreach ($detalles as $d) {
+            $buf .= '<tr>';
+            $buf .= '<td>' . htmlspecialchars($codigo) . '</td>';
+            $buf .= '<td>' . htmlspecialchars($nombrePrograma) . '</td>';
+            $buf .= '<td>' . htmlspecialchars($cabDespliegue) . '</td>';
+            $buf .= '<td>' . htmlspecialchars($cabDesc) . '</td>';
+            foreach ($colsSinNum as $k) {
+                if ($k === 'ubicacion') {
+                    $buf .= '<td>' . htmlspecialchars($d['ubicacion'] ?? '') . '</td>';
+                } elseif ($k === 'producto') {
+                    $buf .= '<td>' . htmlspecialchars($d['nomProducto'] ?? ($d['codProducto'] ?? '')) . '</td>';
+                } elseif ($k === 'proveedor') {
+                    $codProv = trim((string)($d['codProveedor'] ?? ''));
+                    $nomProv = trim((string)($d['nomProveedor'] ?? ''));
+                    $proveedorVal = $codProv !== '' ? ($nomProv !== '' ? $nomProv : $codProv) : ($d['nomProveedor'] ?? '');
+                    $buf .= '<td>' . htmlspecialchars($proveedorVal) . '</td>';
+                } elseif ($k === 'unidad') {
+                    $buf .= '<td>' . htmlspecialchars($d['unidades'] ?? '') . '</td>';
+                } elseif ($k === 'dosis') {
+                    $buf .= '<td>' . htmlspecialchars($d['dosis'] ?? '') . '</td>';
+                } elseif ($k === 'descripcion_vacuna') {
+                    $buf .= '<td style="white-space:pre-wrap;">' . htmlspecialchars(formatearDescripcionVacuna($d['descripcionVacuna'] ?? '')) . '</td>';
+                } elseif ($k === 'numeroFrascos') {
+                    $buf .= '<td>' . htmlspecialchars($d['numeroFrascos'] ?? '') . '</td>';
+                } elseif ($k === 'edad') {
+                    $edadVal = $d['edad'] ?? '';
+                    $buf .= '<td>' . htmlspecialchars($edadVal !== '' && $edadVal !== null ? $edadVal : '') . '</td>';
+                } elseif ($k === 'unidadDosis') {
+                    $buf .= '<td>' . htmlspecialchars($d['unidadDosis'] ?? '') . '</td>';
+                } elseif ($k === 'area_galpon') {
+                    $buf .= '<td>' . (isset($d['areaGalpon']) && $d['areaGalpon'] !== null ? (int)$d['areaGalpon'] : '') . '</td>';
+                } elseif ($k === 'cantidad_por_galpon') {
+                    $buf .= '<td>' . (isset($d['cantidadPorGalpon']) && $d['cantidadPorGalpon'] !== null ? (int)$d['cantidadPorGalpon'] : '') . '</td>';
+                }
+            }
+            $buf .= '</tr>';
+            $n++;
+            if ($n % 250 === 0) {
+                $mpdf->WriteHTML($buf, \Mpdf\HTMLParserMode::HTML_BODY);
+                $buf = '';
+            }
+        }
+        if ($buf !== '') {
+            $mpdf->WriteHTML($buf, \Mpdf\HTMLParserMode::HTML_BODY);
+        }
+    }
+    $mpdf->WriteHTML('</tbody></table>', \Mpdf\HTMLParserMode::HTML_BODY);
     $mpdf->Output('reporte_programa_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', $codigo) . '_' . date('Ymd_His') . '.pdf', 'I');
     exit;
 } catch (Exception $e) {

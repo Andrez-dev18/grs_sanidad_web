@@ -14,7 +14,7 @@ ini_set('display_errors', 1);
 date_default_timezone_set('America/Lima');
 
 // --- Autenticación ---
-include_once '../../conexion_grs_joya/conexion.php';
+include_once '../../conexion_grs/conexion.php';
 include_once '../includes/historial_resultados.php';
 include_once '../includes/historial_acciones.php';
 /*$authHeader = '';
@@ -38,7 +38,7 @@ if ($authHeader !== "Bearer " . API_TOKEN) {
 }
 */
 // --- Conexión ---
-$conexion = conectar_joya();
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     echo json_encode([
         'success' => false,

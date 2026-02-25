@@ -6,8 +6,8 @@ if (empty($_SESSION['active'])) {
     exit;
 }
 
-include_once '../../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     echo json_encode(['success' => false, 'message' => 'Error de conexión']);
     exit;
@@ -25,7 +25,7 @@ if ($codigo === '') {
     exit;
 }
 
-// Actualizar relación vacuna-enfermedad (codVacuna = código mitm, o codProducto si migrado)
+
 $chkRel = @$conn->query("SHOW TABLES LIKE 'san_rel_vacuna_enfermedad'");
 if ($chkRel && $chkRel->fetch_assoc()) {
     $chkVac = @$conn->query("SHOW COLUMNS FROM san_rel_vacuna_enfermedad LIKE 'codVacuna'");

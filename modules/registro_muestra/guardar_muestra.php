@@ -7,10 +7,10 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-include_once '../../../conexion_grs_joya/conexion.php';
+include_once '../../../conexion_grs/conexion.php';
 include_once '../../includes/historial_resultados.php';
 include_once '../../includes/historial_acciones.php';
-$conexion = conectar_joya();
+$conexion = conectar_joya_mysqli();
 if (!$conexion) {
     http_response_code(500);
     echo json_encode(['error' => 'Error de conexión a la base de datos']);

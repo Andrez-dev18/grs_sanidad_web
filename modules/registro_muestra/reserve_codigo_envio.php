@@ -2,8 +2,8 @@
 while (ob_get_level()) ob_end_clean();
 header('Content-Type: application/json; charset=utf-8');
 
-include_once '../../../conexion_grs_joya/conexion.php';
-$conexion = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conexion = conectar_joya_mysqli();
 
 if (!$conexion) {
     echo json_encode(['error' => 'Error de conexión']);

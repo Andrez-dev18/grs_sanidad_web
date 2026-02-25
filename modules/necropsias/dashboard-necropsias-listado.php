@@ -7,8 +7,8 @@ if (empty($_SESSION['active'])) {
 }
 
 //ruta relativa a la conexion
-include_once '../../../conexion_grs_joya/conexion.php';
-$conn = conectar_joya();
+include_once '../../../conexion_grs/conexion.php';
+$conn = conectar_joya_mysqli();
 if (!$conn) {
     die("Error de conexión: " . mysqli_connect_error());
 }
@@ -175,14 +175,14 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
                 </div>
 
                 <!-- ICONO -->
-                <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300 rotate-180"
+                <svg id="iconoFiltros" class="w-5 h-5 text-gray-600 transition-transform duration-300"
                     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
 
             <!-- CONTENIDO PLEGABLE (desplegado por defecto) -->
-            <div id="contenidoFiltros" class="px-6 pb-6 pt-4">
+            <div id="contenidoFiltros" class="px-6 pb-6 pt-4 hidden">
 
                 <?php
                 if ($conn) {
@@ -235,7 +235,7 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
                     </div>
                     <div id="periodoPorMes" class="hidden flex-shrink-0 min-w-[200px]">
                         <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-calendar mr-1 text-blue-600"></i>Mes</label>
-                        <input id="mesUnico" type="month" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        <input id="mesUnico" type="month" value="<?php echo date('Y-m'); ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
                     </div>
                     <div id="periodoEntreMeses" class="hidden flex-shrink-0 flex items-end gap-2">
                         <div class="min-w-[180px]"><label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-hourglass-start mr-1 text-blue-600"></i>Mes Inicio</label><input id="mesInicio" type="month" value="<?php echo date('Y') . '-01'; ?>" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"></div>
@@ -1555,9 +1555,8 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
                     var $length = wrapper.find('.dataTables_length').first();
                     var $filter = wrapper.find('.dataTables_filter').first();
                     if ($controls.length && $length.length && $filter.length) {
-                        $controls.append($length, $filter);
-                        var vista = $('#tablaNecropsiasWrapper').attr('data-vista') || 'lista';
-                        $controls.toggle(vista !== 'iconos');
+                        $controls.empty().append($length, $filter);
+                        $controls.show();
                     }
                 },
                 ajax: {
@@ -1578,9 +1577,8 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
                 language: window.DATATABLES_LANG_ES || {},
                 pageLength: 20,
                 lengthMenu: [20, 25, 50, 100],
-                order: [
-                    [9, 'desc']
-                ], // Ordenar por fecha de registro (incluida la hora)
+                order: [[0, 'asc']],
+                orderClasses: false,
                 columns: [{
                         data: 'counter',
                         className: 'text-center',
@@ -1735,56 +1733,23 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
                         '<div class="card-acciones">' + acciones + '</div></div></div>';
                     cont.append(card);
                 });
-                var len = api.page.len();
-                var lengthOptions = [10, 25, 50, 100];
-                var lengthSelect = '<label class="inline-flex items-center gap-2"><span>Mostrar</span><select class="cards-length-select">' +
-                    lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
-                    '</select><span>registros</span></label>';
                 var vista = $('#tablaNecropsiasWrapper').attr('data-vista') || '';
                 if (vista === 'iconos') {
-                    var $toolbarRow = $('#necIconosControls .iconos-toolbar-row');
-                    if (!$toolbarRow.length) {
-                        var $filter = $('#necDtControls .dataTables_filter').detach();
-                        var iconosRow = '<div class="iconos-toolbar-row flex flex-wrap items-center gap-3">' + lengthSelect + '</div>';
-                        $('#necIconosControls').html(iconosRow);
-                        if ($filter.length) $('#necIconosControls .iconos-toolbar-row').append($filter);
-                        $('#necIconosControls .cards-length-select').on('change', function() {
-                            var val = parseInt($(this).val(), 10);
-                            if (tabla) tabla.page.len(val).draw(false);
-                        });
-                    } else {
-                        var $sel = $toolbarRow.find('.cards-length-select');
-                        if ($sel.length) $sel.find('option').remove().end().append(lengthOptions.map(function(n) { return '<option value="' + n + '"' + (n === len ? ' selected' : '') + '>' + n + '</option>'; }).join(''));
-                    }
                     $('#cardsControlsTopNec').empty();
                     $('#cardsPaginationNec').html(typeof buildPaginationIconos === 'function' ? buildPaginationIconos(info) : '');
-                } else {
-                    var navBtns = '<div class="flex gap-2">' +
-                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page === 0 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'previous\').draw(false);">Anterior</button>' +
-                        '<button type="button" class="px-3 py-1 rounded border border-gray-300 text-sm ' + (info.page >= info.pages - 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100') + '" ' + (info.page >= info.pages - 1 ? 'disabled' : '') + ' onclick="var dt=$(\'#tabla\').DataTable(); if(dt) dt.page(\'next\').draw(false);">Siguiente</button>' +
-                        '</div>';
-                    var controlsHtml = '<div class="flex flex-wrap items-center justify-between gap-3 w-full">' + lengthSelect + '<span>Mostrando ' + (info.start + 1) + ' a ' + info.end + ' de ' + info.recordsDisplay + ' registros</span>' + navBtns + '</div>';
-                    $('#cardsControlsTopNec').html(controlsHtml);
-                    $('#cardsPaginationNec').html(controlsHtml);
-                    $('#cardsControlsTopNec .cards-length-select, #cardsPaginationNec .cards-length-select').on('change', function() {
-                        var val = parseInt($(this).val(), 10);
-                        if (tabla) tabla.page.len(val).draw(false);
-                    });
                 }
             }
             function aplicarVisibilidadVistaNec(vista) {
                 var esTabla = (vista === 'tabla');
                 $('#tablaNecropsiasWrapper').attr('data-vista', vista);
                 if (esTabla) {
-                    var $filter = $('#necIconosControls .dataTables_filter').detach();
-                    if ($filter.length) $('#necDtControls').append($filter);
                     $('#necDtControls').show();
                     $('#necIconosControls').hide();
                     $('#viewTarjetasNec').addClass('hidden').css('display', 'none');
                     $('#tablaNecropsiasWrapper .view-lista-wrap').removeClass('hidden').css('display', 'block');
                 } else {
-                    $('#necDtControls').hide();
-                    $('#necIconosControls').show();
+                    $('#necDtControls').show();
+                    $('#necIconosControls').hide();
                     $('#tablaNecropsiasWrapper .view-lista-wrap').addClass('hidden').css('display', 'none');
                     $('#viewTarjetasNec').removeClass('hidden').css('display', 'block');
                     $('#cardsContainerNec').attr('data-vista-cards', 'iconos');
@@ -3395,8 +3360,6 @@ include_once __DIR__ . '/../../includes/datatables_lang_es.php';
         }
     </script>
 
-    <!-- Tabla: estilos unificados al final para ganar a DataTables -->
-    <link rel="stylesheet" href="../../css/dashboard-config.css">
 </body>
 
 </html>
