@@ -30,8 +30,12 @@ $usuario = $_SESSION['usuario'] ?? 'WEB';
 
 $chkNom = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'nomGranja'");
 $chkEdad = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'edad'");
+$chkTolerancia = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'tolerancia'");
+$chkTolDet = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'tolerancia'");
 $tieneNomGranja = $chkNom && $chkNom->num_rows > 0;
 $tieneEdad = $chkEdad && $chkEdad->num_rows > 0;
+$tieneTolerancia = $chkTolerancia && $chkTolerancia->num_rows > 0;
+$tieneTolDet = $chkTolDet && $chkTolDet->num_rows > 0;
 
 $edadPrograma = null;
 if ($tieneEdad) {
@@ -87,6 +91,25 @@ if ($tieneEdad) {
     $placeholders .= ", ?";
     $types .= "i";
 }
+if ($tieneTolerancia) {
+    $cols .= ", tolerancia";
+    $placeholders .= ", ?";
+    $types .= "i";
+}
+$toleranciaPorEdad = [];
+if ($tieneTolerancia && $tieneTolDet) {
+    $stTol = $conn->prepare("SELECT edad, COALESCE(NULLIF(tolerancia, 0), 1) AS tol FROM san_fact_programa_det WHERE codPrograma = ?");
+    if ($stTol) {
+        $stTol->bind_param("s", $codPrograma);
+        $stTol->execute();
+        $resTol = $stTol->get_result();
+        while ($row = $resTol->fetch_assoc()) {
+            $e = (int)($row['edad'] ?? 0);
+            $toleranciaPorEdad[$e] = max(1, (int)($row['tol'] ?? 1));
+        }
+        $stTol->close();
+    }
+}
 $stmt = $conn->prepare("INSERT INTO san_fact_cronograma ($cols) VALUES ($placeholders)");
 if (!$stmt) {
     $conn->close();
@@ -118,6 +141,7 @@ foreach ($items as $it) {
         $bindVals = [$granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zonaItem, $subzonaVal, $numCronograma, $usuario];
         if ($tieneNomGranja) $bindVals[] = $nomGranja;
         if ($tieneEdad) $bindVals[] = $edadVal;
+        if ($tieneTolerancia) $bindVals[] = isset($toleranciaPorEdad[$edadVal]) ? $toleranciaPorEdad[$edadVal] : (empty($toleranciaPorEdad) ? 1 : max(array_values($toleranciaPorEdad)));
         $stmt->bind_param($types, ...$bindVals);
         if (!$stmt->execute()) {
             $stmt->close();

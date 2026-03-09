@@ -15,15 +15,20 @@ if (!$conn) {
 $codTipo = isset($_GET['codTipo']) ? trim((string)$_GET['codTipo']) : '';
 $chk = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'nomTipo'");
 $tieneTipo = $chk && $chk->fetch_assoc();
+$chkCat = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'categoria'");
+$tieneCategoria = $chkCat && $chkCat->fetch_assoc();
 $sql = $tieneTipo
-    ? "SELECT codigo, nombre, codTipo, nomTipo FROM san_fact_programa_cab WHERE 1=1"
-    : "SELECT codigo, nombre FROM san_fact_programa_cab WHERE 1=1";
+    ? "SELECT codigo, nombre, codTipo, nomTipo" . ($tieneCategoria ? ", categoria" : "") . " FROM san_fact_programa_cab WHERE 1=1"
+    : "SELECT codigo, nombre" . ($tieneCategoria ? ", categoria" : "") . " FROM san_fact_programa_cab WHERE 1=1";
 $params = [];
 $types = '';
 if ($codTipo !== '' && is_numeric($codTipo)) {
     $sql .= " AND codTipo = ?";
     $params[] = (int)$codTipo;
     $types .= 'i';
+}
+if ($tieneCategoria) {
+    $sql .= " AND (categoria LIKE '%PROGRAMA SANITARIO%' OR categoria LIKE '%PROGRAMA SEGUIMIENTO%' OR categoria LIKE '%SEGUIMIENTO SANITARIO%' OR categoria LIKE '%SEGUIMIENTO%')";
 }
 $sql .= " ORDER BY codigo DESC";
 if ($types !== '') {

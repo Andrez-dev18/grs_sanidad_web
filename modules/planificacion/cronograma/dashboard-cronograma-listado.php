@@ -1146,6 +1146,12 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                         open: true
                     }, '*');
                 } catch (e) {}
+                try {
+                    (window.top || window.parent).postMessage({
+                        type: 'sanidadMobileModalState',
+                        open: true
+                    }, '*');
+                } catch (e) {}
             } else {
                 cronogramaModalCount--;
                 if (cronogramaModalCount <= 0) {
@@ -1157,6 +1163,12 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                         }, '*');
                     } catch (e) {}
                 }
+                try {
+                    (window.top || window.parent).postMessage({
+                        type: 'sanidadMobileModalState',
+                        open: false
+                    }, '*');
+                } catch (e) {}
             }
         }
 
@@ -1181,7 +1193,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             return s;
         }
         var columnasPorSiglaReporte = {
-            'NC': ['num', 'ubicacion', 'edad'],
+            'NC': ['num', 'ubicacion', 'edad', 'tolerancia'],
             'PL': ['num', 'ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'edad'],
             'GR': ['num', 'ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'edad'],
             'MC': ['num', 'ubicacion', 'producto', 'proveedor', 'dosis', 'area_galpon', 'cantidad_por_galpon', 'unidadDosis', 'edad'],
@@ -1199,6 +1211,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             descripcion_vacuna: 'Descripción',
             numeroFrascos: 'Nº frascos',
             edad: 'Edad de aplicación',
+            tolerancia: 'Tolerancia',
             unidadDosis: 'Unid. dosis',
             area_galpon: 'Área galpón',
             cantidad_por_galpon: 'Cant. por galpón'
@@ -1227,6 +1240,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             if (k === 'descripcion_vacuna') return esc(formatearDescripcionVacunaDet(d.descripcionVacuna));
             if (k === 'numeroFrascos') return esc(d.numeroFrascos || '');
             if (k === 'edad') return (d.edad !== null && d.edad !== undefined && d.edad !== '' ? d.edad : '');
+            if (k === 'tolerancia') return (d.tolerancia !== null && d.tolerancia !== undefined && d.tolerancia !== '' ? String(d.tolerancia) : '1');
             if (k === 'unidadDosis') return esc(d.unidadDosis || '');
             if (k === 'area_galpon') return (d.areaGalpon !== null && d.areaGalpon !== undefined && d.areaGalpon !== '' ? d.areaGalpon : '');
             if (k === 'cantidad_por_galpon') return (d.cantidadPorGalpon !== null && d.cantidadPorGalpon !== undefined && d.cantidadPorGalpon !== '' ? d.cantidadPorGalpon : '');
@@ -1234,7 +1248,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         }
 
         function valorClaveDetalle(k, d) {
-            if (k === 'edad') return '';
+            if (k === 'edad' || k === 'tolerancia') return '';
             if (k === 'num') return '';
             if (k === 'ubicacion') return (d.ubicacion || '');
             if (k === 'producto') return (d.nomProducto || d.codProducto || '');
@@ -1345,10 +1359,29 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 }
                 if (cab.fechaInicio) { cabHtml += '<dt class="font-medium">Fecha inicio</dt><dd>' + esc(fechaDDMMYYYY((cab.fechaInicio || '').toString().substring(0, 10))) + '</dd>'; }
                 if (cab.fechaFin) { cabHtml += '<dt class="font-medium">Fecha fin</dt><dd>' + esc(fechaDDMMYYYY((cab.fechaFin || '').toString().substring(0, 10))) + '</dd>'; }
+                if (cab.esEspecial === 1 || cab.esEspecial === '1') {
+                    cabHtml += '<dt class="font-medium col-span-2">Programa especial</dt><dd class="col-span-2">';
+                    var modoEspL = (cab.modoEspecial || '').toString().toUpperCase();
+                    if (modoEspL === 'PERIODICIDAD') {
+                        cabHtml += 'Periodicidad: cada ' + (cab.intervaloMeses || 1) + ' mes(es), día ' + (cab.diaDelMes || 15) + ' del mes.';
+                    } else if (modoEspL === 'MANUAL') {
+                        var fL = cab.fechasManuales || [];
+                        cabHtml += 'Fechas manuales: ' + (fL.length > 0 ? fL.map(function(f) { return fechaDDMMYYYY((f || '').toString().substring(0, 10)); }).join(', ') : '—');
+                    } else {
+                        cabHtml += 'Fechas definidas por periodicidad o manual.';
+                    }
+                    var tolL = 1;
+                    if (detalles.length > 0 && detalles[0].tolerancia != null && detalles[0].tolerancia !== '') tolL = detalles[0].tolerancia;
+                    cabHtml += ' Tolerancia: ' + tolL + ' día(s).</dd>';
+                }
                 cabHtml += '</dl>';
                 cabEl.innerHTML = cabHtml;
                 // Columnas dinámicas por sigla (igual que en programas listado); Edad siempre al final
+                var catStrC = (cab.categoria || '').toString().trim();
+                var esSeguimientoC = catStrC.toUpperCase().indexOf('SEGUIMIENTO') !== -1;
+                var esEspecialC = cab.esEspecial === 1 || cab.esEspecial === '1';
                 var cols = columnasPorSiglaReporte[sigla] || columnasPorSiglaReporte['PL'];
+                if (!esSeguimientoC && esEspecialC) cols = cols.filter(function(k) { return k !== 'edad' && k !== 'tolerancia'; });
                 var colsSinNum = cols.filter(function(k) {
                     return k !== 'num';
                 });
@@ -1357,6 +1390,12 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                         return k !== 'edad';
                     });
                     colsSinNum.push('edad');
+                }
+                if (colsSinNum.indexOf('tolerancia') !== -1) {
+                    colsSinNum = colsSinNum.filter(function(k) {
+                        return k !== 'tolerancia';
+                    });
+                    colsSinNum.push('tolerancia');
                 }
                 var detallesAgrupados = agruparDetallesPorEdad(detalles, colsSinNum);
                 var thCells = '<th class="px-3 py-2 text-left bg-blue-600 text-white">Código</th><th class="px-3 py-2 text-left bg-blue-600 text-white">Nombre programa</th><th class="px-3 py-2 text-left bg-blue-600 text-white">Despliegue</th><th class="px-3 py-2 text-left bg-blue-600 text-white">Descripción</th>';
@@ -1525,7 +1564,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 var id = this.getAttribute('data-modal');
                 if (id) {
                     document.getElementById(id).classList.add('hidden');
-                    if (id === 'modalCalendario' || id === 'modalDetalleEvento') {
+                    if (id === 'modalCalendario' || id === 'modalDetalleEvento' || id === 'modalDetalles' || id === 'modalEditarCronograma') {
                         notificarParentModal(false);
                         var tituloCal = document.querySelector('#modalCalendario h3');
                         if (tituloCal) tituloCal.textContent = 'Calendario';
@@ -1534,7 +1573,10 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             });
         });
         document.getElementById('modalDetalles').addEventListener('click', function(e) {
-            if (e.target === this) this.classList.add('hidden');
+            if (e.target === this) {
+                this.classList.add('hidden');
+                notificarParentModal(false);
+            }
         });
 
         var modalEditarCronoCerrar = document.getElementById('modalEditarCronogramaCerrar');
@@ -1607,6 +1649,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             }
             if (iframe) iframe.src = 'dashboard-cronograma-registro.php?numCronograma=' + encodeURIComponent(numCronograma) + '&editar=1';
             if (modal) modal.classList.remove('hidden');
+            notificarParentModal(true);
         }
 
         function editarCronograma(numCronograma) {
@@ -1621,6 +1664,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             if (overlay) overlay.classList.add('hidden');
             var overlayFull = document.getElementById('cronoEditarCargaOverlayFullscreen');
             if (overlayFull) overlayFull.classList.add('hidden');
+            notificarParentModal(false);
             cargarListado();
         }
         (function() {
@@ -1729,6 +1773,11 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 return Number(x.numCronograma) === Number(numCrono);
             });
             if (!g) return;
+            abrirModalDetallesDesdeGrupo(g);
+        });
+
+        function abrirModalDetallesDesdeGrupo(g) {
+            if (!g) return;
             var detalles = g.detalles || [];
             document.getElementById('detallesCodPrograma').textContent = (g.codPrograma || '') + ' — ' + (g.nomPrograma || '');
             document.getElementById('detallesTotal').textContent = detalles.length;
@@ -1763,7 +1812,41 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             renderDetallesListadoPage(1);
             renderDetallesGranjasPage(1);
             document.getElementById('modalDetalles').classList.remove('hidden');
-        });
+            notificarParentModal(true);
+        }
+
+        (function verDetalleDesdeUrl() {
+            var params = new URLSearchParams(window.location.search);
+            if (params.get('verDetalle') !== '1' || !params.get('numCronograma')) return;
+            var num = params.get('numCronograma');
+            fetch('get_cronograma.php?numCronograma=' + encodeURIComponent(num))
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (!res.success || !res.data) return;
+                    var d = res.data;
+                    var detalles = [];
+                    (d.items || []).forEach(function(it) {
+                        (it.fechas || []).forEach(function(f) {
+                            detalles.push({
+                                codPrograma: d.codPrograma || '',
+                                nomPrograma: d.nomPrograma || '',
+                                granja: it.granja || '',
+                                nomGranja: it.nomGranja || '',
+                                campania: it.campania || (f && f.campania) || '',
+                                galpon: it.galpon || '',
+                                fechaCarga: (f && f.fechaCarga) || '',
+                                fechaEjecucion: (f && f.fechaEjecucion) || '',
+                                edad: (f && f.edad != null) ? f.edad : (it.edad != null ? it.edad : ''),
+                                numCronograma: d.numCronograma,
+                                zona: it.zona || '',
+                                subzona: it.subzona || ''
+                            });
+                        });
+                    });
+                    var g = { numCronograma: d.numCronograma, codPrograma: d.codPrograma, nomPrograma: d.nomPrograma, detalles: detalles };
+                    if (typeof abrirModalDetallesDesdeGrupo === 'function') abrirModalDetallesDesdeGrupo(g);
+                });
+        })();
 
         var detallesPageSizeEl = document.getElementById('detallesPageSize');
         if (detallesPageSizeEl) detallesPageSizeEl.addEventListener('change', function() {
@@ -2397,7 +2480,11 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                     var det = res.detalles || [];
                     var sigla = (res.sigla || 'PL').toUpperCase();
                     if (sigla === 'NEC') sigla = 'NC';
+                    var catStrEv = (cab.categoria || '').toString().trim();
+                    var esSeguimientoEv = catStrEv.toUpperCase().indexOf('SEGUIMIENTO') !== -1;
+                    var esEspecialEv = cab.esEspecial === 1 || cab.esEspecial === '1';
                     var cols = columnasPorSiglaReporte[sigla] || columnasPorSiglaReporte['PL'];
+                    if (!esSeguimientoEv && esEspecialEv) cols = cols.filter(function(k) { return k !== 'edad' && k !== 'tolerancia'; });
                     var colsSinNum = cols.filter(function(k) {
                         return k !== 'num';
                     });
@@ -2407,10 +2494,31 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                         });
                         colsSinNum.push('edad');
                     }
+                    if (colsSinNum.indexOf('tolerancia') !== -1) {
+                        colsSinNum = colsSinNum.filter(function(k) {
+                            return k !== 'tolerancia';
+                        });
+                        colsSinNum.push('tolerancia');
+                    }
                     var cabFilaHtml = '<div class="campo"><dt>Código</dt><dd>' + esc(cab.codigo) + '</dd></div>';
                     cabFilaHtml += '<div class="campo"><dt>Tipo</dt><dd>' + esc(cab.nomTipo || '') + '</dd></div>';
                     cabFilaHtml += '<div class="campo"><dt>Nombre</dt><dd>' + esc(cab.nombre) + '</dd></div>';
                     cabFilaHtml += '<div class="campo descripcion"><dt>Descripción</dt><dd>' + (cab.descripcion ? esc(cab.descripcion) : '—') + '</dd></div>';
+                    if (esEspecialEv) {
+                        cabFilaHtml += '<div class="campo"><dt>Programa especial</dt><dd>';
+                        var modoEv = (cab.modoEspecial || '').toString().toUpperCase();
+                        if (modoEv === 'PERIODICIDAD') {
+                            cabFilaHtml += 'Cada ' + (cab.intervaloMeses || 1) + ' mes(es), día ' + (cab.diaDelMes || 15) + ' del mes.';
+                        } else if (modoEv === 'MANUAL') {
+                            var fEv = cab.fechasManuales || [];
+                            cabFilaHtml += 'Fechas manuales: ' + (fEv.length > 0 ? fEv.map(function(f) { return fechaDDMMYYYY((f || '').toString().substring(0, 10)); }).join(', ') : '—');
+                        } else {
+                            cabFilaHtml += 'Fechas por periodicidad o manual.';
+                        }
+                        var tolEv = 1;
+                        if (det.length > 0 && det[0].tolerancia != null && det[0].tolerancia !== '') tolEv = det[0].tolerancia;
+                        cabFilaHtml += ' Tolerancia: ' + tolEv + ' día(s).</dd></div>';
+                    }
                     cabFilaEl.innerHTML = cabFilaHtml;
                     if (det.length === 0) {
                         box.innerHTML = '<p class="text-gray-500 text-sm">Sin registros en el detalle del programa.</p>';

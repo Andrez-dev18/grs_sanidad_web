@@ -1,4 +1,6 @@
 <?php
+@ini_set('max_execution_time', 300);
+@set_time_limit(300);
 header('Content-Type: application/json');
 session_start();
 if (empty($_SESSION['active'])) {
@@ -38,6 +40,10 @@ $chkEdad = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'edad'");
 if ($chkEdad && $chkEdad->num_rows > 0) $tieneEdad = true;
 $chkNumCrono = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'numCronograma'");
 $tieneNumCronograma = $chkNumCrono && $chkNumCrono->num_rows > 0;
+$chkTolerancia = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'tolerancia'");
+$tieneTolerancia = $chkTolerancia && $chkTolerancia->num_rows > 0;
+$chkTolDet = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'tolerancia'");
+$tieneTolDet = $chkTolDet && $chkTolDet->num_rows > 0;
 
 $numCronograma = 1;
 if ($tieneNumCronograma) {
@@ -65,6 +71,26 @@ if (is_array($items) && !empty($items)) {
         $cols .= ", edad";
         $placeholders .= ", ?";
         $types .= "i";
+    }
+    if ($tieneTolerancia) {
+        $cols .= ", tolerancia";
+        $placeholders .= ", ?";
+        $types .= "i";
+    }
+    // Mapa edad -> tolerancia desde san_fact_programa_det (para copiar al cronograma)
+    $toleranciaPorEdad = [];
+    if ($tieneTolerancia && $tieneTolDet) {
+        $stTol = $conn->prepare("SELECT edad, COALESCE(NULLIF(tolerancia, 0), 1) AS tol FROM san_fact_programa_det WHERE codPrograma = ?");
+        if ($stTol) {
+            $stTol->bind_param("s", $codPrograma);
+            $stTol->execute();
+            $resTol = $stTol->get_result();
+            while ($row = $resTol->fetch_assoc()) {
+                $e = (int)($row['edad'] ?? 0);
+                $toleranciaPorEdad[$e] = max(1, (int)($row['tol'] ?? 1));
+            }
+            $stTol->close();
+        }
     }
     $stmt = $conn->prepare("INSERT INTO san_fact_cronograma ($cols) VALUES ($placeholders)");
     if (!$stmt) {
@@ -95,6 +121,7 @@ if (is_array($items) && !empty($items)) {
             if ($tieneNumCronograma) $bindVals[] = $numCronograma;
             if ($tieneNomGranja) $bindVals[] = $nomGranja;
             if ($tieneEdad) $bindVals[] = $edadVal;
+            if ($tieneTolerancia) $bindVals[] = isset($toleranciaPorEdad[$edadVal]) ? $toleranciaPorEdad[$edadVal] : (empty($toleranciaPorEdad) ? 1 : max(array_values($toleranciaPorEdad)));
            
             $params = array_merge([$types], $bindVals);
             $refs = [];
@@ -188,6 +215,22 @@ if ($tieneNumCronograma) {
     $placeholdersModo2 .= ", ?";
     $typesModo2 .= "i";
 }
+if ($tieneTolerancia) {
+    $colsModo2 .= ", tolerancia";
+    $placeholdersModo2 .= ", ?";
+    $typesModo2 .= "i";
+}
+$toleranciaModo2 = 1;
+if ($tieneTolerancia && $tieneTolDet) {
+    $stTol2 = $conn->prepare("SELECT COALESCE(MAX(NULLIF(tolerancia, 0)), 1) AS tol FROM san_fact_programa_det WHERE codPrograma = ?");
+    if ($stTol2) {
+        $stTol2->bind_param("s", $codPrograma);
+        $stTol2->execute();
+        $r = $stTol2->get_result();
+        if ($r && $row = $r->fetch_assoc()) $toleranciaModo2 = max(1, (int)($row['tol'] ?? 1));
+        $stTol2->close();
+    }
+}
 $stmt = $conn->prepare("INSERT INTO san_fact_cronograma ($colsModo2) VALUES ($placeholdersModo2)");
 if (!$stmt) {
     $errMsg = (isset($conn) && $conn) ? (string)@$conn->error : 'Prepare falló';
@@ -204,7 +247,13 @@ foreach ($pares as $f) {
         $fechaEjecucion = is_string($f) ? $f : date('Y-m-d', strtotime($f));
         $fechaCarga = $fechaEjecucion;
     }
-    if ($tieneNumCronograma) {
+    if ($tieneTolerancia) {
+        if ($tieneNumCronograma) {
+            $stmt->bind_param($typesModo2, $granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zona, $subzona, $numCronograma, $toleranciaModo2);
+        } else {
+            $stmt->bind_param($typesModo2, $granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zona, $subzona, $toleranciaModo2);
+        }
+    } elseif ($tieneNumCronograma) {
         $stmt->bind_param($typesModo2, $granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zona, $subzona, $numCronograma);
     } else {
         $stmt->bind_param($typesModo2, $granja, $campania, $galpon, $codPrograma, $nomPrograma, $fechaCarga, $fechaEjecucion, $usuario, $zona, $subzona);

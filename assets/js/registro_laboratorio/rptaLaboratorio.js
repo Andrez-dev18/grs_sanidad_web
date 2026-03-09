@@ -1,4 +1,4 @@
-﻿//###################################################
+//###################################################
 //BLOQUE PARA CARGAR SIDEBAR CON LAS SOLICITUDES
 //####################################################
 
@@ -1989,6 +1989,11 @@ async function cargarDatosCompletados(codigoEnvio) {
                     state[`${enf.nombre}_cv${sufijo}`] = d.cv || '';
                     state[`${enf.nombre}_sd${sufijo}`] = d.desviacion_estandar || '';
                     state[`${enf.nombre}_count${sufijo}`] = d.count_muestras || 20;
+                    state[`${enf.nombre}_sp${sufijo}`] = (d.sp != null && d.sp !== '') ? d.sp : '';
+                    state[`${enf.nombre}_cv_sp${sufijo}`] = (d.cv_sp != null && d.cv_sp !== '') ? d.cv_sp : '';
+                    state[`${enf.nombre}_pct_positivos${sufijo}`] = (d.pct_positivos != null && d.pct_positivos !== '') ? d.pct_positivos : '';
+                    state[`${enf.nombre}_pct_sospechosos${sufijo}`] = (d.pct_sospechosos != null && d.pct_sospechosos !== '') ? d.pct_sospechosos : '';
+                    state[`${enf.nombre}_pct_negativos${sufijo}`] = (d.pct_negativos != null && d.pct_negativos !== '') ? d.pct_negativos : '';
                     state[`${enf.nombre}_obs${sufijo}`] = d.obs || '';
 
                     // Niveles s00-s24
@@ -2576,50 +2581,42 @@ function renderEnfermedadPanel(enf, conf, tipo) {
 
         let nivelesHtml = `<div class="mt-2 grid grid-cols-5 gap-2 bg-gray-50 p-3 rounded border border-gray-100">` +
             Array.from({ length: 25 }, (_, k) => {
-                return `<input type="number" 
+                return `<input type="number"
                                name="${enf}_s${k}${sufijo}"
-                               step="0.01" 
-                               placeholder="S${k}" 
+                               step="0.01"
+                               placeholder="S${k}"
                                class="text-center text-xs border border-gray-300 rounded h-8 w-full focus:border-blue-500 outline-none hover:bg-white transition-colors focus:ring-1 focus:ring-blue-200">`;
             }).join('') +
             `</div>`;
 
-        // ✅ AQUI EL CAMBIO: Grid de 5 columnas para incluir DATO
+        // Grid con estilos inline para no depender de Tailwind/responsividad
+        // Usamos 5 columnas en 2 filas para mejor visualización en pantallas normales
         htmlContenidoResultados += `
             <div class="mb-6 ${cantidadMuestras > 1 ? 'bg-gray-50/50 p-3 rounded-lg border border-gray-100' : ''}">
                 ${tituloMuestra}
+
+                <!-- Fila 1: DATO, GMEAN, CV %, SD, COUNT -->
+                <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:0.5rem; margin-bottom:0.5rem;">
+                    <div><label style="display:block;font-size:9px;font-weight:700;color:#9ca3af;margin-bottom:4px;">DATO</label><input type="number" step="0.01" name="${enf}_dato${sufijo}" class="input-lab font-bold text-gray-700" style="width:100%;padding:4px;font-size:12px;"></div>
+                    <div><label style="display:block;font-size:9px;font-weight:700;color:#9ca3af;margin-bottom:4px;">GMEAN</label><input type="number" step="0.01" name="${enf}_gmean${sufijo}" class="input-lab font-bold text-gray-700" style="width:100%;padding:4px;font-size:12px;"></div>
+                    <div><label style="display:block;font-size:9px;font-weight:700;color:#9ca3af;margin-bottom:4px;">CV %</label><input type="number" step="0.01" name="${enf}_cv${sufijo}" class="input-lab" style="width:100%;padding:4px;font-size:12px;"></div>
+                    <div><label style="display:block;font-size:9px;font-weight:700;color:#9ca3af;margin-bottom:4px;">SD</label><input type="number" step="0.01" name="${enf}_sd${sufijo}" class="input-lab" style="width:100%;padding:4px;font-size:12px;"></div>
+                    <div><label style="display:block;font-size:9px;font-weight:700;color:#9ca3af;margin-bottom:4px;">COUNT</label><input type="number" value="20" name="${enf}_count${sufijo}" class="input-lab bg-gray-50 text-center" style="width:100%;padding:4px;font-size:12px;"></div>
+                </div>
                 
-                <div class="grid grid-cols-5 gap-4 mb-4"> <div>
-                        <label class="block text-[10px] font-bold text-gray-400 mb-1">DATO</label>
-                        <input type="number" step="0.01" name="${enf}_dato${sufijo}" class="input-lab font-bold text-gray-700">
-                    </div>
-
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 mb-1">GMEAN</label>
-                        <input type="number" step="0.01" name="${enf}_gmean${sufijo}" class="input-lab font-bold text-gray-700">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 mb-1">CV %</label>
-                        <input type="number" step="0.01" name="${enf}_cv${sufijo}" class="input-lab">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 mb-1">SD</label>
-                        <input type="number" step="0.01" name="${enf}_sd${sufijo}" class="input-lab">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-bold text-gray-400 mb-1">COUNT</label>
-                        <input type="number" value="20" name="${enf}_count${sufijo}" class="input-lab bg-gray-50 text-center">
-                    </div>
-
-                    <div class="col-span-5">
-                        <label class="block text-[10px] font-bold text-gray-400 mb-1">OBSERVACIONES</label>
-                        <textarea 
-                            name="${enf}_obs${sufijo}" 
-                            rows="2" 
-                            placeholder="Observaciones de la muestra ${i}..."
-                            class="w-full text-xs text-gray-700 border border-gray-300 rounded p-2 focus:border-blue-500 outline-none hover:bg-white transition-colors focus:ring-1 focus:ring-blue-200 resize-y"
-                        ></textarea>
-                    </div>
+                <!-- Fila 2: S/P, CV%(S/P), % Pos, % Sos, % Neg -->
+                <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:0.5rem; margin-bottom:0.5rem;">
+                    <div><label style="display:block;font-size:9px;font-weight:700;color:#9ca3af;margin-bottom:4px;">S/P</label><input type="number" step="0.001" name="${enf}_sp${sufijo}" class="input-lab" style="width:100%;padding:4px;font-size:12px;"></div>
+                    <div><label style="display:block;font-size:9px;font-weight:700;color:#9ca3af;margin-bottom:4px;">CV%(S/P)</label><input type="number" step="0.1" name="${enf}_cv_sp${sufijo}" class="input-lab" style="width:100%;padding:4px;font-size:12px;"></div>
+                    <div><label style="display:block;font-size:9px;font-weight:700;color:#9ca3af;margin-bottom:4px;">% Pos</label><input type="number" step="0.1" name="${enf}_pct_positivos${sufijo}" class="input-lab" style="width:100%;padding:4px;font-size:12px;"></div>
+                    <div><label style="display:block;font-size:9px;font-weight:700;color:#9ca3af;margin-bottom:4px;">% Sos</label><input type="number" step="0.1" name="${enf}_pct_sospechosos${sufijo}" class="input-lab" style="width:100%;padding:4px;font-size:12px;"></div>
+                    <div><label style="display:block;font-size:9px;font-weight:700;color:#9ca3af;margin-bottom:4px;">% Neg</label><input type="number" step="0.1" name="${enf}_pct_negativos${sufijo}" class="input-lab" style="width:100%;padding:4px;font-size:12px;"></div>
+                </div>
+                
+                <!-- OBSERVACIONES -->
+                <div style="margin-top:0.5rem;">
+                    <label style="display:block;font-size:10px;font-weight:700;color:#9ca3af;margin-bottom:4px;">OBSERVACIONES</label>
+                    <textarea name="${enf}_obs${sufijo}" rows="2" placeholder="Observaciones de la muestra ${i}..." class="w-full text-xs text-gray-700 border border-gray-300 rounded p-2 focus:border-blue-500 outline-none resize-y"></textarea>
                 </div>
 
                 <details class="group">
@@ -2641,9 +2638,9 @@ function renderEnfermedadPanel(enf, conf, tipo) {
             </button>` : '';
 
     panel.innerHTML = `
-        <div class="relative border border-gray-200 rounded-lg bg-white overflow-hidden shadow-sm">
+        <div class="relative border border-gray-200 rounded-lg bg-white shadow-sm" style="overflow-x: visible; min-width: 100%;">
             ${botonEliminar}
-            
+
             <div class="px-4 py-2 border-b border-gray-200 flex justify-between items-center bg-gray-50">
                 <span class="font-bold text-gray-700">${enf}</span>
                 <input type="hidden" name="enfermedades[]" value="${enf}">
@@ -2652,8 +2649,8 @@ function renderEnfermedadPanel(enf, conf, tipo) {
                      ${esHisopado ? `<span class="text-[9px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-bold">${cantidadMuestras} Muestras</span>` : ''}
                 </div>
             </div>
-            
-            <div class="p-4">
+
+            <div class="p-4" style="overflow-x: visible; min-width: fit-content;">
                 ${htmlContenidoResultados}
             </div>
         </div>`;

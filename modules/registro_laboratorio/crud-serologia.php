@@ -459,6 +459,11 @@ try {
                     $c    = $getVal('_cv') !== NULL ? (float)$getVal('_cv') : NULL;
                     $s    = $getVal('_sd') !== NULL ? (float)$getVal('_sd') : NULL;
                     $cnt  = $getVal('_count') !== NULL ? (int)$getVal('_count') : 20;
+                    $sp   = $getVal('_sp') !== NULL && $getVal('_sp') !== '' ? (float)$getVal('_sp') : NULL;
+                    $cvSp = $getVal('_cv_sp') !== NULL && $getVal('_cv_sp') !== '' ? (float)$getVal('_cv_sp') : NULL;
+                    $pctPos = $getVal('_pct_positivos') !== NULL && $getVal('_pct_positivos') !== '' ? (float)$getVal('_pct_positivos') : NULL;
+                    $pctSos = $getVal('_pct_sospechosos') !== NULL && $getVal('_pct_sospechosos') !== '' ? (float)$getVal('_pct_sospechosos') : NULL;
+                    $pctNeg = $getVal('_pct_negativos') !== NULL && $getVal('_pct_negativos') !== '' ? (float)$getVal('_pct_negativos') : NULL;
                     $obs  = $getVal('_obs'); // Texto, no float
 
                     $codRefCompleto = !empty($_POST['codRef_completo']) ? $_POST['codRef_completo']
@@ -477,14 +482,16 @@ try {
                     $cols = ['codigo_envio', 'posSolicitud', 'codRef', 'fecha_toma_muestra', 'edad_aves', 'tipo_ave', 
                              'planta_incubacion', 'lote', 'codigo_granja', 'codigo_campana', 'numero_galpon', 'edad_reproductora', 
                              'condicion', 'estado', 'numero_informe', 'fecha_informe', 'fecha_registro_lab', 'usuario_registro', 
-                             'enfermedad', 'codigo_enfermedad', 'dato', 'gmean', 'cv', 'desviacion_estandar', 'count_muestras', 'obs'];
+                             'enfermedad', 'codigo_enfermedad', 'dato', 'gmean', 'cv', 'desviacion_estandar', 'count_muestras', 
+                             'sp', 'cv_sp', 'pct_positivos', 'pct_sospechosos', 'pct_negativos', 'obs'];
                     
                     for ($i=0; $i<=24; $i++) $cols[] = "s0$i";
 
                     $vals = [$cod, $posSolicitud, $codRefCompleto, $fec, $edad, $tipo, 
                              $planta, $lote, $granja, $camp, $galp, $edRep, 
                              $cond, $est, $inf, $fecInf, $fechaRegistroLab, $user, 
-                             $enf, $codigo_enf, $dato, $g, $c, $s, $cnt, $obs];
+                             $enf, $codigo_enf, $dato, $g, $c, $s, $cnt, 
+                             $sp, $cvSp, $pctPos, $pctSos, $pctNeg, $obs];
                     
                     $vals = array_merge($vals, $levelValues);
 

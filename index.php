@@ -65,13 +65,38 @@ $subTracking = $secLogistica;
             background: #f8f9fa;
             margin: 0;
             padding: 0;
+            min-height: 100%;
+            overflow-x: hidden;
+        }
+
+        html.modal-host-lock,
+        body.modal-host-lock {
+            overflow: hidden !important;
             height: 100%;
-            overflow: hidden;
+        }
+
+        body.modal-host-lock .content-wrapper,
+        body.modal-host-lock main {
+            overflow: hidden !important;
         }
 
         :root {
             --sidebar-width: 300px;
             --sidebar-mini-width: 112px;
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --sidebar-width: 240px;
+                --sidebar-mini-width: 64px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            :root {
+                --sidebar-width: 220px;
+                --sidebar-mini-width: 48px;
+            }
         }
 
         .sidebar {
@@ -349,6 +374,24 @@ $subTracking = $secLogistica;
                 left: 0 !important;
                 width: 100vw !important;
             }
+
+            /* Notificaciones: más compactas en móvil */
+            .notif-dropdown {
+                width: min(24rem, calc(100vw - 1rem)) !important;
+                max-height: min(85vh, 420px) !important;
+            }
+            .notif-dropdown .overflow-y-auto {
+                max-height: min(70vh, 320px) !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .notif-dropdown {
+                width: calc(100vw - 1rem) !important;
+                left: 0.5rem !important;
+                right: 0.5rem !important;
+                margin-left: auto !important;
+            }
         }
 
         /* Animaciones */
@@ -372,8 +415,16 @@ $subTracking = $secLogistica;
         #dashboardFrame {
             width: 100%;
             min-height: calc(100vh - 80px);
+            height: 100%;
             border: none;
             background: #f9fafb;
+        }
+
+        /* Main content: permitir scroll para mostrar contenido completo */
+        main {
+            min-height: calc(100vh - 80px);
+            height: auto;
+            overflow-y: visible;
         }
 
         /* Iframe a pantalla completa cuando un modal interno (ej. Calendario) está abierto; no cubre el sidebar para no cambiarlo */
@@ -530,6 +581,10 @@ $subTracking = $secLogistica;
                                 class="submenu-link menu-link block text-gray-400 hover:text-white">1.3 Tracking</a>
 
                             <a href="#"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/dashboard-planificacion.php', '📅 Dashboard Planificación', 'Resumen de programas, asignaciones y cumplimiento')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white">1.4 Planificación</a>
+
+                            <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/dashboard/guia/dashboard-guia-dashboards.php', 'ℹ️ Acerca de', 'Información de los Dashboards')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white">
                                 <span class="font-medium">ℹ️ Acerca de</span>
@@ -629,10 +684,13 @@ $subTracking = $secLogistica;
                                 <div id="submenu-asignacion" class="submenu hidden pl-4 mt-1 space-y-1">
                                     <a href="#"
                                         onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma-registro.php', '📅 Asignación - Registro', 'Registro de cronograma')"
-                                        class="submenu-link menu-link block text-gray-400 hover:text-white py-1.5">4.2.1 Registro</a>
+                                        class="submenu-link menu-link block text-gray-400 hover:text-white py-1.5">4.2.1 Registro Planificado</a>
+                                    <a href="#"
+                                        onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma-asignacion-eventual.php', '📅 Registro Eventual', 'Asignación eventual')"
+                                        class="submenu-link menu-link block text-gray-400 hover:text-white py-1.5">4.2.2 Registro Eventual</a>
                                     <a href="#"
                                         onclick="selectMenuItem(this); loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma-listado.php', '📅 Asignación - Listado', 'Listado de cronogramas')"
-                                        class="submenu-link menu-link block text-gray-400 hover:text-white py-1.5">4.2.2 Listado</a>
+                                        class="submenu-link menu-link block text-gray-400 hover:text-white py-1.5">4.2.3 Listado</a>
                                 </div>
                             </div>
                             <div class="submenu-section mt-1">
@@ -791,10 +849,13 @@ $subTracking = $secLogistica;
                             <a href="#"
                                 onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/notificaciones_whatsapp/dashboard-notificaciones-whatsapp.php','📱 Número telefónico', 'Configure su número para recordatorios por WhatsApp')"
                                 class="submenu-link menu-link block text-gray-400 hover:text-white"><?php echo $isTransportista ? '2.12' : '7.12'; ?> Número telefónico</a>
+                            <a href="#"
+                                onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/estandares/dashboard-estandares.php','📐 Estándares', 'Gestione estándares por subproceso y actividad')"
+                                class="submenu-link menu-link block text-gray-400 hover:text-white"><?php echo $isTransportista ? '2.13' : '7.13'; ?> Estándares</a>
                             <?php if ($isAdmin): ?>
                                 <a href="#"
                                     onclick="selectMenuItem(this); loadDashboardAndData('modules/configuracion/notificaciones_usuarios/dashboard-notificaciones-usuarios.php','👥 Notificaciones de usuarios', 'Gestione teléfonos autorizados para notificaciones')"
-                                    class="submenu-link menu-link block text-gray-400 hover:text-white"><?php echo $isTransportista ? '2.13' : '7.13'; ?> Notificaciones de usuarios</a>
+                                    class="submenu-link menu-link block text-gray-400 hover:text-white"><?php echo $isTransportista ? '2.14' : '7.14'; ?> Notificaciones de usuarios</a>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -834,7 +895,7 @@ $subTracking = $secLogistica;
                             <i class="fas fa-bell text-gray-600 text-lg"></i>
                             <span id="notifBadge" class="absolute top-0 right-0 bg-red-500 text-white text-[10px] rounded-full w-5 h-5 hidden flex items-center justify-center">0</span>
                         </button>
-                        <div id="notifDropdown" class="hidden absolute top-full mt-2 w-96 max-w-[calc(100vw-1.5rem)] right-0 bg-white border border-gray-200 rounded-2xl shadow-lg z-50 overflow-hidden flex flex-col max-h-[85vh]">
+                        <div id="notifDropdown" class="hidden absolute top-full mt-2 w-96 max-w-[calc(100vw-1.5rem)] right-0 bg-white border border-gray-200 rounded-2xl shadow-lg z-50 overflow-hidden flex flex-col max-h-[85vh] notif-dropdown">
                             <div class="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between rounded-t-2xl flex-shrink-0">
                                 <span class="font-semibold text-gray-800">Eventos del cronograma</span>
                                 <a href="#" onclick="irACalendario(); return false;" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Ver calendario</a>
@@ -906,6 +967,23 @@ $subTracking = $secLogistica;
     </div>
 
     <script>
+        let mobileModalOpenCount = 0;
+
+        function applyHostModalScrollLock() {
+            const shouldLock = window.innerWidth < 1024 && mobileModalOpenCount > 0;
+            document.documentElement.classList.toggle('modal-host-lock', shouldLock);
+            document.body.classList.toggle('modal-host-lock', shouldLock);
+        }
+
+        function setHostModalState(isOpen) {
+            if (isOpen) {
+                mobileModalOpenCount += 1;
+            } else {
+                mobileModalOpenCount = Math.max(0, mobileModalOpenCount - 1);
+            }
+            applyHostModalScrollLock();
+        }
+
         function showLoading() {
             document.getElementById('loadingIndicator').classList.remove('hidden');
         }
@@ -1006,6 +1084,14 @@ $subTracking = $secLogistica;
                     frame.classList.remove('iframe-fullscreen');
                 }
             }
+            if (event.data && event.data.type === 'sanidadMobileModalState') {
+                if (typeof event.data.openCount === 'number') {
+                    mobileModalOpenCount = Math.max(0, Number(event.data.openCount) || 0);
+                    applyHostModalScrollLock();
+                } else if (typeof event.data.open === 'boolean') {
+                    setHostModalState(event.data.open);
+                }
+            }
             // Overlay recálculo programa: desde iframe (registro) para cubrir toda la app
             if (event.data && event.data.tipo === 'mostrarModalCargaRecalcular') {
                 var ov = document.getElementById('overlayRecalcTop');
@@ -1031,9 +1117,17 @@ $subTracking = $secLogistica;
                 var rect = btn.getBoundingClientRect();
                 dd.style.position = 'fixed';
                 dd.style.top = (rect.bottom + 8) + 'px';
-                dd.style.right = (window.innerWidth - rect.right) + 'px';
-                dd.style.left = 'auto';
-                dd.style.width = 'min(24rem, calc(100vw - 1.5rem))';
+                if (window.innerWidth <= 480) {
+                    dd.style.left = '0.5rem';
+                    dd.style.right = '0.5rem';
+                    dd.style.width = 'auto';
+                    dd.style.marginLeft = '0';
+                    dd.style.marginRight = '0';
+                } else {
+                    dd.style.right = (window.innerWidth - rect.right) + 'px';
+                    dd.style.left = 'auto';
+                    dd.style.width = 'min(24rem, calc(100vw - 1.5rem))';
+                }
                 dd.classList.remove('hidden');
             } else {
                 dd.classList.add('hidden');
@@ -1049,9 +1143,19 @@ $subTracking = $secLogistica;
             var calLink = document.querySelector('[onclick*="dashboard-calendario.php"]');
             if (calLink) {
                 markActiveElement(calLink);
-                loadDashboardAndData(url, '📅 Calendario', 'Vista de cronogramas por día, semana, mes y año');
-            } else {
-                loadDashboardAndData(url, '📅 Calendario', 'Vista de cronogramas por día, semana, mes y año');
+            }
+            loadDashboardAndData(url, '📅 Calendario', 'Vista de cronogramas por día, semana, mes y año');
+            var sidebar = document.getElementById('sidebar');
+            var overlay = document.getElementById('sidebarOverlay');
+            var contentWrapper = document.querySelector('.content-wrapper');
+            if (sidebar && contentWrapper) {
+                sidebar.classList.add('collapsed');
+                contentWrapper.classList.add('sidebar-collapsed');
+                if (window.innerWidth < 1024 && overlay) {
+                    overlay.classList.remove('active');
+                } else if (overlay) {
+                    overlay.classList.remove('active');
+                }
             }
         }
 
@@ -1189,11 +1293,13 @@ $subTracking = $secLogistica;
                 sidebar.classList.remove('collapsed');
                 overlay.classList.remove('active');
                 contentWrapper.classList.remove('sidebar-collapsed');
+                mobileModalOpenCount = 0;
             } else {
                 sidebar.classList.add('collapsed');
                 overlay.classList.remove('active');
                 contentWrapper.classList.add('sidebar-collapsed');
             }
+            applyHostModalScrollLock();
         });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

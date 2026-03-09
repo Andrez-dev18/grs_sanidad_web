@@ -21,34 +21,7 @@ if ($codPrograma === '') {
     exit;
 }
 
-
-$sqlDet = "SELECT DISTINCT edad FROM san_fact_programa_det WHERE codPrograma = ? AND edad IS NOT NULL AND edad != 0 ORDER BY edad ASC";
-$st = $conn->prepare($sqlDet);
-$st->bind_param("s", $codPrograma);
-$st->execute();
-$resEdades = $st->get_result();
-$edadesUnicas = [];
-while ($r = $resEdades->fetch_assoc()) {
-    $edadesUnicas[] = (int) $r['edad'];
-}
-$st->close();
-if (empty($edadesUnicas)) {
-    echo json_encode(['success' => false, 'message' => 'Programa sin edades en el detalle.', 'fechas' => []]);
-    exit;
-}
-// Edades positivas (consultadas en tabla de carga); edades negativas usan fila edad=1 como referencia
-$edadesPositivas = array_values(array_filter($edadesUnicas, function ($e) { return $e > 0; }));
-$edadesNegativas = array_values(array_filter($edadesUnicas, function ($e) { return $e < 0; }));
-$edadesParaTabla = $edadesPositivas;
-if (!empty($edadesNegativas) && !in_array(1, $edadesParaTabla)) {
-    $edadesParaTabla[] = 1;
-    sort($edadesParaTabla);
-}
-if (empty($edadesParaTabla)) {
-    $edadesParaTabla = [1];
-}
-
-// Rango del programa (fechaInicio / fechaFin): si ambos están definidos, se filtran las fechas al calcular
+// Rango del programa (fechaInicio / fechaFin) - necesario para filtrar fechas especial
 $fechaInicioPrograma = null;
 $fechaFinPrograma = null;
 $chkCab = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'fechaInicio'");
@@ -63,18 +36,121 @@ if ($chkCab && $chkCab->num_rows > 0) {
             $fi = trim((string)($rowCab['fechaInicio'] ?? ''));
             $ff = trim((string)($rowCab['fechaFin'] ?? ''));
             if ($fi !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $fi)) $fechaInicioPrograma = $fi;
-            if ($ff !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $ff)) {
-                $fechaFinPrograma = $ff;
-            } elseif ($fechaInicioPrograma !== null && $anio > 0) {
-                $fechaFinPrograma = $anio . '-12-31';
-            }
+            if ($ff !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $ff)) $fechaFinPrograma = $ff;
+            elseif ($fechaInicioPrograma !== null && $anio > 0) $fechaFinPrograma = $anio . '-12-31';
         }
     }
 }
-
-// Si la fecha inicio del programa es anterior al 1 de enero del año seleccionado, filtrar desde el 1 de enero del año seleccionado
 if ($anio > 0 && $fechaInicioPrograma !== null && $fechaInicioPrograma < $anio . '-01-01') {
     $fechaInicioPrograma = $anio . '-01-01';
+}
+
+// Programa especial: leer fechas desde detalle (prioridad) o cabecera
+$esEspecial = 0;
+$modoEspecial = '';
+$intervaloMeses = 1;
+$diaDelMes = 15;
+$fechasManualesParaAnio = [];
+$fechasPeriodicasParaAnio = [];
+$fechas_manuales_json = null;
+
+$chkEsEspecial = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'esEspecial'");
+$tieneEspecial = $chkEsEspecial && $chkEsEspecial->num_rows > 0;
+$chkFechasDet = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'fechas'");
+$chkIntervaloDet = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'intervaloMeses'");
+$chkDiaDet = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'diaDelMes'");
+$tieneFechasDet = $chkFechasDet && $chkFechasDet->num_rows > 0;
+$tienePeriodicidadDet = $chkIntervaloDet && $chkIntervaloDet->num_rows > 0 && $chkDiaDet && $chkDiaDet->num_rows > 0;
+
+// fechas, intervaloMeses, diaDelMes solo en DET
+if ($tieneEspecial || $tieneFechasDet || $tienePeriodicidadDet) {
+    $sqlCabEsp = "SELECT codigo" . ($tieneEspecial ? ", esEspecial, modoEspecial" : "") . " FROM san_fact_programa_cab WHERE codigo = ? LIMIT 1";
+    $stCabEsp = $conn->prepare($sqlCabEsp);
+    if ($stCabEsp) {
+        $stCabEsp->bind_param("s", $codPrograma);
+        $stCabEsp->execute();
+        $rowCabEsp = $stCabEsp->get_result()->fetch_assoc();
+        $stCabEsp->close();
+        if ($rowCabEsp) {
+            $esEspecial = $tieneEspecial ? (int)($rowCabEsp['esEspecial'] ?? 0) : 0;
+            $modoEspecial = $tieneEspecial ? trim((string)($rowCabEsp['modoEspecial'] ?? '')) : '';
+        }
+    }
+    if (($tieneFechasDet || $tienePeriodicidadDet)) {
+        $camposDetEsp = $tieneFechasDet ? "fechas" : "";
+        if ($tienePeriodicidadDet) $camposDetEsp .= ($camposDetEsp ? ", " : "") . "intervaloMeses, diaDelMes";
+        $stDetEsp = $conn->prepare("SELECT " . $camposDetEsp . " FROM san_fact_programa_det WHERE codPrograma = ? LIMIT 1");
+        if ($stDetEsp) {
+            $stDetEsp->bind_param("s", $codPrograma);
+            $stDetEsp->execute();
+            $rowDetEsp = $stDetEsp->get_result()->fetch_assoc();
+            $stDetEsp->close();
+            if ($rowDetEsp) {
+                if ($tieneFechasDet && isset($rowDetEsp['fechas']) && $rowDetEsp['fechas'] !== null && $rowDetEsp['fechas'] !== '') {
+                    $fechas_manuales_json = $rowDetEsp['fechas'];
+                }
+                if ($tienePeriodicidadDet && isset($rowDetEsp['intervaloMeses']) && $rowDetEsp['intervaloMeses'] !== null) {
+                    $intervaloMeses = max(1, min(12, (int)$rowDetEsp['intervaloMeses']));
+                }
+                if ($tienePeriodicidadDet && isset($rowDetEsp['diaDelMes']) && $rowDetEsp['diaDelMes'] !== null) {
+                    $diaDelMes = max(1, min(31, (int)$rowDetEsp['diaDelMes']));
+                }
+            }
+        }
+    }
+    if ($esEspecial === 1 && strtoupper($modoEspecial) === 'MANUAL' && $fechas_manuales_json !== null && $anio > 0) {
+        $dec = json_decode($fechas_manuales_json, true);
+        $arr = is_array($dec) ? $dec : [];
+        $desde = $fechaInicioPrograma ?? ($anio . '-01-01');
+        $hasta = $fechaFinPrograma ?? ($anio . '-12-31');
+        foreach ($arr as $f) {
+            $d = is_string($f) ? substr(trim($f), 0, 10) : (isset($f['fecha']) ? substr(trim($f['fecha']), 0, 10) : '');
+            if ($d !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) && $d >= $desde && $d <= $hasta) {
+                $fechasManualesParaAnio[] = $d;
+            }
+        }
+        $fechasManualesParaAnio = array_values(array_unique($fechasManualesParaAnio));
+        sort($fechasManualesParaAnio);
+    }
+    if ($esEspecial === 1 && strtoupper($modoEspecial) === 'PERIODICIDAD' && $anio > 0) {
+        $desde = $fechaInicioPrograma ?? ($anio . '-01-01');
+        $hasta = $fechaFinPrograma ?? ($anio . '-12-31');
+        $mes = 1;
+        while ($mes <= 12) {
+            $dia = min($diaDelMes, cal_days_in_month(CAL_GREGORIAN, $mes, $anio));
+            $d = sprintf('%04d-%02d-%02d', $anio, $mes, $dia);
+            if ($d >= $desde && $d <= $hasta) $fechasPeriodicasParaAnio[] = $d;
+            $mes += $intervaloMeses;
+        }
+        $fechasPeriodicasParaAnio = array_values(array_unique($fechasPeriodicasParaAnio));
+        sort($fechasPeriodicasParaAnio);
+    }
+}
+
+$sqlDet = "SELECT DISTINCT edad FROM san_fact_programa_det WHERE codPrograma = ? AND edad IS NOT NULL AND edad != 0 ORDER BY edad ASC";
+$st = $conn->prepare($sqlDet);
+$st->bind_param("s", $codPrograma);
+$st->execute();
+$resEdades = $st->get_result();
+$edadesUnicas = [];
+while ($r = $resEdades->fetch_assoc()) {
+    $edadesUnicas[] = (int) $r['edad'];
+}
+$st->close();
+if (empty($edadesUnicas) && !($esEspecial === 1 && (strtoupper($modoEspecial) === 'MANUAL' || strtoupper($modoEspecial) === 'PERIODICIDAD'))) {
+    echo json_encode(['success' => false, 'message' => 'Programa sin edades en el detalle.', 'fechas' => []]);
+    exit;
+}
+// Edades positivas (consultadas en tabla de carga); edades negativas usan fila edad=1 como referencia
+$edadesPositivas = array_values(array_filter($edadesUnicas, function ($e) { return $e > 0; }));
+$edadesNegativas = array_values(array_filter($edadesUnicas, function ($e) { return $e < 0; }));
+$edadesParaTabla = $edadesPositivas;
+if (!empty($edadesNegativas) && !in_array(1, $edadesParaTabla)) {
+    $edadesParaTabla[] = 1;
+    sort($edadesParaTabla);
+}
+if (empty($edadesParaTabla)) {
+    $edadesParaTabla = [1];
 }
 
 function filtrarParesPorRango($pares, $fechaInicio, $fechaFin) {
@@ -119,6 +195,36 @@ if ($modo === 'zonas') {
         exit;
     }
     $itemsZona = [];
+    $fechasEspecialParaAnio = (strtoupper($modoEspecial) === 'PERIODICIDAD' && !empty($fechasPeriodicasParaAnio)) ? $fechasPeriodicasParaAnio : $fechasManualesParaAnio;
+    // Programa especial (manual o periódico): NO usar cargapollo_proyeccion; solo fechas del programa + granjas seleccionadas
+    if ($esEspecial === 1 && (strtoupper($modoEspecial) === 'MANUAL' || strtoupper($modoEspecial) === 'PERIODICIDAD')) {
+        if (empty($fechasEspecialParaAnio)) {
+            echo json_encode(['success' => false, 'message' => 'Programa especial sin fechas definidas para este año.', 'fechas' => [], 'pares' => [], 'items' => []]);
+            $conn->close();
+            exit;
+        }
+        $paresCargaEjecucion = [];
+        foreach ($pairsNorm as $pair) {
+            $id_granja = $pair[0];
+            $id_galpon = $pair[1];
+            $paresEsta = [];
+            foreach ($edadesParaTabla as $edad) {
+                foreach ($fechasEspecialParaAnio as $fechaEjec) {
+                    $paresCargaEjecucion[] = ['edad' => $edad, 'fechaCarga' => $fechaEjec, 'fechaEjecucion' => $fechaEjec, 'campania' => '000'];
+                    $paresEsta[] = ['edad' => $edad, 'fechaCarga' => $fechaEjec, 'fechaEjecucion' => $fechaEjec, 'campania' => '000'];
+                }
+            }
+            if (!empty($paresEsta)) {
+                $itemsZona[] = ['granja' => $id_granja, 'campania' => '000', 'galpon' => $id_galpon, 'fechas' => $paresEsta];
+            }
+        }
+        $fechasResultado = array_values(array_unique($fechasEspecialParaAnio));
+        sort($fechasResultado);
+        $edadPrograma = !empty($edadesUnicas) ? (int)$edadesUnicas[0] : null;
+        echo json_encode(['success' => true, 'fechas' => $fechasResultado, 'pares' => $paresCargaEjecucion, 'items' => $itemsZona, 'edadPrograma' => $edadPrograma]);
+        $conn->close();
+        exit;
+    }
     foreach ($pairsNorm as $pair) {
         $id_granja = $pair[0];
         $id_galpon = $pair[1];
@@ -142,7 +248,8 @@ if ($modo === 'zonas') {
             $fechaCarga = $r['fecha_carga'] ?? null;
             $edad = (int)($r['edad'] ?? 0);
             if (!$fechaEjec) continue;
-            if ($edad >= 1) {
+            // Solo incluir edad >= 1 en resultados si el programa tiene edades positivas; si solo tiene negativas (ej. -1), la edad 1 es solo referencia para calcularlas
+            if ($edad >= 1 && !empty($edadesPositivas)) {
                 $fechasResultado[] = $fechaEjec;
                 $paresCargaEjecucion[] = ['edad' => $edad, 'fechaCarga' => $fechaCarga, 'fechaEjecucion' => $fechaEjec, 'campania' => $campaniaVal];
                 $paresEsta[] = ['edad' => $edad, 'fechaCarga' => $fechaCarga, 'fechaEjecucion' => $fechaEjec, 'campania' => $campaniaVal];
@@ -194,6 +301,32 @@ if ($modo === 'especifico_multi') {
     }
     $campanias = array_values(array_unique($campanias));
     $items = [];
+    $fechasEspMulti = (strtoupper($modoEspecial) === 'PERIODICIDAD' && !empty($fechasPeriodicasParaAnio)) ? $fechasPeriodicasParaAnio : $fechasManualesParaAnio;
+    if ($esEspecial === 1 && (strtoupper($modoEspecial) === 'MANUAL' || strtoupper($modoEspecial) === 'PERIODICIDAD')) {
+        if (empty($fechasEspMulti)) {
+            echo json_encode(['success' => false, 'message' => 'Programa especial sin fechas definidas para este año.', 'fechas' => [], 'items' => []]);
+            $conn->close();
+            exit;
+        }
+        foreach ($campanias as $campaniaVal) {
+            $campania = str_pad($campaniaVal, 3, '0', STR_PAD_LEFT);
+            $paresEstaCampania = [];
+            foreach ($edadesParaTabla as $edad) {
+                foreach ($fechasEspMulti as $fechaEjec) {
+                    $paresEstaCampania[] = ['edad' => $edad, 'fechaCarga' => $fechaEjec, 'fechaEjecucion' => $fechaEjec, 'campania' => $campania];
+                }
+            }
+            if (!empty($paresEstaCampania)) {
+                $items[] = ['granja' => $granja, 'campania' => $campania, 'galpon' => $galpon, 'fechas' => $paresEstaCampania];
+            }
+        }
+        $fechasResultado = array_values($fechasEspMulti);
+        sort($fechasResultado);
+        $edadPrograma = !empty($edadesUnicas) ? (int)$edadesUnicas[0] : null;
+        echo json_encode(['success' => true, 'fechas' => $fechasResultado, 'items' => $items, 'edadPrograma' => $edadPrograma]);
+        $conn->close();
+        exit;
+    }
     $placeholders = implode(',', array_fill(0, count($edadesParaTabla), '?'));
     foreach ($campanias as $campaniaVal) {
         $campania = str_pad($campaniaVal, 3, '0', STR_PAD_LEFT);
@@ -212,7 +345,8 @@ if ($modo === 'especifico_multi') {
             $fechaCarga = $r['fecha_carga'] ?? null;
             $edad = (int)($r['edad'] ?? 0);
             if (!$fechaEjec) continue;
-            if ($edad >= 1) {
+            // Solo incluir edad >= 1 en resultados si el programa tiene edades positivas
+            if ($edad >= 1 && !empty($edadesPositivas)) {
                 $fechasResultado[] = $fechaEjec;
                 $paresEstaCampania[] = ['edad' => $edad, 'fechaCarga' => $fechaCarga, 'fechaEjecucion' => $fechaEjec, 'campania' => $campania];
             }
@@ -274,6 +408,36 @@ if (strlen($granja) !== 3 || $galpon === '' || empty($campanias)) {
     exit;
 }
 
+$fechasEspEspecifico = (strtoupper($modoEspecial) === 'PERIODICIDAD' && !empty($fechasPeriodicasParaAnio)) ? $fechasPeriodicasParaAnio : $fechasManualesParaAnio;
+if ($esEspecial === 1 && (strtoupper($modoEspecial) === 'MANUAL' || strtoupper($modoEspecial) === 'PERIODICIDAD')) {
+    if (empty($fechasEspEspecifico)) {
+        echo json_encode(['success' => false, 'message' => 'Programa especial sin fechas definidas para este año.', 'fechas' => [], 'pares' => [], 'items' => []]);
+        $conn->close();
+        exit;
+    }
+    $items = [];
+    $paresCargaEjecucion = [];
+    foreach ($campanias as $campaniaVal) {
+        $campania = str_pad($campaniaVal, 3, '0', STR_PAD_LEFT);
+        $paresEstaCampania = [];
+        foreach ($edadesParaTabla as $edad) {
+            foreach ($fechasEspEspecifico as $fechaEjec) {
+                $paresCargaEjecucion[] = ['edad' => $edad, 'fechaCarga' => $fechaEjec, 'fechaEjecucion' => $fechaEjec];
+                $paresEstaCampania[] = ['edad' => $edad, 'fechaCarga' => $fechaEjec, 'fechaEjecucion' => $fechaEjec, 'campania' => $campania];
+            }
+        }
+        if (!empty($paresEstaCampania)) {
+            $items[] = ['granja' => $granja, 'campania' => $campania, 'galpon' => $galpon, 'fechas' => $paresEstaCampania];
+        }
+    }
+    $fechasResultado = array_values($fechasEspEspecifico);
+    sort($fechasResultado);
+    $edadPrograma = !empty($edadesUnicas) ? (int)$edadesUnicas[0] : null;
+    echo json_encode(['success' => true, 'fechas' => $fechasResultado, 'pares' => $paresCargaEjecucion, 'items' => $items, 'edadPrograma' => $edadPrograma]);
+    $conn->close();
+    exit;
+}
+
 $placeholders = implode(',', array_fill(0, count($edadesParaTabla), '?'));
 $items = [];
 foreach ($campanias as $campaniaVal) {
@@ -293,7 +457,8 @@ foreach ($campanias as $campaniaVal) {
         $fechaCarga = $r['fecha_carga'] ?? null;
         $edad = (int)($r['edad'] ?? 0);
         if (!$fechaEjec) continue;
-        if ($edad >= 1) {
+        // Solo incluir edad >= 1 en resultados si el programa tiene edades positivas
+        if ($edad >= 1 && !empty($edadesPositivas)) {
             $fechasResultado[] = $fechaEjec;
             $paresCargaEjecucion[] = ['edad' => $edad, 'fechaCarga' => $fechaCarga, 'fechaEjecucion' => $fechaEjec];
             $paresEstaCampania[] = ['edad' => $edad, 'fechaCarga' => $fechaCarga, 'fechaEjecucion' => $fechaEjec, 'campania' => $campania];

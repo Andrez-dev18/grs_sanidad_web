@@ -297,6 +297,15 @@ if (!$conn) {
                             <label class="block text-sm font-medium text-gray-700">EDAD</label>
                             <input type="text" id="edad" readonly class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed">
                         </div>
+
+                        <!-- RELACIONAR CON PLANIFICACIÓN (select de matches en san_fact_cronograma) -->
+                        <div class="md:col-span-6" id="wrapSelectPlanificacion">
+                            <label class="block text-sm font-medium text-gray-700">RELACIONAR CON PLANIFICACIÓN</label>
+                            <select id="selectPlanificacion" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" disabled>
+                                <option value="">Complete granja, campaña y galpón para cargar opciones</option>
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500" id="msgPlanificacion"></p>
+                        </div>
                     </div>
 
                     <!-- Tabs -->
@@ -1303,40 +1312,130 @@ if (!$conn) {
 
             if (!codigo || !galpon) {
                 edadEl.value = '';
+                resetSelectPlanificacion();
                 return;
             }
 
-            try {
-                const r = await fetch(
-                    `get_edad.php?codigo=${encodeURIComponent(codigo)}&galpon=${encodeURIComponent(galpon)}&fecha=${encodeURIComponent(fecha)}`,
-                    { cache: 'no-store' }
-                );
-                const data = await r.json();
-                const edadNum = (data && data.edad !== null && data.edad !== undefined) ? parseInt(data.edad, 10) : NaN;
-
-                if (isNaN(edadNum)) {
+            // Calcular edad client-side desde fec_ing_min (igual que app Flutter, sin get_edad)
+            const opt = galponEl.options[galponEl.selectedIndex];
+            const fecIngMin = opt?.dataset?.fecIngMin || '';
+            let edadNum = NaN;
+            if (fecIngMin && /^\d{4}-\d{2}-\d{2}$/.test(fecIngMin)) {
+                const anio = parseInt(fecIngMin.slice(0, 4), 10);
+                if (!Number.isNaN(anio) && anio <= 1900) {
+                    // Fecha sentinela inválida (ej. 1000-01-01): se trata como ausente.
                     edadEl.value = '';
-                    return;
-                }
-
-                if (edadNum <= 0) {
-                    edadEl.value = '';
-                    if (mostrarAlerta) {
+                    resetSelectPlanificacion();
+                    if (mostrarAlerta && codigo && galpon) {
                         Swal.fire({
                             icon: 'warning',
-                            title: 'Fecha inválida',
-                            text: 'La edad calculada es negativa o cero para este galpón. Seleccione una fecha válida.',
+                            title: 'Datos incompletos',
+                            text: 'Este galpón tiene una fecha de ingreso inválida. Seleccione otro galpón o actualice el maestro.',
                             confirmButtonText: 'Aceptar'
                         });
                     }
                     return;
                 }
-
-                edadEl.value = String(edadNum);
-            } catch (err) {
-                console.error('Error recalculando edad por galpón:', err);
-                edadEl.value = '';
+                const [y, m, d] = fecIngMin.split('-').map(Number);
+                const fIngUtc = Date.UTC(y, m - 1, d);
+                const parts = String(fecha).split('-').map(Number);
+                const fSelUtc = Date.UTC(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
+                const diffMs = fSelUtc - fIngUtc;
+                const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                edadNum = diffDias + 1;
             }
+
+            if (isNaN(edadNum) || !fecIngMin) {
+                edadEl.value = '';
+                resetSelectPlanificacion();
+                if (mostrarAlerta && codigo && galpon) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Datos incompletos',
+                        text: 'Este galpón no tiene fecha de ingreso. Seleccione granja y galpón desde el listado principal.',
+                        confirmButtonText: 'Aceptar'
+                    });
+                }
+                return;
+            }
+
+            if (edadNum <= 0) {
+                edadEl.value = '';
+                if (mostrarAlerta) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Fecha inválida',
+                        text: 'La edad calculada es negativa o cero para este galpón. Seleccione una fecha válida.',
+                        confirmButtonText: 'Aceptar'
+                    });
+                }
+                return;
+            }
+
+            edadEl.value = String(edadNum);
+            await cargarMatchesPlanificacion();
+        }
+
+        function resetSelectPlanificacion() {
+            const sel = document.getElementById('selectPlanificacion');
+            const msg = document.getElementById('msgPlanificacion');
+            if (sel) {
+                sel.disabled = true;
+                sel.innerHTML = '<option value="">Complete granja, campaña y galpón para cargar opciones</option>';
+            }
+            if (msg) msg.textContent = '';
+        }
+
+        async function cargarMatchesPlanificacion() {
+            const granja = (document.getElementById('granja')?.value || '').trim();
+            const campania = (document.getElementById('campania')?.value || '').trim();
+            const galpon = (document.getElementById('galpon')?.value || '').trim();
+            const edad = (document.getElementById('edad')?.value || '').trim();
+            if (!granja || !campania || !galpon) {
+                resetSelectPlanificacion();
+                return;
+            }
+            const sel = document.getElementById('selectPlanificacion');
+            const msg = document.getElementById('msgPlanificacion');
+            if (!sel || !msg) return;
+            try {
+                sel.disabled = true;
+                sel.innerHTML = '<option value="">Cargando opciones...</option>';
+                msg.textContent = '';
+                const r = await fetch(`verificar_necropsia_en_cronograma.php?granja=${encodeURIComponent(granja)}&campania=${encodeURIComponent(campania)}&galpon=${encodeURIComponent(galpon)}&edad=${encodeURIComponent(edad)}`, { cache: 'no-store' });
+                const data = await r.json();
+                if (!data.success) {
+                    sel.innerHTML = '<option value="">Error al verificar</option>';
+                    return;
+                }
+                sel.innerHTML = '<option value="">Seleccione con cuál planificación relacionar</option>';
+                if (data.existe && data.matches && data.matches.length > 0) {
+                    data.matches.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m.value;
+                        opt.textContent = m.label;
+                        sel.appendChild(opt);
+                    });
+                    sel.disabled = false;
+                    msg.textContent = data.message || '';
+                    msg.className = 'mt-1 text-xs text-green-600';
+                } else {
+                    msg.textContent = data.message || 'No existe en cronograma. Regístrelo primero en 4.2.2 Registro Eventual.';
+                    msg.className = 'mt-1 text-xs text-amber-600';
+                }
+            } catch (err) {
+                console.error('Error cargando matches planificación:', err);
+                sel.innerHTML = '<option value="">Error al cargar</option>';
+                msg.textContent = '';
+            }
+        }
+
+        const CENCOS_ENDPOINT = 'https://granjarinconadadelsur.com/sanidad/flutter/necropcias/get_cencos_galpones.php';
+        let cencosData = null; // CENCOS + galpones (igual que Flutter get_cencos_galpones)
+
+        function getCencosEndpointConFecha() {
+            const fecha = getFechaSeleccionada();
+            return `${CENCOS_ENDPOINT}?fecha=${encodeURIComponent(fecha)}`;
         }
 
         async function cargarGranjasConFecha({
@@ -1346,29 +1445,28 @@ if (!$conn) {
             if (!select) return;
 
             const valorPrevio = select.value;
-            const fecha = getFechaSeleccionada();
 
             try {
                 select.innerHTML = '<option value="">Cargando granjas...</option>';
-                const response = await fetch(`get_granjas.php?fecha=${encodeURIComponent(fecha)}`);
-                const granjas = await response.json();
+                const response = await fetch(getCencosEndpointConFecha(), { cache: 'no-store' });
+                const json = await response.json();
+                cencosData = json?.data?.cencos ?? [];
+                cencosData.sort((a, b) => String(b?.codigo || '').localeCompare(String(a?.codigo || '')));
 
                 select.innerHTML = '<option value="">Seleccione granja...</option>';
-                granjas.forEach(g => {
+                (cencosData || []).forEach(c => {
                     const opt = document.createElement('option');
-                    opt.value = g.codigo;
-                    opt.textContent = `${g.codigo} - ${g.nombre}`;
-                    opt.dataset.edad = g.edad;
+                    opt.value = c.codigo;
+                    opt.textContent = `${c.codigo} - ${c.nombre}`;
+                    opt.dataset.galpones = JSON.stringify(c.galpones || []);
                     select.appendChild(opt);
                 });
 
                 if (preserveSelection && valorPrevio) {
                     select.value = valorPrevio;
                     if (select.value) {
-                        // Recalcular dependencias si se mantiene selección
                         select.dispatchEvent(new Event('change'));
                     } else {
-                        // Si la granja ya no existe para esa fecha, limpiar dependencias
                         document.getElementById('campania').value = '';
                         document.getElementById('edad').value = '';
                         const selectGalpon = document.getElementById('galpon');
@@ -1379,7 +1477,7 @@ if (!$conn) {
                     }
                 }
             } catch (err) {
-                console.error('Error cargando granjas:', err);
+                console.error('Error cargando CENCOS:', err);
                 select.innerHTML = '<option value="">Error al cargar</option>';
             }
         }
@@ -1400,26 +1498,11 @@ if (!$conn) {
     <script>
         
 
-        // Función auxiliar para cargar granjas si no están cargadas
+        // Función auxiliar para cargar CENCOS si no están cargados (igual que Flutter)
         async function cargarGranjasParaEdicion() {
             const select = document.getElementById('granja');
-            if (select.options.length <= 1) { // Solo tiene placeholder
-                try {
-                    const fecha = getFechaSeleccionada();
-                    const response = await fetch(`get_granjas.php?fecha=${encodeURIComponent(fecha)}`);
-                    const granjas = await response.json();
-
-                    select.innerHTML = '<option value="">Seleccione granja...</option>';
-                    granjas.forEach(g => {
-                        const opt = document.createElement('option');
-                        opt.value = g.codigo;
-                        opt.textContent = `${g.codigo} - ${g.nombre}`;
-                        opt.dataset.edad = g.edad;
-                        select.appendChild(opt);
-                    });
-                } catch (err) {
-                    console.error('Error cargando granjas:', err);
-                }
+            if (select.options.length <= 1) {
+                await cargarGranjasConFecha({ preserveSelection: false });
             }
         }
     </script>
@@ -1532,6 +1615,30 @@ if (!$conn) {
                 return;
             }
 
+            // Validación: debe existir match en san_fact_cronograma y usuario debe seleccionar uno
+            const selectPlanif = document.getElementById('selectPlanificacion');
+            const valorPlanif = selectPlanif?.value?.trim() || '';
+            const msgPlanif = document.getElementById('msgPlanificacion')?.textContent || '';
+            if (!valorPlanif) {
+                if (msgPlanif && msgPlanif.includes('4.2.2')) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Registro previo requerido',
+                        html: 'No existe esta combinación (granja, campaña, galpón, edad) en el cronograma.<br>Regístrela primero en la sección <strong>4.2.2 Registro Eventual</strong>.',
+                        confirmButtonText: 'Ir a Registro Eventual',
+                        showCancelButton: true,
+                        cancelButtonText: 'Cerrar'
+                    }).then((result) => {
+                        if (result.isConfirmed && window.parent && typeof window.parent.loadDashboardAndData === 'function') {
+                            window.parent.loadDashboardAndData('modules/planificacion/cronograma/dashboard-cronograma-asignacion-eventual.php', '📅 Registro Eventual', 'Asignación eventual');
+                        }
+                    });
+                } else {
+                    SwalAlert('Seleccione con cuál planificación desea relacionar esta necropsia', 'warning');
+                }
+                return;
+            }
+
             // Diagnóstico presuntivo es opcional
 
             // CAPTURAR FECHA FIN (Hora actual al momento de dar click)
@@ -1557,7 +1664,7 @@ if (!$conn) {
                 fectra: fectra, // → tfectra
                 numreg: numreg, // → tnumreg
                 tcencos: tcencos, // → tcencos (nombre completo)
-                planId: planIdSeleccionado, // Enlace con planificación (si aplica)
+                planId: valorPlanif || planIdSeleccionado, // Enlace con planificación seleccionada
                 diagpresuntivo: diagpresuntivo,
                 fechaHoraInicio: fechaHoraInicio,
                 fechaHoraFin: fechaHoraFin,
@@ -1862,62 +1969,45 @@ if (!$conn) {
 
         // Si cambia la fecha, recargar granjas usando esa fecha (y mantener selección si ya eligió una)
         document.getElementById('fectra').addEventListener('change', async function() {
-            // Si ya hay granja seleccionada, mantenerla y recalcular edad/campaña
-            const tieneSeleccion = !!document.getElementById('granja')?.value;
-            await cargarGranjasConFecha({
-                preserveSelection: tieneSeleccion
-            });
+            // CENCOS no dependen de fecha; solo recalcular edad
             await recalcularEdadPorFechaYGalpon(false);
         });
 
-        // Al cambiar granja
+        // Al cambiar granja (galpones desde get_cencos_galpones, sin fetch adicional)
         document.getElementById('granja').addEventListener('change', async function() {
             const codigo = this.value;
             const option = this.options[this.selectedIndex];
 
-            // Limpiar campos dependientes
             document.getElementById('campania').value = '';
             document.getElementById('edad').value = '';
             const selectGalpon = document.getElementById('galpon');
-            selectGalpon.innerHTML = '<option value="">Cargando galpones...</option>';
+            selectGalpon.innerHTML = '<option value="">Seleccione galpón</option>';
             selectGalpon.disabled = true;
 
             if (!codigo) return;
 
-            // Campaña: últimos 3 dígitos del código de granja (tgranja)
             document.getElementById('campania').value = codigo.slice(-3);
 
-            // Cargar galpones
+            let galpones = [];
             try {
-                const response = await fetch(`get_galpones.php?codigo=${codigo}`);
-                const galpones = await response.json();
-
-                selectGalpon.innerHTML = '<option value="">Seleccione galpón</option>';
-
-                let maxGalpon = 0;
-                let maxOption = null;
+                if (option?.dataset?.galpones) {
+                    galpones = JSON.parse(option.dataset.galpones) || [];
+                } else if (cencosData) {
+                    const cenco = cencosData.find(c => c.codigo === codigo);
+                    galpones = cenco?.galpones || [];
+                }
 
                 galpones.forEach(g => {
                     const opt = document.createElement('option');
-                    opt.value = g.galpon;
-                    opt.textContent = `${g.galpon} - ${g.nombre}`;
+                    const tcodint = String(g.tcodint ?? g.galpon ?? '');
+                    opt.value = tcodint;
+                    opt.textContent = `${tcodint}${g.nombre ? ' - ' + g.nombre : ''}`;
+                    opt.dataset.fecIngMin = g.fec_ing_min || '';
                     selectGalpon.appendChild(opt);
-
-                    // Guardar el mayor
-                    if (parseInt(g.galpon) > maxGalpon) {
-                        maxGalpon = parseInt(g.galpon);
-                        maxOption = opt;
-                    }
                 });
 
-                // Autoseleccionar el galpón mayor
-                if (maxOption) {
-                    maxOption.selected = true;
-                }
-
                 selectGalpon.disabled = false;
-                await recalcularEdadPorFechaYGalpon(true);
-
+                await recalcularEdadPorFechaYGalpon(false);
             } catch (err) {
                 console.error('Error cargando galpones:', err);
                 selectGalpon.innerHTML = '<option value="">Error al cargar</option>';
@@ -2026,6 +2116,7 @@ if (!$conn) {
             document.getElementById('txtDiagnosticoPresuntivo').value = '';
             fechaHoraInicio = null;
             planIdSeleccionado = '';
+            resetSelectPlanificacion();
 
             // 5. Desmarcar todos los checkboxes
             document.querySelectorAll('input[type="checkbox"]').forEach(cb => {

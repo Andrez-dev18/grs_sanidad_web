@@ -529,7 +529,8 @@ if (empty($_SESSION['active'])) {
         var labelsReporteCrono = {
             num: '#', ubicacion: 'Ubicación', producto: 'Producto', proveedor: 'Proveedor', unidad: 'Unidad',
             dosis: 'Dosis', descripcion_vacuna: 'Descripcion', numeroFrascos: 'Nº frascos', edad: 'Edad',
-            unidadDosis: 'Unid. dosis', area_galpon: 'Área galpón', cantidad_por_galpon: 'Cant. por galpón'
+            unidadDosis: 'Unid. dosis', area_galpon: 'Área galpón', cantidad_por_galpon: 'Cant. por galpón',
+            tolerancia: 'Tolerancia'
         };
         function valorCeldaDetalleCrono(k, d) {
             if (k === 'num') return '';
@@ -544,6 +545,7 @@ if (empty($_SESSION['active'])) {
             if (k === 'unidadDosis') return esc(d.unidadDosis || '');
             if (k === 'area_galpon') return (d.areaGalpon !== null && d.areaGalpon !== undefined && d.areaGalpon !== '' ? d.areaGalpon : '');
             if (k === 'cantidad_por_galpon') return (d.cantidadPorGalpon !== null && d.cantidadPorGalpon !== undefined && d.cantidadPorGalpon !== '' ? d.cantidadPorGalpon : '');
+            if (k === 'tolerancia') return (d.tolerancia !== null && d.tolerancia !== undefined && d.tolerancia !== '' ? String(d.tolerancia) : '1');
             return '';
         }
         function keyDetalleSinEdad(d, colsSinEdad) {
@@ -601,39 +603,76 @@ if (empty($_SESSION['active'])) {
                 }
                 var cab = res.cab || {};
                 var detalles = res.detalles || [];
+                var catStr = (cab.categoria || '').toString().trim();
+                var esSeguimiento = catStr.toUpperCase().indexOf('SEGUIMIENTO') !== -1;
+                var nomCategoria = esSeguimiento ? 'Seguimiento Sanitario' : (catStr ? 'Programa Sanitario' : '');
                 var cabHtml = '<div class="font-semibold text-gray-800 mb-1">' + esc(cab.codigo) + ' — ' + esc(cab.nombre) + '</div>';
                 cabHtml += '<dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">';
                 cabHtml += '<dt class="font-medium">Tipo</dt><dd>' + esc(cab.nomTipo || '') + '</dd>';
+                if (nomCategoria) { cabHtml += '<dt class="font-medium">Categoría</dt><dd>' + esc(nomCategoria) + '</dd>'; }
                 if (cab.despliegue) { cabHtml += '<dt class="font-medium">Despliegue</dt><dd>' + esc(cab.despliegue) + '</dd>'; }
                 if (cab.descripcion) { cabHtml += '<dt class="font-medium col-span-2">Descripción</dt><dd class="col-span-2">' + esc(cab.descripcion) + '</dd>'; }
                 if (cab.fechaInicio) { cabHtml += '<dt class="font-medium">Fecha inicio</dt><dd>' + esc(formatoDDMMYYYY((cab.fechaInicio || '').toString().substring(0, 10))) + '</dd>'; }
                 if (cab.fechaFin) { cabHtml += '<dt class="font-medium">Fecha fin</dt><dd>' + esc(formatoDDMMYYYY((cab.fechaFin || '').toString().substring(0, 10))) + '</dd>'; }
+                if (cab.esEspecial === 1 || cab.esEspecial === '1') {
+                    cabHtml += '<dt class="font-medium col-span-2">Programa especial</dt><dd class="col-span-2">';
+                    var modoEsp = (cab.modoEspecial || '').toString().toUpperCase();
+                    if (modoEsp === 'PERIODICIDAD') {
+                        var intM = cab.intervaloMeses != null ? cab.intervaloMeses : 1;
+                        var diaM = cab.diaDelMes != null ? cab.diaDelMes : 15;
+                        cabHtml += 'Con periodicidad: cada ' + intM + ' mes(es), día ' + diaM + ' del mes.';
+                    } else if (modoEsp === 'MANUAL') {
+                        var fManuales = cab.fechasManuales || [];
+                        cabHtml += 'Fechas manuales: ' + (fManuales.length > 0 ? fManuales.map(function(f) { return formatoDDMMYYYY((f || '').toString().substring(0, 10)); }).join(', ') : '—');
+                    } else {
+                        cabHtml += 'Fechas definidas por periodicidad o manual.';
+                    }
+                    var tolEsp = 1;
+                    if (detalles.length > 0 && detalles[0].tolerancia != null && detalles[0].tolerancia !== '') tolEsp = detalles[0].tolerancia;
+                    cabHtml += ' Tolerancia: ' + tolEsp + ' día(s).</dd>';
+                }
                 cabHtml += '</dl>';
                 cabEl.innerHTML = cabHtml;
                 var sigla = (res.sigla || 'PL').toUpperCase();
                 if (sigla === 'NEC') sigla = 'NC';
-                var cols = columnasPorSiglaReporte[sigla] || columnasPorSiglaReporte['PL'];
+                var cols;
+                if (esSeguimiento) {
+                    cols = ['num', 'edad', 'tolerancia'];
+                } else {
+                    cols = columnasPorSiglaReporte[sigla] || columnasPorSiglaReporte['PL'];
+                    if (cab.esEspecial === 1 || cab.esEspecial === '1') {
+                        cols = cols.filter(function(k) { return k !== 'edad' && k !== 'tolerancia'; });
+                    }
+                }
                 var colsSinNum = cols.filter(function(k) { return k !== 'num'; });
                 if (colsSinNum.indexOf('edad') !== -1) {
                     colsSinNum = colsSinNum.filter(function(k) { return k !== 'edad'; });
                     colsSinNum.push('edad');
                 }
-                var thCells = '<th class="px-3 py-2 text-left">N°</th><th class="px-3 py-2 text-left">Código</th><th class="px-3 py-2 text-left">Nombre programa</th><th class="px-3 py-2 text-left">Despliegue</th><th class="px-3 py-2 text-left">Descripción</th>';
+                var thCells = esSeguimiento
+                    ? '<th class="px-3 py-2 text-left">N°</th><th class="px-3 py-2 text-left">Edad</th><th class="px-3 py-2 text-left">Tolerancia</th>'
+                    : '<th class="px-3 py-2 text-left">N°</th><th class="px-3 py-2 text-left">Código</th><th class="px-3 py-2 text-left">Nombre programa</th><th class="px-3 py-2 text-left">Despliegue</th><th class="px-3 py-2 text-left">Descripción</th>';
                 colsSinNum.forEach(function(k) { thCells += '<th class="px-3 py-2 text-left">' + (labelsReporteCrono[k] || k) + '</th>'; });
                 theadEl.innerHTML = '<tr>' + thCells + '</tr>';
                 tbodyEl.innerHTML = '';
                 if (detalles.length === 0) {
                     sinRegEl.classList.remove('hidden');
                 } else {
-                    var filasAgrupadas = agruparDetallesPorEdadPanel(detalles, colsSinNum);
+                    var filasAgrupadas = esSeguimiento ? detalles : agruparDetallesPorEdadPanel(detalles, colsSinNum);
                     filasAgrupadas.forEach(function(d, idx) {
                         var tr = document.createElement('tr');
                         tr.className = 'border-b border-gray-200';
                         var num = idx + 1;
-                        var td = '<td class="px-3 py-2">' + num + '</td><td class="px-3 py-2">' + esc(cab.codigo) + '</td><td class="px-3 py-2">' + esc(cab.nombre) + '</td><td class="px-3 py-2">' + esc(cab.despliegue || '') + '</td><td class="px-3 py-2">' + esc(cab.descripcion || '') + '</td>';
-                        colsSinNum.forEach(function(k) {
-                            td += '<td class="px-3 py-2"' + (k === 'descripcion_vacuna' ? ' style="white-space:pre-wrap;"' : '') + '>' + valorCeldaDetalleCrono(k, d) + '</td>';
-                        });
+                        var td = '<td class="px-3 py-2">' + num + '</td>';
+                        if (esSeguimiento) {
+                            td += '<td class="px-3 py-2">' + valorCeldaDetalleCrono('edad', d) + '</td>';
+                            td += '<td class="px-3 py-2">' + valorCeldaDetalleCrono('tolerancia', d) + '</td>';
+                        } else {
+                            td += '<td class="px-3 py-2">' + esc(cab.codigo) + '</td><td class="px-3 py-2">' + esc(cab.nombre) + '</td><td class="px-3 py-2">' + esc(cab.despliegue || '') + '</td><td class="px-3 py-2">' + esc(cab.descripcion || '') + '</td>';
+                            colsSinNum.forEach(function(k) {
+                                td += '<td class="px-3 py-2"' + (k === 'descripcion_vacuna' ? ' style="white-space:pre-wrap;"' : '') + '>' + valorCeldaDetalleCrono(k, d) + '</td>';
+                            });
+                        }
                         tr.innerHTML = td;
                         tbodyEl.appendChild(tr);
                     });
@@ -731,24 +770,41 @@ if (empty($_SESSION['active'])) {
                     }
                     var cab = res.cab || {};
                     var detalles = res.detalles || [];
-                    var sigla = (res.sigla || 'PL').toUpperCase();
-                    if (sigla === 'NEC') sigla = 'NC';
-                    var cols = columnasPorSiglaReporte[sigla] || columnasPorSiglaReporte['PL'];
-                    var colsSinNum = cols.filter(function(k) { return k !== 'num'; });
+                    var catStrModal = (cab.categoria || '').toString().trim();
+                    var esSeguimientoModal = catStrModal.toUpperCase().indexOf('SEGUIMIENTO') !== -1;
+                    var nomCategoriaModal = esSeguimientoModal ? 'Seguimiento Sanitario' : (catStrModal ? 'Programa Sanitario' : '');
                     var cabHtml = '<div class="grid grid-cols-2 gap-x-4 gap-y-1 text-gray-700">' +
                         '<span class="font-medium">Código:</span><span>' + esc(cab.codigo) + '</span>' +
                         '<span class="font-medium">Nombre:</span><span>' + esc(cab.nombre) + '</span>' +
                         '<span class="font-medium">Tipo:</span><span>' + esc(cab.nomTipo) + '</span>' +
-                        '<span class="font-medium">Zona:</span><span>' + esc(cab.zona) + '</span>' +
-                        '<span class="font-medium">Despliegue:</span><span>' + esc(cab.despliegue) + '</span>' +
-                        '<span class="font-medium">Fecha registro:</span><span>' + (cab.fechaHoraRegistro ? formatoDDMMYYYY(cab.fechaHoraRegistro.split(' ')[0]) : '') + '</span>' +
-                        (cab.descripcion ? ('<span class="font-medium">Descripción:</span><span class="col-span-1">' + esc(cab.descripcion) + '</span>') : '') +
-                        '</div>';
+                        (nomCategoriaModal ? ('<span class="font-medium">Categoría:</span><span>' + esc(nomCategoriaModal) + '</span>') : '') +
+                        '<span class="font-medium">Zona:</span><span>' + esc(cab.zona || '') + '</span>' +
+                        '<span class="font-medium">Despliegue:</span><span>' + esc(cab.despliegue || '') + '</span>' +
+                        '<span class="font-medium">Fecha registro:</span><span>' + (cab.fechaHoraRegistro ? formatoDDMMYYYY(cab.fechaHoraRegistro.split(' ')[0]) : '') + '</span>';
+                    if (cab.esEspecial === 1 || cab.esEspecial === '1') {
+                        cabHtml += '<span class="font-medium col-span-2">Programa especial:</span><span class="col-span-2">';
+                        var modoEspM = (cab.modoEspecial || '').toString().toUpperCase();
+                        if (modoEspM === 'PERIODICIDAD') {
+                            cabHtml += 'Periodicidad: cada ' + (cab.intervaloMeses || 1) + ' mes(es), día ' + (cab.diaDelMes || 15) + ' del mes.';
+                        } else if (modoEspM === 'MANUAL') {
+                            var fM = cab.fechasManuales || [];
+                            cabHtml += 'Fechas manuales: ' + (fM.length > 0 ? fM.map(function(f) { return formatoDDMMYYYY((f || '').toString().substring(0, 10)); }).join(', ') : '—');
+                        } else {
+                            cabHtml += 'Fechas definidas por periodicidad o manual.';
+                        }
+                        var tolEspM = 1;
+                        if (detalles.length > 0 && detalles[0].tolerancia != null && detalles[0].tolerancia !== '') tolEspM = detalles[0].tolerancia;
+                        cabHtml += ' Tolerancia: ' + tolEspM + ' día(s).</span>';
+                    }
+                    cabHtml += (cab.descripcion ? ('<span class="font-medium">Descripción:</span><span class="col-span-1">' + esc(cab.descripcion) + '</span>') : '') + '</div>';
                     document.getElementById('modalVerCabeceraCrono').innerHTML = cabHtml;
-                    var thCells = '<th class="px-3 py-2 text-left">Código</th><th class="px-3 py-2 text-left">Nombre programa</th><th class="px-3 py-2 text-left">Zona</th><th class="px-3 py-2 text-left">Despliegue</th><th class="px-3 py-2 text-left">Descripción</th>';
-                    colsSinNum.forEach(function(k) {
-                        thCells += '<th class="px-3 py-2 text-left">' + (labelsReporteCrono[k] || k) + '</th>';
-                    });
+                    var sigla = (res.sigla || 'PL').toUpperCase();
+                    if (sigla === 'NEC') sigla = 'NC';
+                    var cols = esSeguimientoModal ? ['num', 'edad', 'tolerancia'] : (columnasPorSiglaReporte[sigla] || columnasPorSiglaReporte['PL']);
+                    if (!esSeguimientoModal && (cab.esEspecial === 1 || cab.esEspecial === '1')) cols = cols.filter(function(k) { return k !== 'edad' && k !== 'tolerancia'; });
+                    var colsSinNum = cols.filter(function(k) { return k !== 'num'; });
+                    var thCells = esSeguimientoModal ? '' : '<th class="px-3 py-2 text-left">Código</th><th class="px-3 py-2 text-left">Nombre programa</th><th class="px-3 py-2 text-left">Zona</th><th class="px-3 py-2 text-left">Despliegue</th><th class="px-3 py-2 text-left">Descripción</th>';
+                    colsSinNum.forEach(function(k) { thCells += '<th class="px-3 py-2 text-left">' + (labelsReporteCrono[k] || k) + '</th>'; });
                     document.getElementById('modalVerDetalleTheadCrono').innerHTML = '<tr>' + thCells + '</tr>';
                     var tbody = document.getElementById('modalVerDetalleBodyCrono');
                     var sinReg = document.getElementById('modalVerDetalleSinRegistrosCrono');
@@ -758,10 +814,10 @@ if (empty($_SESSION['active'])) {
                     } else {
                         sinReg.classList.add('hidden');
                         var d = detalles[detalleIndex];
-                        var td = '<td class="px-3 py-2">' + esc(cab.codigo || codigo) + '</td><td class="px-3 py-2">' + esc(cab.nombre || '') + '</td><td class="px-3 py-2">' + esc(cab.zona || '') + '</td><td class="px-3 py-2">' + esc(cab.despliegue || '') + '</td><td class="px-3 py-2">' + esc(cab.descripcion || '') + '</td>';
-                        colsSinNum.forEach(function(k) {
-                            td += '<td class="px-3 py-2"' + (k === 'descripcion_vacuna' ? ' style="white-space:pre-wrap;"' : '') + '>' + valorCeldaDetalleCrono(k, d) + '</td>';
-                        });
+                        var td = esSeguimientoModal
+                            ? '<td class="px-3 py-2">' + valorCeldaDetalleCrono('edad', d) + '</td><td class="px-3 py-2">' + valorCeldaDetalleCrono('tolerancia', d) + '</td>'
+                            : '<td class="px-3 py-2">' + esc(cab.codigo || codigo) + '</td><td class="px-3 py-2">' + esc(cab.nombre || '') + '</td><td class="px-3 py-2">' + esc(cab.zona || '') + '</td><td class="px-3 py-2">' + esc(cab.despliegue || '') + '</td><td class="px-3 py-2">' + esc(cab.descripcion || '') + '</td>';
+                        if (!esSeguimientoModal) colsSinNum.forEach(function(k) { td += '<td class="px-3 py-2"' + (k === 'descripcion_vacuna' ? ' style="white-space:pre-wrap;"' : '') + '>' + valorCeldaDetalleCrono(k, d) + '</td>'; });
                         tbody.innerHTML = '<tr class="border-b border-gray-200">' + td + '</tr>';
                     }
                     document.getElementById('modalVerProgramaDetalleCrono').classList.remove('hidden');
@@ -1143,15 +1199,25 @@ if (empty($_SESSION['active'])) {
             var cont = document.getElementById('contenedorGalponesCampanias');
             if (!cont) return;
             campaniasPreseleccionPorGalpon = campaniasPreseleccionPorGalpon || {};
-            if (!granja) {
-                cont.innerHTML = '<p class="text-cargando">Seleccione una granja para cargar galpones y sus campañas.</p>';
-                return;
-            }
+           
             cont.innerHTML = '<p class="text-cargando">Cargando galpones...</p>';
             var anio = (document.getElementById('cronoAnio') && document.getElementById('cronoAnio').value) || new Date().getFullYear();
             fetch('get_galpones.php?codigo=' + encodeURIComponent(granja)).then(r => r.json()).then(function(res) {
                 var galpones = asList(res);
+                var esGranja8 = (granja || '').toString().trim().substring(0, 1) === '8';
                 if (galpones.length === 0) {
+                    if (esGranja8) {
+                        var nomG = (granjasMap[granja] || granja || 'Granja ' + granja).toString().replace(/&/g, '&amp;').replace(/</g, '&lt;');
+                        var setPre800 = new Set((campaniasPreseleccionPorGalpon['000'] || []).map(function(c) { return String(c || '').trim(); }).filter(Boolean));
+                        var checked800 = setPre800.has('000') ? ' checked' : '';
+                        cont.innerHTML = '<div class="galpon-campanias-block" data-granja-sin-galpones="1">' +
+                            '<div class="galpon-titulo"><span class="text-gray-600">' + nomG + ' (cód. ' + (granja || '').replace(/&/g, '&amp;') + ')</span></div>' +
+                            '<p class="text-gray-500 text-sm mt-1 mb-2">Esta granja no tiene campaña ni galpones. Marque la opción para asignar el programa a la granja.</p>' +
+                            '<div class="campanias-wrap" data-galpon="000">' +
+                            '<label class="cursor-pointer font-medium text-emerald-700"><input type="checkbox" class="chk-campania rounded border-gray-300" data-galpon="000" value="000"' + checked800 + '> Asignar programa a la granja</label>' +
+                            '</div></div>';
+                        return;
+                    }
                     cont.innerHTML = '<p class="text-gray-500 text-sm">No hay galpones para esta granja.</p>';
                     return;
                 }

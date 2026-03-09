@@ -30,7 +30,15 @@ Elige la sección [link:programa-registro] de tu portal de Sanidad.
 
 Elija el tipo de programa y complete el encabezado. Para agregar los detalles del programa presione [btn:agregar-fila].
 
-En el campo edad puede ingresar varias separadas por comas (ej: 1, 2, 5).
+**Proveedor:** En 7.10 Productos puede asignar un proveedor al producto y se cargará por defecto. O bien, puede buscarlo directamente con el icono de lupa.
+
+[render:proveedor]
+
+**Descripción:** En la sección [link:productos] (7.10 Productos) puede editar un producto e indicar si es una vacuna y seleccionar las enfermedades.
+
+[render:descripcion]
+
+**Edad:** En el campo edad puede ingresar varias separadas por comas (ej: 1, 2, 5).
 
 | Ejemplo (fecha carga 15/02/2026):
 | edad 1 → 15/02

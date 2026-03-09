@@ -1,8 +1,5 @@
 <?php
-/**
- * Configuración WhatsApp (Gekawa API).
- * No subir este archivo con valores reales al repositorio.
- */
+
 if (!defined('WHATSAPP_APPKEY')) {
     define('WHATSAPP_APPKEY', 'a0df7d06-8853-4fa1-83a0-28c967b62e0c');
 }

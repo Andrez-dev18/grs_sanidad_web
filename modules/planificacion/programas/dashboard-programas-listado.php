@@ -366,6 +366,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                                     <th class="px-6 py-4 text-left text-sm font-semibold">Código</th>
                                     <th class="px-6 py-4 text-left text-sm font-semibold">Nombre</th>
                                     <th class="px-6 py-4 text-left text-sm font-semibold">Tipo</th>
+                                    <th class="px-6 py-4 text-left text-sm font-semibold">Categoría</th>
                                     <th class="px-6 py-4 text-left text-sm font-semibold">Despliegue</th>
                                     <th class="px-6 py-4 text-left text-sm font-semibold">Fecha inicio</th>
                                     <th class="px-6 py-4 text-left text-sm font-semibold">Fecha fin</th>
@@ -391,6 +392,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 <button type="button" id="modalDetallesCerrar" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
             </div>
             <div class="modal-body overflow-auto flex-1 p-4">
+                <div id="modalDetallesCab" class="hidden mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm"></div>
                 <div class="table-wrapper overflow-x-auto">
                     <table class="data-table w-full text-sm" id="tablaModalDetalles">
                         <thead class="bg-gray-50 border-b border-gray-200" id="modalDetallesThead"></thead>
@@ -540,9 +542,10 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             tr.className = 'border-b border-gray-200';
             var reporteUrl = 'generar_reporte_programa.php?codigo=' + encodeURIComponent(codigo);
             tr.innerHTML = '<td class="px-4 py-3">' + (idx + 1) + '</td>' +
-                '<td class="px-4 py-3">' + esc(codigo) + '</td>' +
+                '<td class="px-4 py-3">' + esc(codigo) + (cab.esEspecial === 1 || cab.esEspecial === '1' ? ' <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800" title="Programa especial">Especial</span>' : '') + '</td>' +
                 '<td class="px-4 py-3">' + esc(cab.nombre) + '</td>' +
                 '<td class="px-4 py-3">' + esc(cab.nomTipo) + '</td>' +
+                '<td class="px-4 py-3">' + esc(cab.categoria || '') + '</td>' +
                 '<td class="px-4 py-3">' + esc(cab.despliegue) + '</td>' +
                 '<td class="px-4 py-3">' + formatearFecha(cab.fechaInicio) + '</td>' +
                 '<td class="px-4 py-3">' + formatearFecha(cab.fechaFin) + '</td>' +
@@ -677,7 +680,7 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         }
 
         var columnasPorSiglaReporte = {
-            'NC': ['num', 'ubicacion', 'edad'],
+            'NC': ['num', 'ubicacion', 'edad', 'tolerancia'],
             'PL': ['num', 'ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'edad'],
             'GR': ['num', 'ubicacion', 'producto', 'proveedor', 'unidad', 'dosis', 'descripcion_vacuna', 'numeroFrascos', 'edad'],
             'MC': ['num', 'ubicacion', 'producto', 'proveedor', 'dosis', 'area_galpon', 'cantidad_por_galpon', 'unidadDosis', 'edad'],
@@ -687,7 +690,8 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         var labelsReporte = {
             num: '#', ubicacion: 'Ubicación', producto: 'Producto', proveedor: 'Proveedor', unidad: 'Unidad',
             dosis: 'Dosis', descripcion_vacuna: 'Descripcion', numeroFrascos: 'Nº frascos', edad: 'Edad de aplicación',
-            unidadDosis: 'Unid. dosis', area_galpon: 'Área galpón', cantidad_por_galpon: 'Cant. por galpón'
+            unidadDosis: 'Unid. dosis', area_galpon: 'Área galpón', cantidad_por_galpon: 'Cant. por galpón',
+            tolerancia: 'Tolerancia'
         };
         function valorCeldaDetalle(k, d) {
             if (k === 'num') return '';
@@ -699,13 +703,14 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
             if (k === 'descripcion_vacuna') return esc(formatearDescripcionVacuna(d.descripcionVacuna));
             if (k === 'numeroFrascos') return esc(d.numeroFrascos || '');
             if (k === 'edad') return (d.edad !== null && d.edad !== undefined && d.edad !== '' ? d.edad : '');
+            if (k === 'tolerancia') return (d.tolerancia !== null && d.tolerancia !== undefined && d.tolerancia !== '' ? String(d.tolerancia) : '1');
             if (k === 'unidadDosis') return esc(d.unidadDosis || '');
             if (k === 'area_galpon') return (d.areaGalpon !== null && d.areaGalpon !== undefined && d.areaGalpon !== '' ? d.areaGalpon : '');
             if (k === 'cantidad_por_galpon') return (d.cantidadPorGalpon !== null && d.cantidadPorGalpon !== undefined && d.cantidadPorGalpon !== '' ? d.cantidadPorGalpon : '');
             return '';
         }
         function valorClaveDetalle(k, d) {
-            if (k === 'edad' || k === 'num') return '';
+            if (k === 'edad' || k === 'num' || k === 'tolerancia') return '';
             if (k === 'ubicacion') return (d.ubicacion || '');
             if (k === 'producto') return (d.nomProducto || d.codProducto || '');
             if (k === 'proveedor') return ((d.codProveedor && String(d.codProveedor).trim()) ? d.codProveedor : (d.nomProveedor || ''));
@@ -741,44 +746,86 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         }
         function abrirModalDetalles(codigo) {
             if (!codigo) return;
-            var detalles = window._detallesPorPrograma[codigo];
-            if (!detalles) detalles = [];
-            var cab = window._cabPorPrograma[codigo] || {};
-            var sigla = (window._siglaPorPrograma[codigo] || 'PL').toUpperCase();
-            if (sigla === 'NEC') sigla = 'NC';
-            var cols = columnasPorSiglaReporte[sigla] || columnasPorSiglaReporte['PL'];
-            var colsSinNum = cols.filter(function(k) { return k !== 'num'; });
-            if (colsSinNum.indexOf('edad') !== -1) {
-                colsSinNum = colsSinNum.filter(function(k) { return k !== 'edad'; });
-                colsSinNum.push('edad');
-            }
-            var detallesAgrupados = agruparDetallesPorEdad(detalles, colsSinNum);
-            document.getElementById('modalDetallesTitulo').textContent = 'Detalles - ' + codigo;
+            var cabEl = document.getElementById('modalDetallesCab');
             var thead = document.getElementById('modalDetallesThead');
             var tbody = document.getElementById('modalDetallesBody');
             var sinReg = document.getElementById('modalDetallesSinRegistros');
-            var thCells = '<th class="px-3 py-2 text-left">Código</th><th class="px-3 py-2 text-left">Nombre programa</th><th class="px-3 py-2 text-left">Despliegue</th><th class="px-3 py-2 text-left">Descripción</th>';
-            colsSinNum.forEach(function(k) {
-                thCells += '<th class="px-3 py-2 text-left">' + (labelsReporte[k] || k) + '</th>';
-            });
-            thead.innerHTML = '<tr>' + thCells + '</tr>';
-            tbody.innerHTML = '';
-            if (detallesAgrupados.length === 0) {
-                sinReg.classList.remove('hidden');
-            } else {
-                sinReg.classList.add('hidden');
-                detallesAgrupados.forEach(function(d, i) {
-                    var tr = document.createElement('tr');
-                    tr.className = 'border-b border-gray-200';
-                    var td = '<td class="px-3 py-2">' + esc(cab.codigo || codigo) + '</td><td class="px-3 py-2">' + esc(cab.nombre || '') + '</td><td class="px-3 py-2">' + esc(cab.despliegue || '') + '</td><td class="px-3 py-2">' + esc(cab.descripcion || '') + '</td>';
-                    colsSinNum.forEach(function(k) {
-                        td += '<td class="px-3 py-2"' + (k === 'descripcion_vacuna' ? ' style="white-space:pre-wrap;"' : '') + '>' + valorCeldaDetalle(k, d) + '</td>';
-                    });
-                    tr.innerHTML = td;
-                    tbody.appendChild(tr);
-                });
-            }
+            document.getElementById('modalDetallesTitulo').textContent = 'Detalles - ' + codigo;
+            cabEl.classList.add('hidden');
+            thead.innerHTML = '';
+            tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando...</td></tr>';
+            sinReg.classList.add('hidden');
             document.getElementById('modalDetallesPrograma').classList.remove('hidden');
+            fetch('get_programa_cab_detalle.php?codigo=' + encodeURIComponent(codigo), { cache: 'no-store' })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    if (!res.success) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-4 text-red-600">' + esc(res.message || 'Error al cargar programa.') + '</td></tr>';
+                        return;
+                    }
+                    var cab = res.cab || {};
+                    var detalles = res.detalles || [];
+                    var sigla = (res.sigla || 'PL').toUpperCase();
+                    if (sigla === 'NEC') sigla = 'NC';
+                    var catStr = (cab.categoria || '').toString().trim();
+                    var esSeguimiento = catStr.toUpperCase().indexOf('SEGUIMIENTO') !== -1;
+                    var esEspecial = cab.esEspecial === 1 || cab.esEspecial === '1';
+                    if (esEspecial) {
+                        cabEl.classList.remove('hidden');
+                        var modoEsp = (cab.modoEspecial || '').toString().toUpperCase();
+                        var cabEspHtml = '<div class="font-medium text-gray-700 mb-2">Programa especial</div><div class="text-gray-600">';
+                        if (modoEsp === 'PERIODICIDAD') {
+                            var intM = cab.intervaloMeses != null ? cab.intervaloMeses : 1;
+                            var diaM = cab.diaDelMes != null ? cab.diaDelMes : 15;
+                            cabEspHtml += 'Periodicidad: cada ' + intM + ' mes(es), día ' + diaM + ' del mes.';
+                        } else if (modoEsp === 'MANUAL') {
+                            var fManuales = cab.fechasManuales || [];
+                            cabEspHtml += 'Fechas manuales: ' + (fManuales.length > 0 ? fManuales.map(function(f) { return formatearFecha((f || '').toString().substring(0, 10)); }).join(', ') : '—');
+                        } else {
+                            cabEspHtml += 'Fechas definidas por periodicidad o manual.';
+                        }
+                        var tolEsp = 1;
+                        if (detalles.length > 0 && detalles[0].tolerancia != null && detalles[0].tolerancia !== '') tolEsp = detalles[0].tolerancia;
+                        cabEspHtml += ' Tolerancia: ' + tolEsp + ' día(s).</div>';
+                        cabEl.innerHTML = cabEspHtml;
+                    }
+                    var cols = columnasPorSiglaReporte[sigla] || columnasPorSiglaReporte['PL'];
+                    if (!esSeguimiento && esEspecial) cols = cols.filter(function(k) { return k !== 'edad' && k !== 'tolerancia'; });
+                    var colsSinNum = cols.filter(function(k) { return k !== 'num'; });
+                    if (colsSinNum.indexOf('edad') !== -1) {
+                        colsSinNum = colsSinNum.filter(function(k) { return k !== 'edad'; });
+                        colsSinNum.push('edad');
+                    }
+                    if (colsSinNum.indexOf('tolerancia') !== -1) {
+                        colsSinNum = colsSinNum.filter(function(k) { return k !== 'tolerancia'; });
+                        colsSinNum.push('tolerancia');
+                    }
+                    var detallesAgrupados = agruparDetallesPorEdad(detalles, colsSinNum);
+                    var thCells = '<th class="px-3 py-2 text-left">Código</th><th class="px-3 py-2 text-left">Nombre programa</th><th class="px-3 py-2 text-left">Despliegue</th><th class="px-3 py-2 text-left">Descripción</th>';
+                    colsSinNum.forEach(function(k) {
+                        thCells += '<th class="px-3 py-2 text-left">' + (labelsReporte[k] || k) + '</th>';
+                    });
+                    thead.innerHTML = '<tr>' + thCells + '</tr>';
+                    tbody.innerHTML = '';
+                    if (detallesAgrupados.length === 0) {
+                        sinReg.classList.remove('hidden');
+                    } else {
+                        sinReg.classList.add('hidden');
+                        detallesAgrupados.forEach(function(d, i) {
+                            var tr = document.createElement('tr');
+                            tr.className = 'border-b border-gray-200';
+                            var td = '<td class="px-3 py-2">' + esc(cab.codigo || codigo) + '</td><td class="px-3 py-2">' + esc(cab.nombre || '') + '</td><td class="px-3 py-2">' + esc(cab.despliegue || '') + '</td><td class="px-3 py-2">' + esc(cab.descripcion || '') + '</td>';
+                            colsSinNum.forEach(function(k) {
+                                td += '<td class="px-3 py-2"' + (k === 'descripcion_vacuna' ? ' style="white-space:pre-wrap;"' : '') + '>' + valorCeldaDetalle(k, d) + '</td>';
+                            });
+                            tr.innerHTML = td;
+                            tbody.appendChild(tr);
+                        });
+                    }
+                })
+                .catch(function() {
+                    tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-4 text-red-600">Error de conexión.</td></tr>';
+                });
         }
 
         function cerrarModalDetalles() {
@@ -1227,10 +1274,11 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
                 card.innerHTML =
                     '<div class="card-numero-row">#' + num + '</div>' +
                     '<div class="card-contenido">' +
-                    '<div class="card-codigo">' + esc(codigo) + '</div>' +
+                    '<div class="card-codigo">' + esc(codigo) + (cab.esEspecial === 1 || cab.esEspecial === '1' ? ' <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 ml-1" title="Programa especial">Especial</span>' : '') + '</div>' +
                     '<div class="card-campos">' +
                     '<div class="card-row"><span class="label">Nombre:</span> ' + esc(cab.nombre || '') + '</div>' +
                     '<div class="card-row"><span class="label">Tipo:</span> ' + esc(cab.nomTipo || '') + '</div>' +
+                    (cab.categoria ? '<div class="card-row"><span class="label">Categoría:</span> ' + esc(cab.categoria) + '</div>' : '') +
                     '<div class="card-row"><span class="label">Despliegue:</span> ' + esc(cab.despliegue || '') + '</div>' +
                     '<div class="card-row"><span class="label">Fecha inicio:</span> ' + formatearFecha(cab.fechaInicio) + '</div>' +
                     '<div class="card-row"><span class="label">Fecha fin:</span> ' + formatearFecha(cab.fechaFin) + '</div>' +
@@ -1322,6 +1370,6 @@ include_once __DIR__ . '/../../../includes/datatables_lang_es.php';
         cargarTiposParaFiltro();
         cargarListado();
     </script>
-     <link rel="stylesheet" href="../../css/dashboard-config.css">
+     <link rel="stylesheet" href="../../../css/dashboard-config.css">
 </body>
 </html>

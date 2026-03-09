@@ -118,12 +118,12 @@ if (!empty($where)) {
 }
 
 // Consulta lotes únicos (cabeceras)
-$sql = "SELECT DISTINCT r.tgranja, r.tnumreg, r.tfectra, r.tcencos, r.tedad, r.tgalpon, r.tuser, r.tdate, r.ttime
+$sql = "SELECT DISTINCT r.tgranja, r.tnumreg, r.tfectra, r.tcencos, r.tedad, r.tgalpon, r.tcampania, r.tuser, r.tdate, r.ttime
         FROM t_regnecropsia r";
 
 if (!empty($where)) {
     $whereStr = implode(' AND ', $where);
-    foreach (['tgranja', 'tnumreg', 'tfectra', 'tcencos', 'tedad', 'tgalpon', 'tuser', 'tdate'] as $col) {
+    foreach (['tgranja', 'tnumreg', 'tfectra', 'tcencos', 'tedad', 'tgalpon', 'tcampania', 'tuser', 'tdate'] as $col) {
         $whereStr = preg_replace('/\b' . $col . '\b/', "r.$col", $whereStr);
     }
     $sql .= " WHERE " . $whereStr;
@@ -133,7 +133,7 @@ if (!empty($where)) {
 $orderCol = "r.$order_column";
 if ($order_column === 'tdate') {
     $sql .= " ORDER BY r.tdate $order_dir, r.ttime $order_dir, r.tgranja ASC LIMIT ? OFFSET ?";
-} elseif (in_array($order_column, ['tgranja', 'tnumreg', 'tfectra', 'tcencos', 'tedad', 'tgalpon', 'tuser'])) {
+} elseif (in_array($order_column, ['tgranja', 'tnumreg', 'tfectra', 'tcencos', 'tedad', 'tgalpon', 'tcampania', 'tuser'])) {
     $sql .= " ORDER BY $orderCol $order_dir, r.tdate DESC, r.ttime DESC, r.tgranja ASC LIMIT ? OFFSET ?";
 } else {
     $sql .= " ORDER BY r.tdate $order_dir, r.ttime $order_dir, r.tgranja ASC LIMIT ? OFFSET ?";
@@ -164,8 +164,11 @@ while ($row = $result->fetch_assoc()) {
     // Extraer granja (3 primeros dígitos de tgranja)
     $granja = substr($row['tgranja'], 0, 3);
     
-    // Extraer campaña (últimos 3 dígitos de tgranja)
-    $campania = strlen($row['tgranja']) >= 3 ? substr($row['tgranja'], -3) : '';
+    // Usar tcampania almacenada; fallback: últimos 3 dígitos de tgranja (como Flutter)
+    $campania = trim($row['tcampania'] ?? '');
+    if ($campania === '' && strlen($row['tgranja']) >= 3) {
+        $campania = substr($row['tgranja'], -3);
+    }
     
     // Extraer nombre (tcencos hasta antes de C=)
     $nombre = $row['tcencos'];

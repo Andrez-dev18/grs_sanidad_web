@@ -13,7 +13,7 @@ if (!$conn) {
     exit;
 }
 
-// Obtener granjas desde pi_dim_detalles y nombre desde regcencosgalpones
+// Obtener granjas desde pi_dim_detalles (6%) y nombre desde regcencosgalpones; además granjas que empiezan con 8 (ej. 800 JEM) solo con nombre, sin campaña ni galpones
 $sql = "
     SELECT d.codigo,
            COALESCE(NULLIF(r.nombre, ''), d.codigo) AS nombre,
@@ -23,7 +23,7 @@ $sql = "
         SELECT DISTINCT TRIM(id_granja) AS codigo
         FROM pi_dim_detalles
         WHERE TRIM(id_granja) <> ''
-          AND TRIM(id_granja) LIKE '6%'
+          AND (TRIM(id_granja) LIKE '6%' OR TRIM(id_granja) LIKE '8%')
           AND TRIM(id_granja) REGEXP '^[0-9]+$'
           AND TRIM(id_granja) NOT IN ('624', '640', '641')
     ) AS d
@@ -31,7 +31,7 @@ $sql = "
         SELECT LEFT(TRIM(tcencos), 3) AS codigo, MAX(TRIM(tnomcen)) AS nombre
         FROM regcencosgalpones
         WHERE TRIM(tcencos) <> ''
-          AND LEFT(TRIM(tcencos), 3) LIKE '6%'
+          AND (LEFT(TRIM(tcencos), 3) LIKE '6%' OR LEFT(TRIM(tcencos), 3) LIKE '8%')
           AND LEFT(TRIM(tcencos), 3) REGEXP '^[0-9]+$'
         GROUP BY LEFT(TRIM(tcencos), 3)
     ) AS r ON r.codigo = d.codigo
@@ -43,7 +43,7 @@ $sql = "
         FROM pi_dim_detalles det
         INNER JOIN pi_dim_caracteristicas car ON car.id = det.id_caracteristica
         WHERE TRIM(det.id_granja) <> ''
-          AND TRIM(det.id_granja) LIKE '6%'
+          AND (TRIM(det.id_granja) LIKE '6%' OR TRIM(det.id_granja) LIKE '8%')
           AND TRIM(det.id_granja) REGEXP '^[0-9]+$'
           AND UPPER(TRIM(car.nombre)) IN ('ZONA', 'SUBZONA')
         GROUP BY TRIM(det.id_granja)
@@ -53,12 +53,14 @@ $sql = "
 
 $res = $conn->query($sql);
 $data = [];
+$codigosVistos = [];
 if ($res) {
     while ($row = $res->fetch_assoc()) {
         $codigo = trim((string)($row['codigo'] ?? ''));
         if ($codigo === '') {
             continue;
         }
+        $codigosVistos[$codigo] = true;
         $data[] = [
             'codigo' => $codigo,
             'nombre' => trim((string)($row['nombre'] ?? $codigo)),
@@ -67,6 +69,39 @@ if ($res) {
         ];
     }
 }
+
+// Incluir granjas 8xx que no estén en pi_dim_detalles (ej. 800 JEM: solo nombre, sin campaña ni galpones)
+$sql8 = "
+    SELECT LEFT(TRIM(tcencos), 3) AS codigo, COALESCE(NULLIF(MAX(TRIM(tnomcen)), ''), LEFT(TRIM(tcencos), 3)) AS nombre
+    FROM regcencosgalpones
+    WHERE TRIM(tcencos) <> ''
+      AND LEFT(TRIM(tcencos), 3) LIKE '8%'
+      AND LEFT(TRIM(tcencos), 3) REGEXP '^[0-9]+$'
+    GROUP BY LEFT(TRIM(tcencos), 3)
+    ORDER BY codigo
+";
+$res8 = $conn->query($sql8);
+if ($res8) {
+    while ($row = $res8->fetch_assoc()) {
+        $codigo = str_pad(trim((string)($row['codigo'] ?? '')), 3, '0', STR_PAD_LEFT);
+        if ($codigo === '' || isset($codigosVistos[$codigo])) {
+            continue;
+        }
+        $codigosVistos[$codigo] = true;
+        $nombre = trim((string)($row['nombre'] ?? $codigo));
+        if ($codigo === '800' && $nombre === '800') {
+            $nombre = 'JEM';
+        }
+        $data[] = [
+            'codigo' => $codigo,
+            'nombre' => $nombre,
+            'zona' => '',
+            'subzona' => ''
+        ];
+    }
+}
+
+usort($data, function ($a, $b) { return strcmp($a['codigo'], $b['codigo']); });
 
 echo json_encode(['success' => true, 'data' => $data]);
 $conn->close();

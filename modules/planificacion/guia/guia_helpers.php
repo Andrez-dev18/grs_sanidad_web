@@ -71,6 +71,11 @@ function md2html($md, &$toc, $forPdf = false) {
             $closeBlock();
             if ($inList) { $out[] = '</ol>'; $inList = false; }
             $out[] = '<!--FLOW:' . $m[1] . '-->';
+        } elseif (preg_match('/^\[page\]$/', $trimmed, $m) || preg_match('/^<!--PAGE-->$/', $trimmed, $m) || preg_match('/^<page>$/', $trimmed, $m)) {
+            // Etiqueta para salto de página explícito en la revista
+            $closeBlock();
+            if ($inList) { $out[] = '</ol>'; $inList = false; }
+            $out[] = '<!--PAGE-->';
         } elseif (preg_match('/^\| (.+)$/', $trimmed, $m)) {
             if ($inList) { $out[] = '</ol>'; $inList = false; }
             if (!$inBlock) { $closeBlock(); $out[] = '<div class="guia-block">'; $inBlock = true; }
@@ -150,6 +155,8 @@ function md2html($md, &$toc, $forPdf = false) {
         : '<div class="guia-render"><span class="guia-render-label">Campo Edad (detalle)</span><div class="guia-render-input-wrap"><span class="guia-render-th">Edad <i class="fas fa-info-circle text-blue-500 text-sm" title="Edad 1 = fecha carga. -1 = un día antes."></i></span><input type="text" class="guia-render-input" value="1, 2, 5" readonly placeholder="1, 2, -1" style="width:70px;padding:0.25rem 0.5rem;font-size:0.75rem;border:1px solid #d1d5db;border-radius:0.2rem;background:#fff;"></div></div>';
     $renders = ['<!--RENDER:edad-->' => $renderEdad];
     foreach ($renders as $k => $v) $html = str_replace($k, $v, $html);
+    // Reemplazar etiqueta <!--PAGE--> por separador de página para vista de revista
+    $html = str_replace('<!--PAGE-->', '<div class="guia-page-break"></div>', $html);
     $flowRegistro = $forPdf
         ? '<div class="guia-flow-pdf guia-flow-pdf-side"><table cellpadding="6" cellspacing="0" border="0" style="width:100%;max-width:480px;margin:0 auto;border-collapse:collapse;"><tr><td style="text-align:center;padding:10px 12px;background:#fff;border:2px solid #10b981;font-weight:bold;font-size:11pt;">Crear mi programa</td><td style="text-align:center;width:50px;font-size:10pt;color:#94a3b8;">&#8594;</td><td style="text-align:center;padding:8px 10px;background:#f8fafc;border:1px dashed #94a3b8;font-size:10pt;"><strong>Ver mis programas</strong></td></tr><tr><td colspan="3" style="text-align:center;padding:4px;font-size:9pt;color:#047857;">&#8595; llevar el programa a dónde y cuándo</td></tr><tr><td style="text-align:center;padding:10px 12px;background:#fff;border:2px solid #10b981;font-weight:bold;font-size:11pt;">Crear mi asignación</td><td style="text-align:center;width:50px;font-size:10pt;color:#94a3b8;">&#8594;</td><td style="text-align:center;padding:8px 10px;background:#f8fafc;border:1px dashed #94a3b8;font-size:10pt;"><strong>Ver mis asignaciones</strong></td></tr><tr><td colspan="3" style="text-align:center;padding:4px;font-size:9pt;color:#047857;">&#8595; ver todo en el calendario</td></tr><tr><td colspan="3" style="text-align:center;padding:10px 12px;background:#fff;border:2px solid #10b981;font-weight:bold;font-size:11pt;">Calendario</td></tr></table></div>'
         : '<div class="guia-flow guia-flow-vertical" id="guia-flow-registro">

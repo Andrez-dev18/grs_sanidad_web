@@ -35,7 +35,7 @@ Le da una **visión rápida del estado general** del sistema: cuántos envíos s
 
 ### ¿Para qué sirve?
 
-Ofrece un **análisis más detallado** con indicadores específicos: muestras enviadas, enfermedades más repetidas, resultados completados y, sobre todo, **estadísticas de necropsias** por sistema, hallazgos y granjas. Ideal para el área de sanidad avícola.
+Ofrece un **análisis más detallado** con indicadores específicos: muestras enviadas, enfermedades más repetidas, resultados completados y, **estadísticas de necropsias** por sistema, hallazgos y granjas. 
 
 ### ¿Qué encontrará?
 

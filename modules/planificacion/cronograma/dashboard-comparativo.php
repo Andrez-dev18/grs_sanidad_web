@@ -165,10 +165,34 @@ if (empty($_SESSION['active'])) {
                 </div>
             </div>
             <div class="flex flex-wrap items-start gap-4 mb-4 border-t border-gray-200 pt-4">
+                <div class="flex-shrink-0 min-w-[200px]" style="max-width: 260px;">
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-tags mr-1 text-blue-600"></i>Categoría</label>
+                    <select id="filtroCategoria" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
+                        <option value="">Todas</option>
+                        <option value="PROGRAMA SANITARIO">Programa Sanitario</option>
+                        <option value="SEGUIMIENTO SANITARIO">Seguimiento Sanitario</option>
+                    </select>
+                </div>
                 <div class="flex-shrink-0 min-w-[200px]" style="max-width: 280px;">
                     <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-clipboard-list mr-1 text-blue-600"></i>Tipo de programa</label>
-                    <select id="tipoPrograma" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
-                        <option value="">Seleccione tipo...</option>
+                    <div class="selector-display">
+                        <input id="tipoProgramaResumen" type="text" class="form-control" readonly placeholder="Clic para seleccionar" value="Todos" />
+                    </div>
+                </div>
+                <div id="wrapTipoCPComparativo" class="flex-shrink-0 min-w-[180px] hidden" style="max-width: 220px;">
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-bug mr-1 text-blue-600"></i>Tipo CP</label>
+                    <select id="tipoCPComparativo" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
+                        <option value="ROEDORES">ROEDORES</option>
+                        <option value="GORGOJOS">GORGOJOS</option>
+                    </select>
+                </div>
+                <div class="flex-shrink-0 min-w-[180px]" style="max-width: 220px;">
+                    <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fas fa-flag mr-1 text-blue-600"></i>Estado</label>
+                    <select id="filtroEstado" class="w-full px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer text-sm">
+                        <option value="todos">Todos</option>
+                        <option value="cumplido">Cumplido</option>
+                        <option value="atrasado">Atrasado</option>
+                        <option value="no_cumplido">No cumplido</option>
                     </select>
                 </div>
                 <div class="flex-shrink-0 min-w-[260px]" style="max-width: 360px;">
@@ -178,9 +202,12 @@ if (empty($_SESSION['active'])) {
                     </div>
                 </div>
             </div>
-            <div class="dashboard-actions mt-6 flex flex-wrap justify-end gap-4">
-                <button type="button" id="btnFiltrar" class="btn-primary">
-                    <i class="fas fa-file-pdf"></i> Reporte PDF
+            <div class="dashboard-actions mt-6 flex flex-wrap justify-end gap-4 items-center">
+                <button type="button" id="btnOrden1" class="btn-primary" title="Orden antiguo: planificado y desarrollado en filas distintas (salvo match SI CUMPLIO). Sin columna edad desarrollada.">
+                    <i class="fas fa-file-pdf"></i> Orden 1
+                </button>
+                <button type="button" id="btnOrden2" class="btn-primary" title="Planificado y desarrollado en una fila. Incluye columna Edad Desarrollada.">
+                    <i class="fas fa-file-pdf"></i> Orden 2
                 </button>
                 <button type="button" id="btnLimpiar" class="px-6 py-2.5 rounded-lg border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-200 text-sm font-medium inline-flex items-center gap-2">
                     Limpiar
@@ -189,6 +216,28 @@ if (empty($_SESSION['active'])) {
         </div>
     </div>
 </div>
+<div id="modalTipoPrograma" class="modal-overlay">
+    <div class="modal-box" style="width: min(680px, 96vw); max-height: 90vh;">
+        <div class="modal-head">
+            <h4 class="text-sm font-semibold text-gray-800">Seleccionar tipo(s) de programa</h4>
+            <button type="button" id="btnCerrarModalTipoPrograma" class="text-gray-500 hover:text-gray-700 text-lg leading-none">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="mb-3">
+                <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <input type="checkbox" id="chkTipoProgramaTodas" checked>
+                    <span>Marcar / desmarcar todas</span>
+                </label>
+            </div>
+            <div id="checksTipoPrograma" class="checks-grid-3"></div>
+        </div>
+        <div class="modal-foot">
+            <button type="button" id="btnCancelarModalTipoPrograma" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">Cancelar</button>
+            <button type="button" id="btnAplicarModalTipoPrograma" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">Aplicar</button>
+        </div>
+    </div>
+</div>
+
 <div id="modalGranja" class="modal-overlay">
     <div class="modal-box modal-granja-box">
         <div class="modal-head">
@@ -197,6 +246,7 @@ if (empty($_SESSION['active'])) {
         </div>
         <div class="modal-body modal-granja-body">
             <div class="modal-granja-top">
+                <input type="text" id="buscarGranja" class="form-control mb-2" placeholder="Buscar granja por código o nombre..." style="max-width: 100%;">
                 <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700">
                     <input type="checkbox" id="chkGranjasTodasTarjetas" checked>
                     <span>Marcar / desmarcar todas</span>
@@ -253,10 +303,15 @@ if (empty($_SESSION['active'])) {
     var campaniasTemp = [];
     var galponesTemp = [];
     var treeSelTemp = null;
+    var tiposProgramaDisponibles = [];
+    var tiposProgramaSeleccionados = [];
     var treeExpandTemp = { zonas: new Set(), subzonas: new Set(), granjas: new Set(), campanias: new Set() };
+    var granjasColapsadasPorUsuario = new Set();
     var arbolGranjasCargadas = new Set();
     var arbolGranjasCargando = {};
     var arbolPeriodoKey = '';
+    var abrirGranjaConEstadoInicial = false;
+    var tiposProgramaSeleccionadosGuardados = [];
 
     function asList(res) {
         if (!res) return [];
@@ -267,18 +322,48 @@ if (empty($_SESSION['active'])) {
 
     function cargarTiposPrograma() {
         return fetch('../programas/get_tipos_programa.php').then(function(r) { return r.json(); }).then(function(res) {
-            var sel = document.getElementById('tipoPrograma');
-            if (!sel || !res.success) return;
-            sel.innerHTML = '<option value="">Seleccione tipo...</option>';
-            (res.data || []).forEach(function(t) {
-                var opt = document.createElement('option');
-                opt.value = t.codigo;
-                opt.textContent = t.nombre || '';
-                opt.dataset.nombre = t.nombre || '';
-                opt.dataset.sigla = (t.sigla || '').trim().toUpperCase();
-                sel.appendChild(opt);
+            if (!res.success) return;
+            tiposProgramaDisponibles = (res.data || []).map(function(t) {
+                return {
+                    codigo: String(t.codigo || ''),
+                    nombre: (t.nombre || '').trim(),
+                    sigla: (t.sigla || '').trim().toUpperCase()
+                };
             });
+            renderChecksTipoPrograma();
+            refrescarResumenTipoPrograma();
         }).catch(function() {});
+    }
+
+    function renderChecksTipoPrograma() {
+        var cont = document.getElementById('checksTipoPrograma');
+        if (!cont) return;
+        cont.innerHTML = '';
+        tiposProgramaDisponibles.forEach(function(t) {
+            var lb = document.createElement('label');
+            var checked = tiposProgramaSeleccionados.indexOf(t.codigo) >= 0 || tiposProgramaSeleccionados.length === 0 ? 'checked' : '';
+            lb.innerHTML = '<input type="checkbox" class="chkTipoPrograma" value="' + String(t.codigo).replace(/"/g, '&quot;') + '" data-nombre="' + String(t.nombre || '').replace(/"/g, '&quot;') + '" data-sigla="' + String(t.sigla || '').replace(/"/g, '&quot;') + '" ' + checked + '> <span>' + String(t.nombre || t.codigo).replace(/</g, '&lt;') + '</span>';
+            cont.appendChild(lb);
+        });
+        var chkTodos = document.getElementById('chkTipoProgramaTodas');
+        if (chkTodos) {
+            chkTodos.checked = tiposProgramaSeleccionados.length === 0 || tiposProgramaSeleccionados.length === tiposProgramaDisponibles.length;
+        }
+    }
+
+    function refrescarResumenTipoPrograma() {
+        var inp = document.getElementById('tipoProgramaResumen');
+        if (!inp) return;
+        if (tiposProgramaSeleccionados.length === 0 || tiposProgramaSeleccionados.length === tiposProgramaDisponibles.length) {
+            inp.value = 'Todos';
+        } else {
+            var nombres = tiposProgramaSeleccionados.map(function(c) {
+                var t = tiposProgramaDisponibles.find(function(x) { return String(x.codigo) === c; });
+                return t ? t.nombre : c;
+            });
+            inp.value = 'Personalizado (' + tiposProgramaSeleccionados.length + ')';
+            inp.title = nombres.join(', ');
+        }
     }
 
     function normalizarGranja(g) {
@@ -407,15 +492,18 @@ if (empty($_SESSION['active'])) {
         var gSet = new Set();
         var cSet = new Set();
         var gpSet = new Set();
+        var srcGranjas = (abrirGranjaConEstadoInicial ? [] : granjasSeleccionadas);
+        var srcCampanias = (abrirGranjaConEstadoInicial ? [] : campaniasSeleccionadas);
+        var srcGalpones = (abrirGranjaConEstadoInicial ? [] : galponesSeleccionados);
         if (!treeSelTemp) {
-            if (granjasSeleccionadas.length === 0) disp.granjas.forEach(function(v) { gSet.add(v); });
-            else granjasSeleccionadas.forEach(function(v) { if (disp.granjas.has(String(v))) gSet.add(String(v)); });
+            if (srcGranjas.length === 0) disp.granjas.forEach(function(v) { gSet.add(v); });
+            else srcGranjas.forEach(function(v) { if (disp.granjas.has(String(v))) gSet.add(String(v)); });
 
-            if (campaniasSeleccionadas.length === 0) disp.campanias.forEach(function(v) { cSet.add(v); });
-            else campaniasSeleccionadas.forEach(function(v) { var k = keyCamp(v.granja, v.campania); if (disp.campanias.has(k)) cSet.add(k); });
+            if (srcCampanias.length === 0) disp.campanias.forEach(function(v) { cSet.add(v); });
+            else srcCampanias.forEach(function(v) { var k = keyCamp(v.granja, v.campania); if (disp.campanias.has(k)) cSet.add(k); });
 
-            if (galponesSeleccionados.length === 0) disp.galpones.forEach(function(v) { gpSet.add(v); });
-            else galponesSeleccionados.forEach(function(v) { var k = keyGalpon(v.granja, v.campania, v.galpon); if (disp.galpones.has(k)) gpSet.add(k); });
+            if (srcGalpones.length === 0) disp.galpones.forEach(function(v) { gpSet.add(v); });
+            else srcGalpones.forEach(function(v) { var k = keyGalpon(v.granja, v.campania, v.galpon); if (disp.galpones.has(k)) gpSet.add(k); });
             treeSelTemp = { granjas: gSet, campanias: cSet, galpones: gpSet };
             return;
         }
@@ -452,12 +540,37 @@ if (empty($_SESSION['active'])) {
             return;
         }
 
+        var searchText = (document.getElementById('buscarGranja') && document.getElementById('buscarGranja').value || '').trim().toLowerCase();
+        var expandirTodo = true;
+        var mapZonasFiltrado = mapZonas;
+        if (searchText) {
+            mapZonasFiltrado = {};
+            zonas.forEach(function(z) {
+                mapZonasFiltrado[z] = {};
+                Object.keys(mapZonas[z] || {}).forEach(function(sub) {
+                    var granjasMatch = (mapZonas[z][sub] || []).filter(function(g) {
+                        var cod = String(g.codigo || '').toLowerCase();
+                        var nom = String(g.nombre || '').toLowerCase();
+                        return cod.indexOf(searchText) >= 0 || nom.indexOf(searchText) >= 0;
+                    });
+                    if (granjasMatch.length > 0) mapZonasFiltrado[z][sub] = granjasMatch;
+                });
+                if (Object.keys(mapZonasFiltrado[z]).length === 0) delete mapZonasFiltrado[z];
+            });
+        }
+        var zonasVisibles = Object.keys(mapZonasFiltrado).sort();
+        var mapParaRender = searchText ? mapZonasFiltrado : mapZonas;
         var html = '';
-        zonas.forEach(function(zona) {
-            var expZona = treeExpandTemp.zonas.has(zona);
+        if (searchText && zonasVisibles.length === 0) {
+            cont.innerHTML = '<div class="text-sm text-gray-500 py-4">No se encontraron granjas con &quot;' + String(searchText).replace(/</g, '&lt;') + '&quot; en código o nombre.</div>';
+            actualizarChecksMasterArbol();
+            return;
+        }
+        zonasVisibles.forEach(function(zona) {
+            var expZona = expandirTodo || treeExpandTemp.zonas.has(zona);
             var granjasZona = [];
-            Object.keys(mapZonas[zona] || {}).forEach(function(sub) {
-                (mapZonas[zona][sub] || []).forEach(function(g) { granjasZona.push(String(g.codigo || '').trim()); });
+            Object.keys(mapParaRender[zona] || {}).forEach(function(sub) {
+                (mapParaRender[zona][sub] || []).forEach(function(g) { granjasZona.push(String(g.codigo || '').trim()); });
             });
             var selZona = granjasZona.filter(function(c) { return treeSelTemp.granjas.has(c); }).length;
             var checkedZona = granjasZona.length > 0 && selZona === granjasZona.length;
@@ -466,12 +579,12 @@ if (empty($_SESSION['active'])) {
             html += '<div class="tree-zone-head">';
             html += '<button type="button" class="tree-expand-zona btnExpZona" data-zona="' + String(zona).replace(/"/g, '&quot;') + '" aria-expanded="' + (expZona ? 'true' : 'false') + '" title="Expandir/contraer"><i class="fas fa-chevron-right"></i></button>';
             html += '<input type="checkbox" class="chkZonaTarjeta" data-zona="' + String(zona).replace(/"/g, '&quot;') + '" title="Marcar/desmarcar zona" ' + (checkedZona ? 'checked' : '') + '> <span>Zona: ' + String(zona).replace(/</g, '&lt;') + '</span></div>';
-            var subs = Object.keys(mapZonas[zona] || {}).sort();
+            var subs = Object.keys(mapParaRender[zona] || {}).sort();
             html += '<div class="tree-zone-body"' + (expZona ? '' : ' style="display:none;"') + '>';
             subs.forEach(function(sub) {
                 var keySub = zona + '|' + sub;
-                var expSub = treeExpandTemp.subzonas.has(keySub);
-                var granjasSub = (mapZonas[zona][sub] || []).map(function(g) { return String(g.codigo || '').trim(); });
+                var expSub = expandirTodo || treeExpandTemp.subzonas.has(keySub);
+                var granjasSub = (mapParaRender[zona][sub] || []).map(function(g) { return String(g.codigo || '').trim(); });
                 var selSub = granjasSub.filter(function(c) { return treeSelTemp.granjas.has(c); }).length;
                 var checkedSub = granjasSub.length > 0 && selSub === granjasSub.length;
                 html += '<div class="tree-subzona">';
@@ -479,11 +592,12 @@ if (empty($_SESSION['active'])) {
                 html += '<button type="button" class="tree-expand-subzona btnExpSubzona" data-key="' + String(keySub).replace(/"/g, '&quot;') + '" aria-expanded="' + (expSub ? 'true' : 'false') + '"><i class="fas fa-chevron-right"></i></button>';
                 html += '<input type="checkbox" class="chkSubzonaTarjeta" data-zona="' + String(zona).replace(/"/g, '&quot;') + '" data-subzona="' + String(sub).replace(/"/g, '&quot;') + '" title="Marcar/desmarcar subzona" ' + (checkedSub ? 'checked' : '') + '> <span>Subzona: ' + String(sub).replace(/</g, '&lt;') + '</span></div>';
                 html += '<div class="tree-subzona-granjas"' + (expSub ? '' : ' style="display:none;"') + '>';
-                (mapZonas[zona][sub] || []).sort(function(a, b) { return String(a.codigo).localeCompare(String(b.codigo)); }).forEach(function(g) {
+                (mapParaRender[zona][sub] || []).sort(function(a, b) { return String(a.codigo).localeCompare(String(b.codigo)); }).forEach(function(g) {
                     var cod = String(g.codigo || '').trim();
                     var nom = String(g.nombre || cod).trim();
+                    var searchText = (document.getElementById('buscarGranja') && document.getElementById('buscarGranja').value || '').trim().toLowerCase();
+                    var expG = (searchText !== '' && !granjasColapsadasPorUsuario.has(cod)) || treeExpandTemp.granjas.has(cod);
                     var checkedG = treeSelTemp.granjas.has(cod) ? 'checked' : '';
-                    var expG = treeExpandTemp.granjas.has(cod);
                     var camps = mapTree[cod] || [];
                     var cargandoDetalle = !!arbolGranjasCargando[cod];
                     html += '<div class="tree-granja">';
@@ -526,18 +640,18 @@ if (empty($_SESSION['active'])) {
         });
         cont.innerHTML = html;
 
-        zonas.forEach(function(zona) {
+        zonasVisibles.forEach(function(zona) {
             var granjasZona = [];
-            Object.keys(mapZonas[zona] || {}).forEach(function(sub) {
-                (mapZonas[zona][sub] || []).forEach(function(g) { granjasZona.push(String(g.codigo || '').trim()); });
+            Object.keys(mapParaRender[zona] || {}).forEach(function(sub) {
+                (mapParaRender[zona][sub] || []).forEach(function(g) { granjasZona.push(String(g.codigo || '').trim()); });
             });
             var selZona = granjasZona.filter(function(c) { return treeSelTemp.granjas.has(c); }).length;
             var indetZona = selZona > 0 && selZona < granjasZona.length;
             cont.querySelectorAll('.chkZonaTarjeta').forEach(function(chk) {
                 if ((chk.getAttribute('data-zona') || '') === zona) chk.indeterminate = indetZona;
             });
-            Object.keys(mapZonas[zona] || {}).forEach(function(sub) {
-                var granjasSub = (mapZonas[zona][sub] || []).map(function(g) { return String(g.codigo || '').trim(); });
+            Object.keys(mapParaRender[zona] || {}).forEach(function(sub) {
+                var granjasSub = (mapParaRender[zona][sub] || []).map(function(g) { return String(g.codigo || '').trim(); });
                 var selSub = granjasSub.filter(function(c) { return treeSelTemp.granjas.has(c); }).length;
                 var indetSub = selSub > 0 && selSub < granjasSub.length;
                 cont.querySelectorAll('.chkSubzonaTarjeta').forEach(function(chk) {
@@ -557,6 +671,14 @@ if (empty($_SESSION['active'])) {
                 if (!z) return;
                 if (treeExpandTemp.zonas.has(z)) {
                     treeExpandTemp.zonas.delete(z);
+                    var zoneCard = btnZ.closest('.tree-zone');
+                    if (zoneCard) {
+                        var zoneBody = zoneCard.querySelector('.tree-zone-body');
+                        if (zoneBody) zoneBody.style.display = 'none';
+                        btnZ.setAttribute('aria-expanded', 'false');
+                        var iconZ = btnZ.querySelector('i');
+                        if (iconZ) iconZ.style.transform = 'none';
+                    }
                 } else {
                     treeExpandTemp.zonas.add(z);
                 }
@@ -569,6 +691,14 @@ if (empty($_SESSION['active'])) {
                 if (!k) return;
                 if (treeExpandTemp.subzonas.has(k)) {
                     treeExpandTemp.subzonas.delete(k);
+                    var subCard = btnS.closest('.tree-subzona');
+                    if (subCard) {
+                        var subGranjas = subCard.querySelector('.tree-subzona-granjas');
+                        if (subGranjas) subGranjas.style.display = 'none';
+                        btnS.setAttribute('aria-expanded', 'false');
+                        var iconS = btnS.querySelector('i');
+                        if (iconS) iconS.style.transform = 'none';
+                    }
                 } else {
                     treeExpandTemp.subzonas.add(k);
                 }
@@ -577,13 +707,24 @@ if (empty($_SESSION['active'])) {
             }
             var btnG = t.closest ? t.closest('.btnExpGranja') : null;
             if (btnG) {
+                ev.preventDefault();
+                ev.stopPropagation();
                 var g = btnG.getAttribute('data-granja') || '';
                 if (!g) return;
                 if (treeExpandTemp.granjas.has(g)) {
                     treeExpandTemp.granjas.delete(g);
-                    renderTarjetasGranjas();
+                    granjasColapsadasPorUsuario.add(g);
+                    var granjaCard = btnG.closest('.tree-granja');
+                    if (granjaCard) {
+                        var wrap = granjaCard.querySelector('.tree-campanias-wrap');
+                        if (wrap) wrap.style.display = 'none';
+                        btnG.setAttribute('aria-expanded', 'false');
+                        var icon = btnG.querySelector('i');
+                        if (icon) icon.style.transform = 'none';
+                    }
                     return;
                 }
+                granjasColapsadasPorUsuario.delete(g);
                 treeExpandTemp.granjas.add(g);
                 renderTarjetasGranjas();
                 cargarDetalleArbolPorGranja(g, getParamsPeriodo()).then(function() {
@@ -1146,34 +1287,56 @@ if (empty($_SESSION['active'])) {
     }
 
     function esTipoNecropsias() {
-        var sel = document.getElementById('tipoPrograma');
-        if (!sel || !sel.value) return false;
-        var opt = sel.options[sel.selectedIndex];
-        if (!opt) return false;
-        var nombre = (opt.dataset.nombre || opt.textContent || '').toString().toLowerCase();
-        var sigla = (opt.dataset.sigla || '').toString().toUpperCase();
-        return nombre.indexOf('necropsia') >= 0 || sigla === 'NEC' || sigla === 'NC';
+        if (tiposProgramaSeleccionados.length === 0) return false;
+        return tiposProgramaSeleccionados.some(function(c) {
+            var t = tiposProgramaDisponibles.find(function(x) { return String(x.codigo) === c; });
+            if (!t) return false;
+            var nombre = (t.nombre || '').toString().toLowerCase();
+            var sigla = (t.sigla || '').toString().toUpperCase();
+            return nombre.indexOf('necropsia') >= 0 || sigla === 'NEC' || sigla === 'NC';
+        });
     }
 
-    document.getElementById('btnFiltrar').addEventListener('click', function() {
-        var sel = document.getElementById('tipoPrograma');
-        var tipoVacio = !sel || !sel.value || (sel.value || '').trim() === '';
-        if (tipoVacio) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({ icon: 'warning', title: 'Tipo de programa', text: 'Debe seleccionar un tipo de programa.' });
-            } else {
-                alert('Debe seleccionar un tipo de programa.');
-            }
-            return;
-        }
-        if (!esTipoNecropsias()) {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({ icon: 'info', title: 'Tipo de programa', text: 'Por ahora solo está disponible el reporte PDF para el tipo Necropsias. Seleccione Necropsias en el filtro de tipo de programa.' });
-            } else {
-                alert('Por ahora solo está disponible el reporte PDF para el tipo Necropsias. Seleccione Necropsias en el filtro de tipo de programa.');
-            }
-            return;
-        }
+    function esTipoMoviZonas() {
+        if (tiposProgramaSeleccionados.length === 0) return true;
+        var siglasMovi = ['GJ', 'VGJ', 'PL', 'VPI', 'CP', 'CDP', 'LD', 'LYD', 'MC', 'MDC'];
+        return tiposProgramaSeleccionados.some(function(c) {
+            var t = tiposProgramaDisponibles.find(function(x) { return String(x.codigo) === c; });
+            if (!t) return false;
+            var nombre = (t.nombre || '').toString().toLowerCase();
+            var sigla = (t.sigla || '').toString().toUpperCase();
+            if (nombre.indexOf('necropsia') >= 0 || sigla === 'NEC' || sigla === 'NC') return false;
+            return siglasMovi.indexOf(sigla) >= 0 || nombre.indexOf('vacuna') >= 0 || nombre.indexOf('gja') >= 0 || nombre.indexOf('planta') >= 0 || nombre.indexOf('plagas') >= 0 || nombre.indexOf('limpieza') >= 0 || nombre.indexOf('desinfeccion') >= 0 || nombre.indexOf('manejo cama') >= 0;
+        });
+    }
+
+    function tieneTipoConReporte() {
+        return esTipoNecropsias() || esTipoMoviZonas();
+    }
+
+    /** Obtiene el tipo de reporte (slug) a partir del primer tipo de programa seleccionado. Sigla → reporte. */
+    function getReporteSlugDesdeTipos() {
+        if (!tiposProgramaDisponibles.length) return 'necropsias';
+        var codigoPrimero = tiposProgramaSeleccionados.length > 0 ? tiposProgramaSeleccionados[0] : null;
+        var t = codigoPrimero ? tiposProgramaDisponibles.find(function(x) { return String(x.codigo) === String(codigoPrimero); }) : null;
+        var sigla = (t && t.sigla) ? String(t.sigla).trim().toUpperCase() : '';
+        var nombre = (t && t.nombre) ? String(t.nombre).toLowerCase() : '';
+        if (sigla === 'NC' || sigla === 'NEC' || nombre.indexOf('necropsia') >= 0) return 'necropsias';
+        if (sigla === 'CP' || nombre.indexOf('plagas') >= 0) return 'cp';
+        if (sigla === 'VPL' || sigla === 'VPI' || sigla === 'PL') return 'vpl';
+        if (sigla === 'VGJ' || sigla === 'GJ') return 'vgj';
+        if (sigla === 'LYD' || sigla === 'LD') return 'lyd';
+        if (sigla === 'MSA') return 'msa';
+        if (sigla === 'MSB') return 'msb';
+        return 'necropsias';
+    }
+
+    function granjasFiltroParaReporte() {
+        if (granjasSeleccionadas.length > 0) return granjasSeleccionadas.slice();
+        return granjasDisponibles.map(function(g) { return g.codigo; }).filter(Boolean);
+    }
+
+    function abrirReportePropuesta(orden) {
         var p = getParamsPeriodo();
         var params = new URLSearchParams();
         params.set('periodoTipo', p.periodoTipo);
@@ -1183,13 +1346,25 @@ if (empty($_SESSION['active'])) {
         if (p.mesUnico) params.set('mesUnico', p.mesUnico);
         if (p.mesInicio) params.set('mesInicio', p.mesInicio);
         if (p.mesFin) params.set('mesFin', p.mesFin);
-        var granjasFiltro = granjasSeleccionadas.length > 0
-            ? granjasSeleccionadas.slice()
-            : granjasDisponibles.map(function(g) { return g.codigo; }).filter(Boolean);
+        params.set('orden', orden === 2 ? '2' : '1');
+        var estadoEl = document.getElementById('filtroEstado');
+        if (estadoEl && estadoEl.value && estadoEl.value !== 'todos') params.set('estado', estadoEl.value);
+        var granjasFiltro = granjasFiltroParaReporte();
         granjasFiltro.forEach(function(v) { params.append('granja[]', v); });
-        var url = 'generar_reporte_necropsias_vs_cronograma.php?' + params.toString();
+        if (tiposProgramaSeleccionados && tiposProgramaSeleccionados.length > 0) {
+            tiposProgramaSeleccionados.forEach(function(c) { params.append('tipoPrograma[]', c); });
+        }
+        var catEl = document.getElementById('filtroCategoria');
+        if (catEl && catEl.value) params.set('categoria', catEl.value);
+        if (getReporteSlugDesdeTipos() === 'cp') {
+            var tipoCP = document.getElementById('tipoCPComparativo');
+            if (tipoCP && tipoCP.value) params.set('tipoCP', tipoCP.value);
+        }
+        var url = 'generar_reporte_comparativo_unificado.php?' + params.toString();
         window.open(url, '_blank');
-    });
+    }
+    document.getElementById('btnOrden1').addEventListener('click', function() { abrirReportePropuesta(1); });
+    document.getElementById('btnOrden2').addEventListener('click', function() { abrirReportePropuesta(2); });
 
     document.getElementById('btnLimpiar').addEventListener('click', function() {
         var d = new Date();
@@ -1201,7 +1376,12 @@ if (empty($_SESSION['active'])) {
         var y = d.getFullYear();
 
         var p = document.getElementById('periodoTipo'); if (p) p.value = 'ENTRE_MESES';
-        var tp = document.getElementById('tipoPrograma'); if (tp) tp.value = '';
+        tiposProgramaSeleccionados = [];
+        renderChecksTipoPrograma();
+        refrescarResumenTipoPrograma();
+        var fe = document.getElementById('filtroEstado'); if (fe) fe.value = 'todos';
+        var fcat = document.getElementById('filtroCategoria'); if (fcat) fcat.value = '';
+        aplicarVisibilidadTipoCP();
         var fu = document.getElementById('fechaUnica'); if (fu) fu.value = ymd;
         var fi = document.getElementById('fechaInicio'); if (fi) fi.value = first;
         var ff = document.getElementById('fechaFin'); if (ff) ff.value = last;
@@ -1229,6 +1409,14 @@ if (empty($_SESSION['active'])) {
         aplicarVisibilidadPeriodoComparativo();
     });
 
+    function aplicarVisibilidadTipoCP() {
+        var wrapCP = document.getElementById('wrapTipoCPComparativo');
+        if (!wrapCP) return;
+        if (getReporteSlugDesdeTipos() === 'cp') wrapCP.classList.remove('hidden');
+        else wrapCP.classList.add('hidden');
+    }
+    aplicarVisibilidadTipoCP();
+
     var periodoTipo = document.getElementById('periodoTipo');
     if (periodoTipo) periodoTipo.addEventListener('change', function() {
         aplicarVisibilidadPeriodoComparativo();
@@ -1249,17 +1437,87 @@ if (empty($_SESSION['active'])) {
     refrescarResumenes();
 
     function abrirSelectorGranja() {
-        granjasTemp = granjasSeleccionadas.slice();
-        campaniasTemp = campaniasSeleccionadas.slice();
-        galponesTemp = galponesSeleccionados.slice();
+        abrirGranjaConEstadoInicial = true;
         treeSelTemp = null;
+        var buscarEl = document.getElementById('buscarGranja');
+        if (buscarEl) buscarEl.value = '';
         cargarArbolFiltrosComparativo().then(function() {
-        renderFiltrosGranjasModal();
-        construirChecksGranjas();
-        abrirModal('modalGranja');
+            renderFiltrosGranjasModal();
+            construirChecksGranjas();
+            abrirGranjaConEstadoInicial = false;
+            abrirModal('modalGranja');
+            setTimeout(function() {
+                var b = document.getElementById('buscarGranja');
+                if (b) b.focus();
+            }, 100);
         });
     }
+    document.getElementById('tipoProgramaResumen').addEventListener('click', function() {
+        tiposProgramaSeleccionadosGuardados = tiposProgramaSeleccionados.slice();
+        tiposProgramaSeleccionados = [];
+        renderChecksTipoPrograma();
+        abrirModal('modalTipoPrograma');
+    });
+    document.getElementById('btnCerrarModalTipoPrograma').addEventListener('click', function() {
+        tiposProgramaSeleccionados = tiposProgramaSeleccionadosGuardados.slice();
+        refrescarResumenTipoPrograma();
+        cerrarModal('modalTipoPrograma');
+    });
+    document.getElementById('btnCancelarModalTipoPrograma').addEventListener('click', function() {
+        tiposProgramaSeleccionados = tiposProgramaSeleccionadosGuardados.slice();
+        refrescarResumenTipoPrograma();
+        cerrarModal('modalTipoPrograma');
+    });
+    document.getElementById('btnAplicarModalTipoPrograma').addEventListener('click', function() {
+        var cont = document.getElementById('checksTipoPrograma');
+        tiposProgramaSeleccionados = [];
+        if (cont) {
+            cont.querySelectorAll('.chkTipoPrograma:checked').forEach(function(cb) {
+                var v = (cb.value || '').trim();
+                if (v) tiposProgramaSeleccionados.push(v);
+            });
+        }
+        tiposProgramaSeleccionados = (tiposProgramaSeleccionados.length === 0 || tiposProgramaSeleccionados.length === tiposProgramaDisponibles.length) ? [] : tiposProgramaSeleccionados;
+        refrescarResumenTipoPrograma();
+        aplicarVisibilidadTipoCP();
+        cerrarModal('modalTipoPrograma');
+    });
+    var chkTipoTodos = document.getElementById('chkTipoProgramaTodas');
+    if (chkTipoTodos) {
+        document.getElementById('checksTipoPrograma').addEventListener('change', function(ev) {
+            if (ev.target && ev.target.classList.contains('chkTipoPrograma')) {
+                var cont = document.getElementById('checksTipoPrograma');
+                var checks = cont ? cont.querySelectorAll('.chkTipoPrograma') : [];
+                var checked = cont ? cont.querySelectorAll('.chkTipoPrograma:checked') : [];
+                chkTipoTodos.checked = checked.length === checks.length;
+                chkTipoTodos.indeterminate = checked.length > 0 && checked.length < checks.length;
+            }
+        });
+    }
+    document.getElementById('chkTipoProgramaTodas').addEventListener('change', function() {
+        var cont = document.getElementById('checksTipoPrograma');
+        if (!cont) return;
+        var chk = this;
+        cont.querySelectorAll('.chkTipoPrograma').forEach(function(cb) { cb.checked = chk.checked; });
+    });
+    ['modalTipoPrograma'].forEach(function(id) {
+        var m = document.getElementById(id);
+        if (!m) return;
+        m.addEventListener('click', function(ev) {
+            if (ev.target === m) {
+                tiposProgramaSeleccionados = tiposProgramaSeleccionadosGuardados.slice();
+                refrescarResumenTipoPrograma();
+                cerrarModal(id);
+            }
+        });
+    });
+
     document.getElementById('granjaResumen').addEventListener('click', abrirSelectorGranja);
+    var buscarGranjaEl = document.getElementById('buscarGranja');
+    if (buscarGranjaEl) {
+        buscarGranjaEl.addEventListener('input', function() { renderTarjetasGranjas(); });
+        buscarGranjaEl.addEventListener('keyup', function() { renderTarjetasGranjas(); });
+    }
     document.getElementById('btnCerrarModalGranja').addEventListener('click', function() { cerrarModal('modalGranja'); });
     document.getElementById('btnCancelarModalGranja').addEventListener('click', function() { cerrarModal('modalGranja'); });
     document.getElementById('btnAplicarModalGranja').addEventListener('click', function() {

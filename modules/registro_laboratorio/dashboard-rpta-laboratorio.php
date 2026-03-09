@@ -182,6 +182,49 @@ $result = $conexion->query($query);
             grid-template-columns: repeat(13, 1fr);
         }
 
+        /* Estilos para el panel de enfermedades en resultados cuantitativos */
+        #enfermedadPanel {
+            min-width: 100%;
+            overflow-x: visible;
+        }
+        
+        #enfermedadPanel > div {
+            min-width: fit-content;
+        }
+        
+        /* Asegurar que los inputs dentro del grid sean visibles */
+        #enfermedadPanel input[type="number"],
+        #enfermedadPanel input[type="text"],
+        #enfermedadPanel textarea {
+            min-width: 60px;
+            box-sizing: border-box;
+        }
+        
+        /* Contenedor de enfermedades: permitir overflow para ver todos los campos */
+        #contenedorEnfermedades {
+            overflow-x: visible;
+            min-width: 100%;
+        }
+        
+        #bloqueCuanti {
+            overflow-x: visible;
+            min-width: 100%;
+        }
+        
+        #tabContentSegundo {
+            overflow-x: visible;
+        }
+        
+        /* Panel detalle: permitir overflow para resultados cuantitativos */
+        #responseDetailPanel {
+            overflow-x: visible;
+            max-width: none;
+        }
+        
+        #responseDetailPanel #contenedorEnfermedades > div {
+            overflow-x: visible;
+        }
+
         /* Panel solicitudes: ocupa la altura disponible sin forzar min que recorte */
         #panelSolicitudes {
             min-height: 400px;

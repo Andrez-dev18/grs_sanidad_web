@@ -233,8 +233,11 @@ if ($stAnio) {
     }
 }
 
-// Datos del programa y fechas efectivas
-$stCab = $conn->prepare("SELECT nombre, fechaInicio, fechaFin FROM san_fact_programa_cab WHERE codigo = ? LIMIT 1");
+// Datos del programa y fechas efectivas (incl. programa especial)
+$chkEsEspecial = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'esEspecial'");
+$tieneEspecial = $chkEsEspecial && $chkEsEspecial->num_rows > 0;
+$sqlCab = "SELECT nombre, fechaInicio, fechaFin" . ($tieneEspecial ? ", esEspecial, modoEspecial" : "") . " FROM san_fact_programa_cab WHERE codigo = ? LIMIT 1";
+$stCab = $conn->prepare($sqlCab);
 $stCab->bind_param("s", $codPrograma);
 $stCab->execute();
 $cab = $stCab->get_result()->fetch_assoc();
@@ -244,6 +247,33 @@ if (!$cab) {
     echo json_encode(['success' => false, 'message' => 'Programa no encontrado', 'total' => 0]);
     exit;
 }
+$esEspecial = $tieneEspecial ? (int)($cab['esEspecial'] ?? 0) : 0;
+$modoEspecial = $tieneEspecial ? trim((string)($cab['modoEspecial'] ?? '')) : '';
+$intervaloMeses = 1;
+$diaDelMes = 15;
+$fechas_manuales_json = null;
+
+// fechas, intervaloMeses, diaDelMes solo en DET
+$chkFechasDet = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'fechas'");
+$chkIntervaloDet = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'intervaloMeses'");
+$chkDiaDet = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'diaDelMes'");
+if (($chkFechasDet && $chkFechasDet->num_rows > 0) || ($chkIntervaloDet && $chkIntervaloDet->num_rows > 0 && $chkDiaDet && $chkDiaDet->num_rows > 0)) {
+    $camposDetEsp = ($chkFechasDet && $chkFechasDet->num_rows > 0) ? "fechas" : "";
+    if ($chkIntervaloDet && $chkIntervaloDet->num_rows > 0 && $chkDiaDet && $chkDiaDet->num_rows > 0) $camposDetEsp .= ($camposDetEsp ? ", " : "") . "intervaloMeses, diaDelMes";
+    $stDetEsp = $conn->prepare("SELECT " . $camposDetEsp . " FROM san_fact_programa_det WHERE codPrograma = ? LIMIT 1");
+    if ($stDetEsp) {
+        $stDetEsp->bind_param("s", $codPrograma);
+        $stDetEsp->execute();
+        $rowDetEsp = $stDetEsp->get_result()->fetch_assoc();
+        $stDetEsp->close();
+        if ($rowDetEsp) {
+            if (isset($rowDetEsp['fechas']) && $rowDetEsp['fechas'] !== null && $rowDetEsp['fechas'] !== '') $fechas_manuales_json = $rowDetEsp['fechas'];
+            if (isset($rowDetEsp['intervaloMeses']) && $rowDetEsp['intervaloMeses'] !== null) $intervaloMeses = max(1, min(12, (int)$rowDetEsp['intervaloMeses']));
+            if (isset($rowDetEsp['diaDelMes']) && $rowDetEsp['diaDelMes'] !== null) $diaDelMes = max(1, min(31, (int)$rowDetEsp['diaDelMes']));
+        }
+    }
+}
+
 $chkFi = @$conn->query("SHOW COLUMNS FROM san_fact_programa_cab LIKE 'fechaInicio'");
 $tieneFechasCab = $chkFi && $chkFi->num_rows > 0;
 $fechaInicioPrograma = null;
@@ -379,7 +409,7 @@ if ($modoSoloFechaInicio && $fechaInicioNueva < $fechaInicioAnteriorInput) {
     }
 }
 
-// Edades del detalle del programa
+// Edades del detalle del programa (programa especial puede tener edad=null)
 $nomPrograma = trim((string)($cab['nombre'] ?? ''));
 $zonaDefault = '';
 $stDet = $conn->prepare("SELECT DISTINCT edad FROM san_fact_programa_det WHERE codPrograma = ? AND edad IS NOT NULL AND edad != 0 ORDER BY edad ASC");
@@ -389,11 +419,6 @@ $resDet = $stDet->get_result();
 $edadesUnicas = [];
 while ($r = $resDet->fetch_assoc()) $edadesUnicas[] = (int)$r['edad'];
 $stDet->close();
-if (empty($edadesUnicas)) {
-    $conn->close();
-    echo json_encode(['success' => false, 'message' => 'Programa sin edades en detalle', 'total' => 0]);
-    exit;
-}
 $edadesNegativas = array_values(array_filter($edadesUnicas, function ($e) { return $e < 0; }));
 $edadesParaTabla = array_values(array_filter($edadesUnicas, function ($e) { return $e > 0; }));
 if (!empty($edadesNegativas) && !in_array(1, $edadesParaTabla)) {
@@ -401,6 +426,17 @@ if (!empty($edadesNegativas) && !in_array(1, $edadesParaTabla)) {
     sort($edadesParaTabla);
 }
 if (empty($edadesParaTabla)) $edadesParaTabla = [1];
+// Programa especial sin edades (edad=null en det): usar edad 1 como placeholder
+if (empty($edadesUnicas) && $esEspecial === 1) {
+    $edadesParaTabla = [1];
+    $edadesNegativas = [];
+}
+// Solo fallar si no es especial y no hay edades
+if (empty($edadesUnicas) && $esEspecial !== 1) {
+    $conn->close();
+    echo json_encode(['success' => false, 'message' => 'Programa sin edades en detalle', 'total' => 0]);
+    exit;
+}
 
 // Filtra pares (edad,fechaEjecucion) dentro del rango [fechaInicio, fechaFin] 
 function filtrarParesPorRangoRecal($pares, $fechaInicio, $fechaFin) {
@@ -415,18 +451,82 @@ function filtrarParesPorRangoRecal($pares, $fechaInicio, $fechaFin) {
 if ($anio > 0 && $fechaFinRecalc !== null && $fechaFinRecalc > $anio . '-12-31') {
     $fechaFinRecalc = $anio . '-12-31';
 }
+
+// Programa especial: ventana [1 ene | inicio programa, 31 dic | fin programa] del año de asignación
+$fechasEspecial = [];
+if ($esEspecial === 1 && $anio > 0) {
+    $desdeEspecial = $anio . '-01-01';
+    $hastaEspecial = $anio . '-12-31';
+    if ($fechaInicioPrograma !== null && $fechaInicioPrograma !== '' && $fechaInicioPrograma > $desdeEspecial) {
+        $desdeEspecial = $fechaInicioPrograma;
+    }
+    if ($fechaFinPrograma !== null && $fechaFinPrograma !== '' && $fechaFinPrograma < $hastaEspecial) {
+        $hastaEspecial = $fechaFinPrograma;
+    }
+    if ($desdeEspecial > $hastaEspecial) {
+        $fechasEspecial = [];
+    } elseif (strtoupper($modoEspecial) === 'MANUAL' && $fechas_manuales_json !== null && $fechas_manuales_json !== '') {
+        $dec = json_decode($fechas_manuales_json, true);
+        $arr = is_array($dec) ? $dec : [];
+        foreach ($arr as $f) {
+            $d = is_string($f) ? substr(trim($f), 0, 10) : (isset($f['fecha']) ? substr(trim($f['fecha']), 0, 10) : '');
+            if ($d !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) && $d >= $desdeEspecial && $d <= $hastaEspecial) {
+                $fechasEspecial[] = $d;
+            }
+        }
+        $fechasEspecial = array_values(array_unique($fechasEspecial));
+        sort($fechasEspecial);
+    } elseif (strtoupper($modoEspecial) === 'PERIODICIDAD') {
+        $mes = (int)substr($desdeEspecial, 5, 2);
+        $anioInt = (int)substr($desdeEspecial, 0, 4);
+        $dia = max(1, min(31, $diaDelMes));
+        $fechaActual = sprintf('%04d-%02d-%02d', $anioInt, $mes, min($dia, (int)date('t', mktime(0, 0, 0, $mes, 1, $anioInt))));
+        if ($fechaActual < $desdeEspecial) {
+            $mes += $intervaloMeses;
+            while ($mes > 12) { $mes -= 12; $anioInt++; }
+            $fechaActual = sprintf('%04d-%02d-%02d', $anioInt, $mes, min($dia, (int)date('t', mktime(0, 0, 0, $mes, 1, $anioInt))));
+        }
+        while ($fechaActual <= $hastaEspecial) {
+            $fechasEspecial[] = $fechaActual;
+            $mes += $intervaloMeses;
+            while ($mes > 12) { $mes -= 12; $anioInt++; }
+            $ultimoDia = (int)date('t', mktime(0, 0, 0, $mes, 1, $anioInt));
+            $fechaActual = sprintf('%04d-%02d-%02d', $anioInt, $mes, min($dia, $ultimoDia));
+        }
+    }
+}
+
 // Preparar INSERT y procesar por cada numCronograma
 $placeholders = implode(',', array_fill(0, count($edadesParaTabla), '?'));
 $total = 0;
 $usuario = $_SESSION['usuario'] ?? 'WEB';
 $tieneNomGranjaCol = true;
 $tieneEdad = true;
+$chkTolerancia = @$conn->query("SHOW COLUMNS FROM san_fact_cronograma LIKE 'tolerancia'");
+$chkTolDet = @$conn->query("SHOW COLUMNS FROM san_fact_programa_det LIKE 'tolerancia'");
+$tieneTolerancia = $chkTolerancia && $chkTolerancia->num_rows > 0;
+$tieneTolDet = $chkTolDet && $chkTolDet->num_rows > 0;
+$toleranciaPorEdad = [];
+if ($tieneTolerancia && $tieneTolDet) {
+    $stTol = $conn->prepare("SELECT edad, COALESCE(NULLIF(tolerancia, 0), 1) AS tol FROM san_fact_programa_det WHERE codPrograma = ?");
+    if ($stTol) {
+        $stTol->bind_param("s", $codPrograma);
+        $stTol->execute();
+        $resTol = $stTol->get_result();
+        while ($row = $resTol->fetch_assoc()) {
+            $e = $row['edad'] !== null && $row['edad'] !== '' ? (int)$row['edad'] : 0;
+            $toleranciaPorEdad[$e] = max(1, (int)($row['tol'] ?? 1));
+        }
+        $stTol->close();
+    }
+}
 $cols = "granja, campania, galpon, codPrograma, nomPrograma, fechaCarga, fechaEjecucion, usuarioRegistro, zona, subzona";
 $placeholdersInsert = "?, ?, ?, ?, ?, ?, ?, ?, ?, ?";
 $types = "ssssssssss";
 if ($tieneNumCronograma) { $cols .= ", numCronograma"; $placeholdersInsert .= ", ?"; $types .= "i"; }
 if ($tieneNomGranjaCol) { $cols .= ", nomGranja"; $placeholdersInsert .= ", ?"; $types .= "s"; }
 if ($tieneEdad) { $cols .= ", edad"; $placeholdersInsert .= ", ?"; $types .= "i"; }
+if ($tieneTolerancia) { $cols .= ", tolerancia"; $placeholdersInsert .= ", ?"; $types .= "i"; }
 $stmt = $conn->prepare("INSERT INTO san_fact_cronograma ($cols) VALUES ($placeholdersInsert)");
 if (!$stmt) {
     $conn->close();
@@ -460,8 +560,37 @@ foreach ($numsCronograma as $numCronograma) {
     $granja = $sc['granja'];
     $galpon = $sc['galpon'];
     $campanias = $sc['campanias'];
+    // Programa especial: si no hay galpon/campañas usar campaña placeholder para granja sin zona/subzona
+    if ($esEspecial === 1 && empty($campanias)) {
+        $campanias = ['000'];
+    }
     if (empty($campanias)) continue;
     $items = [];
+    if ($esEspecial === 1 && !empty($fechasEspecial)) {
+        $fechaMaxRecalc = $fechaFinRecalc ?? $anio . '-12-31';
+        foreach ($campanias as $campaniaVal) {
+            $campania = str_pad($campaniaVal, 3, '0', STR_PAD_LEFT);
+            $paresEstaCampania = [];
+            foreach ($edadesParaTabla as $edad) {
+                foreach ($fechasEspecial as $fechaEjec) {
+                    if ($fechaEjec >= $fechaInicioRecalc && $fechaEjec <= $fechaMaxRecalc) {
+                        $paresEstaCampania[] = ['edad' => $edad, 'fechaCarga' => $fechaEjec, 'fechaEjecucion' => $fechaEjec, 'campania' => $campania];
+                    }
+                }
+            }
+            foreach ($fechasEspecial as $fechaEjec) {
+                foreach ($edadesNegativas as $edadNeg) {
+                    $fechaEjecNeg = date('Y-m-d', strtotime($fechaEjec . ' ' . $edadNeg . ' days'));
+                    if ($fechaEjecNeg >= $fechaInicioRecalc && $fechaEjecNeg <= $fechaMaxRecalc) {
+                        $paresEstaCampania[] = ['edad' => $edadNeg, 'fechaCarga' => $fechaEjec, 'fechaEjecucion' => $fechaEjecNeg, 'campania' => $campania];
+                    }
+                }
+            }
+            if (!empty($paresEstaCampania)) {
+                $items[] = ['granja' => $granja, 'campania' => $campania, 'galpon' => $galpon, 'fechas' => $paresEstaCampania];
+            }
+        }
+    } else {
     foreach ($campanias as $campaniaVal) {
         $campania = str_pad($campaniaVal, 3, '0', STR_PAD_LEFT);
         $tcencos = $granja . $campania;
@@ -500,6 +629,7 @@ foreach ($numsCronograma as $numCronograma) {
             $items[] = ['granja' => $granja, 'campania' => $campania, 'galpon' => $galpon, 'fechas' => $paresEstaCampania];
         }
     }
+    }
     $zonaItem = $sc['zona'] !== '' ? $sc['zona'] : $zonaDefault;
     $subzonaVal = $sc['subzona'];
     $nomGranja = $sc['nomGranja'];
@@ -529,6 +659,7 @@ foreach ($numsCronograma as $numCronograma) {
         if ($tieneNumCronograma) $bindVals[] = $numCronograma;
         if ($tieneNomGranjaCol) $bindVals[] = $nomGranja;
         if ($tieneEdad) $bindVals[] = $edadVal;
+        if ($tieneTolerancia) $bindVals[] = isset($toleranciaPorEdad[$edadVal]) ? $toleranciaPorEdad[$edadVal] : (empty($toleranciaPorEdad) ? 1 : max(array_values($toleranciaPorEdad)));
         $params = array_merge([$types], $bindVals);
         $refs = [];
         foreach ($params as $k => $v) { $refs[$k] = &$params[$k]; }

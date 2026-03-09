@@ -22,6 +22,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
     <title>Calendario - Planificación</title>
     <link rel="stylesheet" href="../../../css/output.css">
     <link rel="stylesheet" href="../../../assets/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="../../../css/dashboard-responsive.css">
     <style>
         body { background: #f8f9fa; font-family: system-ui, sans-serif; }
         .cal-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding: 0.75rem; background: #fff; border-radius: 0.75rem; border: 1px solid #e5e7eb; }
@@ -319,6 +320,8 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
     var calWhatsAppFechaPendiente = '';
     var calWhatsAppEventosPendientes = [];
     var calWhatsAppDestinatarios = [];
+    var calModalIds = ['modalDetalleEvento', 'modalDetalleProgramaCal', 'modalEventosDia', 'modalWhatsAppDia'];
+    var calModalOpenPrev = null;
 
     var calForzarAutoScroll = true;
     var vistaActual = 'mes';
@@ -353,6 +356,39 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
         var d = parseFecha(ymd);
         d.setFullYear(d.getFullYear() + delta);
         return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
+    function syncParentModalState() {
+        var open = calModalIds.some(function(id) {
+            var modal = document.getElementById(id);
+            return modal && !modal.classList.contains('hidden');
+        });
+        if (open === calModalOpenPrev) return;
+        calModalOpenPrev = open;
+        try {
+            (window.top || window.parent).postMessage({
+                type: 'sanidadMobileModalState',
+                open: open
+            }, '*');
+        } catch (e) {}
+    }
+    function watchModalStateBridge() {
+        calModalIds.forEach(function(id) {
+            var modal = document.getElementById(id);
+            if (!modal) return;
+            new MutationObserver(syncParentModalState).observe(modal, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+        });
+        syncParentModalState();
+        window.addEventListener('beforeunload', function() {
+            try {
+                (window.top || window.parent).postMessage({
+                    type: 'sanidadMobileModalState',
+                    open: false
+                }, '*');
+            } catch (e) {}
+        });
     }
     function getLunesSemana(ymd) {
         var d = parseFecha(ymd);
@@ -615,8 +651,11 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
                 return;
             }
             if (calCronogramasVisibles) {
-                if (calCronogramasVisibles.size === 0) return;
-                if (!calCronogramasVisibles.has(Number(r.numCronograma))) return;
+                var numC = Number(r.numCronograma) || 0;
+                if (numC !== 0) {
+                    if (calCronogramasVisibles.size === 0) return;
+                    if (!calCronogramasVisibles.has(numC)) return;
+                }
             }
             var fec = (r.fechaEjecucion || '').toString().trim();
             var key = fec.substring(0, 10);
@@ -1183,6 +1222,7 @@ if (!$conn) die("Error de conexión: " . mysqli_connect_error());
     miniCalMes = d.getMonth();
     miniCalAnio = d.getFullYear();
     aplicarVistaInicialResponsive();
+    watchModalStateBridge();
     cargarTiposPrograma();
     cargarDatosVista();
 })();
